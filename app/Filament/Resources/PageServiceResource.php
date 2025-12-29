@@ -1,0 +1,169 @@
+<?php
+
+namespace App\Filament\Resources;
+
+use App\Enums\BlockType;
+use App\Enums\PageType;
+use App\Filament\Resources\PageServiceResource\Pages;
+use App\Filament\Resources\PageServiceResource\RelationManagers;
+use App\Models\Page;
+use Filament\Forms;
+use Filament\Forms\Components\Section;
+use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
+use Filament\Forms\Form;
+use Filament\Forms\Get;
+use Filament\Forms\Set;
+use Filament\Resources\Resource;
+use Filament\Tables;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Str;
+
+class PageServiceResource extends Resource
+{
+    protected static ?string $model = Page::class;
+
+    protected static ?string $recordTitleAttribute = 'title';
+
+    protected static ?string $navigationLabel = 'Страницы Услуг';
+
+    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+
+    protected static ?string $slug = 'pages-services';
+
+    protected static ?int $navigationSort = 1;
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()->where('type', '=', PageType::Services);
+    }
+
+    public static function form(Form $form): Form
+    {
+        return $form
+            ->disabled(auth()->user()->hasRole('demo'))
+            ->schema([
+                Section::make()->schema([
+                    Forms\Components\TextInput::make('title')
+                        ->label('Заголовок')
+                        ->required(),
+
+                    Forms\Components\TextInput::make('breadcrumbs_title')
+                        ->label('Заголовок для хлебных крошек')
+                        ->helperText('По-умолчанию берется заголовок'),
+
+                    Forms\Components\RichEditor::make('body_html')
+                        ->label('Текст страницы'),
+
+                    Forms\Components\Checkbox::make('is_price_page')
+                        ->label('Страница с прайс-листом')
+                        ->columnSpanFull(),
+
+                    Forms\Components\Checkbox::make('active')
+                        ->label('Опубликована'),
+                    
+                    Forms\Components\Select::make('cities')
+                        ->label('Доступность в городах')
+                        ->relationship('cities', 'name')
+                        ->multiple()
+                        ->preload()
+                        ->helperText('Если пусто - доступна везде'),
+
+                    Forms\Components\Select::make('type')
+                        ->required()
+                        ->default(PageType::Services->value)
+                        ->label('Шаблон страницы')
+                        ->options(collect(PageType::toArray())->filter(function ($item, $id) {
+                            return $id == PageType::Services->value;
+                        }))
+                        ->reactive(),
+
+                    Forms\Components\Textarea::make('header_scripts')
+                        ->label('Скрипты в head'),
+
+                    Forms\Components\TextInput::make('sorting')
+                        ->label('Порядок страниц (сортировка)'),
+                ]),
+
+                Section::make('SEO')->schema([
+                    Forms\Components\TextInput::make('seo.title'),
+
+                    Forms\Components\TextInput::make('handle')
+                        ->label('URL псевдоним')
+                        ->prefix(config('app.url') . '/')
+                        ->unique(ignorable: fn($record) => $record)
+                        ->afterStateUpdated(function (Get $get, Set $set, $record) {
+                            if ($record) {
+                                $set('show_redirect', true);
+                            }
+                        })
+                        ->reactive(),
+
+                    Forms\Components\Checkbox::make('show_redirect')
+                        ->default(false)
+                        ->reactive()
+                        ->hidden(),
+
+                    Forms\Components\Checkbox::make('redirect')
+                        ->label(function (Get $get, $record) {
+                            if (!$record) {
+                                return "Создать редирект";
+                            }
+
+                            return "Создать редирект {$record->handle} → {$get('handle')}";
+                        })
+//                        ->afterStateHydrated(fn(Forms\Components\Checkbox $component) => $component->state(true))
+                        ->hidden(fn(Get $get) => !$get('show_redirect')),
+
+                    Forms\Components\TextInput::make('seo.canonical')
+                        ->label('Канонический URL')
+                        ->prefix(config('app.url') . '/'),
+
+                    Forms\Components\Textarea::make('seo.description')
+                        ->helperText(function (?string $state): string {
+                            return (string)Str::of(strlen($state))
+                                ->append(' / ')
+                                ->append(160 . ' ')
+                                ->append('символов');
+                        })
+                        ->reactive(),
+
+                    Forms\Components\Checkbox::make('seo.noindex')
+                        ->label('Запретить поисковикам индексировать эту страницу'),
+                ]),
+            ]);
+    }
+
+    public static function table(Table $table): Table
+    {
+        return $table
+            ->columns([
+                Tables\Columns\TextColumn::make('title')->label('Заголовок'),
+            ])
+            ->filters([
+                //
+            ])
+            ->actions([
+                Tables\Actions\EditAction::make(),
+            ])
+            ->bulkActions([
+                Tables\Actions\DeleteBulkAction::make(),
+            ]);
+    }
+
+    public static function getRelations(): array
+    {
+        return [
+            RelationManagers\BlocksRelationManager::class,
+        ];
+    }
+
+    public static function getPages(): array
+    {
+        return [
+            'index' => PageServiceResource\Pages\ListPageServices::route('/'),
+            'create' => PageServiceResource\Pages\CreatePageService::route('/create'),
+            'edit' => PageServiceResource\Pages\EditPageService::route('/{record}/edit'),
+        ];
+    }
+}
