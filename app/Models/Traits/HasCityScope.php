@@ -19,13 +19,38 @@ trait HasCityScope
 
             if ($currentCity) {
                 $builder->where(function (Builder $query) use ($currentCity) {
-                    $query->whereHas('cities', function (Builder $q) use ($currentCity) {
-                        $q->where('cities.id', $currentCity->id);
-                    })->orDoesntHave('cities');
+                    $table = $query->getModel()->getTable();
+                    $pivotTable = self::getCityPivotTableName($table);
+                    $foreignKey = str()->singular($table) . '_id';
+
+                    // Используем whereExists вместо whereHas для оптимизации (избегаем N+1)
+                    $query->whereExists(function ($subQuery) use ($table, $pivotTable, $foreignKey, $currentCity) {
+                        $subQuery->selectRaw(1)
+                            ->from($pivotTable)
+                            ->whereColumn("{$pivotTable}.{$foreignKey}", "{$table}.id")
+                            ->where("{$pivotTable}.city_id", $currentCity->id);
+                    })->orWhereNotExists(function ($subQuery) use ($table, $pivotTable, $foreignKey) {
+                        // Или показываем записи, которые не привязаны ни к одному городу
+                        $subQuery->selectRaw(1)
+                            ->from($pivotTable)
+                            ->whereColumn("{$pivotTable}.{$foreignKey}", "{$table}.id");
+                    });
                 });
             } else {
-                $builder->doesntHave('cities');
+                $builder->whereDoesntHave('cities');
             }
         });
+    }
+
+    /**
+     * Получить имя pivot-таблицы для связи с городами
+     *
+     * @param string $table Имя таблицы модели
+     * @return string Имя pivot-таблицы
+     */
+    protected static function getCityPivotTableName(string $table): string
+    {
+        // Для большинства таблиц: city_doctors, city_pages, city_services
+        return 'city_' . $table;
     }
 }

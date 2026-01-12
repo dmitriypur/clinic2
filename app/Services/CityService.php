@@ -28,8 +28,9 @@ class CityService
 
     public function getCityBySlug(string $slug): ?City
     {
-        // Cache could be added here
-        return City::where('slug', $slug)->where('active', true)->first();
+        return Cache::remember("city_by_slug_{$slug}", 3600, function () use ($slug) {
+            return City::where('slug', $slug)->where('active', true)->first();
+        });
     }
 
     public function getActiveCities(): \Illuminate\Database\Eloquent\Collection
@@ -37,5 +38,36 @@ class CityService
         return Cache::remember('active_cities', 3600, function () {
             return City::where('active', true)->get();
         });
+    }
+
+    /**
+     * Добавляет префикс текущего города к пути (если город не дефолтный)
+     * Централизованный метод для избежания дублирования логики
+     *
+     * @param string $path Путь без префикса (например, '/services' или 'doctors/ivanov')
+     * @return string Путь с префиксом города (например, '/spb/services')
+     */
+    public function addCityPrefix(string $path): string
+    {
+        $city = $this->getCurrentCity();
+
+        // Если город не выбран или является дефолтным - возвращаем путь как есть
+        if (!$city || $city->is_default) {
+            return $path;
+        }
+
+        $cleanPath = ltrim($path, '/');
+        $slug = $city->slug;
+
+        // Защита от дублирования префикса
+        if (empty($cleanPath)) {
+            return '/' . $slug;
+        }
+
+        if (str_starts_with($cleanPath, $slug . '/')) {
+            return '/' . $cleanPath;
+        }
+
+        return '/' . $slug . '/' . $cleanPath;
     }
 }

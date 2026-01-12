@@ -20,11 +20,11 @@ class CityResource extends Resource
     protected static ?string $model = City::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-building-office-2';
-    
+
     protected static ?string $navigationLabel = 'Города';
-    
+
     protected static ?string $modelLabel = 'Город';
-    
+
     protected static ?string $pluralModelLabel = 'Города';
 
     public static function form(Form $form): Form
@@ -38,21 +38,38 @@ class CityResource extends Resource
                             ->required()
                             ->live(onBlur: true)
                             ->afterStateUpdated(fn (Set $set, ?string $state) => $set('slug', Str::slug($state))),
-                        
+
                         TextInput::make('slug')
                             ->label('Slug (URL)')
                             ->required()
-                            ->unique(ignoreRecord: true),
-                            
+                            ->unique(ignoreRecord: true)
+                            ->rules([
+                                'regex:/^[a-z0-9-]+$/',
+                                function ($attribute, $value, $fail) {
+                                    // Список зарезервированных системных маршрутов
+                                    $reserved = [
+                                        'api', 'admin', 'profile', 'search', 'live-search',
+                                        'doctors', 'stati', 'directory', 'tags', 'reviews',
+                                        'sitemap.xml', 'sitemap.html', 'robots.txt',
+                                        'yml-feed', 'call-request', 'clear-price', 'form',
+                                        'login', 'logout'
+                                    ];
+                                    if (in_array(strtolower($value), $reserved)) {
+                                        $fail('Этот slug зарезервирован системой. Пожалуйста, выберите другой.');
+                                    }
+                                },
+                            ])
+                            ->helperText('Только латинские буквы, цифры и дефис'),
+
                         Toggle::make('is_default')
                             ->label('Основной город')
                             ->helperText('Открывается без префикса в URL'),
-                            
+
                         Toggle::make('active')
                             ->label('Активен')
                             ->default(true),
                     ])->columns(2),
-                    
+
                 Section::make('Контакты')
                     ->schema([
                         TextInput::make('phone')
@@ -97,7 +114,7 @@ class CityResource extends Resource
                             ->label('Предложный падеж (где?)')
                             ->placeholder('в Санкт-Петербурге')
                             ->helperText('Используется в заголовках: "Лечение ... в Санкт-Петербурге"'),
-                            
+
                         TextInput::make('seo_cases.genitive')
                             ->label('Родительный падеж (кого/чего?)')
                             ->placeholder('Санкт-Петербурга')
@@ -157,15 +174,15 @@ class CityResource extends Resource
                     ->label('Название')
                     ->searchable()
                     ->sortable(),
-                    
+
                 Tables\Columns\TextColumn::make('slug')
                     ->label('Slug')
                     ->badge(),
-                    
+
                 Tables\Columns\IconColumn::make('is_default')
                     ->label('Основной')
                     ->boolean(),
-                    
+
                 Tables\Columns\IconColumn::make('active')
                     ->label('Активен')
                     ->boolean(),

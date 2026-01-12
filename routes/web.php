@@ -130,7 +130,10 @@ $contentRoutes = function () {
 // Get active cities slugs for routing constraint
 try {
     $citySlugs = \Illuminate\Support\Facades\Cache::remember('route_city_slugs', 3600, function () {
-        return \App\Models\City::where('active', true)->pluck('slug')->implode('|');
+        return \App\Models\City::where('active', true)
+            ->pluck('slug')
+            ->map(fn($slug) => preg_quote($slug, '/')) // Экранируем спецсимволы regex для безопасности
+            ->implode('|');
     });
 } catch (\Exception $e) {
     $citySlugs = 'spb'; // Fallback

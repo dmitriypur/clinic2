@@ -81,17 +81,11 @@ if (!function_exists('city_route')) {
         // 1. Генерируем базовый относительный путь (например, /doctors/ivanov)
         $path = route($name, $parameters, false);
 
-        // 2. Получаем текущий город
+        // 2. Используем централизованный метод для добавления префикса города
         $cityService = app(\App\Services\CityService::class);
-        $city = $cityService->getCurrentCity();
+        $path = $cityService->addCityPrefix($path);
 
-        // 3. Если город есть и он не дефолтный — добавляем префикс
-        if ($city && !$city->is_default) {
-            // Получится /spb/doctors/ivanov
-            $path = '/' . $city->slug . '/' . ltrim($path, '/');
-        }
-
-        // 4. Если нужен абсолютный URL (http://site.ru/...), оборачиваем в url()
+        // 3. Если нужен абсолютный URL (http://site.ru/...), оборачиваем в url()
         if ($absolute) {
             return url($path);
         }
@@ -104,12 +98,8 @@ if (!function_exists('home_route')) {
     function home_route()
     {
         $cityService = app(\App\Services\CityService::class);
-        $city = $cityService->getCurrentCity();
+        $path = $cityService->addCityPrefix('/');
 
-        if ($city && !$city->is_default) {
-            return url($city->slug);
-        }
-
-        return url('/');
+        return url($path);
     }
 }

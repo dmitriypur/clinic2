@@ -53,16 +53,25 @@ class City extends Model
 
     protected static function booted()
     {
-        static::saved(function () {
+        static::saved(function (City $city) {
             \Illuminate\Support\Facades\Cache::forget('route_city_slugs');
             \Illuminate\Support\Facades\Cache::forget('default_city');
             \Illuminate\Support\Facades\Cache::forget('active_cities');
+
+            // Сбрасываем кеш для конкретного города при изменении его slug
+            \Illuminate\Support\Facades\Cache::forget("city_by_slug_{$city->slug}");
+
+            // Если slug был изменен, сбрасываем кеш и для старого значения
+            if ($city->isDirty('slug') && $city->getOriginal('slug')) {
+                \Illuminate\Support\Facades\Cache::forget("city_by_slug_{$city->getOriginal('slug')}");
+            }
         });
 
-        static::deleted(function () {
+        static::deleted(function (City $city) {
             \Illuminate\Support\Facades\Cache::forget('route_city_slugs');
             \Illuminate\Support\Facades\Cache::forget('default_city');
             \Illuminate\Support\Facades\Cache::forget('active_cities');
+            \Illuminate\Support\Facades\Cache::forget("city_by_slug_{$city->slug}");
         });
     }
 

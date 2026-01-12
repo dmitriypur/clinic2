@@ -4,8 +4,10 @@ namespace App\Providers;
 
 use App\Clinic;
 use App\Models\Block;
+use App\Models\Doctor;
 use App\Models\Page;
 use App\Observers\BlockObserver;
+use App\Observers\DoctorObserver;
 use App\Observers\PageObserver;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\ServiceProvider;
@@ -44,10 +46,11 @@ class AppServiceProvider extends ServiceProvider
         Clinic::setHttp();
 
         Model::preventLazyLoading(!app()->isProduction());
-        
+
         // Регистрируем обсерверы
         Page::observe(PageObserver::class);
         Block::observe(BlockObserver::class);
+        Doctor::observe(DoctorObserver::class);
         Navigation::observe(\App\Observers\NavigationObserver::class);
 
         View::composer('components.block.full-price-list', function ($view) {
