@@ -66,11 +66,53 @@ class Clinic
 
     public static function scriptVariables(): array
     {
+        $cityService = app(\App\Services\CityService::class);
+        $currentCity = $cityService->getCurrentCity();
+        $cities = $cityService->getActiveCities();
+
+        $currentPath = request()->path();
+        // home_route() возвращает '/' для дефолтного города, и '/slug' для других.
+        // request()->path() возвращает '/' для главной страницы дефолтного города, и 'slug' для главной другого города.
+        // приведем все к одному виду - без слеша в конце, кроме корневого '/', чтобы substr не отрезал лишнее.
+        if ($currentPath !== '/') {
+            $currentPath = rtrim($currentPath, '/');
+        }
+
+        $preparedPath = $currentPath;
+        if ($currentCity && !$currentCity->is_default) {
+            $prefix = $currentCity->slug;
+            if (str_starts_with($preparedPath, $prefix)) {
+                $preparedPath = substr($preparedPath, strlen($prefix));
+            }
+        }
+        $preparedPath = ltrim($preparedPath, '/');
+
+
+        $queryString = request()->getQueryString();
+        $query = $queryString ? '?' . $queryString : '';
+
+        $preparedCities = $cities->map(function($city) use ($preparedPath, $query, $currentCity) {
+            $path = $preparedPath ? '/' . $preparedPath : '';
+            $url = $city->is_default
+                ? url($path . $query)
+                : url($city->slug . $path . $query);
+
+            return [
+                'id' => $city->id,
+                'name' => $city->name,
+                'slug' => $city->slug,
+                'url' => $url,
+                'is_current' => $currentCity && $currentCity->id === $city->id
+            ];
+        })->values();
+
         return [
             'csrfToken' => csrf_token(),
             'env' => config('app.env'),
             'baseUrl' => url('/'),
             'state' => resolve(InitialFrontendState::class)->forUser(Auth::user()),
+            'detectedCity' => session()->pull('detected_city'),
+            'cities' => $preparedCities,
         ];
     }
 

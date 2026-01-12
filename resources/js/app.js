@@ -1,11 +1,11 @@
 import Vue from "vue";
 import Swiper from "swiper";
-import {Autoplay, Navigation, Pagination} from "swiper/modules";
+import { Autoplay, Navigation, Pagination } from "swiper/modules";
 import YmapPlugin from "vue-yandex-maps";
 import LightBox from "vue-image-lightbox";
 import GLightbox from "glightbox";
-import VueTheMask from 'vue-the-mask'
-import VCalendar from 'v-calendar';
+import VueTheMask from "vue-the-mask";
+import VCalendar from "v-calendar";
 
 import {
   CertificateForm,
@@ -24,20 +24,25 @@ import {
   CitySwitcher,
 } from "./components";
 
-const CallbackForm = () => import('./components/CallbackForm/CallbackForm.vue')
-const CallbackModal = () => import('./components/CallbackModal/CallbackModal.vue')
-const CallToAction = () => import('./components/CallToAction/CallToAction.vue')
-const VideoComponent = () => import('./components/Video/Video.vue')
-const VideoNew = () => import('./components/VideoNew/VideoNew.vue')
-const VideoModal = () => import('./components/VideoModal/VideoModal.vue')
-const Faq = () => import('./components/Faq/Faq.vue')
-const AppFilter = () => import('./components/AppFilter/AppFilter.vue')
-const OnlineAppointmentForm = () => import('./components/OnlineAppointmentForm/OnlineAppointmentForm.vue')
-const DoctorCard = () => import('./components/DoctorCard/DoctorCard.vue')
-const SearchLive = () => import('./components/SearchLive/SearchLive.vue')
-const AccessibilityToggle = () => import('./components/AccessibilityToggle/AccessibilityToggle.vue')
+const CallbackForm = () => import("./components/CallbackForm/CallbackForm.vue");
+const CallbackModal = () =>
+  import("./components/CallbackModal/CallbackModal.vue");
+const CallToAction = () => import("./components/CallToAction/CallToAction.vue");
+const VideoComponent = () => import("./components/Video/Video.vue");
+const VideoNew = () => import("./components/VideoNew/VideoNew.vue");
+const VideoModal = () => import("./components/VideoModal/VideoModal.vue");
+const Faq = () => import("./components/Faq/Faq.vue");
+const AppFilter = () => import("./components/AppFilter/AppFilter.vue");
+const OnlineAppointmentForm = () =>
+  import("./components/OnlineAppointmentForm/OnlineAppointmentForm.vue");
+const DoctorCard = () => import("./components/DoctorCard/DoctorCard.vue");
+const SearchLive = () => import("./components/SearchLive/SearchLive.vue");
+const CityConfirmationModal = () =>
+  import("./components/CityConfirmationModal.vue");
+const AccessibilityToggle = () =>
+  import("./components/AccessibilityToggle/AccessibilityToggle.vue");
 
-import {eventBus} from "./eventBus";
+import { eventBus } from "./eventBus";
 import VueObserveVisibility from "vue-observe-visibility";
 import VueLazyload from "vue-lazyload";
 
@@ -46,8 +51,8 @@ import "vue-image-lightbox/dist/vue-image-lightbox.min.css";
 Vue.use(VueObserveVisibility);
 Vue.use(YmapPlugin);
 Vue.use(VueLazyload);
-Vue.use(VueTheMask)
-Vue.use(VCalendar)
+Vue.use(VueTheMask);
+Vue.use(VCalendar);
 
 new Vue({
   components: {
@@ -78,6 +83,7 @@ new Vue({
     SearchLive,
     AccessibilityToggle,
     CitySwitcher,
+    CityConfirmationModal,
   },
 
   data: {
@@ -133,7 +139,9 @@ new Vue({
       selector: ".glightbox",
     });
 
-    const links = [...document.links].filter((link) => link.href.includes(this.baseUrl) && link.href.includes("#"));
+    const links = [...document.links].filter(
+      (link) => link.href.includes(this.baseUrl) && link.href.includes("#")
+    );
 
     links.forEach((link) => {
       link.addEventListener("click", this.handleSmoothScroll);
@@ -150,17 +158,20 @@ new Vue({
     });
 
     window.addEventListener("scroll", function () {
-      const scrollHeight = Number.isNaN(window.innerHeight) ? window.clientHeight : window.innerHeight;
+      const scrollHeight = Number.isNaN(window.innerHeight)
+        ? window.clientHeight
+        : window.innerHeight;
 
       self.showToTopButton = window.scrollY >= scrollHeight;
     });
   },
 
-
   beforeDestroy() {
     const self = this;
 
-    const links = [...document.links].filter((link) => link.href.includes(this.baseUrl) && link.href.includes("#"));
+    const links = [...document.links].filter(
+      (link) => link.href.includes(this.baseUrl) && link.href.includes("#")
+    );
 
     links.forEach((link) => {
       link.removeEventListener("click", this.handleSmoothScroll);
@@ -179,7 +190,8 @@ new Vue({
   methods: {
     toTop() {
       window.scrollTo({
-        top: 0, behavior: "smooth",
+        top: 0,
+        behavior: "smooth",
       });
     },
 
@@ -204,9 +216,13 @@ new Vue({
     },
 
     handleSmoothScroll(e) {
-      const href = e.target.getAttribute("href") || e.target.parentElement.getAttribute("href");
+      const href =
+        e.target.getAttribute("href") ||
+        e.target.parentElement.getAttribute("href");
 
-      const target = document.querySelector("#" + href.slice(href.indexOf("#") + 1));
+      const target = document.querySelector(
+        "#" + href.slice(href.indexOf("#") + 1)
+      );
 
       if (!target) {
         return;
@@ -244,7 +260,11 @@ new Vue({
       this.loginModalActive = false;
     },
 
-    setActiveElementModal(show = false, blockId = null, currentElementIndex = null) {
+    setActiveElementModal(
+      show = false,
+      blockId = null,
+      currentElementIndex = null
+    ) {
       this.activeElementModalBlockId = show ? blockId : null;
       this.activeElementModalIndex = show ? currentElementIndex : null;
     },
@@ -265,15 +285,19 @@ new Vue({
         slidesPerView: 1,
         breakpoints: {
           640: {
-            cssMode: false, slidesPerView: 2, spaceBetween: 32,
+            cssMode: false,
+            slidesPerView: 2,
+            spaceBetween: 32,
           },
         },
 
         pagination: {
-          el: ".doctors-swiper-pagination", clickable: true,
+          el: ".doctors-swiper-pagination",
+          clickable: true,
         },
         navigation: {
-          nextEl: ".doctors-swiper-next", prevEl: ".doctors-swiper-prev",
+          nextEl: ".doctors-swiper-next",
+          prevEl: ".doctors-swiper-prev",
         },
       });
 
@@ -285,22 +309,27 @@ new Vue({
         slidesPerView: 1,
         breakpoints: {
           768: {
-            cssMode: false, slidesPerView: 2, spaceBetween: 20,
+            cssMode: false,
+            slidesPerView: 2,
+            spaceBetween: 20,
           },
           1024: {
-            cssMode: false, slidesPerView: 3, spaceBetween: 20,
+            cssMode: false,
+            slidesPerView: 3,
+            spaceBetween: 20,
           },
         },
 
         pagination: {
-          el: '.doctors-alt-swiper-pagination',
+          el: ".doctors-alt-swiper-pagination",
           // renderBullet: function (index, className) {
           //   return '<div class="custom-bullet ' + className + '">' +(index+1)+'</div>';
           // },
           clickable: true,
         },
         navigation: {
-          nextEl: ".doctors-swiper-next", prevEl: ".doctors-swiper-prev",
+          nextEl: ".doctors-swiper-next",
+          prevEl: ".doctors-swiper-prev",
         },
       });
 
@@ -312,18 +341,24 @@ new Vue({
         spaceBetween: 16,
         breakpoints: {
           640: {
-            cssMode: false, slidesPerView: 2, spaceBetween: 24,
+            cssMode: false,
+            slidesPerView: 2,
+            spaceBetween: 24,
           },
           920: {
-            cssMode: false, slidesPerView: 3, spaceBetween: 32,
+            cssMode: false,
+            slidesPerView: 3,
+            spaceBetween: 32,
           },
         },
 
         pagination: {
-          el: ".review-swiper-pagination", clickable: true,
+          el: ".review-swiper-pagination",
+          clickable: true,
         },
         navigation: {
-          nextEl: ".review-swiper-next", prevEl: ".review-swiper-prev",
+          nextEl: ".review-swiper-next",
+          prevEl: ".review-swiper-prev",
         },
       });
 
@@ -335,15 +370,19 @@ new Vue({
         cssMode: true,
         breakpoints: {
           640: {
-            cssMode: false, slidesPerView: 3, spaceBetween: 32,
+            cssMode: false,
+            slidesPerView: 3,
+            spaceBetween: 32,
           },
         },
 
         pagination: {
-          el: ".gallery-swiper-pagination", clickable: true,
+          el: ".gallery-swiper-pagination",
+          clickable: true,
         },
         navigation: {
-          nextEl: ".gallery-swiper-next", prevEl: ".gallery-swiper-prev",
+          nextEl: ".gallery-swiper-next",
+          prevEl: ".gallery-swiper-prev",
         },
       });
 
@@ -360,10 +399,12 @@ new Vue({
         lazyLoading: true, // breakpoints: {
 
         pagination: {
-          el: ".promotions-swiper-pagination", clickable: true,
+          el: ".promotions-swiper-pagination",
+          clickable: true,
         },
         navigation: {
-          nextEl: ".promotions-swiper-next", prevEl: ".promotions-swiper-prev",
+          nextEl: ".promotions-swiper-next",
+          prevEl: ".promotions-swiper-prev",
         },
       });
 
@@ -378,10 +419,12 @@ new Vue({
         lazyLoading: true, // breakpoints: {
 
         pagination: {
-          el: ".promotions-swiper-pagination", clickable: true,
+          el: ".promotions-swiper-pagination",
+          clickable: true,
         },
         navigation: {
-          nextEl: ".promotions-swiper-next", prevEl: ".promotions-swiper-prev",
+          nextEl: ".promotions-swiper-next",
+          prevEl: ".promotions-swiper-prev",
         },
 
         breakpoints: {
@@ -404,7 +447,8 @@ new Vue({
           },
         },
         navigation: {
-          nextEl: ".utp-swiper-next", prevEl: ".utp-swiper-prev",
+          nextEl: ".utp-swiper-next",
+          prevEl: ".utp-swiper-prev",
         },
       });
 
@@ -435,7 +479,8 @@ new Vue({
         spaceBetween: 16,
         lazyLoading: true,
         pagination: {
-          el: ".doctor-documents-mobile-swiper-pagination", clickable: true,
+          el: ".doctor-documents-mobile-swiper-pagination",
+          clickable: true,
         },
       });
 
@@ -447,11 +492,12 @@ new Vue({
           loop: true,
           spaceBetween: 12,
           pagination: {
-            el: ".grid-carousel-swiper-pagination", clickable: true,
+            el: ".grid-carousel-swiper-pagination",
+            clickable: true,
           },
         });
       } else {
-        gridCarouselSwiper?.disable()
+        gridCarouselSwiper?.disable();
       }
 
       let pointsCarouselSwiper;
@@ -462,11 +508,12 @@ new Vue({
           loop: true,
           spaceBetween: 40,
           pagination: {
-            el: ".points-carousel-swiper-pagination", clickable: true,
+            el: ".points-carousel-swiper-pagination",
+            clickable: true,
           },
         });
       } else {
-        pointsCarouselSwiper?.disable()
+        pointsCarouselSwiper?.disable();
       }
 
       new Swiper(".video-carousel-swiper", {
@@ -480,10 +527,12 @@ new Vue({
           },
         },
         pagination: {
-          el: ".video-carousel-swiper-pagination", clickable: true,
+          el: ".video-carousel-swiper-pagination",
+          clickable: true,
         },
         navigation: {
-          nextEl: ".video-carousel-swiper-next", prevEl: ".video-carousel-swiper-prev",
+          nextEl: ".video-carousel-swiper-next",
+          prevEl: ".video-carousel-swiper-prev",
         },
       });
 
@@ -493,10 +542,12 @@ new Vue({
         loop: true,
         spaceBetween: 12,
         pagination: {
-          el: ".stories-swiper-pagination", clickable: true,
+          el: ".stories-swiper-pagination",
+          clickable: true,
         },
         navigation: {
-          nextEl: ".stories-swiper-next", prevEl: ".stories-swiper-prev",
+          nextEl: ".stories-swiper-next",
+          prevEl: ".stories-swiper-prev",
         },
       });
 
@@ -510,14 +561,16 @@ new Vue({
             slidesPerView: 2,
           },
           992: {
-            slidesPerView: (typeof countCards !== 'undefined') ? countCards : 3,
+            slidesPerView: typeof countCards !== "undefined" ? countCards : 3,
           },
         },
         pagination: {
-          el: ".cards-swiper-pagination", clickable: true,
+          el: ".cards-swiper-pagination",
+          clickable: true,
         },
         navigation: {
-          nextEl: ".cards-swiper-next", prevEl: ".cards-swiper-prev",
+          nextEl: ".cards-swiper-next",
+          prevEl: ".cards-swiper-prev",
         },
       });
 
@@ -531,14 +584,16 @@ new Vue({
             slidesPerView: 2,
           },
           992: {
-            slidesPerView: (typeof countCards !== 'undefined') ? countCards : 3,
+            slidesPerView: typeof countCards !== "undefined" ? countCards : 3,
           },
         },
         pagination: {
-          el: ".advantages-swiper-pagination", clickable: true,
+          el: ".advantages-swiper-pagination",
+          clickable: true,
         },
         navigation: {
-          nextEl: ".advantages-swiper-next", prevEl: ".cards-swiper-prev",
+          nextEl: ".advantages-swiper-next",
+          prevEl: ".cards-swiper-prev",
         },
       });
 
@@ -552,14 +607,16 @@ new Vue({
             slidesPerView: 2,
           },
           992: {
-            slidesPerView: (typeof countBlog !== 'undefined') ? countBlog : 3,
+            slidesPerView: typeof countBlog !== "undefined" ? countBlog : 3,
           },
         },
         pagination: {
-          el: ".blog-swiper-pagination", clickable: true,
+          el: ".blog-swiper-pagination",
+          clickable: true,
         },
         navigation: {
-          nextEl: ".blog-swiper-next", prevEl: ".blog-swiper-prev",
+          nextEl: ".blog-swiper-next",
+          prevEl: ".blog-swiper-prev",
         },
       });
 
@@ -571,18 +628,19 @@ new Vue({
           loop: true,
           spaceBetween: 20,
           navigation: {
-            nextEl: ".banner-grid-swiper-next", prevEl: ".banner-grid-swiper-prev",
+            nextEl: ".banner-grid-swiper-next",
+            prevEl: ".banner-grid-swiper-prev",
           },
         });
       } else {
-        bannerGridSwiper?.disable()
+        bannerGridSwiper?.disable();
       }
     },
-
   },
 }).$mount("#app");
 
 function setHeight(el, val) {
   if (typeof val === "function") val = val();
-  if (typeof val === "string") el.style.height = val; else el.style.height = val + "px";
+  if (typeof val === "string") el.style.height = val;
+  else el.style.height = val + "px";
 }

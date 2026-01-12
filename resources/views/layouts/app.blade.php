@@ -287,6 +287,8 @@
                      @close="closeLoginModal"></login-modal>
     @endguest
 
+    <city-confirmation-modal></city-confirmation-modal>
+
     <cookie-toast
         cookie-domain="{{ config('session.domain') ?? request()->getHost() }}"
         cookie-name="{{ $cookieConsentName }}" cookie-lifetime="{{ 365 * 20 }}"

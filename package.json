@@ -19,6 +19,7 @@
         "@popperjs/core": "^2.11.8",
         "glightbox": "^3.2.0",
         "humps": "^2.0.1",
+        "js-cookie": "^3.0.5",
         "photoswipe": "^5.4.2",
         "swiper": "^11.0",
         "v-calendar": "^2.4.2",

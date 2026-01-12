@@ -18,14 +18,14 @@
 
     $queryString = request()->getQueryString();
     $query = $queryString ? '?' . $queryString : '';
-    
+
     // Prepare data for Vue component
     $preparedCities = $cities->map(function($city) use ($currentPath, $query, $currentCity) {
         $path = $currentPath ? '/' . $currentPath : '';
         $url = $city->is_default
             ? url($path . $query)
             : url($city->slug . $path . $query);
-            
+
         return [
             'id' => $city->id,
             'name' => $city->name,
@@ -36,7 +36,7 @@
     })->values();
 @endphp
 
-<city-switcher 
-    :cities='@json($preparedCities)' 
+<city-switcher
+    :cities='@json($preparedCities)'
     current-city-name="{{ $currentCity ? $currentCity->name : 'Выбрать город' }}"
 ></city-switcher>
