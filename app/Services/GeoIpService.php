@@ -40,7 +40,7 @@ class GeoIpService
                 return null;
             }
 
-            // Ищем активный город в БД по имени, без учета регистра
+            // Ищем активный город в БД по имени, без учета регистра (совместимо с MySQL и PostgreSQL)
             return City::query()
                 ->where('active', true)
                 ->whereRaw('LOWER(name) = ?', [mb_strtolower($cityName)])
@@ -94,8 +94,12 @@ class GeoIpService
 
             $bindings = $query->getBindings();
             $sql = $query->toSql();
-            // Вручную вставляем биндинги в SQL для наглядности
-            $debugData['database_query'] = str_replace_array('?', array_map(fn($i) => is_numeric($i) ? $i : "'$i'", $bindings), $sql);
+
+            $debugSql = $sql;
+            foreach ($bindings as $binding) {
+                $debugSql = preg_replace('/\?/', is_numeric($binding) ? $binding : "'" . $binding . "'", $debugSql, 1);
+            }
+            $debugData['database_query'] = $debugSql;
 
             $city = $query->first();
 

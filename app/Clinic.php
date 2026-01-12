@@ -106,12 +106,18 @@ class Clinic
             ];
         })->values();
 
+        $detectedCity = session()->pull('detected_city');
+        if ($detectedCity) {
+            // The modal will only show for non-default cities, so the URL is always prefixed with the slug.
+            $detectedCity->url = url($detectedCity->slug . rtrim('/' . $preparedPath, '/'));
+        }
+
         return [
             'csrfToken' => csrf_token(),
             'env' => config('app.env'),
             'baseUrl' => url('/'),
             'state' => resolve(InitialFrontendState::class)->forUser(Auth::user()),
-            'detectedCity' => session()->pull('detected_city'),
+            'detectedCity' => $detectedCity,
             'cities' => $preparedCities,
         ];
     }
