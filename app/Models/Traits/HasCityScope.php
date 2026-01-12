@@ -50,7 +50,9 @@ trait HasCityScope
      */
     protected static function getCityPivotTableName(string $table): string
     {
-        // Для большинства таблиц: city_doctors, city_pages, city_services
-        return 'city_' . $table;
+        // Для всех таблиц: city_doctor, city_page, city_service (единственное число)
+        // Убираем 's' в конце, если есть
+        $singular = str_ends_with($table, 's') ? substr($table, 0, -1) : $table;
+        return 'city_' . $singular;
     }
 }
