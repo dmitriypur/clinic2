@@ -54,4 +54,57 @@ class GeoIpService
             return null;
         }
     }
+
+    public function debugCityByIp(?string $ip): array
+    {
+        $debugData = [
+            'ip_checked' => $ip,
+            'error' => null,
+            'api_response_body' => null,
+            'extracted_city_name' => null,
+            'database_query' => null,
+            'database_result' => 'Not Run',
+        ];
+
+        if (empty($ip) || in_array($ip, ['127.0.0.1', '::1'], true)) {
+            $debugData['error'] = 'Local IP, lookup skipped.';
+            return $debugData;
+        }
+
+        try {
+            $response = Http::get(self::API_URL . $ip);
+            $debugData['api_response_body'] = $response->json();
+
+            if ($response->failed()) {
+                $debugData['error'] = 'Sypex Geo API request failed with status: ' . $response->status();
+                return $debugData;
+            }
+
+            $cityName = $debugData['api_response_body']['city']['name_ru'] ?? null;
+            $debugData['extracted_city_name'] = $cityName;
+
+            if (!$cityName) {
+                $debugData['error'] = 'City name not found in API response.';
+                return $debugData;
+            }
+
+            $query = City::query()
+                ->where('active', true)
+                ->where('name', 'ILIKE', $cityName);
+
+            $debugData['database_query'] = $query->toSql();
+            $city = $query->first();
+
+            if ($city) {
+                $debugData['database_result'] = 'City Found: ' . $city->name . ' (ID: ' . $city->id . ')';
+            } else {
+                $debugData['database_result'] = 'City NOT Found in DB.';
+            }
+            return $debugData;
+
+        } catch (\Throwable $e) {
+            $debugData['error'] = 'Exception in GeoIpService: ' . $e->getMessage();
+            return $debugData;
+        }
+    }
 }

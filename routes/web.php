@@ -33,31 +33,11 @@ Route::get('/ip-debug', function (\Illuminate\Http\Request $request) {
 
     $geoIpService = app(\App\Services\GeoIpService::class);
     $ipFromLaravel = $request->ip();
-    $cityFromLaravelIp = $geoIpService->getCityByIp($ipFromLaravel);
-
-    // Manually checking potential headers for the real IP
-    $ipFromHeader = $request->header('X-Forwarded-For')
-        ?? $request->header('CF-Connecting-IP')
-        ?? $request->header('X-Real-IP')
-        ?? null;
-
-    // Sometimes X-Forwarded-For can be a comma-separated list
-    if (is_string($ipFromHeader) && str_contains($ipFromHeader, ',')) {
-        $ipFromHeader = explode(',', $ipFromHeader)[0];
-    }
-
-    $cityFromHeader = $geoIpService->getCityByIp($ipFromHeader);
 
     return response()->json([
         'message' => 'IP Detection Debug Info. This route MUST BE REMOVED after debugging.',
-        'a_ip_detected_by_laravel' => [
-            'ip' => $ipFromLaravel,
-            'detected_city' => $cityFromLaravelIp ? $cityFromLaravelIp->name : 'Not Found',
-        ],
-        'b_ip_from_common_proxy_headers' => [
-            'ip' => $ipFromHeader ?? 'Not Found',
-            'detected_city' => $cityFromHeader ? $cityFromHeader->name : 'Not Found',
-        ],
+        'ip_detected_by_laravel' => $ipFromLaravel,
+        'geoip_service_debug_output' => $geoIpService->debugCityByIp($ipFromLaravel),
         'raw_headers' => $request->headers->all(),
     ]);
 });
