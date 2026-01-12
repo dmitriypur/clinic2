@@ -26,22 +26,6 @@ Route::get('/clear-price', function (){
     return 'Good boy';
 });
 
-Route::get('/ip-debug', function (\Illuminate\Http\Request $request) {
-    if (config('app.env') === 'local') {
-        return response()->json(['message' => 'This debug route is for production testing.']);
-    }
-
-    $geoIpService = app(\App\Services\GeoIpService::class);
-    $ipFromLaravel = $request->ip();
-
-    return response()->json([
-        'message' => 'IP Detection Debug Info. This route MUST BE REMOVED after debugging.',
-        'ip_detected_by_laravel' => $ipFromLaravel,
-        'geoip_service_debug_output' => $geoIpService->debugCityByIp($ipFromLaravel),
-        'raw_headers' => $request->headers->all(),
-    ]);
-});
-
 Route::view('form', 'form');
 
 Route::domain('form.' . parse_url(config('app.url'), PHP_URL_HOST))->group(function () {
