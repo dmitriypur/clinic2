@@ -60,8 +60,16 @@ class SetCityMiddleware
                     $detectedCity = $this->geoIpService->getCityByIp($request->ip());
                 }
 
+                \Log::info('City detection', [
+                    'ip' => $request->ip(),
+                    'detected_city' => $detectedCity ? $detectedCity->name : null,
+                    'is_default' => $detectedCity ? $detectedCity->is_default : null,
+                    'cookie_exists' => $request->cookie('city_confirmed') ? 'yes' : 'no'
+                ]);
+
                 if ($detectedCity && !$detectedCity->is_default) {
                     session(['detected_city' => $detectedCity]);
+                    \Log::info('Detected city saved to session', ['city' => $detectedCity->name]);
                 }
             }
         }
