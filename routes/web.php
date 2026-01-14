@@ -149,3 +149,11 @@ Route::prefix('{city}')
 
 // 2. Default Context Routes (e.g. /services)
 Route::group([], $contentRoutes);
+
+// Тестовая страница для нового виджета записи (только для разработки)
+if (config('app.env') !== 'production') {
+    Route::get('/booking-widget-v2-demo', function () {
+        $city = \App\Models\City::first();
+        return view('booking-widget-v2-demo', compact('city'));
+    })->name('booking.widget.v2.demo');
+}
