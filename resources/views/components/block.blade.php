@@ -10,7 +10,7 @@
                     <li itemprop="itemListElement" itemscope
                         itemtype="https://schema.org/ListItem">
                         <a itemprop="item"
-                           href="{{ home_route() }}"
+                           href="/"
                            class="text-interactive hover:text-interactive-hovered hover:underline">
                             <span itemprop="name">Главная</span>
                         </a>
@@ -65,6 +65,12 @@
             </div>
             @break
 
+        @case(\App\Enums\BlockType::DOCTORS)
+            <div class="container">
+                <x-block.doctors :block="$block"/>
+            </div>
+            @break
+
         @case(\App\Enums\BlockType::DOCTORS_ALT)
             <div class="container">
                 <x-block.doctors-alt :block="$block"/>
@@ -101,6 +107,10 @@
 
         @case(\App\Enums\BlockType::FULL_PRICE_LIST)
             <x-block.full-price-list :block="$block"/>
+            @break
+
+        @case(\App\Enums\BlockType::REVIEWS)
+            <x-block.reviews :block="$block" :title="$pageTitle"/>
             @break
 
         @case(\App\Enums\BlockType::CALL_TO_ACTION)
@@ -283,6 +293,14 @@
 
         @case(\App\Enums\BlockType::LIST_TEXT_WITH_LINK)
             <x-block.list-text-with-link :block="$block"/>
+            @break
+
+        @case(\App\Enums\BlockType::BANNER_SELECTION_GLASSES)
+            <x-banner.selection-glasses :block="$block"/>
+            @break
+
+        @case(\App\Enums\BlockType::TAGS_NEW)
+            <x-block.tags-new :block="$block"/>
             @break
 
     @endswitch

@@ -19,6 +19,8 @@ use Illuminate\Support\Facades\Route;
 
 // --- Global Routes (No City Context needed or Global Context) ---
 
+
+
 Route::get('/clear-price', function (){
     Cache::forget('prices');
     Cache::forget('services_with_media_and_prices');
@@ -59,6 +61,15 @@ Route::get('/yml-feed/doctors', [YmlFeedController::class, 'showDoctorsFeed'])->
 // --- Content Routes (Multicity) ---
 
 $contentRoutes = function () {
+    // Тестовая страница для нового виджета записи (только для разработки)
+    if (config('app.env') !== 'production') {
+        Route::get('/booking-widget-v2-demo', function () {
+            return view('booking-widget-v2-demo', [
+                'city' => app(\App\Services\CityService::class)->getCurrentCity() ?? \App\Models\City::first(),
+            ]);
+        })->name('booking.widget.v2.demo');
+    }
+
     Route::get('/search', [SearchController::class, 'search'])->name('search');
     Route::get('/live-search', [SearchController::class, 'liveSearch'])->name('live.search');
 
@@ -149,11 +160,3 @@ Route::prefix('{city}')
 
 // 2. Default Context Routes (e.g. /services)
 Route::group([], $contentRoutes);
-
-// Тестовая страница для нового виджета записи (только для разработки)
-if (config('app.env') !== 'production') {
-    Route::get('/booking-widget-v2-demo', function () {
-        $city = \App\Models\City::first();
-        return view('booking-widget-v2-demo', compact('city'));
-    })->name('booking.widget.v2.demo');
-}

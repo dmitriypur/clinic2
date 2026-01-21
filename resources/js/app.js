@@ -102,6 +102,7 @@ new Vue({
     callbackModalTarget: null,
     loginModalActive: false,
     bookingWidgetV2Active: false,
+    currentCityId: null,
     showToTopButton: false,
   },
 

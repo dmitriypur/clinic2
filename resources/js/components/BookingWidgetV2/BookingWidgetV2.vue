@@ -70,17 +70,18 @@
 </template>
 
 <script>
-import bookingApi from '../../services/bookingApi';
+import bookingApi from "../../services/bookingApi";
 
-const Modal = () => import('../Modal');
-const DoctorSelectionStep = () => import('./components/DoctorSelectionStep.vue');
-const DateSelectionStep = () => import('./components/DateSelectionStep.vue');
-const TimeSelectionStep = () => import('./components/TimeSelectionStep.vue');
-const PatientFormStep = () => import('./components/PatientFormStep.vue');
-const ConfirmationStep = () => import('./components/ConfirmationStep.vue');
+const Modal = () => import("../Modal");
+const DoctorSelectionStep = () =>
+  import("./components/DoctorSelectionStep.vue");
+const DateSelectionStep = () => import("./components/DateSelectionStep.vue");
+const TimeSelectionStep = () => import("./components/TimeSelectionStep.vue");
+const PatientFormStep = () => import("./components/PatientFormStep.vue");
+const ConfirmationStep = () => import("./components/ConfirmationStep.vue");
 
 export default {
-  name: 'BookingWidgetV2',
+  name: "BookingWidgetV2",
 
   components: {
     Modal,
@@ -109,24 +110,26 @@ export default {
 
   data() {
     return {
-      currentStep: 'doctor', // doctor, date, time, form, confirmation
-      
+      currentStep: "doctor", // doctor, date, time, form, confirmation
+
+      // Cities from API for mapping
+      allCities: [],
       // Doctors
       doctors: [],
       loadingDoctors: false,
       doctorsError: null,
       selectedDoctor: null,
-      
+
       // Date
       selectedDate: new Date(),
       availableDates: [],
-      
+
       // Slots
       slots: [],
       loadingSlots: false,
       slotsError: null,
       selectedSlot: null,
-      
+
       // Form
       isSubmitting: false,
       patientData: null,
@@ -135,41 +138,83 @@ export default {
 
   computed: {
     formattedAppointmentDateTime() {
-      if (!this.selectedDate || !this.selectedSlot) return '';
-      
-      const dateOptions = { day: 'numeric', month: 'long', year: 'numeric' };
-      const dateStr = this.selectedDate.toLocaleDateString('ru-RU', dateOptions);
-      
+      if (!this.selectedDate || !this.selectedSlot) return "";
+
+      const dateOptions = { day: "numeric", month: "long", year: "numeric" };
+      const dateStr = this.selectedDate.toLocaleDateString(
+        "ru-RU",
+        dateOptions
+      );
+
       return `${dateStr} в ${this.selectedSlot.time}`;
     },
 
     clinicInfo() {
       if (!this.selectedSlot) return null;
-      
-      let info = this.selectedSlot.clinic_name || '';
+
+      let info = this.selectedSlot.clinic_name || "";
       if (this.selectedSlot.branch_name) {
         info += ` — ${this.selectedSlot.branch_name}`;
       }
-      
+
       return info || null;
     },
 
     currentCityId() {
-      // Пытаемся получить city_id из разных источников
-      if (this.cityId) return this.cityId;
-      
-      // Можно взять из window.currentCity если есть
-      if (window.currentCity?.id) return window.currentCity.id;
-      
-      // По умолчанию - первый город (или хардкод для тестов)
-      return 1;
+      // Получаем локальное название города из системных переменных
+      const localCityName =
+        window.currentCity?.name ||
+        window.config?.state?.currentCity?.name ||
+        "Москва";
+
+      console.log("BookingWidgetV2: Local city name is", localCityName);
+
+      // ПРИОРИТЕТ 1: Ищем соответствие ID во внешнем API по названию города
+      if (this.allCities && this.allCities.length > 0) {
+        const matchedCity = this.allCities.find(
+          (c) => c.name.toLowerCase() === localCityName.toLowerCase()
+        );
+        if (matchedCity) {
+          console.log(
+            "BookingWidgetV2: Found API ID by name mapping:",
+            matchedCity.id
+          );
+          return matchedCity.id;
+        }
+      }
+
+      // ПРИОРИТЕТ 2: Хардкод маппинг для известных городов
+      const fallbackMapping = {
+        Москва: 2,
+        Киров: 1,
+        Краснодар: 7,
+      };
+
+      if (fallbackMapping[localCityName]) {
+        console.log(
+          "BookingWidgetV2: Using fallback mapping for",
+          localCityName,
+          "->",
+          fallbackMapping[localCityName]
+        );
+        return fallbackMapping[localCityName];
+      }
+
+      // ПРИОРИТЕТ 3: Явно переданный ID из пропсов (только если это не 1 для Москвы)
+      if (this.cityId && !(localCityName === "Москва" && this.cityId === 1)) {
+        return this.cityId;
+      }
+
+      console.log("BookingWidgetV2: Defaulting to Moscow API ID (2)");
+      return 2; // Default to Moscow API ID
     },
   },
 
   watch: {
     open: {
-      handler(val) {
+      async handler(val) {
         if (val) {
+          await this.initCities();
           this.fetchDoctors();
         } else {
           this.resetWidget();
@@ -187,21 +232,39 @@ export default {
   },
 
   methods: {
+    // ===== INIT CITIES =====
+    async initCities() {
+      if (this.allCities.length > 0) return;
+      try {
+        const response = await bookingApi.getCities();
+        this.allCities = response.data || response || [];
+      } catch (error) {
+        console.error("Error fetching cities for mapping:", error);
+      }
+    },
+
     // ===== DOCTOR STEP =====
     async fetchDoctors() {
       this.loadingDoctors = true;
       this.doctorsError = null;
 
+      const apiCityId = this.currentCityId;
+      console.log(
+        "BookingWidgetV2: Requesting doctors for API City ID:",
+        apiCityId
+      );
+
       try {
-        const response = await bookingApi.getDoctorsByCity(this.currentCityId);
+        const response = await bookingApi.getDoctorsByCity(apiCityId);
         this.doctors = response.data || response || [];
-        
+
         if (this.doctors.length === 0) {
-          this.doctorsError = 'В данный момент нет доступных врачей';
+          this.doctorsError = "В данный момент нет доступных врачей";
         }
       } catch (error) {
-        console.error('Error fetching doctors:', error);
-        this.doctorsError = error.message || 'Не удалось загрузить список врачей';
+        console.error("Error fetching doctors:", error);
+        this.doctorsError =
+          error.message || "Не удалось загрузить список врачей";
       } finally {
         this.loadingDoctors = false;
       }
@@ -213,7 +276,7 @@ export default {
 
     handleDoctorNext() {
       if (this.selectedDoctor) {
-        this.currentStep = 'date';
+        this.currentStep = "date";
       }
     },
 
@@ -226,7 +289,7 @@ export default {
 
     handleDateNext() {
       if (this.selectedDate) {
-        this.currentStep = 'time';
+        this.currentStep = "time";
         if (this.slots.length === 0) {
           this.fetchSlots();
         }
@@ -242,16 +305,19 @@ export default {
 
       try {
         const dateStr = this.formatDateForApi(this.selectedDate);
-        const response = await bookingApi.getDoctorSlots(this.selectedDoctor.id, dateStr);
-        
+        const response = await bookingApi.getDoctorSlots(
+          this.selectedDoctor.id,
+          dateStr
+        );
+
         this.slots = response.data || response || [];
-        
+
         if (this.slots.length === 0) {
-          this.slotsError = 'На выбранную дату нет доступных слотов';
+          this.slotsError = "На выбранную дату нет доступных слотов";
         }
       } catch (error) {
-        console.error('Error fetching slots:', error);
-        this.slotsError = error.message || 'Не удалось загрузить расписание';
+        console.error("Error fetching slots:", error);
+        this.slotsError = error.message || "Не удалось загрузить расписание";
       } finally {
         this.loadingSlots = false;
       }
@@ -263,7 +329,7 @@ export default {
 
     handleTimeNext() {
       if (this.selectedSlot) {
-        this.currentStep = 'form';
+        this.currentStep = "form";
       }
     },
 
@@ -288,7 +354,7 @@ export default {
           phone: this.cleanPhone(formData.phone),
           promo_code: formData.promo_code || null,
           comment: formData.comment || null,
-          appointment_source: 'site',
+          appointment_source: "site",
         };
 
         // Опционально: проверка слота перед созданием заявки
@@ -301,20 +367,21 @@ export default {
 
         // Метрика (если нужно)
         if (this.target && window.ym) {
-          ym(94302729, 'reachGoal', this.target);
+          ym(94302729, "reachGoal", this.target);
         }
 
         // Переходим к подтверждению
-        this.currentStep = 'confirmation';
+        this.currentStep = "confirmation";
       } catch (error) {
-        console.error('Error creating application:', error);
-        
+        console.error("Error creating application:", error);
+
         // Обработка ошибок валидации (422)
         if (error.status === 422 && error.errors) {
           this.$refs.patientForm?.setErrors(error.errors);
         } else {
           this.$refs.patientForm?.setGeneralError(
-            error.message || 'Произошла ошибка при создании заявки. Попробуйте еще раз.'
+            error.message ||
+              "Произошла ошибка при создании заявки. Попробуйте еще раз."
           );
         }
       } finally {
@@ -331,27 +398,29 @@ export default {
       };
 
       const result = await bookingApi.checkSlot(checkData);
-      
+
       if (!result.available) {
-        throw new Error('К сожалению, выбранный слот уже занят. Пожалуйста, выберите другое время.');
+        throw new Error(
+          "К сожалению, выбранный слот уже занят. Пожалуйста, выберите другое время."
+        );
       }
     },
 
     // ===== UTILS =====
     formatDateForApi(date) {
       const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
       return `${year}-${month}-${day}`;
     },
 
     cleanPhone(phone) {
       // Убираем все символы кроме цифр
-      return phone.replace(/\D/g, '');
+      return phone.replace(/\D/g, "");
     },
 
     handleClose() {
-      this.$emit('close');
+      this.$emit("close");
       // Задержка перед сбросом для плавной анимации закрытия
       setTimeout(() => {
         this.resetWidget();
@@ -359,7 +428,7 @@ export default {
     },
 
     resetWidget() {
-      this.currentStep = 'doctor';
+      this.currentStep = "doctor";
       this.selectedDoctor = null;
       this.selectedDate = new Date();
       this.selectedSlot = null;

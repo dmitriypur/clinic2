@@ -10,6 +10,8 @@ enum BlockType: int
 //
 //    case GRID_IMAGES = 2;
 
+    case DOCTORS = 3;
+
     case CONTACTS = 4;
 
     case ELEMENTS_ITEM_COLUMN = 5;
@@ -27,6 +29,8 @@ enum BlockType: int
     case VIDEO = 11;
 
     case PRICE_LIST = 12;
+
+    case REVIEWS = 13;
 
     case CALL_TO_ACTION = 14;
 
@@ -117,24 +121,29 @@ enum BlockType: int
     case UNIVERSAL_TEXT_BLOCK = 58;
     case GRID_CONTACTS = 59;
     case LIST_TEXT_WITH_LINK = 60;
+    case BANNER_SELECTION_GLASSES = 61;
+    case TAGS_NEW = 62;
+
+
 
     public function getLabel(): string
     {
         return match ($this) {
             self::TEXT_WITH_IMAGE => 'Текст с изображением',
-//            self::INLINE_IMAGES => 'Изображения с описанием (каждый элемент расположен вертикально)',
-//            self::GRID_IMAGES => 'Изображения с описанием (каждый элемент расположен горизонтально)',
             self::ELEMENTS_ITEM_COLUMN => 'Элементы (каждый элемент расположен вертикально)',
             self::ELEMENTS_ITEM_ROW => 'Элементы (каждый элемент расположен горизонтально)',
+            self::DOCTORS => 'Специалисты',
             self::CONTACTS => 'Контакты',
             self::PROMOTIONS => 'Акции',
             self::TAGS => 'Тэги',
+            self::TAGS_NEW => 'Тэги (новый дизайн)',
             self::CAROUSEL => 'Карусель изображений',
             self::HTML => 'Текст',
             self::VIDEO => 'Видео',
             self::VIDEO_NEW => 'Видео новый дизайн',
             self::PRICE_LIST => 'Прайс-лист на услугу',
             self::FULL_PRICE_LIST => 'Прайс-лист на все услуги',
+            self::REVIEWS => 'Отзывы',
             self::CALL_TO_ACTION => 'Форма заявки',
             self::LICENSES => 'Лицензии и сертификаты',
             self::FAQ => 'FAQ',
@@ -180,6 +189,7 @@ enum BlockType: int
             self::UNIVERSAL_TEXT_BLOCK => 'Универсальный текстовый блок',
             self::GRID_CONTACTS => 'Сетка контактов',
             self::LIST_TEXT_WITH_LINK => 'Список текст со ссылкой',
+            self::BANNER_SELECTION_GLASSES => 'Блок "Баннер для страницы Подбор очков"',
         };
     }
 

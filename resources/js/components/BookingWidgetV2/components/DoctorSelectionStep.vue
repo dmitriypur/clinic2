@@ -55,12 +55,12 @@
           <!-- Avatar -->
           <div class="flex-shrink-0">
             <div
-              v-if="doctor.avatar_url"
+              v-if="doctor.photo_src"
               class="size-16 md:size-20 rounded-full overflow-hidden bg-gray-100"
             >
               <img
-                :src="doctor.avatar_url"
-                :alt="doctor.full_name"
+                :src="doctor.photo_src"
+                :alt="doctor.name"
                 class="w-full h-full object-cover"
               />
             </div>
@@ -85,14 +85,14 @@
           <!-- Info -->
           <div class="flex-1 min-w-0">
             <h3 class="text-lg font-semibold text-heading mb-1">
-              {{ doctor.full_name }}
+              {{ doctor.name }}
             </h3>
             <p v-if="doctor.specialization" class="text-sm text-subdued mb-2">
               {{ doctor.specialization }}
             </p>
-            <div v-if="doctor.experience_years" class="text-sm text-subdued">
-              Стаж: {{ doctor.experience_years }} 
-              {{ pluralizeYears(doctor.experience_years) }}
+            <div v-if="doctor.experience" class="text-sm text-subdued">
+              Стаж: {{ doctor.experience }}
+              {{ pluralizeYears(doctor.experience) }}
             </div>
           </div>
 
@@ -101,7 +101,8 @@
             <div
               class="size-6 rounded-full border-2 flex items-center justify-center transition-colors"
               :class="{
-                'border-interactive bg-interactive': selectedDoctorId === doctor.id,
+                'border-interactive bg-interactive':
+                  selectedDoctorId === doctor.id,
                 'border-gray-300': selectedDoctorId !== doctor.id,
               }"
             >
@@ -125,9 +126,7 @@
 
     <!-- Empty State -->
     <div v-else class="text-center py-12">
-      <p class="text-subdued text-lg">
-        К сожалению, врачи не найдены
-      </p>
+      <p class="text-subdued text-lg">К сожалению, врачи не найдены</p>
     </div>
 
     <!-- Next Button -->
@@ -137,7 +136,8 @@
         :disabled="!selectedDoctorId"
         class="w-full p-3 lg:px-6 font-semibold rounded text-white transition-colors shadow-md"
         :class="{
-          'bg-interactive hover:bg-interactive-button-hovered active:bg-interactive-button-hovered': selectedDoctorId,
+          'bg-interactive hover:bg-interactive-button-hovered active:bg-interactive-button-hovered':
+            selectedDoctorId,
           'bg-disabled text-disabled cursor-not-allowed': !selectedDoctorId,
         }"
       >
@@ -149,7 +149,7 @@
 
 <script>
 export default {
-  name: 'DoctorSelectionStep',
+  name: "DoctorSelectionStep",
 
   props: {
     doctors: {
@@ -172,18 +172,18 @@ export default {
 
   methods: {
     selectDoctor(doctor) {
-      this.$emit('select', doctor);
+      this.$emit("select", doctor);
     },
 
     handleNext() {
       if (this.selectedDoctorId) {
-        this.$emit('next');
+        this.$emit("next");
       }
     },
 
     pluralizeYears(count) {
       const cases = [2, 0, 1, 1, 1, 2];
-      const titles = ['год', 'года', 'лет'];
+      const titles = ["год", "года", "лет"];
       return titles[
         count % 100 > 4 && count % 100 < 20
           ? 2

@@ -69,13 +69,6 @@ class BlockResource extends Resource
                         ->required()
                         ->relationship('page', 'title', fn($query) => $query->orderBy('id')),
 
-                    Forms\Components\Select::make('cities')
-                        ->label('Города')
-                        ->multiple()
-                        ->relationship('cities', 'name')
-                        ->preload()
-                        ->helperText('Если пусто - доступна везде'),
-
                     Forms\Components\Select::make('type')
                         ->columnSpanFull()
                         ->label('Тип')
@@ -109,7 +102,7 @@ class BlockResource extends Resource
                         ->hidden(
                             fn(Forms\Get $get) => !in_array(
                                 BlockType::from($get('type')),
-                                [BlockType::DOCTORS_ALT]
+                                [BlockType::DOCTORS, BlockType::DOCTORS_ALT]
                             )
                         ),
 
@@ -158,11 +151,13 @@ class BlockResource extends Resource
                         ->required(
                             fn(Forms\Get $get) => !in_array($get('type'), [
                                 BlockType::PRICE_LIST->value,
+                                BlockType::REVIEWS->value,
                             ])
                         )
                         ->hidden(
                             fn(Forms\Get $get) => !in_array($get('type'), [
                                 BlockType::PRICE_LIST->value,
+                                BlockType::REVIEWS->value,
                             ])
                         ),
 
@@ -210,13 +205,16 @@ class BlockResource extends Resource
                                 ->required(),
                         ])
                         ->required(
-                            fn(Forms\Get $get) => BlockType::from($get('type')) ==
-                                BlockType::TAGS
+                            fn(Forms\Get $get) => !in_array(BlockType::from($get('type')), [
+                                BlockType::TAGS,
+                                BlockType::TAGS_NEW,
+                            ])
                         )
                         ->hidden(
-                            fn(Forms\Get $get) => BlockType::from($get('type')) !=
-                                BlockType::TAGS
-                        ),
+                            fn(Forms\Get $get) => !in_array(BlockType::from($get('type')), [
+                                BlockType::TAGS,
+                                BlockType::TAGS_NEW,
+                            ])),
 
                     Forms\Components\RichEditor::make('payload.enter_text')
                         ->columnSpanFull()
@@ -539,6 +537,7 @@ class BlockResource extends Resource
                                 BlockType::BANNER_APPOINTMENT,
                                 BlockType::BANNER_CORRECTION,
                                 BlockType::BANNER_MYOPIA,
+                                BlockType::BANNER_SELECTION_GLASSES,
                             ])),
                     Forms\Components\TextInput::make('payload.service_hero_subtitle')
                         ->columnSpanFull()
@@ -577,6 +576,7 @@ class BlockResource extends Resource
                                 BlockType::BANNER_APPOINTMENT,
                                 BlockType::BANNER_CORRECTION,
                                 BlockType::BANNER_MYOPIA,
+                                BlockType::BANNER_SELECTION_GLASSES,
                             ])),
                     SpatieMediaLibraryFileUpload::make('bg')
                         ->label('Изображение')
@@ -592,6 +592,7 @@ class BlockResource extends Resource
                                 BlockType::BANNER_CORRECTION,
                                 BlockType::BANNER_MYOPIA,
                                 BlockType::DETAILS,
+                                BlockType::BANNER_SELECTION_GLASSES,
                             ])),
                     SpatieMediaLibraryFileUpload::make('pic')
                         ->label('Изображение (для мобильных)')
@@ -607,6 +608,7 @@ class BlockResource extends Resource
                                 BlockType::BANNER_CORRECTION,
                                 BlockType::BANNER_MYOPIA,
                                 BlockType::DETAILS,
+                                BlockType::BANNER_SELECTION_GLASSES,
                             ]))
                 ]),
 

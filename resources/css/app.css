@@ -909,6 +909,17 @@
         border-radius: 3px;
         background: #1F3462;
     }
+
+    /* Скрытие полосы прокрутки для Chrome, Safari и Opera */
+    .no-scrollbar::-webkit-scrollbar {
+        display: none;
+    }
+
+    /* Скрытие полосы прокрутки для IE, Edge и Firefox */
+    .no-scrollbar {
+        -ms-overflow-style: none;  /* IE и Edge */
+        scrollbar-width: none;  /* Firefox */
+    }
 }
 
 .dropdown-in{

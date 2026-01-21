@@ -48,7 +48,7 @@ class AppLayout extends Component
         }
 
         if (!$this->image) {
-            $this->image = url('images/preview.jpg');
+            $this->image = url('images/preview-new.jpg');
         }
 
     }

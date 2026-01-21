@@ -3,11 +3,12 @@
 namespace App\Filament\Resources\PageServiceResource\RelationManagers;
 
 use App\Enums\BlockType;
-use App\Filament\Actions\Tables\ReplicateBlockAction;
 use App\Filament\Resources\BlockResource;
+use App\Models\Block;
 use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
+use Filament\Tables\Actions\ReplicateAction;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
@@ -51,7 +52,19 @@ class BlocksRelationManager extends RelationManager
                         $record->update($data);
                         return $record;
                     }),
-                ReplicateBlockAction::make(),
+                ReplicateAction::make()
+                    ->label('Клонировать')
+                    ->beforeReplicaSaved(function (Block $record, Block $replica): void {
+                        $nextOrder = ($this->getOwnerRecord()->blocks()->max('order_column') ?? 0) + 1;
+                        $replica->order_column = $nextOrder;
+
+                        $record->media->each(function ($image) use ($replica) {
+                            $replica
+                                ->addMediaFromStream($image->stream())
+                                ->usingFileName($image->file_name)
+                                ->toMediaCollection($image->collection_name);
+                        });
+                    }),
                 Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([

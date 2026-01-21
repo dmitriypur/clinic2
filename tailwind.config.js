@@ -76,11 +76,13 @@ module.exports = {
         "blue-gray": "#CBD3E5",
         "light-gray": "#F6F7F9",
         "blue-dark": "#0D103B",
+        "tags": "rgba(29, 29, 29, 0.4)",
       },
       textColor: {
         subdued: "#87909b",
         critical: "#c5280c",
         disabled: "#A4ACAF",
+        tags: "rgba(29, 29, 29, 0.4)",
       },
       fill: {
         "icon-subdued": "#87909b",
