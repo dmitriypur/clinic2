@@ -858,6 +858,16 @@
         background: radial-gradient(126% 126% at 50% 50%, #7EC9FF 0%, #3981F1 100%);
     }
 
+    .white-to-gray-gradient{
+        background: linear-gradient(90deg, #FFFFFF 0%, #878787 100%);
+    }
+    .white-to-orange-gradient{
+        background: linear-gradient(90deg, #FFFFFF 0%, #FF8212 100%);
+    }
+    .white-to-blue-gradient{
+        background: linear-gradient(90deg, #FFFFFF 0%, #3981F1 100%);
+    }
+
     .accessibility-mode .btn-gradient,
     .accessibility-mode .orange-gr,
     .accessibility-mode .orange-gr-nohover,

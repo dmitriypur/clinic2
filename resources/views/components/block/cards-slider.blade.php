@@ -20,7 +20,7 @@
                         @continue
                     @endif
                     <div
-                        class=" h-auto swiper-slide">
+                        class="h-auto swiper-slide">
                         <x-vertical-card :block="$block" :item="$item"></x-vertical-card>
                     </div>
                 @endforeach

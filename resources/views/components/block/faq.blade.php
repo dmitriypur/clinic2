@@ -13,7 +13,6 @@
     @endif
     <faq inline-template>
         <div>
-
             <dl class="space-y-5 text-interactive">
                 @foreach($block->payload['faq'] as $id => $item)
                     <item inline-template :count="countItems">
@@ -21,8 +20,7 @@
                             <summary
                                 class="flex items-center gap-4 cursor-pointer border border-[#E5E7EB] p-4 bg-surface rounded-2xl"
                                 @click.self="toggle({{$id}})">
-                                <div class="aspect-square h-10 w-10 md:h-16 md:w-16 bg-cover pointer-events-none"
-                                     style="background-image: @if($item['icon']) url('storage/{{ $item['icon'] }}' @else url({{ asset('images/faq.png') }} @endif"></div>
+                                <div class="aspect-square h-10 w-10 md:h-16 md:w-16 bg-gray-200 pointer-events-none rounded-full flex justify-center items-center text-xl font-semibold">{{$id+1}}</div>
                                 <div
                                     class="leading-none md:text-xl font-medium select-none pointer-events-none"
                                     @click.self="toggle">{{ $item['question'] }}</div>

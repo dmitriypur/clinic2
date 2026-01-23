@@ -1,24 +1,21 @@
 <div class="container">
-    <div class="bg-surface rounded-2xl pt-10 pb-4 px-2.5 md:p-10 w-full mx-auto">
-        <div class="w-full md:grid grid-cols-12 gap-x-6 accessibility:block">
-            <div class="hidden md:block col-span-4 relative flex accessibility:hidden">
-                <img src="{{ asset('images/folder.webp') }}" alt="Иллюстрация папки с медицинскими документами" width="400" height="280" class="max-w-72 absolute right-0">
-                <img src="{{ asset('images/corgi-lupa.webp') }}" alt="Веселая корги в очках и с лупой" width="156" height="177" class="max-w-72 absolute left-0 z-10">
+    <div class="bg-surface rounded-2xl w-full mx-auto overflow-hidden md:overflow-visible">
+        <div class="w-full flex flex-col md:grid grid-cols-12 gap-x-6 accessibility:block bg-gradient-to-tr from-[#65B3EB] via-white via-50% to-white md:bg-none">
+            <div class="block order-1 md:order-0 col-span-5 relative flex accessibility:hidden md:bg-gradient-to-r from-[#65B3EB] to-white rounded-l-2xl">
+                <img src="{{ asset('images/korgy-lupa.webp') }}" alt="Иллюстрация папки с медицинскими документами" width="400" height="280" class="w-full max-w-[542px] md:absolute left-0 bottom-0">
             </div>
-            <div class="md:col-span-8">
+            <div class="md:col-span-7 px-3 py-6 md:py-20 order-0 md:order-1">
                 <div class="px-4 md:px-0 lg:pr-20 xl:pr-40">
-                    <h2 class="text-center md:text-left font-semibold text-2xl md:text-3xl text-heading">
+                    <h2 class="font-semibold text-[28px] md:text-[34px] text-heading">
                         {{ $block->title }}
                     </h2>
 
-                    <p class="text-center md:text-left text-sm font-medium md:text-lg md:text-xl text-interactive/60 mt-4 max-w-3xl">Мы работаем строго в рамках действующего законодательства и на основании официальных медицинских лицензий, выданных Минздравом РФ.</p>
-
-                    <img src="{{ asset('images/folder.webp') }}" alt="Иллюстрация папки с медицинскими документами" width="400" height="280" class="md:hidden mt-5">
+                    <p class="font-medium text-interactive/60 mt-4 max-w-3xl">Мы работаем строго в рамках действующего законодательства и на основании официальных медицинских лицензий, выданных Минздравом РФ.</p>
                 </div>
 
-                <div class="w-full mt-12 md:mt-6">
+                <div class="w-full mt-4 md:mt-6 px-4 md:px-0">
                     <x-button-primary
-                        class="text-lg md:text-xl h-14 md:h-16 w-full md:w-[430px]"
+                        class="h-14 w-full md:w-[225px]"
                         @click="$refs.lightbox.showImage(0)">
                         Посмотреть лицензии
                     </x-button-primary>

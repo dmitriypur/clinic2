@@ -112,17 +112,16 @@ enum BlockType: int
     case CARDS_BORDER = 53;
 
     case LIST_WITH_IMAGE = 54;
-
     case BANNERS_GRID = 55;
-
     case ADVANTAGES_SLIDER = 56;
-
     case DETAILS = 57;
     case UNIVERSAL_TEXT_BLOCK = 58;
     case GRID_CONTACTS = 59;
     case LIST_TEXT_WITH_LINK = 60;
     case BANNER_SELECTION_GLASSES = 61;
     case TAGS_NEW = 62;
+
+    case TEXT_WITH_IMAGE_NEW = 63;
 
 
 
@@ -190,6 +189,7 @@ enum BlockType: int
             self::GRID_CONTACTS => 'Сетка контактов',
             self::LIST_TEXT_WITH_LINK => 'Список текст со ссылкой',
             self::BANNER_SELECTION_GLASSES => 'Блок "Баннер для страницы Подбор очков"',
+            self::TEXT_WITH_IMAGE_NEW => 'Текстc изображением (новый дизайн)'
         };
     }
 

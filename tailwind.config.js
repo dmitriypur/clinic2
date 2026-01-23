@@ -9,7 +9,13 @@ module.exports = {
     "./resources/**/*.vue",
     "./resources/**/*.js",
   ],
-  safelist: ["swiper-pagination-bullet"],
+  safelist: [
+    "swiper-pagination-bullet",
+    {
+      pattern: /grid-cols-(1|2|3|4|5|6|7|8|9|10|11|12)/,
+      variants: ["sm", "md", "lg", "xl"],
+    },
+  ],
   theme: {
     extend: {
       width: {

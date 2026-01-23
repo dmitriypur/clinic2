@@ -1,167 +1,86 @@
-<footer class="py-10 bg-surface lg:py-12">
-    <div class="container">
-        <div class="flex gap-4 lg:gap-10 flex-col-reverse lg:flex-col">
-            <div
-                class="flex flex-col lg:flex-row gap-6 lg:justify-between lg:items-center">
-                <div class="lg:hidden">
-                    <rating-badge></rating-badge>
-                </div>
-                <div class="lg:hidden">
-                    Имеются противопоказания. Необходима консультация
-                    специалиста
-                </div>
-
-                <div
-                    class="flex gap-6 justify-between lg:justify-around items-center">
-                    <div class="hidden lg:block">
-                        <x-brand :settings="$seoSettings"/>
-                    </div>
-                    <div class="lg:hidden">
-                        <x-copyright :settings="$settings"/>
-                    </div>
-
-                    <div class="flex lg:hidden items-center gap-2">
-                        @if ($settings->youtube)
-                            <a href="{{ $settings->youtube }}"
-                               target="_blank"
-                               rel="nofollow"
-                               class="flex items-center bg-[#c4302b] w-8 h-8 rounded-full pl-1">
-                                        <span
-                                            class="text-white [&_svg]:h-6 [&_svg]:w-6">
-                                            <x-icon-youtube/>
-                                        </span>
-                            </a>
-                        @endif
-                        @if ($settings->telegram)
-                            <a href="{{ $settings->telegram }}"
-                               target="_blank"
-                               rel="nofollow"
-                               class="flex items-center bg-gradient-to-b from-[#37BBFE] to-[#007DBB] w-8 h-8 rounded-full pl-1.5">
-                                        <span
-                                            class="text-white [&_svg]:h-4 [&_svg]:w-4">
-                                            <x-icon-telegram/>
-                                        </span>
-                            </a>
-                        @endif
-                        <a href="{{ $settings->vk }}" target="_blank" rel="nofollow"
-                           class="flex text-interactive hover:underline items-center gap-2">
-                                    <span
-                                        class="text-vk [&_svg]:h-8 [&_svg]:w-8">
-                                        <x-icon-vk/>
-                                    </span>
-                        </a>
-                    </div>
-                </div>
-
-                <div class="lg:hidden">
-                    <x-keycraft/>
-                </div>
-
-                <div class="hidden lg:block">
-                    <rating-badge></rating-badge>
-                </div>
-                <div class="hidden lg:block">
-                    <div class="flex gap-1">
-                        <div class="w-[18px] h-[18px] pt-1">
-                                    <span
-                                        class="inline-flex w-[13px] h-4 text-icon-subdued">
-                                        <x-icon-map-pin></x-icon-map-pin>
-                                    </span>
-                        </div>
-                        <div class="font-medium">
-                            <a href="/#contacts"
-                               class="text-lg/6">{{ $settings->address }}</a>
-                            <p class="text-sm">{{ str_replace('<br>', '', trim($settings->schedule)) }}</p>
-                            @if($settings->show_special_schedule)
-                                <a href="/storage/{{ $settings->special_schedule }}"
-                                   class="text-lg pt-1 block font-medium text-interactive"
-                                   target="_blank"><span>{{ $settings->special_schedule_title }}</span></a>
-                            @endif
-                        </div>
-                    </div>
-                </div>
-                <div class="hidden lg:block">
-                    <x-phone :settings="$settings"/>
-                </div>
-
-                <div class="hidden lg:flex gap-4">
-                    @if ($settings->youtube)
-                        <a href="{{ $settings->youtube }}"
-                           target="_blank"
-                           rel="nofollow"
-                           class="flex items-center bg-[#c4302b] w-8 h-8 rounded-full pl-1">
-                                    <span
-                                        class="text-white [&_svg]:h-6 [&_svg]:w-6">
-                                        <x-icon-youtube/>
-                                    </span>
-                        </a>
-                    @endif
-                    @if ($socials['telegram'] ?? false)
-                        <a href="{{ $socials['telegram'] }}"
-                           target="_blank"
-                           rel="nofollow"
-                           class="flex items-center bg-gradient-to-b from-[#37BBFE] to-[#007DBB] w-8 h-8 rounded-full pl-1.5">
-                                    <span
-                                        class="text-white [&_svg]:h-4 [&_svg]:w-4">
-                                        <x-icon-telegram/>
-                                    </span>
-                        </a>
-                    @endif
-                    <a href="{{ $socials['vk'] ?? '#' }}" target="_blank" rel="nofollow"
-                       class="flex text-interactive hover:underline items-center gap-2">
-                                <span class="text-vk [&_svg]:h-8 [&_svg]:w-8">
-                                    <x-icon-vk/>
-                                </span>
-                    </a>
-                </div>
+<footer class="bg-surface">
+    <div class="container relative py-10 z-10">
+        <div class="hidden xl:block absolute -right-20 bottom-0 max-w-[500px] -z-10">
+            <picture>
+                <source srcset="{{ asset('images/footer-korgi.webp') }}" type="image/webp">
+                <img src="{{ asset('images/footer-korgi.jpg') }}" alt="Веселые девочка и корги в очках и кепке" width="500" height="550" loading="lazy" class="w-full h-auto">
+            </picture>
+        </div>
+        <div class="flex flex-col lg:flex-row lg:justify-between gap-6 md:gap-10">
+            <div class="block md:hidden max-w-72 mx-auto">
+                <x-brand :settings="$seoSettings"/>
             </div>
             @if ($footerMenu)
                 <nav itemscope=""
-                     itemtype="http://schema.org/SiteNavigationElement">
-                    <ul class="grid grid-cols-2 lg:grid-cols-none lg:grid-flow-col">
+                     itemtype="http://schema.org/SiteNavigationElement" class="relative order-0  mt-4 md:mt-0">
+                    <ul class="grid md:grid-cols-3 lg:grid-cols-none lg:grid-flow-col gap-6 lg:gap-10 text-center md:text-left">
                         @foreach ($footerMenu->items as $item)
-                            <li>
+                            <li class="first:col-span-full md:first:col-span-1">
                                 <a href="{{ $item['data']['url'] }}"
                                    target="{{ $item['data']['target'] }}"
-                                   class="text-interactive hover:underline text-sm py-1 block lg:p-0 lg:text-lg lg:font-medium"
+                                   class="text-action-primary text-2xl py-1 flex items-center justify-center md:justify-start gap-x-2 lg:p-0 font-semibold md:mb-2"
                                    itemprop="url">
                                         <span
                                             itemprop="name"> {{ $item['label'] }}</span>
                                 </a>
 
                                 @if ($item['children'])
-                                    <ul class="text-sm hidden lg:block">
+                                    <ul class="text-sm">
                                         @foreach ($item['children'] as $child)
-                                            <li>
-                                                <a href="{{ $child['data']['url'] }}"
-                                                   class="whitespace-nowrap py-2 block hover:underline font-medium {{ $child['active'] ? 'text-action-primary hover:text-action-primary-hovered' : 'text-interactive hover:text-interactive-hovered' }}">{{ $child['label'] }}</a>
-                                            </li>
+                                            @if(!isset($child['data']['custom-attr']))
+                                                <li>
+                                                    <a href="{{ $child['data']['url'] }}"
+                                                       class="whitespace-nowrap py-1 block hover:underline font-medium {{ $child['active'] ? 'text-action-primary hover:text-action-primary-hovered' : 'text-interactive hover:text-interactive-hovered' }}">{{ $child['label'] }}</a>
+                                                </li>
+                                            @else
+                                                <li>
+                                                    <p @click="showCallbackModal(null, 'otpravka-formy')"
+                                                       class="whitespace-nowrap py-1 block hover:underline font-medium cursor-pointer text-interactive hover:text-interactive-hovered"
+                                                       onclick="ym(94302729,'reachGoal','shapka-forma-open')">Записаться на прием</p>
+                                                </li>
+                                            @endif
                                         @endforeach
                                     </ul>
                                 @endif
                             </li>
                         @endforeach
+
                     </ul>
                 </nav>
             @endif
 
-
-            <div class="hidden lg:flex justify-between items-end mt-16">
-                <div>
-                    <div class="text-sm">Имеются противопоказания.
-                        Необходима консультация специалиста
+            <div class="relative flex-auto order-1 lg:order-0">
+                <div class="flex items-center md:items-start flex-col gap-2 md:gap-6 pb-10">
+                    <div class="flex flex-col">
+                        <div class="hidden md:block max-w-72">
+                            <x-brand :settings="$seoSettings"/>
+                        </div>
                     </div>
-                    <x-copyright :settings="$settings"/>
+                    <div class="-order-1 md:order-1 py-1 bg-[#FFFBF7] md:py-1.5 px-5 w-auto border border-action-primary rounded-md relative before:absolute before:h-full before:w-2 before:orange-gr-nohover before:top-0 before:left-0 before:rounded">
+                        <p class="text-[8px] md:text-es font-semibold italic text-action-primary">Клиника сертифицирована <span class="block text-blue-label">Национальным фондом защиты детского зрения</span></p>
+                    </div>
+                    <rating-badge></rating-badge>
+                    <div class="hidden absolute bottom-0 left-0 max-w-[358px] md:max-w-full">
+                        <div class="absolute w-max left-full bottom-[21%] -translate-x-[120%] z-10">
+                            <x-footer-phone :settings="$settings"/>
+                        </div>
+                    </div>
                 </div>
-                @if(filled($settings->promotion_company) && filled($settings->promotion_company_url))
-                    <div class="text-xs">Продвижение сайта - <a
-                            href="{{ $settings->promotion_company_url }}"
-                            rel="noindex nofollow"
-                            target="_blank"
-                            class="underline hover:no-underline">{{ $settings->promotion_company  }}</a>
-                    </div>
-                @endif
             </div>
+        </div>
+        <div class="pt-4 text-center md:text-left">
+            <x-copyright :settings="$settings"/>
+            <nav class="mt-6 md:mt-4">
+                <ul class="text-es flex flex-col md:flex-row flex-wrap md:justify-center gap-x-4 gap-y-1 md:gap-20 [&_li]:shrink-1">
+                    <li><a href="/documents" class="text-interactive no-underline hover:text-interactive/60">Политика конфиденциальности</a></li>
+                    <li><a href="/sitemap.html" class="text-interactive no-underline hover:text-interactive/60">Карта сайта</a></li>
+                    @if(filled($settings->promotion_company) && filled($settings->promotion_company_url))
+                        <li class="block"><a href="{{ $settings->promotion_company_url }}" rel="noindex nofollow" target="_blank" class="text-interactive no-underline hover:text-interactive/60">Продвижение сайта - {{ $settings->promotion_company  }}</a></li>
+                    @endif
+                </ul>
+            </nav>
+            <p class="text-center text-es text-interactive/50 mt-3">Имеются противопоказания. Необходима консультация специалиста.<br> Информация, представленная на сайте, не является офертой.</p>
         </div>
     </div>
 </footer>
+

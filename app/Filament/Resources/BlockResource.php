@@ -166,7 +166,8 @@ class BlockResource extends Resource
                         ->hidden(
                             fn(Forms\Get $get) => !in_array(
                                 BlockType::from($get('type')),
-                                [BlockType::HTML, BlockType::TEXT_WITH_IMAGE, BlockType::TEXT_SUBDUED, BlockType::WELCOME, BlockType::POST_TEXT,]
+                                [BlockType::HTML, BlockType::TEXT_WITH_IMAGE, BlockType::TEXT_WITH_IMAGE_NEW,
+                                BlockType::TEXT_SUBDUED, BlockType::WELCOME, BlockType::POST_TEXT,]
                             )
                         )
                         ->columnSpan('full'),
@@ -313,7 +314,7 @@ class BlockResource extends Resource
                         ])
                         ->hidden(
                             fn(Forms\Get $get) => BlockType::from($get('type')) !=
-                                BlockType::TEXT_BLOCKS
+                                BlockType::TEXT_BLOCKS,
                         ),
 
                     SpatieMediaLibraryFileUpload::make('default')
@@ -325,6 +326,7 @@ class BlockResource extends Resource
                             fn(Forms\Get $get) => !in_array(BlockType::from($get('type')),
                                 [
                                     BlockType::TEXT_WITH_IMAGE,
+                                    BlockType::TEXT_WITH_IMAGE_NEW,
                                     BlockType::WELCOME,
                                     BlockType::TEXT_WITH_IMAGE_ALT,
                                     BlockType::PICTURE,
@@ -622,6 +624,11 @@ class BlockResource extends Resource
                             ->default(false)
                             ->columnSpan('3')
                             ->reactive(),
+                        Forms\Components\Toggle::make('payload.is_button')
+                            ->label('Кнопка вместо ссылки')
+                            ->default(false)
+                            ->columnSpan('3')
+                            ->reactive(),
                     ])->hidden(
                         fn(Forms\Get $get) => !in_array(BlockType::from($get('type')), [
                             BlockType::CARDS_SLIDER, BlockType::ADVANTAGES_SLIDER
@@ -629,7 +636,7 @@ class BlockResource extends Resource
                     ),
 
                     Forms\Components\Repeater::make('images')
-                        ->label('Изображения')
+                        ->label('Карточка')
                         ->schema([
                             Forms\Components\TextInput::make('uuid')
                                 ->label('UUID')
@@ -656,7 +663,7 @@ class BlockResource extends Resource
                                 ->columnSpan('full')
                                 ->hidden(
                                     fn(Forms\Get $get) => !in_array(BlockType::from($get('../../type')), [
-                                        BlockType::ADVANTAGES_SLIDER
+                                        BlockType::ADVANTAGES_SLIDER, BlockType::CARDS_SLIDER
                                     ])
                                 ),
 
@@ -846,7 +853,15 @@ class BlockResource extends Resource
                     ->label('Кол-во колонок')
                     ->hidden(
                         fn(Forms\Get $get) => !in_array(BlockType::from($get('type')), [
-                            BlockType::SEVERAL_COLS,
+                            BlockType::SEVERAL_COLS, BlockType::NIGHT_LENSES_SELECTION
+                        ])
+                    ),
+                Forms\Components\Toggle::make('payload.is_slider')
+                    ->label('Слайдер')
+                    ->default(0)
+                    ->hidden(
+                        fn(Forms\Get $get) => !in_array(BlockType::from($get('type')), [
+                            BlockType::NIGHT_LENSES_SELECTION
                         ])
                     ),
 

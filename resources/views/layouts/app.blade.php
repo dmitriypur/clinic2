@@ -76,7 +76,7 @@
 
 <body
     class="bg-surface-subdued antialiased text-interactive pt-[72px] lg:pt-56 [&_*]:[-webkit-tap-highlight-color]:transparent">
-<div id="app" v-cloak>
+<div id="app" v-cloak class="overflow-hidden">
     @if (isset($seoSettings->scripts) && count($seoSettings->scripts))
         @foreach ($seoSettings->scripts as $script)
             {!! $script['value'] !!}
@@ -273,7 +273,7 @@
     {!! $slot !!}
 
     @if($showFooter)
-        @include('parts.footer-new')
+        @include('parts.footer')
     @endif
 
     <online-appointment-form :open="callbackModalActive"

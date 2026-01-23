@@ -521,6 +521,20 @@ new Vue({
         pointsCarouselSwiper?.disable();
       }
 
+      let nightLensesSelectionSwiper;
+      if (window.innerWidth < 768 && document.querySelector(".night-lenses-selection-swiper")) {
+        nightLensesSelectionSwiper = new Swiper(".night-lenses-selection-swiper", {
+          modules: [Pagination],
+          slidesPerView: 1.15,
+          loop: true,
+          spaceBetween: 16,
+          pagination: {
+            el: ".night-lenses-selection-swiper-pagination", clickable: true,
+          },
+        });
+      } else {
+        nightLensesSelectionSwiper?.disable()
+      }
       new Swiper(".video-carousel-swiper", {
         modules: [Pagination, Navigation],
         slidesPerView: 1,
