@@ -103,10 +103,6 @@
             <x-block.full-price-list :block="$block"/>
             @break
 
-        @case(\App\Enums\BlockType::REVIEWS)
-            <x-block.reviews :block="$block" :title="$pageTitle"/>
-            @break
-
         @case(\App\Enums\BlockType::CALL_TO_ACTION)
             <x-block.call-to-action :block="$block"/>
             @break

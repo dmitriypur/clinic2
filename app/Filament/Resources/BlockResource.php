@@ -102,7 +102,7 @@ class BlockResource extends Resource
                         ->hidden(
                             fn(Forms\Get $get) => !in_array(
                                 BlockType::from($get('type')),
-                                [BlockType::DOCTORS, BlockType::DOCTORS_ALT]
+                                [BlockType::DOCTORS_ALT]
                             )
                         ),
 
@@ -151,13 +151,11 @@ class BlockResource extends Resource
                         ->required(
                             fn(Forms\Get $get) => !in_array($get('type'), [
                                 BlockType::PRICE_LIST->value,
-                                BlockType::REVIEWS->value,
                             ])
                         )
                         ->hidden(
                             fn(Forms\Get $get) => !in_array($get('type'), [
                                 BlockType::PRICE_LIST->value,
-                                BlockType::REVIEWS->value,
                             ])
                         ),
 

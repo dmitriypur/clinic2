@@ -10,8 +10,6 @@ enum BlockType: int
 //
 //    case GRID_IMAGES = 2;
 
-    case DOCTORS = 3;
-
     case CONTACTS = 4;
 
     case ELEMENTS_ITEM_COLUMN = 5;
@@ -29,8 +27,6 @@ enum BlockType: int
     case VIDEO = 11;
 
     case PRICE_LIST = 12;
-
-    case REVIEWS = 13;
 
     case CALL_TO_ACTION = 14;
 
@@ -131,7 +127,6 @@ enum BlockType: int
             self::TEXT_WITH_IMAGE => 'Текст с изображением',
             self::ELEMENTS_ITEM_COLUMN => 'Элементы (каждый элемент расположен вертикально)',
             self::ELEMENTS_ITEM_ROW => 'Элементы (каждый элемент расположен горизонтально)',
-            self::DOCTORS => 'Специалисты',
             self::CONTACTS => 'Контакты',
             self::PROMOTIONS => 'Акции',
             self::TAGS => 'Тэги',
@@ -142,7 +137,6 @@ enum BlockType: int
             self::VIDEO_NEW => 'Видео новый дизайн',
             self::PRICE_LIST => 'Прайс-лист на услугу',
             self::FULL_PRICE_LIST => 'Прайс-лист на все услуги',
-            self::REVIEWS => 'Отзывы',
             self::CALL_TO_ACTION => 'Форма заявки',
             self::LICENSES => 'Лицензии и сертификаты',
             self::FAQ => 'FAQ',
