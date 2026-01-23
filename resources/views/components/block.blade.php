@@ -65,12 +65,6 @@
             </div>
             @break
 
-        @case(\App\Enums\BlockType::DOCTORS)
-            <div class="container">
-                <x-block.doctors :block="$block"/>
-            </div>
-            @break
-
         @case(\App\Enums\BlockType::DOCTORS_ALT)
             <div class="container">
                 <x-block.doctors-alt :block="$block"/>
