@@ -53,6 +53,12 @@ class City extends Model
 
     protected static function booted()
     {
+        static::saving(function (City $city) {
+            if ($city->is_default) {
+                static::where('id', '!=', $city->id)->update(['is_default' => false]);
+            }
+        });
+
         static::saved(function (City $city) {
             \Illuminate\Support\Facades\Cache::forget('route_city_slugs');
             \Illuminate\Support\Facades\Cache::forget('default_city');

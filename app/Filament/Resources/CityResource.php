@@ -14,6 +14,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class CityResource extends Resource
 {
@@ -45,19 +46,13 @@ class CityResource extends Resource
                             ->unique(ignoreRecord: true)
                             ->rules([
                                 'regex:/^[a-z0-9-]+$/',
-                                function ($attribute, $value, $fail) {
-                                    // Список зарезервированных системных маршрутов
-                                    $reserved = [
-                                        'api', 'admin', 'profile', 'search', 'live-search',
-                                        'doctors', 'stati', 'directory', 'tags', 'reviews',
-                                        'sitemap.xml', 'sitemap.html', 'robots.txt',
-                                        'yml-feed', 'call-request', 'clear-price', 'form',
-                                        'login', 'logout'
-                                    ];
-                                    if (in_array(strtolower($value), $reserved)) {
-                                        $fail('Этот slug зарезервирован системой. Пожалуйста, выберите другой.');
-                                    }
-                                },
+                                Rule::notIn([
+                                    'api', 'admin', 'profile', 'search', 'live-search',
+                                    'doctors', 'stati', 'directory', 'tags', 'reviews',
+                                    'sitemap.xml', 'sitemap.html', 'robots.txt',
+                                    'yml-feed', 'call-request', 'clear-price', 'form',
+                                    'login', 'logout'
+                                ]),
                             ])
                             ->helperText('Только латинские буквы, цифры и дефис'),
 
