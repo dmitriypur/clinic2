@@ -117,7 +117,7 @@
                         </button>
 
                         <div class="hidden lg:flex justify-end gap-5 w-full px-10 md:pr-0">
-                            <div class="pt-2">
+                            <div class="hidden pt-2">
                                 <x-city-switcher :cities="$cities" :currentCity="$currentCity" />
                             </div>
                             <x-address/>
