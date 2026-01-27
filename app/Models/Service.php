@@ -8,6 +8,7 @@ use App\Models\ServicePrice;
 use App\Models\Traits\HasCityScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 use Spatie\Image\Manipulations;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
@@ -37,6 +38,12 @@ class Service extends Model implements HasMedia
 
     protected static function booted()
     {
+        static::creating(function (self $service) {
+            if (empty($service->uuid)) {
+                $service->uuid = Str::uuid()->toString();
+            }
+        });
+
         static::saved(function () {
             self::clearServicesCache();
         });

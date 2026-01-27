@@ -12,6 +12,7 @@ use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Support\Str;
 
 class ChildrenRelationManager extends RelationManager
 {
@@ -37,6 +38,9 @@ class ChildrenRelationManager extends RelationManager
                 Forms\Components\TextInput::make('uuid')
                     ->label('Внешний идентификатор')
                     ->placeholder('н-р: 215e537e-f097-11ed-b52e-fc3cbccb3d9b')
+                    ->default(fn($record) => $record?->uuid ?? Str::uuid()->toString())
+                    ->disabled()
+                    ->dehydrated()
                     ->required(),
 
                 Forms\Components\TextInput::make('sort_order')

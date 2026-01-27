@@ -14,6 +14,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Str;
 
 class ServiceResource extends Resource
 {
@@ -45,6 +46,9 @@ class ServiceResource extends Resource
                     ->label('Внешний идентификатор')
                     ->placeholder('н-р: 215e537e-f097-11ed-b52e-fc3cbccb3d9b')
                     ->columnSpanFull()
+                    ->default(fn(?Service $record) => $record?->uuid ?? Str::uuid()->toString())
+                    ->disabled()
+                    ->dehydrated()
                     ->required(),
 
                 Forms\Components\Select::make('parent_id')
