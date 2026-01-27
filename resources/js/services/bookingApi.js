@@ -64,7 +64,10 @@ class BookingApiService {
   async getDoctorSlots(doctorId, date) {
     try {
       const response = await this.client.get(`/doctors/${doctorId}/slots`, {
-        params: { date },
+        params: { 
+          date,
+          _t: new Date().getTime() // Cache busting
+        },
       });
       return response.data;
     } catch (error) {

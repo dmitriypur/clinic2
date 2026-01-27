@@ -108,8 +108,10 @@ class Clinic
 
         $detectedCity = session()->get('detected_city');
         if ($detectedCity) {
-            // The modal will only show for non-default cities, so the URL is always prefixed with the slug.
-            $detectedCity->url = url($detectedCity->slug . rtrim('/' . $preparedPath, '/'));
+            $path = $preparedPath ? '/' . $preparedPath : '';
+            $detectedCity->url = $detectedCity->is_default
+                ? url($path . $query)
+                : url($detectedCity->slug . $path . $query);
         }
 
         return [

@@ -50,7 +50,7 @@ class SetCityMiddleware
             $this->cityService->setCurrentCity($defaultCity);
 
             // Определение города по IP для первого визита
-            if (!$request->cookie('city_confirmed')) {
+            if (!$request->cookie('city_confirmed') && $this->cityService->getActiveCities()->count() > 1) {
                 $detectedCity = null;
                 // Тестовый режим для локальной разработки
                 if (config('app.env') === 'local' && $request->has('test_city')) {
@@ -67,7 +67,7 @@ class SetCityMiddleware
                     'cookie_exists' => $request->cookie('city_confirmed') ? 'yes' : 'no'
                 ]);
 
-                if ($detectedCity && !$detectedCity->is_default) {
+                if ($detectedCity) {
                     session(['detected_city' => $detectedCity]);
                     \Log::info('Detected city saved to session', ['city' => $detectedCity->name]);
                 }
