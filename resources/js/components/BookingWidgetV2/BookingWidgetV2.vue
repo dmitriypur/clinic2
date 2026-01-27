@@ -358,9 +358,9 @@ export default {
         };
 
         // Опционально: проверка слота перед созданием заявки
-        if (this.selectedSlot.onec_slot_id) {
-          await this.checkSlotAvailability(applicationData);
-        }
+        // if (this.selectedSlot.onec_slot_id) {
+        //   await this.checkSlotAvailability(applicationData);
+        // }
 
         // Создаем заявку
         await bookingApi.createApplication(applicationData);
