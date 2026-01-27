@@ -16,6 +16,7 @@ use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
+use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Actions\ReplicateAction;
 use Filament\Tables\Table;
@@ -64,10 +65,38 @@ class BlockResource extends Resource
                         ->label('Идентификатор (якорь)')
                         ->prefix('#'),
 
+                    Forms\Components\Select::make('page_type_filter')
+                        ->label('Фильтр типа страниц')
+                        ->options(PageType::toArray())
+                        ->placeholder('Все типы')
+                        ->dehydrated(false)
+                        ->live()
+                        ->hidden(fn($livewire) => $livewire instanceof RelationManager && $livewire->getOwnerRecord() instanceof Page),
+
                     Forms\Components\Select::make('page_id')
                         ->label('Страница')
                         ->required()
-                        ->relationship('page', 'title', fn($query) => $query->orderBy('id')),
+                        ->options(function (Forms\Get $get) {
+                            $type = $get('page_type_filter');
+
+                            return Page::query()
+                                ->when($type !== null && $type !== '', fn($query) => $query->where('type', $type))
+                                ->orderBy('id')
+                                ->pluck('title', 'id');
+                        })
+                        ->searchable()
+                        ->hidden(fn($livewire) => $livewire instanceof RelationManager && $livewire->getOwnerRecord() instanceof Page)
+                        ->default(fn($livewire) => $livewire instanceof RelationManager && $livewire->getOwnerRecord() instanceof Page
+                            ? $livewire->getOwnerRecord()->id
+                            : null)
+                        ->dehydrated(),
+
+                    Forms\Components\Select::make('cities')
+                        ->label('Доступность в городах')
+                        ->relationship('cities', 'name')
+                        ->multiple()
+                        ->preload()
+                        ->helperText('Если пусто - блок доступен во всех городах'),
 
                     Forms\Components\Select::make('type')
                         ->columnSpanFull()

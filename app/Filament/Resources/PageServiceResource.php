@@ -15,6 +15,7 @@ use Filament\Forms\Get;
 use Filament\Forms\Set;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Str;
@@ -141,7 +142,11 @@ class PageServiceResource extends Resource
                 Tables\Columns\TextColumn::make('title')->label('Заголовок'),
             ])
             ->filters([
-                //
+                SelectFilter::make('cities')
+                    ->label('Города')
+                    ->relationship('cities', 'name')
+                    ->multiple()
+                    ->preload(),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
