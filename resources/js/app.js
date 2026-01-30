@@ -47,6 +47,7 @@ const AccessibilityToggle = () =>
 import { eventBus } from "./eventBus";
 import VueObserveVisibility from "vue-observe-visibility";
 import VueLazyload from "vue-lazyload";
+import BookingWebApp from "./booking-webapp-modal/mount";
 
 import "vue-image-lightbox/dist/vue-image-lightbox.min.css";
 
@@ -263,6 +264,14 @@ new Vue({
 
     closeLoginModal() {
       this.loginModalActive = false;
+    },
+
+    openBookingWebApp() {
+      if (window.BookingWebApp && typeof window.BookingWebApp.open === "function") {
+        window.BookingWebApp.open();
+        return;
+      }
+      console.warn("BookingWebApp is not initialized.");
     },
 
     setActiveElementModal(
@@ -657,6 +666,16 @@ new Vue({
     },
   },
 }).$mount("#app");
+
+// Booking WebApp modal (external API)
+const bookingApiBase = window.config?.bookingApiBase || "";
+if (bookingApiBase) {
+  BookingWebApp.init({
+    apiBase: bookingApiBase,
+    title: "Онлайн‑запись",
+    primaryColor: "#2563eb",
+  });
+}
 
 function setHeight(el, val) {
   if (typeof val === "function") val = val();

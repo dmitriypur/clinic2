@@ -121,6 +121,14 @@ export default {
     closeLoginModal() {
       eventBus.$emit('closeLoginModal')
     },
+
+    openBookingWebApp() {
+      if (window.BookingWebApp && typeof window.BookingWebApp.open === 'function') {
+        window.BookingWebApp.open()
+        return
+      }
+      console.warn('BookingWebApp is not initialized.')
+    },
   },
 }
 </script>
