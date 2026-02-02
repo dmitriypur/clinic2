@@ -1,10 +1,10 @@
 <template>
-  <div class="accessibility-toggle">
+  <div class="accessibility-toggle w-8 h-8">
     <!-- Кнопка переключения -->
     <span
       @click="toggleAccessibility"
       :class="[
-        'inline-flex w-9 h-9 text-icon-interactive cursor-pointer',
+        'inline-flex w-8 h-8 text-icon-interactive cursor-pointer',
       ]"
       :title="isAccessibilityMode ? 'Выключить версию для слабовидящих' : 'Включить версию для слабовидящих'"
     >
@@ -253,6 +253,7 @@ export default {
 </script>
 
 <style scoped>
+
 .accessibility-btn {
   transition: all 0.3s ease;
 }

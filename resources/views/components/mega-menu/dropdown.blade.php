@@ -2,7 +2,7 @@
      :class="{
         'dropdown-in': isMobile ? mobileSubIndex === '{{ $menuIndex }}' : activeTop === '{{ $menuIndex }}',
         'hidden': isMobile ? mobileSubIndex !== '{{ $menuIndex }}' : activeTop !== '{{ $menuIndex }}',
-        'lg:absolute left-0 top-10 lg:pt-6 w-full': !{{ $item['is_simple'] ? 'true' : 'false' }},
+        'lg:absolute left-0 top-10 lg:pt-8 w-full': !{{ $item['is_simple'] ? 'true' : 'false' }},
         'lg:absolute top-full left-0 w-72 pt-1': {{ $item['is_simple'] ? 'true' : 'false' }}
      }">
     @if($item['is_doctor_grid'])

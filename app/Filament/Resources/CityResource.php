@@ -6,6 +6,7 @@ use App\Filament\Resources\CityResource\Pages;
 use App\Models\City;
 use Filament\Forms;
 use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
@@ -65,7 +66,7 @@ class CityResource extends Resource
                             ->default(true),
                     ])->columns(2),
 
-                Section::make('Контакты')
+                Section::make('Контакты города')
                     ->schema([
                         TextInput::make('phone')
                             ->label('Телефон')
@@ -86,6 +87,37 @@ class CityResource extends Resource
                             ->label('Режим работы')
                             ->columnSpanFull(),
                     ])->columns(2),
+
+                Section::make('Филиалы')
+                    ->schema([
+                        Repeater::make('branches')
+                            ->label('Филиалы города')
+                            ->schema([
+                                TextInput::make('name')
+                                    ->label('Название филиала')
+                                    ->required(),
+                                TextInput::make('phone')
+                                    ->label('Телефон'),
+                                TextInput::make('email')
+                                    ->label('Email')
+                                    ->email(),
+                                TextInput::make('postal_code')
+                                    ->label('Индекс'),
+                                TextInput::make('address')
+                                    ->label('Адрес')
+                                    ->columnSpanFull(),
+                                TextInput::make('metro')
+                                    ->label('Метро'),
+                                TextInput::make('coordinates')
+                                    ->label('Координаты (lat, lng)'),
+                                TextInput::make('schedule')
+                                    ->label('Режим работы')
+                                    ->columnSpanFull(),
+                            ])
+                            ->columnSpanFull()
+                            ->collapsed()
+                            ->itemLabel(fn (array $state): ?string => $state['name'] ?? null),
+                    ]),
 
                 Section::make('Соцсети')
                     ->schema([

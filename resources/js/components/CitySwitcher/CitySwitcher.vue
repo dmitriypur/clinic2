@@ -1,18 +1,14 @@
 <template>
   <div class="relative group" v-click-outside="close">
-    <button @click="toggle" class="flex items-center gap-2 text-interactive hover:text-action-primary transition-colors">
-      <div class="w-5 h-5">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-          <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
+    <button @click="toggle" class="text-action-primary font-medium flex items-center">
+      <span class="font-semibold border-b border-action-primary hover:border-transparent">{{ currentCityName }}</span>
+      <span class="flex w-8 h-8 shadow rounded ml-2">
+        <svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+          <path fill-rule="evenodd"
+                d="M6.24 8.2a.75.75 0 0 1 1.06.04l2.7 2.908 2.7-2.908a.75.75 0 1 1 1.1 1.02l-3.25 3.5a.75.75 0 0 1-1.1 0l-3.25-3.5a.75.75 0 0 1 .04-1.06Z"
+          />
         </svg>
-      </div>
-      <span class="font-medium">{{ currentCityName }}</span>
-      <div class="w-4 h-4 transition-transform duration-200" :class="{ 'rotate-180': open }">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
-        </svg>
-      </div>
+      </span>
     </button>
 
     <transition
@@ -24,7 +20,7 @@
       leave-to-class="transform opacity-0 scale-95"
     >
       <div v-show="open"
-           class="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg ring-1 ring-black ring-opacity-5 z-50 overflow-hidden">
+           class="absolute left-0 mt-2 w-56 bg-white rounded-xl shadow-lg ring-1 ring-black ring-opacity-5 z-50 overflow-hidden">
         <div class="py-1 max-h-96 overflow-y-auto">
           <a v-for="city in cities" 
              :key="city.id" 

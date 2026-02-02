@@ -14,6 +14,8 @@ export default {
     return {
       open: false, // Fix for "Property or method 'open' is not defined" warning
       active: false,
+      searchOpen: false,
+      branchesOpen: false,
       body: document.body,
       stickyClassNames: ['lg:fixed', 'lg:bg-white', 'lg:shadow-md', 'lg:py-6'],
       relativeClassNames: ['lg:relative', 'lg:py-12'],
@@ -32,6 +34,12 @@ export default {
         this.active ? '' : 'hidden lg:block',
       )
     },
+    navClassNameNew() {
+      return classNames(
+        'relative md:container px-4 py-4 lg:py-2 max-w-[100vw]',
+        this.active ? '' : 'hidden lg:block',
+      )
+    },
   },
 
   mounted() {
@@ -42,11 +50,14 @@ export default {
     eventBus.$on('hideTopBar', function () {
       self.active = false
     })
+
+    document.addEventListener('click', this.handleDocumentClick)
   },
 
   beforeDestroy() {
     // window.removeEventListener('scroll', this.handleScroll)
     // this.scrollLockManager.unregisterScrollLock()
+    document.removeEventListener('click', this.handleDocumentClick)
   },
 
   watch: {
@@ -74,11 +85,31 @@ export default {
       this.active = !this.active
     },
 
+    toggleSearch() {
+      this.searchOpen = !this.searchOpen
+    },
+
     toggleSubNav(id) {
       if (this.subNavOpen === id) {
         this.subNavOpen = null
       } else {
         this.subNavOpen = id
+      }
+    },
+
+    handleDocumentClick(event) {
+      if (!this.branchesOpen) {
+        return
+      }
+
+      const root = this.$el.querySelector('[data-branches-dropdown="1"]')
+
+      if (!root) {
+        return
+      }
+
+      if (!root.contains(event.target)) {
+        this.branchesOpen = false
       }
     },
 
