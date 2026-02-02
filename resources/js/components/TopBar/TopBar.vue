@@ -36,7 +36,7 @@ export default {
     },
     navClassNameNew() {
       return classNames(
-        'relative md:container px-4 py-4 lg:py-2 max-w-[100vw]',
+        'relative md:container px-4 py-4 pb-20 lg:py-2 max-w-[100vw] h-screen overflow-y-auto lg:overflow-visible lg:h-auto',
         this.active ? '' : 'hidden lg:block',
       )
     },

@@ -1,10 +1,10 @@
 <template>
   <div class="relative group" v-click-outside="close">
     <button @click="toggle" class="text-action-primary font-medium flex items-center">
-      <span class="font-semibold border-b border-action-primary hover:border-transparent">{{ currentCityName }}</span>
-      <span class="flex w-8 h-8 shadow rounded ml-2">
-        <svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-          <path fill-rule="evenodd"
+      <span class="font-semibold text-base/6 border-b border-action-primary hover:border-transparent">{{ currentCityName }}</span>
+      <span class="flex w-6 h-6 shadow rounded ml-3">
+        <svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" >
+          <path fill="#1F3462"
                 d="M6.24 8.2a.75.75 0 0 1 1.06.04l2.7 2.908 2.7-2.908a.75.75 0 1 1 1.1 1.02l-3.25 3.5a.75.75 0 0 1-1.1 0l-3.25-3.5a.75.75 0 0 1 .04-1.06Z"
           />
         </svg>
