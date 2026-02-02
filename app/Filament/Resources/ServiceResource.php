@@ -51,19 +51,6 @@ class ServiceResource extends Resource
                     ->dehydrated()
                     ->required(),
 
-                Forms\Components\Select::make('parent_id')
-                    ->label('Родительская категория')
-                    ->relationship('parent', 'title', function (Builder $query, ?Service $record) {
-                        if ($record) {
-                            return $query->where('id', '!=', $record->id);
-                        }
-                        return $query;
-                    })
-                    ->searchable()
-                    ->preload()
-                    ->nullable()
-                    ->columnSpanFull(),
-
                 Forms\Components\TextInput::make('sort_order')
                     ->label('Порядок сортировки')
                     ->numeric()

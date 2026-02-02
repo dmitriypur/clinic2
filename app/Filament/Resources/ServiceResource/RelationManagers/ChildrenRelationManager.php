@@ -55,9 +55,6 @@ class ChildrenRelationManager extends RelationManager
                     ->preload()
                     ->helperText('Если пусто - услуга доступна везде'),
 
-                Forms\Components\SpatieMediaLibraryFileUpload::make('default')
-                    ->label('Изображение'),
-
                 Repeater::make('prices')
                     ->label('Цены')
                     ->relationship('prices')
