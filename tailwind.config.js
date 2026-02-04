@@ -112,10 +112,11 @@ module.exports = {
         "40": "40px",
       },
       fontFamily: {
-        sans: ["Gilroy", ...defaultTheme.fontFamily.sans],
-        bebas: ["'Bebas Neue Light'", "sans-serif"]
+        sans: ["GilroyWeb", ...defaultTheme.fontFamily.sans],
+        bebas: ["'Bebas Neue Light'", "sans-serif"],
       },
-      animation: {
+  
+          animation: {
         backdrop: "fade-in 200ms 1 forwards",
         "spin-fast": "spin 500ms linear infinite",
       },

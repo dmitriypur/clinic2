@@ -336,6 +336,24 @@ export default {
     setGeneralError(message) {
       this.generalError = message;
     },
+
+    calculateAge(dateStr) {
+      if (!dateStr) {
+        return 0;
+      }
+      const [year, month, day] = dateStr.split('-').map((v) => parseInt(v, 10));
+      if (!year || !month || !day) {
+        return 0;
+      }
+      const today = new Date();
+      let age = today.getFullYear() - year;
+      const m = today.getMonth() + 1 - month;
+      const d = today.getDate() - day;
+      if (m < 0 || (m === 0 && d < 0)) {
+        age--;
+      }
+      return age;
+    },
   },
 
   watch: {

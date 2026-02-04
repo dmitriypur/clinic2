@@ -4,43 +4,57 @@
 
 @layer base {
     @font-face {
-        font-family: "Gilroy";
-        src: url("../../public/fonts/Gilroy/Gilroy-Regular.eot");
-        src: local("Gilroy Regular"), local("Gilroy-Regular"),
-        url("../../public/fonts/Gilroy/Gilroy-Regular.eot?#iefix") format("embedded-opentype"),
-        url("../../public/fonts/Gilroy/Gilroy-Regular.woff") format("woff"),
-        url("../../public/fonts/Gilroy/Gilroy-Regular.ttf") format("truetype");
-        font-weight: normal;
+        font-family: "GilroyWeb";
+        src: url("/fonts/Gilroy/Gilroy-Regular.woff2") format("woff2"),
+             url("/fonts/Gilroy/Gilroy-Regular.woff") format("woff"),
+             url("/fonts/Gilroy/Gilroy-Regular.ttf") format("truetype");
+        font-weight: 400;
         font-style: normal;
         font-display: swap;
     }
 
     @font-face {
-        font-family: "Gilroy";
-        src: url("../../public/fonts/Gilroy/Gilroy-Medium.eot");
-        src: local("Gilroy Medium"), local("Gilroy-Medium"),
-        url("../../public/fonts/Gilroy/Gilroy-Medium.eot?#iefix") format("embedded-opentype"),
-        url("../../public/fonts/Gilroy/Gilroy-Medium.woff") format("woff"),
-        url("../../public/fonts/Gilroy/Gilroy-Medium.ttf") format("truetype");
+        font-family: "GilroyWeb";
+        src: url("/fonts/Gilroy/Gilroy-Medium.woff2") format("woff2"),
+             url("/fonts/Gilroy/Gilroy-Medium.woff") format("woff"),
+             url("/fonts/Gilroy/Gilroy-Medium.ttf") format("truetype");
         font-weight: 500;
         font-style: normal;
         font-display: swap;
     }
 
     @font-face {
-        font-family: "Gilroy";
-        src: url("../../public/fonts/Gilroy/Gilroy-Bold.eot");
-        src: local("Gilroy Bold"), local("Gilroy-Bold"),
-        url("../../public/fonts/Gilroy/Gilroy-Bold.eot?#iefix") format("embedded-opentype"),
-        url("../../public/fonts/Gilroy/Gilroy-Bold.woff") format("woff"),
-        url("../../public/fonts/Gilroy/Gilroy-Bold.ttf") format("truetype");
+        font-family: "GilroyWeb";
+        src: url("/fonts/Gilroy/Gilroy-SemiBold.woff2") format("woff2"),
+             url("/fonts/Gilroy/Gilroy-SemiBold.woff") format("woff"),
+             url("/fonts/Gilroy/Gilroy-SemiBold.ttf") format("truetype");
         font-weight: 600;
         font-style: normal;
         font-display: swap;
     }
 
+    @font-face {
+        font-family: "GilroyWeb";
+        src: url("/fonts/Gilroy/Gilroy-Bold.woff2") format("woff2"),
+             url("/fonts/Gilroy/Gilroy-Bold.woff") format("woff"),
+             url("/fonts/Gilroy/Gilroy-Bold.ttf") format("truetype");
+        font-weight: 700;
+        font-style: normal;
+        font-display: swap;
+    }
+
+    @font-face {
+        font-family: "GilroyWeb";
+        src: url("/fonts/Gilroy/Gilroy-ExtraBold.woff2") format("woff2"),
+             url("/fonts/Gilroy/Gilroy-ExtraBold.woff") format("woff"),
+             url("/fonts/Gilroy/Gilroy-ExtraBold.ttf") format("truetype");
+        font-weight: 800;
+        font-style: normal;
+        font-display: swap;
+    }
+
     body {
-        font-family: "Gilroy", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        font-family: "GilroyWeb", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     }
 
     .content {
@@ -49,6 +63,22 @@
 
     .content strong {
         @apply font-semibold;
+    }
+
+    button{
+        position: relative;
+        z-index: 1;
+        overflow: hidden;
+        transition: all .3s;
+    }
+
+    button::before{
+        content: '';
+        position: absolute;
+        inset: 0;
+        transition: all .3s;
+        opacity: 0;
+        z-index: -1;
     }
 
     /* Стили для версии слабовидящих */
@@ -894,12 +924,18 @@
         border: 2px solid #000 !important;
     }
 
-    .btn-gradient:hover,
-    .btn-blue-gradient:hover{
-        background: #fff;
-        color: #1F3462;
-        outline: 2px solid #1F3462;
-        outline-offset: -2px;
+    
+    .btn-gradient::before{
+        background: radial-gradient(44.03% 44.03% at 50% 50%, #FFA759 0%, #FF2600 100%);
+    }
+    .btn-gradient:hover::before{
+        opacity: 1;
+    }
+    .btn-blue-gradient::before{
+        background: radial-gradient(44.03% 44.03% at 50% 50%, #65B3EB 0%, #0011FF 100%);
+    }
+    .btn-blue-gradient:hover::before{
+        opacity: 1;
     }
     .coating__card-list ul li{
         position: relative;
