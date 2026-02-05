@@ -9,7 +9,7 @@
                 @if($cities->count() < 2)
                     <button
                         type="button"
-                        class="flex items-center gap-1"
+                        class="flex items-center gap-1 @if(empty($branches)) cursor-auto @endif"
                         @click="branchesOpen = !branchesOpen"
                     >
                         <p class="tracking-tighter">{{ $address }}</p>
