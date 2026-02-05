@@ -10,8 +10,8 @@
            class="text-lg/6 font-semibold">{{ $phone }}</a>
     </div>
     <button
-            class="hidden lg:block accessibility:hidden text-base/6 font-semibold text-action-primary ml-4 border-b border-action-primary hover:border-transparent"
-            @click="showCallbackModal(null, 'otpravka-formy')">
-            Перезвоните мне
-        </button>
+        class="hidden lg:block accessibility:hidden text-base/6 font-semibold text-action-primary ml-4 border-b hover:border-action-primary border-transparent"
+        @click="showCallbackModal(null, 'otpravka-formy')">
+        Перезвоните мне
+    </button>
 </div>

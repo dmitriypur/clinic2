@@ -1,7 +1,7 @@
 <template>
   <div class="relative group" v-click-outside="close">
     <button @click="toggle" class="text-action-primary font-medium flex items-center">
-      <span class="font-semibold text-base/6 border-b border-action-primary hover:border-transparent">{{ currentCityName }}</span>
+      <span class="font-semibold text-base/6 border-b hover:border-action-primary border-transparent transition">{{ currentCityName }}</span>
       <span class="flex w-6 h-6 shadow rounded ml-3">
         <svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" >
           <path fill="#1F3462"

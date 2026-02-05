@@ -60,14 +60,14 @@
         @apply font-semibold;
     }
 
-    button{
+    button, a.btn-blue-gradient, a.btn-gradient{
         position: relative;
         z-index: 1;
         overflow: hidden;
         transition: all .3s;
     }
 
-    button::before{
+    button::before, a.btn-blue-gradient::before, a.btn-gradient::before{
         content: '';
         position: absolute;
         inset: 0;
@@ -921,13 +921,13 @@
 
     
     .btn-gradient::before{
-        background: radial-gradient(44.03% 44.03% at 50% 50%, #FFA759 0%, #FF2600 100%);
+        background: radial-gradient(44.03% 44.03% at 50% 50%, #FFA759 0%, #FF6A00 100%);
     }
     .btn-gradient:hover::before{
         opacity: 1;
     }
     .btn-blue-gradient::before{
-        background: radial-gradient(44.03% 44.03% at 50% 50%, #65B3EB 0%, #0011FF 100%);
+        background: radial-gradient(44.03% 44.03% at 50% 50%, #65B3EB 0%, #3062B9 100%);
     }
     .btn-blue-gradient:hover::before{
         opacity: 1;
