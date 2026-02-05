@@ -28,7 +28,7 @@ class YmlFeedService
         $this->cityService = $cityService;
         $this->city = $this->cityService->getCurrentCity() ?? $this->cityService->getDefaultCity();
 
-        $defaultName = config('app.name', 'Клиника зрения');
+        $defaultName = config('app.name', 'Ангелы зрения');
         $this->siteName = $generalSettings->site_name !== '' ? $generalSettings->site_name : $defaultName;
         $this->companyName = $defaultName;
         $this->siteUrl = rtrim((string) config('app.url'), '/');

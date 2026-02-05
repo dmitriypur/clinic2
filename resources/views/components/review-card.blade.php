@@ -4,7 +4,7 @@
 >
     <div class="flex flex-col h-full">
         <div class="hidden" itemprop="itemReviewed" itemscope itemtype="https://schema.org/MedicalOrganization">
-            <meta itemProp="name" content="Центр детского зрения Мама, я вижу"/>
+            <meta itemProp="name" content="Центр детского зрения Ангелы зрения"/>
             <meta itemProp="address" content="{{ $address }}"/>
         </div>
 

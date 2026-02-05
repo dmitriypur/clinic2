@@ -3,7 +3,7 @@
         <div class="hidden xl:block absolute -right-20 bottom-0 max-w-[500px] -z-10">
             <picture>
                 <source srcset="{{ asset('images/footer-korgi.webp') }}" type="image/webp">
-                <img src="{{ asset('images/footer-korgi.jpg') }}" alt="Веселые девочка и корги в очках и кепке" width="500" height="550" loading="lazy" class="w-full h-auto">
+                <img src="{{ asset('images/footer-korgi.png') }}" alt="Веселые девочка и корги в очках и кепке" width="500" height="550" loading="lazy" class="w-full h-auto">
             </picture>
         </div>
         <div class="flex flex-col lg:flex-row lg:justify-between gap-6 md:gap-10">

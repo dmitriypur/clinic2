@@ -19,7 +19,7 @@ class UserPasswordController extends Controller
         $user->update(['password' => bcrypt($code = rand(1000, 9999))]);
 
         if (!App::isLocal()) {
-            $smsService->send($user->phone, "Мама, я вижу. Код для входа в личный кабинет: $code");
+            $smsService->send($user->phone, "Ангелы зрения. Код для входа в личный кабинет: $code");
 
             return response()->json();
         }
