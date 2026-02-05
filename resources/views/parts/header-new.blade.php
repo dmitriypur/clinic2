@@ -29,10 +29,10 @@
                     </a>
                 @endif
                 <div class="hidden lg:flex items-center gap-4">
-                    @if(count($cities) > 1)
+                    @if(isset($cities) && count($cities) > 1)
                     <x-city-switcher :cities="$cities" :currentCity="$currentCity" />
                     @endif
-                    <x-address-new :cities="$cities" />
+                    <x-address-new :cities="$cities ?? []" />
                 </div>
 
                 <div class="flex items-center gap-6">
@@ -63,7 +63,9 @@
                     </a>
                 @endif
                 <div class="lg:hidden">
+                    @if(isset($cities) && count($cities) > 1)
                     <x-city-switcher :cities="$cities" :currentCity="$currentCity" />
+                    @endif
                 </div>
                  <div class="block lg:hidden">
                     <x-search></x-search>

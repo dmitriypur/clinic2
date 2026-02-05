@@ -5,8 +5,7 @@
 @layer base {
     @font-face {
         font-family: "GilroyWeb";
-        src: url("/fonts/Gilroy/Gilroy-Regular.woff2") format("woff2"),
-             url("/fonts/Gilroy/Gilroy-Regular.woff") format("woff"),
+        src: url("/fonts/Gilroy/Gilroy-Regular.woff") format("woff"),
              url("/fonts/Gilroy/Gilroy-Regular.ttf") format("truetype");
         font-weight: 400;
         font-style: normal;
@@ -15,8 +14,7 @@
 
     @font-face {
         font-family: "GilroyWeb";
-        src: url("/fonts/Gilroy/Gilroy-Medium.woff2") format("woff2"),
-             url("/fonts/Gilroy/Gilroy-Medium.woff") format("woff"),
+        src: url("/fonts/Gilroy/Gilroy-Medium.woff") format("woff"),
              url("/fonts/Gilroy/Gilroy-Medium.ttf") format("truetype");
         font-weight: 500;
         font-style: normal;
@@ -25,8 +23,7 @@
 
     @font-face {
         font-family: "GilroyWeb";
-        src: url("/fonts/Gilroy/Gilroy-SemiBold.woff2") format("woff2"),
-             url("/fonts/Gilroy/Gilroy-SemiBold.woff") format("woff"),
+        src: url("/fonts/Gilroy/Gilroy-SemiBold.woff") format("woff"),
              url("/fonts/Gilroy/Gilroy-SemiBold.ttf") format("truetype");
         font-weight: 600;
         font-style: normal;
@@ -35,8 +32,7 @@
 
     @font-face {
         font-family: "GilroyWeb";
-        src: url("/fonts/Gilroy/Gilroy-Bold.woff2") format("woff2"),
-             url("/fonts/Gilroy/Gilroy-Bold.woff") format("woff"),
+        src: url("/fonts/Gilroy/Gilroy-Bold.woff") format("woff"),
              url("/fonts/Gilroy/Gilroy-Bold.ttf") format("truetype");
         font-weight: 700;
         font-style: normal;
@@ -45,8 +41,7 @@
 
     @font-face {
         font-family: "GilroyWeb";
-        src: url("/fonts/Gilroy/Gilroy-ExtraBold.woff2") format("woff2"),
-             url("/fonts/Gilroy/Gilroy-ExtraBold.woff") format("woff"),
+        src: url("/fonts/Gilroy/Gilroy-ExtraBold.woff") format("woff"),
              url("/fonts/Gilroy/Gilroy-ExtraBold.ttf") format("truetype");
         font-weight: 800;
         font-style: normal;
