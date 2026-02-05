@@ -19,7 +19,7 @@
         </div>
         <div class="py-2 px-6 border bg-surface-subdued rounded-lg">
             <p class="text-xs text-interactive-50">Режим работы:</p>
-            <p class="font-medium flex items-center gap-1 [&_svg]:fill-[#C3C9D6]">{{ str_replace('<br>', '', trim($schedule)) }}</p>
+            <p class="font-medium flex items-center gap-1 [&_svg]:fill-[#C3C9D6]">{!! str_replace('<br>', '', trim($schedule)) !!}</p>
         </div>
     </div>
     <div>
