@@ -38,7 +38,7 @@
                         @endif
                         <div class="flex items-end gap-1">
                             {{ $price['price1'] }}
-                            <span class="text-2xl">₽</span>
+                            <span class="text-sm md:text-2xl">₽</span>
                         </div>
                         
                         @if(($price['price2'] ?? 0) > 0)
