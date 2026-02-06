@@ -30,13 +30,16 @@
                         @endif
                         <p class="text-sm lg:text-2xl">{!! $block->elementToSpanWrap($price['item']) !!}</p>
                     </div>
-                    <div class="flex flex-col md:flex-row items-center justify-center md:gap-5 text-center font-medium text-xl md:text-3xl w-20 md:w-[273px]">
+                    <div class="flex flex-col md:flex-row items-center justify-center md:gap-4 text-center font-medium text-xl md:text-3xl w-20 md:w-[273px]">
                         {!! ($price['price2'] ?? 0) > 0 ? '<s class="text-sm md:text-2xl text-interactive/20">' . $price['price2'] . '</s>' : '' !!}
                         
                         @if($price['price_from'] ?? false)
                             <span class="text-sm mr-1">от</span>
                         @endif
-                        {{ $price['price1'] }}
+                        <div class="flex items-end gap-1">
+                            {{ $price['price1'] }}
+                            <span class="text-2xl">₽</span>
+                        </div>
                         
                         @if(($price['price2'] ?? 0) > 0)
                             <div class="hidden md:block">
