@@ -19,7 +19,7 @@
                         @click="$refs.lightbox.showImage(0)">
                         Посмотреть лицензии
                     </x-button-primary>
-                    <a href="{{ asset('uslugi-i-ceny') }}" class="flex items-center justify-center text-white font-semibold rounded-xl h-14 w-full md:w-[225px] btn-gradient">
+                    <a href="{{ asset('licenzii-i-iuridiceskaia-informaciia') }}" class="flex items-center justify-center text-white font-semibold rounded-xl h-14 w-full md:w-[225px] btn-gradient">
                         Посмотреть лицензии
                     </a>
                 </div>
