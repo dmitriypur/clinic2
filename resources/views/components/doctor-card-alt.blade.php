@@ -51,7 +51,7 @@
         @if ($doctor->actual_video_url)
             <button
                 @click="videoUrl='{{ $doctor->actual_video_url }}'"
-                class="accessibility:relative accessibility:bottom-0 flex justify-center items-center w-1/2 h-full rounded-xl blue-gradient-nohover">
+                class="accessibility:relative accessibility:bottom-0 flex justify-center items-center w-1/2 h-full rounded-xl btn-blue-gradient">
                 <span
                     class="flex justify-center items-center w-5 h-5 rounded-full bg-white mr-2 accessibility:hidden">
                     <svg
@@ -69,7 +69,7 @@
                     <polygon points="5 3 19 12 5 21 5 3"></polygon>
                     </svg>
                 </span>
-                <span class="font-semibold text-white">видео-визитка</span>
+                <span class="font-semibold leading-3 text-white">видео-визитка</span>
             </button>
         @else
             <div
