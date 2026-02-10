@@ -1,6 +1,6 @@
 <template>
   <div
-    class="fixed inset-0 flex flex-col justify-end md:justify-center pointer-events-none"
+    class="fixed inset-0 flex flex-col justify-center pointer-events-none px-4"
     data-layer
     data-overlay
     ref="containerNode"
@@ -43,7 +43,7 @@ export default {
   computed: {
     className() {
       return classNames(
-        "bg-surface pointer-events-auto fixed md:relative md:rounded-lg inset-x-0 bottom-0 flex flex-col w-full max-h-full md:max-h-[calc(100vh-6rem)] bg-surface shadow-lg",
+        "bg-surface pointer-events-auto relative rounded-xl md:rounded-3xl inset-x-0 bottom-0 flex flex-col w-full max-h-[95vh] bg-surface shadow-lg md:w-max mx-auto",
         !this.limitHeight && "h-full"
       );
     },
@@ -59,7 +59,7 @@ export default {
         "md:mx-auto overflow-hidden",
         this.large && "max-w-6xl p-16",
         this.small && "max-w-2xl p-20",
-        !this.large && !this.small && "md:max-w-[810px]"
+        !this.large && !this.small && "md:max-w-auto"
       );
     },
   },

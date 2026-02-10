@@ -5,7 +5,7 @@
     closeButtonHiddenOnMobile
     @close="handleClose"
   >
-    <div class="min-h-[520px]">
+    <div class="h-auto">
       <StartStep
         v-if="currentStep === 'start'"
         :mode="mode"
@@ -158,7 +158,7 @@ export default {
         window.currentCity?.name ||
         window.config?.state?.currentCity?.name ||
         "Москва";
-
+        
       if (this.allCities && this.allCities.length > 0) {
         const matchedCity = this.allCities.find(
           (c) => c.name.toLowerCase() === localCityName.toLowerCase()

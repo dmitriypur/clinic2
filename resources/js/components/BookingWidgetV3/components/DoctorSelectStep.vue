@@ -1,35 +1,53 @@
 <template>
-  <div class="bg-white rounded-[24px] px-10 pt-10 pb-10">
+  <div class="bg-white md:p-6">
     <StepHeader chipText="Шаг №2" @close="$emit('close')">
       Выберите специалиста
     </StepHeader>
 
-    <div class="mt-6">
+    <div class="mt-6 relative">
       <input
         type="text"
-        class="w-full rounded-[12px] border border-[#EBF0F3] px-4 py-3 text-[16px]"
+        class="w-full rounded-lg text-sm border-none px-6 py-4 bg-surface-subdued outline-icon-subdued"
         placeholder="Поиск врача"
         v-model="query"
       />
+      <span class="absolute top-1/2 -translate-y-1/2 right-4 w-4 h-4">
+        <IconSearch class="w-full h-full" />
+      </span>
     </div>
 
-    <div class="mt-6 h-[352px] overflow-y-auto pr-2">
-      <button
+    <div class="mt-6 h-[352px] overflow-y-auto pr-1 md:w-[450px]">
+      <div
         v-for="doctor in filteredDoctors"
         :key="doctor.id"
-        class="flex w-full items-center gap-4 rounded-[12px] border-2 bg-white px-4 py-3 text-left"
+        class="w-full rounded-xl border-2 bg-white p-2 text-left mt-2 first:mt-0"
         :class="
           selectedDoctorId === doctor.id
-            ? 'border-[#FF8212] bg-[#FFF5EB]'
-            : 'border-[#EBF0F3]'
+            ? 'border-action-primary bg-action-primary/5'
+            : 'border-surface-subdued'
         "
         @click="$emit('select', doctor)"
       >
-        <div class="h-[60px] w-[60px] rounded-[8px] bg-[#EBF0F3]"></div>
-        <div class="text-[16px] font-semibold text-[#1F3462]">
-          {{ doctor.name || doctor.full_name }}
+        <div class="w-full flex items-center gap-2 md:gap-4 cursor-pointer">
+          <div class="h-14 w-14 min-w-14 md:h-16 md:w-16 md:min-w-16 md:rounded-full md:bg-surface-subdued"></div>
+          <div class="w-2/3 md:w-1/2">
+            <div class="text-xs text-action-primary font-semibold mb-1">
+              Видео-визитка
+            </div>
+            <div class="text-sm md:text-base font-semibold leading-tight">
+              {{ doctor.name }}
+            </div>
+          </div>
+          <div v-if="selectedDoctorId === doctor.id" class="text-action-primary ml-auto">
+            <IconCheck class="w-4 h-4 md:w-6 md:h-6" />
+          </div>
         </div>
-      </button>
+        <div class="hidden md:flex md:items-center md:gap-2 md:mt-3 text-xs">
+          <div class="bg-light-gray p-1 border border-interactive/10 rounded-md flex-1 text-center text-nowrap">Врач-офтальмолог</div>
+          <div class="bg-light-gray p-1 border border-interactive/10 rounded-md flex-1 text-center text-nowrap">Взрослые, дети с 3 лет</div>
+          <div class="bg-light-gray p-1 border border-interactive/10 rounded-md flex-1 text-center text-nowrap">Стаж: 16 лет</div>
+        </div>
+      </div>
     </div>
 
     <div v-if="loading" class="mt-4 text-sm text-[#1F3462]">Загрузка...</div>
@@ -47,9 +65,11 @@
 const StepHeader = () => import("./shared/StepHeader.vue");
 const PrimaryButton = () => import("./shared/PrimaryButton.vue");
 const SecondaryButton = () => import("./shared/SecondaryButton.vue");
+const IconSearch = () => import("./shared/IconSearch.vue");
+const IconCheck = () => import("./shared/IconCheck.vue");
 
 export default {
-  components: { StepHeader, PrimaryButton, SecondaryButton },
+  components: { StepHeader, PrimaryButton, SecondaryButton, IconSearch, IconCheck },
   props: {
     doctors: {
       type: Array,

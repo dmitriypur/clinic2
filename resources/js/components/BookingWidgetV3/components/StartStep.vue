@@ -1,30 +1,29 @@
 <template>
-  <div class="bg-white rounded-[24px] px-10 pt-10 pb-10">
+  <div class="bg-white md:py-4">
     <StepHeader chipText="Шаг №1" @close="$emit('close')">
       Что вам удобнее?
     </StepHeader>
 
-    <div class="mt-10 flex gap-8">
+    <div class="mt-10 flex flex-col md:flex-row gap-8">
       <button
-        class="flex-1 rounded-[12px] border border-[#EBF0F3] bg-white px-6 py-5 text-left text-[16px] font-semibold text-[#1F3462]"
+        class="btn-white rounded-xl border border-interactive bg-white p-4 font-semibold text-interactive w-full min-w-64 hover:text-white hover:border-action-primary"
         @click="$emit('select-mode', 'doctor')"
       >
         Выбрать врача
       </button>
       <button
-        class="flex-1 rounded-[12px] border border-[#EBF0F3] bg-white px-6 py-5 text-left text-[16px] font-semibold text-[#1F3462]"
+        class="btn-white rounded-xl border border-interactive bg-white p-4 font-semibold text-interactive w-full min-w-64 hover:text-white hover:border-action-primary"
         @click="$emit('select-mode', 'clinic')"
       >
         Выбрать клинику
       </button>
     </div>
 
-    <div class="mt-10 text-center text-[14px] text-[#1F3462]">
+    <div class="mt-10 text-center">
       <button
-        class="inline-flex items-center gap-2 text-[#1F3462]"
+        class="text-interactive font-semibold underline"
         @click="$emit('leave-request')"
       >
-        <span class="inline-block h-[18px] w-[18px]">☝</span>
         Хочу оставить заявку
       </button>
     </div>

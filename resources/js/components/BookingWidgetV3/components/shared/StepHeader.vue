@@ -1,22 +1,15 @@
 <template>
-  <div class="flex items-center justify-between">
-    <h2 class="text-[34px] leading-[1.2] font-semibold text-[#1F3462]">
+  <div class="flex flex-col-reverse items-center gap-2">
+    <h2 class="text-2xl md:text-4xl font-semibold text-interactive">
       <slot />
     </h2>
     <div class="flex items-center gap-3">
       <span
         v-if="chipText"
-        class="bg-[#F6F7F9] px-5 py-[5px] text-[12px] leading-[1.2] text-[#1D1D1D] shadow-[0px_0px_1.8px_rgba(31,52,98,0.26)]"
+        class="bg-interactive/10 px-5 py-1 text-xs rounded-md"
       >
         {{ chipText }}
       </span>
-      <button
-        class="grid h-6 w-6 place-items-center"
-        aria-label="Close"
-        @click="$emit('close')"
-      >
-        <span class="text-[#1F3462]">×</span>
-      </button>
     </div>
   </div>
 </template>

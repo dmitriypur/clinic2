@@ -1,9 +1,9 @@
 <template>
   <button :class="className" aria-label="Закрыть" @click="onClick">
-    <span class="block h-4 w-4 lg:h-6 lg:w-6 max-h-full max-w-full m-auto">
+    <span class="block h-4 w-4 max-h-full max-w-full m-auto">
       <svg
         viewBox="0 0 20 20"
-        class="fill-interactive group-hover:fill-interactive-hovered lg:group-hover:fill-white/60 lg:fill-white"
+        class="fill-icon-subdued"
         focusable="false"
         aria-hidden="true"
       >
@@ -28,9 +28,9 @@ export default {
   computed: {
     className() {
       return classNames(
-        this.hiddenOnMobile && 'hidden md:flex',
-        'appearance-none bg-transparent cursor-pointer -mr-2 ml-5 p-2 rounded-md hover:bg-surface-hovered lg:-right-8 lg:-top-10 z-10 group',
-        this.title ? 'relative lg:absolute' : 'absolute right-4 top-6',
+        this.hiddenOnMobile && 'flex',
+        'appearance-none bg-transparent cursor-pointer right-4 top-4 z-10',
+        this.title ? 'relative lg:absolute' : 'absolute right-4 top-4',
         'outline-none focus:ring-border-interactive-focus focus:ring'
       )
     },
