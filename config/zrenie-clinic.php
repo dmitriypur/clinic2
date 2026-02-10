@@ -9,7 +9,7 @@ return [
         'callback' => 'events?action=callrequest',
         'profile' => 'events?action=authorization',
         'source' => 'events?action=source',
-        'form' => 'events?action=form',
+        'form' => 'events?action=spravka',
         'schedule' => 'events?action=raspisanie',
     ],
     'sms_aero' => [
