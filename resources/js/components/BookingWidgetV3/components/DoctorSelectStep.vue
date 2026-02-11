@@ -29,7 +29,15 @@
         @click="$emit('select', doctor)"
       >
         <div class="w-full flex items-center gap-2 md:gap-4 cursor-pointer">
-          <div class="h-14 w-14 min-w-14 md:h-16 md:w-16 md:min-w-16 md:rounded-full md:bg-surface-subdued"></div>
+          <div class="h-14 w-14 min-w-14 overflow-hidden rounded-full bg-surface-subdued md:h-16 md:w-16 md:min-w-16">
+            <img
+              v-if="doctor.avatar_url"
+              :src="doctor.avatar_url"
+              :alt="doctor.name || 'Фото врача'"
+              class="h-full w-full object-cover"
+              loading="lazy"
+            />
+          </div>
           <div class="w-2/3 md:w-1/2">
             <div class="text-xs text-action-primary font-semibold mb-1">
               Видео-визитка
@@ -43,9 +51,15 @@
           </div>
         </div>
         <div class="hidden md:flex md:items-center md:gap-2 md:mt-3 text-xs">
-          <div class="bg-light-gray p-1 border border-interactive/10 rounded-md flex-1 text-center text-nowrap">Врач-офтальмолог</div>
-          <div class="bg-light-gray p-1 border border-interactive/10 rounded-md flex-1 text-center text-nowrap">Взрослые, дети с 3 лет</div>
-          <div class="bg-light-gray p-1 border border-interactive/10 rounded-md flex-1 text-center text-nowrap">Стаж: 16 лет</div>
+          <div class="bg-light-gray p-1 border border-interactive/10 rounded-md flex-1 text-center text-nowrap">
+            {{ doctor.speciality || doctor.specialization || "Специалист" }}
+          </div>
+          <div class="bg-light-gray p-1 border border-interactive/10 rounded-md flex-1 text-center text-nowrap">
+            {{ doctor.receives || doctor.extra?.receives || "—" }}
+          </div>
+          <div class="bg-light-gray p-1 border border-interactive/10 rounded-md flex-1 text-center text-nowrap">
+            Стаж: {{ doctor.seniority || doctor.extra?.seniority || "—" }}
+          </div>
         </div>
       </div>
     </div>

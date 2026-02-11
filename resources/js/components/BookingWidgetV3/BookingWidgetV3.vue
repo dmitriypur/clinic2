@@ -185,6 +185,16 @@ export default {
       // 3. Если совсем ничего не нашли, берем первый город из API
       return this.allCities[0].id;
     },
+    allowedClinicIds() {
+      const list = window.config?.booking?.allowedClinicIds;
+      if (!Array.isArray(list)) {
+        return [];
+      }
+
+      return list
+        .map((id) => Number(id))
+        .filter((id) => Number.isFinite(id));
+    },
   },
   watch: {
     open: {
@@ -201,6 +211,94 @@ export default {
     },
   },
   methods: {
+    isClinicAllowed(clinicId) {
+      if (!this.allowedClinicIds.length) {
+        return true;
+      }
+
+      return this.allowedClinicIds.includes(Number(clinicId));
+    },
+    doctorExternalUuid(doctor) {
+      const raw = doctor?.external_id || doctor?.uuid || null;
+      if (!raw) {
+        return null;
+      }
+
+      const normalized = String(raw).trim().toLowerCase();
+      return normalized || null;
+    },
+    uniqueDoctors(doctors) {
+      const map = new Map();
+
+      (doctors || []).forEach((doctor) => {
+        const key = this.doctorExternalUuid(doctor) || String(doctor?.id || "");
+        if (!key || map.has(key)) {
+          return;
+        }
+        map.set(key, doctor);
+      });
+
+      return Array.from(map.values());
+    },
+    async enrichDoctorsWithSiteData(doctors) {
+      const list = this.uniqueDoctors(doctors);
+      const uuids = list
+        .map((doctor) => this.doctorExternalUuid(doctor))
+        .filter(Boolean);
+
+      if (!uuids.length) {
+        return [];
+      }
+
+      try {
+        const response = await bookingApi.getSiteDoctorsByUuids(uuids);
+        const siteDoctors = response.data || response || [];
+        const siteByUuid = siteDoctors.reduce((acc, doctor) => {
+          const uuid = String(doctor?.uuid || "").toLowerCase().trim();
+          if (uuid) {
+            acc[uuid] = doctor;
+          }
+          return acc;
+        }, {});
+
+        return list
+          .map((doctor) => {
+            const uuid = this.doctorExternalUuid(doctor);
+            if (!uuid || !siteByUuid[uuid]) {
+              return null;
+            }
+
+            const siteDoctor = siteByUuid[uuid];
+
+            return {
+              ...doctor,
+              local_uuid: siteDoctor.uuid,
+              ulid: siteDoctor.ulid || doctor.ulid,
+              name: siteDoctor.full_name || doctor.name,
+              full_name: siteDoctor.full_name || doctor.full_name || doctor.name,
+              speciality: siteDoctor.speciality || doctor.speciality,
+              specialization: siteDoctor.speciality || doctor.specialization,
+              job_title: siteDoctor.job_title || doctor.job_title,
+              excerpt: siteDoctor.excerpt || doctor.excerpt,
+              video_url: siteDoctor.video_url || doctor.video_url,
+              avatar_url: siteDoctor.avatar_url || doctor.avatar_url,
+              avatar_image: siteDoctor.avatar_image || doctor.avatar_image,
+              extra: siteDoctor.extra || doctor.extra || {},
+              seniority:
+                siteDoctor.extra?.seniority ||
+                doctor.seniority ||
+                doctor.extra?.seniority,
+              receives:
+                siteDoctor.extra?.receives ||
+                doctor.receives ||
+                doctor.extra?.receives,
+            };
+          })
+          .filter(Boolean);
+      } catch (e) {
+        return [];
+      }
+    },
     async initCities() {
       if (this.allCities.length > 0) return;
       try {
@@ -216,7 +314,9 @@ export default {
       try {
         const response = await bookingApi.getClinicsByCity(this.currentCityId);
         const list = response.data || response || [];
-        this.clinics = list.map((c) => ({ ...c, enabled: true }));
+        this.clinics = list
+          .filter((clinic) => this.isClinicAllowed(clinic.id))
+          .map((c) => ({ ...c, enabled: true }));
       } finally {
         this.loadingClinics = false;
       }
@@ -225,14 +325,31 @@ export default {
       if (!this.currentCityId) return;
       this.loadingDoctors = true;
       try {
-        const response = await bookingApi.getDoctorsByCity(this.currentCityId);
-        this.doctors = response.data || response || [];
+        if (!this.clinics.length) {
+          await this.loadClinics();
+        }
+
+        const doctorGroups = await Promise.all(
+          this.clinics.map(async (clinic) => {
+            try {
+              const response = await bookingApi.getClinicDoctors(clinic.id);
+              return response.data || response || [];
+            } catch (e) {
+              return [];
+            }
+          })
+        );
+
+        this.doctors = await this.enrichDoctorsWithSiteData(doctorGroups.flat());
       } finally {
         this.loadingDoctors = false;
       }
     },
     async loadDoctorsByClinic(clinicId, branchId = null) {
-      if (!clinicId) return;
+      if (!clinicId || !this.isClinicAllowed(clinicId)) {
+        this.clinicDoctors = [];
+        return;
+      }
       this.loadingDoctors = true;
       try {
         const response = await bookingApi.getClinicDoctors(
@@ -240,7 +357,8 @@ export default {
           null,
           branchId
         );
-        this.clinicDoctors = response.data || response || [];
+        const doctors = response.data || response || [];
+        this.clinicDoctors = await this.enrichDoctorsWithSiteData(doctors);
       } finally {
         this.loadingDoctors = false;
       }

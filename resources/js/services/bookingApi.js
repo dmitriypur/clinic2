@@ -155,6 +155,36 @@ class BookingApiService {
   }
 
   /**
+   * Получить локальные данные врачей сайта по UUID (external_id)
+   * GET /api/booking/doctors?uuids=a,b,c
+   */
+  async getSiteDoctorsByUuids(uuids = []) {
+    try {
+      const normalized = Array.from(
+        new Set(
+          (uuids || [])
+            .map((uuid) => String(uuid || "").trim().toLowerCase())
+            .filter(Boolean)
+        )
+      );
+
+      if (!normalized.length) {
+        return { data: [] };
+      }
+
+      const response = await axios.get("/api/booking/doctors", {
+        params: {
+          uuids: normalized.join(","),
+        },
+      });
+
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
    * Получить информацию о враче
    * GET /api/v1/doctors/{doctor_id}
    */

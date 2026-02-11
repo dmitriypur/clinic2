@@ -35,7 +35,15 @@
                 {{ selectedDoctorName }}
               </p>
 
-              <div class="flex flex-col mt-4 relative z-10">
+              <div class="flex gap-2 mt-4 relative z-10">
+                <div v-if="selectedDoctor?.avatar_url" class="w-1/2">
+                  <img
+                  :src="selectedDoctor?.avatar_url"
+                  :alt="selectedDoctor?.name || 'Фото врача'"
+                  class="h-full w-full object-cover"
+                  loading="lazy"
+                />
+                </div>
                 <ul class="flex gap-1.5 flex-col ml-auto w-64">
                   <li class="bg-white py-1.5 px-3.5 rounded-md text-[#1F3462]">
                     <p class="text-[10px] font-normal leading-[100%] opacity-60">Специальность:</p>
