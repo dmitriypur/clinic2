@@ -158,27 +158,32 @@ export default {
         window.currentCity?.name ||
         window.config?.state?.currentCity?.name ||
         "Москва";
-        
-      if (this.allCities && this.allCities.length > 0) {
-        const matchedCity = this.allCities.find(
-          (c) => c.name.toLowerCase() === localCityName.toLowerCase()
-        );
-        if (matchedCity) {
-          return matchedCity.id;
-        }
+
+      if (!this.allCities || !this.allCities.length) {
+        return null;
       }
 
-      const fallbackMapping = {
-        Москва: 2,
-        Киров: 1,
-        Краснодар: 7,
-      };
+      // Нормализация имени (убираем "г." и приводим к нижнему регистру)
+      const normalize = (str) => str ? str.toLowerCase().replace(/^г\.\s*/, '').trim() : '';
+      const targetName = normalize(localCityName);
 
-      if (fallbackMapping[localCityName]) {
-        return fallbackMapping[localCityName];
+      // 1. Ищем совпадение по имени в списке API
+      const matchedCity = this.allCities.find(
+        (c) => normalize(c.name) === targetName
+      );
+
+      if (matchedCity) {
+        return matchedCity.id;
       }
 
-      return 2;
+      // 2. Если не нашли, пробуем найти Москву как дефолт
+      const moscow = this.allCities.find(c => normalize(c.name).includes('москва'));
+      if (moscow) {
+        return moscow.id;
+      }
+
+      // 3. Если совсем ничего не нашли, берем первый город из API
+      return this.allCities[0].id;
     },
   },
   watch: {
@@ -206,6 +211,7 @@ export default {
       }
     },
     async loadClinics() {
+      if (!this.currentCityId) return;
       this.loadingClinics = true;
       try {
         const response = await bookingApi.getClinicsByCity(this.currentCityId);
@@ -216,6 +222,7 @@ export default {
       }
     },
     async loadDoctorsByCity() {
+      if (!this.currentCityId) return;
       this.loadingDoctors = true;
       try {
         const response = await bookingApi.getDoctorsByCity(this.currentCityId);
