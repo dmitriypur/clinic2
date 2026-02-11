@@ -28,7 +28,7 @@ Route::get('/clear-price', function (){
     return 'Good boy';
 });
 
-Route::view('form', 'form');
+// Route::view('form', 'form');
 
 Route::domain('form.' . parse_url(config('app.url'), PHP_URL_HOST))->group(function () {
     Route::get('robots.txt', \App\Http\Controllers\FormRobotsTxtController::class);
