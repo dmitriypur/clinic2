@@ -6,6 +6,7 @@ use App\Models\City;
 use App\Services\CityService;
 use App\Services\GeoIpService;
 use Closure;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\View;
 use Symfony\Component\HttpFoundation\Response;
@@ -19,6 +20,10 @@ class SetCityMiddleware
 
     public function handle(Request $request, Closure $next): Response
     {
+        if ($redirect = $this->handleForcedCity($request)) {
+            return $redirect;
+        }
+
         $citySlug = $request->route('city');
 
         if ($citySlug) {
@@ -79,5 +84,38 @@ class SetCityMiddleware
         View::share('cities', $this->cityService->getActiveCities());
 
         return $next($request);
+    }
+
+    protected function handleForcedCity(Request $request): ?RedirectResponse
+    {
+        $forcedCitySlug = $request->query('force_city');
+
+        if (!$forcedCitySlug) {
+            return null;
+        }
+
+        $forcedCity = $this->cityService->getCityBySlug($forcedCitySlug);
+        if (!$forcedCity) {
+            return null;
+        }
+
+        $segments = $request->segments();
+        $activeCitySlugs = $this->cityService->getActiveCities()->pluck('slug')->all();
+
+        if (!empty($segments) && in_array($segments[0], $activeCitySlugs, true)) {
+            array_shift($segments);
+        }
+
+        $cleanPath = implode('/', $segments);
+        $targetPath = $forcedCity->is_default
+            ? ($cleanPath ? '/' . $cleanPath : '/')
+            : '/' . $forcedCity->slug . ($cleanPath ? '/' . $cleanPath : '');
+
+        $query = $request->query();
+        unset($query['force_city']);
+        $queryString = http_build_query($query);
+        $targetUrl = $targetPath . ($queryString ? '?' . $queryString : '');
+
+        return redirect($targetUrl)->cookie('city_confirmed', 'true', 60 * 24 * 365);
     }
 }
