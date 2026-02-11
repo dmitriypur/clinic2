@@ -2,11 +2,12 @@
     <div class="top-8 font-medium bg-white w-full flex items-center gap-4">
         @php
             $branches = $currentCity->branches ?? [];
+            $citiesCount = collect($cities ?? [])->count();
         @endphp
 
         <div class="flex gap-1 items-center relative" data-branches-dropdown="1">
        
-                @if($cities->count() < 2)
+                @if($citiesCount < 2)
                     <button
                         type="button"
                         class="flex items-center gap-1 @if(empty($branches)) cursor-auto @endif"
