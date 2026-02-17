@@ -151,7 +151,10 @@ export default {
       doctorFlowBranches: [],
       allCities: [],
       doctorsCacheByCity: {},
+      siteDoctorsCacheByUuids: {},
       slotsCacheByQuery: {},
+      doctorsCacheTtlMs: 60 * 1000,
+      siteDoctorsCacheTtlMs: 60 * 1000,
       loadingClinics: false,
       loadingCityBranches: false,
       loadingDoctors: false,
@@ -254,6 +257,34 @@ export default {
       const normalized = String(raw).trim().toLowerCase();
       return normalized || null;
     },
+    normalizeUuidList(uuids) {
+      return Array.from(
+        new Set(
+          (uuids || [])
+            .map((uuid) => String(uuid || "").trim().toLowerCase())
+            .filter(Boolean)
+        )
+      ).sort();
+    },
+    getSiteDoctorsFromCache(key) {
+      const cached = this.siteDoctorsCacheByUuids[key];
+      if (!cached) {
+        return null;
+      }
+
+      if (Date.now() - cached.ts > this.siteDoctorsCacheTtlMs) {
+        delete this.siteDoctorsCacheByUuids[key];
+        return null;
+      }
+
+      return cached.payload;
+    },
+    setSiteDoctorsToCache(key, payload) {
+      this.siteDoctorsCacheByUuids[key] = {
+        ts: Date.now(),
+        payload,
+      };
+    },
     uniqueDoctors(doctors) {
       const map = new Map();
 
@@ -273,17 +304,31 @@ export default {
         return [];
       }
 
-      const uuids = list
-        .map((doctor) => this.doctorExternalUuid(doctor))
-        .filter(Boolean);
+      const uuids = this.normalizeUuidList(
+        list.map((doctor) => this.doctorExternalUuid(doctor))
+      );
 
       if (!uuids.length) {
         return list;
       }
 
       try {
-        const response = await bookingApi.getSiteDoctorsByUuids(uuids);
-        const siteDoctors = response.data || response || [];
+        const cacheKey = uuids.join(",");
+        const cachedPayload = this.getSiteDoctorsFromCache(cacheKey);
+        const response = cachedPayload || (await bookingApi.getSiteDoctorsByUuids(uuids));
+        if (!cachedPayload) {
+          this.setSiteDoctorsToCache(cacheKey, response);
+        }
+        const siteDoctors = Array.isArray(response?.data)
+          ? response.data
+          : Array.isArray(response)
+          ? response
+          : [];
+        const hiddenUuids = new Set(
+          (response?.meta?.hidden_uuids || [])
+            .map((uuid) => String(uuid || "").trim().toLowerCase())
+            .filter(Boolean)
+        );
         const siteByUuid = siteDoctors.reduce((acc, doctor) => {
           const uuid = String(doctor?.uuid || "").toLowerCase().trim();
           if (uuid) {
@@ -293,6 +338,14 @@ export default {
         }, {});
 
         return list
+          .filter((doctor) => {
+            const uuid = this.doctorExternalUuid(doctor);
+            if (!uuid) {
+              return true;
+            }
+
+            return !hiddenUuids.has(uuid);
+          })
           .map((doctor) => {
             const uuid = this.doctorExternalUuid(doctor);
             if (!uuid || !siteByUuid[uuid]) {
@@ -355,8 +408,12 @@ export default {
       if (!this.currentCityId) return;
 
       const cached = this.doctorsCacheByCity[this.currentCityId];
-      if (Array.isArray(cached) && cached.length) {
-        this.doctors = cached;
+      if (
+        cached &&
+        Array.isArray(cached.data) &&
+        Date.now() - cached.ts <= this.doctorsCacheTtlMs
+      ) {
+        this.doctors = cached.data;
         return;
       }
 
@@ -365,7 +422,10 @@ export default {
         const response = await bookingApi.getDoctorsByCity(this.currentCityId);
         const doctors = response.data || response || [];
         this.doctors = await this.enrichDoctorsWithSiteData(doctors);
-        this.doctorsCacheByCity[this.currentCityId] = this.doctors;
+        this.doctorsCacheByCity[this.currentCityId] = {
+          ts: Date.now(),
+          data: this.doctors,
+        };
       } finally {
         this.loadingDoctors = false;
       }

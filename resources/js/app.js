@@ -23,6 +23,7 @@ import {
   ImageLazy,
   CitySwitcher,
 } from "./components";
+import OnlineAppointmentForm from "./components/OnlineAppointmentForm/OnlineAppointmentForm.vue";
 
 const CallbackForm = () => import("./components/CallbackForm/CallbackForm.vue");
 const CallbackModal = () =>
@@ -33,8 +34,6 @@ const VideoNew = () => import("./components/VideoNew/VideoNew.vue");
 const VideoModal = () => import("./components/VideoModal/VideoModal.vue");
 const Faq = () => import("./components/Faq/Faq.vue");
 const AppFilter = () => import("./components/AppFilter/AppFilter.vue");
-const OnlineAppointmentForm = () =>
-  import("./components/OnlineAppointmentForm/OnlineAppointmentForm.vue");
 const BookingWidgetV2 = () =>
   import("./components/BookingWidgetV2/BookingWidgetV2.vue");
 const BookingWidgetV3 = () =>

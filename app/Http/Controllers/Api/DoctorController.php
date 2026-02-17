@@ -14,6 +14,8 @@ class DoctorController extends Controller
      */
     public function __invoke(Request $request, Doctor $doctor): DoctorResource
     {
+        abort_if((bool)($doctor->seo['noindex'] ?? false), 404);
+
         return DoctorResource::make($doctor->load('media'));
     }
 }

@@ -48,6 +48,7 @@ class YmlFeedService
         $generatedAt = now()->format('Y-m-d H:i');
 
         $doctors = Doctor::query()
+            ->publiclyVisible()
             ->with([
                 'reviews' => static function ($query) {
                     $query->latest()->limit(5);

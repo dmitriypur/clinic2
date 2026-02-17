@@ -110,11 +110,14 @@ class GenerateSitemap extends Command
     {
         // Добавляем страницы врачей
         // Если у врача нет привязки к городам (глобальный) или привязан к текущему
-        $doctors = \App\Models\Doctor::where(function ($query) use ($city) {
-            $query->whereHas('cities', function ($q) use ($city) {
-                $q->where('cities.id', $city->id);
-            })->orDoesntHave('cities');
-        })->get();
+        $doctors = \App\Models\Doctor::query()
+            ->publiclyVisible()
+            ->where(function ($query) use ($city) {
+                $query->whereHas('cities', function ($q) use ($city) {
+                    $q->where('cities.id', $city->id);
+                })->orDoesntHave('cities');
+            })
+            ->get();
 
         foreach ($doctors as $doctor) {
             $url = rtrim(config('app.url'), '/') . $prefix . '/doctors/' . ($doctor->handle ?? $doctor->id);

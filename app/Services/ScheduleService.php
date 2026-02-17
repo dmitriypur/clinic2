@@ -5,17 +5,39 @@ namespace App\Services;
 use App\Clinic;
 use App\Contracts\Services\ScheduleService as Contract;
 use App\Models\Doctor;
-use Illuminate\Support\Facades\Cache;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Str;
 
 class ScheduleService implements Contract
 {
     public function get(): array
     {
-        $doctors = Cache::remember('doctors', 3600, fn() => Doctor::all());
-        return collect(Clinic::schedule())->where(fn($item) => isset($item['schedule']['data'][config('zrenie-clinic.clinic_uuid')]))
+        $cityService = app(CityService::class);
+        $currentCity = $cityService->getCurrentCity() ?? $cityService->getDefaultCity();
+
+        $doctorsQuery = Doctor::withoutGlobalScopes()
+            ->publiclyVisible();
+
+        if ($currentCity) {
+            $doctorsQuery->where(function (Builder $query) use ($currentCity): void {
+                $query->whereHas('cities', function (Builder $cityQuery) use ($currentCity): void {
+                    $cityQuery->where('cities.id', $currentCity->id);
+                })->orDoesntHave('cities');
+            });
+        } else {
+            $doctorsQuery->whereDoesntHave('cities');
+        }
+
+        $doctorsByUuid = $doctorsQuery
+            ->with('media')
+            ->get()
+            ->keyBy(fn($doctor) => Str::lower(trim((string) $doctor->uuid)));
+
+        return collect(Clinic::schedule())
+            ->where(fn($item) => isset($item['schedule']['data'][config('zrenie-clinic.clinic_uuid')]))
             ->flatMap(fn($item) => $item['schedule']['data'][config('zrenie-clinic.clinic_uuid')])
-            ->map(function ($item, $key) use ($doctors) {
-                $doctor = $doctors->firstWhere('uuid', $key);
+            ->map(function ($item, $key) use ($doctorsByUuid) {
+                $doctor = $doctorsByUuid->get(Str::lower(trim((string) $key)));
                 if (!$doctor) {
                     return null;
                 }

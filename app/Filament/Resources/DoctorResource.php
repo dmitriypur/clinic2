@@ -13,7 +13,10 @@ use Filament\Forms\Get;
 use Filament\Forms\Set;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Str;
 
 class DoctorResource extends Resource
@@ -216,14 +219,53 @@ class DoctorResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn(Builder $query) => $query->with('cities'))
             ->columns([
                 Tables\Columns\TextColumn::make('full_name')->label('Имя'),
+                Tables\Columns\TextColumn::make('cities_list')
+                    ->label('Города')
+                    ->getStateUsing(fn(Doctor $record): string => $record->cities->pluck('name')->implode(', '))
+                    ->placeholder('Все'),
+                Tables\Columns\IconColumn::make('is_active')
+                    ->label('Активен')
+                    ->boolean()
+                    ->getStateUsing(fn(Doctor $record): bool => !((bool) data_get($record->seo ?? [], 'noindex', false))),
             ])
             ->filters([
-                //
+                SelectFilter::make('cities')
+                    ->label('Города')
+                    ->relationship('cities', 'name')
+                    ->multiple()
+                    ->preload(),
             ])
             ->actions([Tables\Actions\EditAction::make()])
-            ->bulkActions([Tables\Actions\DeleteBulkAction::make()]);
+            ->bulkActions([
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\BulkAction::make('activate')
+                        ->label('Активировать')
+                        ->icon('heroicon-o-check-circle')
+                        ->requiresConfirmation()
+                        ->action(function (Collection $records): void {
+                            $records->each(function (Doctor $doctor): void {
+                                $seo = is_array($doctor->seo) ? $doctor->seo : [];
+                                $seo['noindex'] = false;
+                                $doctor->update(['seo' => $seo]);
+                            });
+                        }),
+                    Tables\Actions\BulkAction::make('deactivate')
+                        ->label('Отключить')
+                        ->icon('heroicon-o-x-circle')
+                        ->requiresConfirmation()
+                        ->action(function (Collection $records): void {
+                            $records->each(function (Doctor $doctor): void {
+                                $seo = is_array($doctor->seo) ? $doctor->seo : [];
+                                $seo['noindex'] = true;
+                                $doctor->update(['seo' => $seo]);
+                            });
+                        }),
+                    Tables\Actions\DeleteBulkAction::make(),
+                ]),
+            ]);
     }
 
     public static function getRelations(): array

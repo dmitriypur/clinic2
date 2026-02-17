@@ -28,20 +28,20 @@
           ></path>
         </svg>
       </div>
-      <div v-else class="-m-4 md:-m-8 flex flex-col">
+      <div v-else class="-m-4 md:-m-8 flex flex-col md:min-w-[800px]">
 
         <Tabs
-          v-if="doctors.length"
+          v-if="hasDoctors"
           :options="['Выбрать время', 'Оставить заявку']"
           :activeIndex="activeTab"
           @change="setActiveTab"
           @close="handleClose"
         />
 
-        <div v-if="activeTab === 0 && doctors.length">
+        <div v-if="activeTab === 0 && hasDoctors">
           <TimeStep
             v-if="step === 'time'"
-            :doctors="doctors"
+            :doctors="doctorsList"
             :selectedDoctor="selectedDoctor"
             :selectedDate="selectedDate"
             :selectedTime="selectedTime"
@@ -95,9 +95,9 @@
           ></path>
         </svg>
       </div>
-      <div v-else class="-m-4 md:-m-8 flex flex-col">
+      <div v-else class="-m-4 md:-m-8 flex flex-col min-h-[400px]">
         <Tabs
-          v-if="doctors.length"
+          v-if="hasDoctors"
           :options="['Выбрать время', 'Оставить заявку']"
           :activeIndex="activeTab"
           @change="setActiveTab"
@@ -108,10 +108,10 @@
           @change="setActiveToggler"
         />
 
-        <div v-if="activeTab === 0 && doctors.length">
+        <div v-if="activeTab === 0 && hasDoctors">
           <TimeStepMobile
             v-if="step === 'time'"
-            :doctors="doctors"
+            :doctors="doctorsList"
             :selectedDoctor="selectedDoctor"
             :selectedDate="selectedDate"
             :selectedTime="selectedTime"
@@ -197,6 +197,12 @@ export default {
   },
 
   computed: {
+    doctorsList() {
+      return Array.isArray(this.doctors) ? this.doctors : [];
+    },
+    hasDoctors() {
+      return this.doctorsList.length > 0;
+    },
     getToday(){
       const date = new Date()
       return `${date.getFullYear()}-${date.getMonth() + 1 < 10 ? ('0' + (date.getMonth() + 1)) : date.getMonth() + 1}-${date.getDate() < 10 ? '0' + date.getDate() : date.getDate()}`
@@ -214,16 +220,19 @@ export default {
     },
 
     doctors(val) {
-      if (!val.length) {
+      const doctors = Array.isArray(val) ? val : [];
+
+      if (!doctors.length) {
         this.selectedDoctor = null;
         return;
       }
 
-      const doctorWithToday = val.find((doctor) =>
-        doctor?.cells?.some(({ dt }) => dt === this.getToday)
+      const doctorWithToday = doctors.find((doctor) =>
+        Array.isArray(doctor?.cells) &&
+        doctor.cells.some((cell) => cell && cell.dt === this.getToday)
       );
 
-      this.selectedDoctor = doctorWithToday ?? val[0];
+      this.selectedDoctor = doctorWithToday ?? doctors[0];
     },
   },
 
@@ -245,7 +254,13 @@ export default {
       axios
         .get("/api/schedule")
         .then((response) => {
-          this.doctors = response.data.doctors;
+          this.doctors = Array.isArray(response?.data?.doctors)
+            ? response.data.doctors
+            : [];
+        })
+        .catch(() => {
+          // Fallback: при проблемах с расписанием показываем форму обратного звонка.
+          this.doctors = [];
         })
         .finally(() => {
           this.loading = false;

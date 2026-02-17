@@ -45,7 +45,7 @@
           </div>
 
           <div v-if="doctors.length" class="relative mt-3 h-auto overflow-hidden rounded-[16px] border border-[rgba(29,29,29,0.2)] bg-white">
-            <div class="absolute bottom-0 right-0 h-[250px] w-[220px] overflow-hidden">
+            <div class="absolute bottom-0 right-0 h-[250px] w-[220px] overflow-hidden z-20">
               <img
                 v-if="doctorAvatar"
                 :src="doctorAvatar"

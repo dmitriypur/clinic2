@@ -15,7 +15,14 @@ class DoctorController extends Controller
      */
     public function __invoke(Request $request, string $handle): View
     {
-        $doctor = Doctor::query()->where('handle', $handle)->orWhere('id', $handle)->with('media')->first();
+        $doctor = Doctor::query()
+            ->publiclyVisible()
+            ->where(function ($query) use ($handle) {
+                $query->where('handle', $handle)
+                    ->orWhere('id', $handle);
+            })
+            ->with('media')
+            ->first();
 
         if (!$doctor) {
             abort(404);

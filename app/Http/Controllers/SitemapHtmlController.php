@@ -23,7 +23,10 @@ class SitemapHtmlController extends Controller
         $postsPages = $pages->where('type', PageType::Posts);
         $otherPages = $pages->filter(fn($page) => !in_array($page->type, [PageType::Services, PageType::Posts]));
 
-        $doctors = Doctor::with('media')->get();
+        $doctors = Doctor::query()
+            ->publiclyVisible()
+            ->with('media')
+            ->get();
         $tags = Tag::has('pages')->get();
 
         return view('sitemap-html', compact('servicesPages', 'postsPages', 'otherPages', 'doctors', 'tags'));

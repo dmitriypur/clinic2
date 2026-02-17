@@ -15,6 +15,10 @@ class Doctors
             $slug = 'all';
         }
 
-        return Cache::remember("doctors-{$slug}", 3600, fn() => Doctor::query()->with('media')->get());
+        return Cache::remember(
+            "doctors-{$slug}",
+            3600,
+            fn() => Doctor::query()->publiclyVisible()->with('media')->get()
+        );
     }
 }

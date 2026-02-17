@@ -34,7 +34,10 @@ class ReviewController extends Controller
 
         $filter = [
             'resources' => [ResourcesForReviews::icons(), ResourcesForReviews::toArray()],
-            'doctors' => Doctor::with('media')->get(),
+            'doctors' => Doctor::query()
+                ->publiclyVisible()
+                ->with('media')
+                ->get(),
             'services' => Page::query()->whereNot('handle', '=', 'services')->where('type', '=', PageType::Services)->where('active', '=', 1)->orderBy('sorting')->pluck('title', 'id'),
         ];
 

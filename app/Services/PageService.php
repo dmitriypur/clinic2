@@ -44,6 +44,7 @@ class PageService
     {
         return Cache::remember('active_doctors', self::CACHE_TTL, function () {
             return Doctor::query()
+                ->publiclyVisible()
                 ->with('media')
                 ->get();
         });

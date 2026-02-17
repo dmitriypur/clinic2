@@ -7,6 +7,7 @@ use App\Models\Traits\HasCityScope;
 use App\Settings\SeoSettings;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -61,6 +62,13 @@ class Doctor extends Model implements HasMedia
         'seo' => 'json',
         'extra' => 'array',
     ];
+
+    public function scopePubliclyVisible(Builder $query): Builder
+    {
+        return $query->whereRaw(
+            "LOWER(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(`seo`, '$.\"noindex\"')), 'false')) NOT IN ('true', '1')"
+        );
+    }
 
     protected static function booted()
     {
