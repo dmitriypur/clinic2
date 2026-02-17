@@ -36,6 +36,7 @@ export default {
     instant: Boolean,
     large: Boolean,
     small: Boolean,
+    fix: Boolean,
     limitHeight: Boolean,
     zIndexOverride: Number,
   },
@@ -59,7 +60,8 @@ export default {
         "md:mx-auto overflow-hidden",
         this.large && "max-w-6xl p-16",
         this.small && "max-w-2xl p-20",
-        !this.large && !this.small && "md:max-w-auto"
+        this.fix && "max-w-6xl fixed inset-x-0 bottom-0 md:relative",
+        !this.large && !this.small && !this.fix && "md:max-w-auto"
       );
     },
   },

@@ -45,7 +45,7 @@
           </div>
 
           <div v-if="doctors.length" class="relative mt-3 h-auto overflow-hidden rounded-[16px] border border-[rgba(29,29,29,0.2)] bg-white">
-            <div class="absolute bottom-0 right-0 h-[250px] w-[220px] overflow-hidden z-20">
+            <div class="absolute bottom-0 -right-12 md:right-0 h-[250px] w-[220px] overflow-hidden z-20">
               <img
                 v-if="doctorAvatar"
                 :src="doctorAvatar"
@@ -76,7 +76,12 @@
               </div>
 
               <p class="mt-[12px] text-[24px] font-semibold leading-[1.2] text-interactive whitespace-pre-line">
-                {{ selectedDoctorName }}
+                <template v-if="selectedDoctorNameParts.last">
+                  {{ selectedDoctorNameParts.main }}<br>{{ selectedDoctorNameParts.last }}
+                </template>
+                <template v-else>
+                  {{ selectedDoctorName }}
+                </template>
               </p>
 
               <div class="flex gap-2.5 flex-col relative mt-6">
@@ -97,16 +102,19 @@
               </div>
             </div>
 
-            <div
+            <button
+              type="button"
               class="absolute right-3.5 top-3.5 flex inline-flex items-center gap-1.5 rounded-lg border border-interactive px-3 py-1.5 z-10"
-              :class="hasVideoVisit ? 'text-interactive cursor-pointer' : 'text-interactive/40 border-interactive/40'"
+              :class="hasVideoVisit ? 'text-interactive cursor-pointer' : 'text-interactive/40 border-interactive/40 cursor-default'"
+              :disabled="!hasVideoVisit"
+              @click="handleOpenVideo"
             >
               <svg width="15" height="20" viewBox="0 0 15 20" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M11.0562 9.34246C11.0562 10.3122 10.6819 11.2421 10.0156 11.9278C9.34937 12.6135 8.44574 12.9987 7.50352 12.9987C6.56131 12.9987 5.65768 12.6135 4.99143 11.9278C4.32519 11.2421 3.95089 10.3122 3.95089 9.34246C3.95089 8.37276 4.32519 7.44278 4.99143 6.7571C5.65768 6.07142 6.56131 5.6862 7.50352 5.6862C8.44574 5.6862 9.34937 6.07142 10.0156 6.7571C10.6819 7.44278 11.0562 8.37276 11.0562 9.34246Z" :fill="hasVideoVisit ? '#1F3462' : '#1f346266'"/>
               <path d="M15 17.0625V5.48437L9.375 0H2.5C1.83696 0 1.20107 0.256807 0.732233 0.713927C0.263392 1.17105 0 1.79103 0 2.4375V17.0625C0 17.709 0.263392 18.329 0.732233 18.7861C1.20107 19.2432 1.83696 19.5 2.5 19.5H12.5C13.163 19.5 13.7989 19.2432 14.2678 18.7861C14.7366 18.329 15 17.709 15 17.0625ZM9.375 3.65625C9.375 4.1411 9.57254 4.60609 9.92417 4.94893C10.2758 5.29177 10.7527 5.48437 11.25 5.48437H13.75V16.7639C13.75 16.7639 12.5 14.625 7.5 14.625C2.5 14.625 1.25 16.7639 1.25 16.7639V2.4375C1.25 2.11427 1.3817 1.80427 1.61612 1.57571C1.85054 1.34715 2.16848 1.21875 2.5 1.21875H9.375V3.65625Z" :fill="hasVideoVisit ? '#1F3462' : '#1f346266'"/>
               </svg>
               <span class="text-[12px] font-semibold leading-[1.2]">Видео-визитка</span>
-            </div>
+            </button>
           </div>
         </div>
 
@@ -200,6 +208,8 @@
 </template>
 
 <script>
+import { eventBus } from "@/eventBus";
+
 const ClinicScheduleStepLegacy = () => import("./ClinicScheduleStepLegacy.vue");
 const PrimaryButton = () => import("./shared/PrimaryButton.vue");
 const SecondaryButton = () => import("./shared/SecondaryButton.vue");
@@ -305,6 +315,23 @@ export default {
     selectedDoctorName() {
       if (!this.activeDoctor) return "Выберите врача";
       return this.activeDoctor.name || this.activeDoctor.full_name || "Выберите врача";
+    },
+    selectedDoctorNameParts() {
+      const fullName = (this.selectedDoctorName || "").trim();
+
+      if (!this.activeDoctor || !fullName) {
+        return { main: fullName, last: "" };
+      }
+
+      const words = fullName.split(/\s+/).filter(Boolean);
+      if (words.length < 2) {
+        return { main: fullName, last: "" };
+      }
+
+      return {
+        main: words.slice(0, -1).join(" "),
+        last: words[words.length - 1],
+      };
     },
     doctorAvatar() {
       return (
@@ -453,6 +480,13 @@ export default {
       }
 
       return "text-interactive";
+    },
+    handleOpenVideo() {
+      if (!this.hasVideoVisit) {
+        return;
+      }
+
+      eventBus.$emit("showVideoModal", this.activeDoctor.video_url);
     },
   },
   watch: {

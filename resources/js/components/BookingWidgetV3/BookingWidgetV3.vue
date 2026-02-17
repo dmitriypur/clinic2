@@ -309,7 +309,7 @@ export default {
       );
 
       if (!uuids.length) {
-        return list;
+        return [];
       }
 
       try {
@@ -324,11 +324,6 @@ export default {
           : Array.isArray(response)
           ? response
           : [];
-        const hiddenUuids = new Set(
-          (response?.meta?.hidden_uuids || [])
-            .map((uuid) => String(uuid || "").trim().toLowerCase())
-            .filter(Boolean)
-        );
         const siteByUuid = siteDoctors.reduce((acc, doctor) => {
           const uuid = String(doctor?.uuid || "").toLowerCase().trim();
           if (uuid) {
@@ -340,18 +335,10 @@ export default {
         return list
           .filter((doctor) => {
             const uuid = this.doctorExternalUuid(doctor);
-            if (!uuid) {
-              return true;
-            }
-
-            return !hiddenUuids.has(uuid);
+            return Boolean(uuid && siteByUuid[uuid]);
           })
           .map((doctor) => {
             const uuid = this.doctorExternalUuid(doctor);
-            if (!uuid || !siteByUuid[uuid]) {
-              return doctor;
-            }
-
             const siteDoctor = siteByUuid[uuid];
 
             return {
@@ -379,7 +366,7 @@ export default {
             };
           });
       } catch (e) {
-        return list;
+        return [];
       }
     },
     async initCities() {

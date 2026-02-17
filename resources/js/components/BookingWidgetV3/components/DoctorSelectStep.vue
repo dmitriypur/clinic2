@@ -39,11 +39,17 @@
             />
           </div>
           <div class="w-2/3 md:w-1/2">
-            <div class="text-xs text-action-primary font-semibold mb-1">
+            <button
+              type="button"
+              class="text-xs font-semibold mb-1"
+              :class="doctorVideoUrl(doctor) ? 'text-action-primary hover:underline cursor-pointer' : 'text-subdued cursor-default'"
+              :disabled="!doctorVideoUrl(doctor)"
+              @click.stop="openDoctorVideo(doctor)"
+            >
               Видео-визитка
-            </div>
+            </button>
             <div class="text-sm md:text-base font-semibold leading-tight">
-              {{ doctor.name }}
+              {{ doctor.name || doctor.full_name }}
             </div>
           </div>
           <div v-if="selectedDoctorId === doctor.id" class="text-action-primary ml-auto">
@@ -76,6 +82,8 @@
 </template>
 
 <script>
+import { eventBus } from "@/eventBus";
+
 const StepHeader = () => import("./shared/StepHeader.vue");
 const PrimaryButton = () => import("./shared/PrimaryButton.vue");
 const SecondaryButton = () => import("./shared/SecondaryButton.vue");
@@ -102,6 +110,19 @@ export default {
     return {
       query: "",
     };
+  },
+  methods: {
+    doctorVideoUrl(doctor) {
+      return doctor?.video_url || doctor?.actual_video_url || doctor?.video || null;
+    },
+    openDoctorVideo(doctor) {
+      const url = this.doctorVideoUrl(doctor);
+      if (!url) {
+        return;
+      }
+
+      eventBus.$emit("showVideoModal", url);
+    },
   },
   computed: {
     filteredDoctors() {

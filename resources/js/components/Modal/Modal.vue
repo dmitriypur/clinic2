@@ -15,6 +15,7 @@
         :labelled-by="labelledBy"
         :large="large"
         :small="small"
+        :fix="fix"
         :limit-height="limitHeight"
         :zIndexOverride="zIndexOverride"
         @close="onClose"
@@ -28,7 +29,7 @@
         <PrevButton v-if="hasPrev" @click="$emit('prev')"/>
         <NextButton v-if="hasNext" @click="$emit('next')"/>
 
-        <div class="flex grow overflow-x-hidden md:rounded-t-lg">
+        <div class="flex grow overflow-x-hidden md:rounded-t-lg min-w-full md:min-w-[500px] md:min-h-[300px]">
           <Scrollable shadow class="w-full">
             <Section>
               <slot/>
@@ -86,6 +87,7 @@ export default {
     closeButtonHiddenOnMobile: Boolean,
     large: Boolean,
     small: Boolean,
+    fix: Boolean,
     limitHeight: {
       type: Boolean,
       default: false,

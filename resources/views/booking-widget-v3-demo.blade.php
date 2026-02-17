@@ -40,4 +40,9 @@
     <meta name="robots" content="noindex,nofollow,noarchive,nosnippet,noimageindex">
     <meta name="googlebot" content="noindex,nofollow,noarchive,nosnippet,noimageindex">
     @endpush
+    <video-modal
+        :open="videoUrl !== null"
+        :video-url="videoUrl"
+        @close="videoUrl = null"
+    ></video-modal>
 </x-app-layout>
