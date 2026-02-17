@@ -61,20 +61,23 @@ Route::get('/yml-feed/doctors', [YmlFeedController::class, 'showDoctorsFeed'])->
 // --- Content Routes (Multicity) ---
 
 $contentRoutes = function () {
-    // Тестовая страница для нового виджета записи (только для разработки)
+    // Тестовая страница для старого виджета записи (только для разработки)
     if (config('app.env') !== 'production') {
         Route::get('/booking-widget-v2-demo', function () {
             return view('booking-widget-v2-demo', [
                 'city' => app(\App\Services\CityService::class)->getCurrentCity() ?? \App\Models\City::first(),
             ]);
         })->name('booking.widget.v2.demo');
-
-        Route::get('/booking-widget-v3-demo', function () {
-            return view('booking-widget-v3-demo', [
-                'city' => app(\App\Services\CityService::class)->getCurrentCity() ?? \App\Models\City::first(),
-            ]);
-        })->name('booking.widget.v3.demo');
     }
+
+    // Демо V3 доступно в production, но только для staff-пользователей (админка) и закрыто от индексации
+    Route::get('/booking-widget-v3-demo', function () {
+        return response()
+            ->view('booking-widget-v3-demo', [
+                'city' => app(\App\Services\CityService::class)->getCurrentCity() ?? \App\Models\City::first(),
+            ])
+            ->header('X-Robots-Tag', 'noindex, nofollow, noarchive, nosnippet, noimageindex');
+    })->middleware('auth:staff')->name('booking.widget.v3.demo');
 
     Route::get('/search', [SearchController::class, 'search'])->name('search');
     Route::get('/live-search', [SearchController::class, 'liveSearch'])->name('live.search');

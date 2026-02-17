@@ -9,6 +9,7 @@
       <StartStep
         v-if="currentStep === 'start'"
         :mode="mode"
+        @close="handleClose"
         @select-mode="handleModeSelect"
         @leave-request="handleLeaveRequest"
       />
@@ -18,6 +19,7 @@
         :doctors="doctors"
         :selectedDoctorId="selectedDoctor?.id"
         :loading="loadingDoctors"
+        @close="handleClose"
         @select="handleDoctorSelect"
         @next="goToDoctorSchedule"
         @back="goToStart"
@@ -28,6 +30,7 @@
         :branches="cityBranches"
         :selectedBranchId="selectedBranch?.id"
         :loading="loadingCityBranches"
+        @close="handleClose"
         @select-branch="handleBranchSelect"
         @next="goToClinicSchedule"
         @back="goToStart"
@@ -55,6 +58,7 @@
         v-else-if="currentStep === 'clinic-schedule'"
         :selectedDoctor="selectedDoctor"
         :doctors="clinicDoctors"
+        :doctorShiftMap="clinicDoctorShiftMap"
         :selectedDoctorId="selectedDoctor?.id"
         :selectedDate="selectedDate"
         :slots="slots"
@@ -77,6 +81,7 @@
         :selectedSlot="selectedSlot"
         :isSubmitting="isSubmitting"
         ref="patientForm"
+        @close="handleClose"
         @back="goBackFromForm"
         @submit="handleFormSubmit"
       />
@@ -141,16 +146,19 @@ export default {
       cityBranches: [],
       doctors: [],
       clinicDoctors: [],
+      clinicDoctorShiftMap: {},
       slots: [],
       doctorFlowBranches: [],
       allCities: [],
       doctorsCacheByCity: {},
+      slotsCacheByQuery: {},
       loadingClinics: false,
       loadingCityBranches: false,
       loadingDoctors: false,
       loadingSlots: false,
       loadingDoctorFlowBranches: false,
       isSubmitting: false,
+      formSourceStep: null,
     };
   },
   computed: {
@@ -203,14 +211,33 @@ export default {
         if (val) {
           await this.initCities();
           await Promise.all([this.loadClinics(), this.loadDoctorsByCity()]);
+          this.applyInitialMode();
         } else {
           this.resetState();
         }
       },
       immediate: true,
     },
+    mode() {
+      this.applyInitialMode();
+    },
   },
   methods: {
+    applyInitialMode() {
+      if (!this.open || this.currentStep !== "start") {
+        return;
+      }
+
+      if (this.mode === "doctor") {
+        this.currentStep = "doctor-select";
+        return;
+      }
+
+      if (this.mode === "clinic") {
+        this.currentStep = "clinic-select";
+        this.loadCityBranches();
+      }
+    },
     isClinicAllowed(clinicId) {
       if (!this.allowedClinicIds.length) {
         return true;
@@ -242,12 +269,16 @@ export default {
     },
     async enrichDoctorsWithSiteData(doctors) {
       const list = this.uniqueDoctors(doctors);
+      if (!list.length) {
+        return [];
+      }
+
       const uuids = list
         .map((doctor) => this.doctorExternalUuid(doctor))
         .filter(Boolean);
 
       if (!uuids.length) {
-        return [];
+        return list;
       }
 
       try {
@@ -265,7 +296,7 @@ export default {
           .map((doctor) => {
             const uuid = this.doctorExternalUuid(doctor);
             if (!uuid || !siteByUuid[uuid]) {
-              return null;
+              return doctor;
             }
 
             const siteDoctor = siteByUuid[uuid];
@@ -293,10 +324,9 @@ export default {
                 doctor.receives ||
                 doctor.extra?.receives,
             };
-          })
-          .filter(Boolean);
+          });
       } catch (e) {
-        return [];
+        return list;
       }
     },
     async initCities() {
@@ -441,8 +471,78 @@ export default {
         });
 
         this.doctorFlowBranches = sorted;
+        await this.selectDoctorFlowBranchByDate(clinicId, sorted);
       } finally {
         this.loadingDoctorFlowBranches = false;
+      }
+    },
+    async selectDoctorFlowBranchByDate(clinicId, branches = this.doctorFlowBranches) {
+      if (!clinicId || !this.selectedDoctor || !this.selectedDate) {
+        this.selectedBranch = null;
+        this.slots = [];
+        this.selectedSlot = null;
+        return;
+      }
+
+      const enabledBranches = (branches || []).filter(
+        (branch) => branch.enabled !== false
+      );
+
+      if (!enabledBranches.length) {
+        this.selectedBranch = null;
+        this.slots = [];
+        this.selectedSlot = null;
+        return;
+      }
+
+      this.loadingSlots = true;
+      try {
+        const currentDate =
+          this.selectedDate instanceof Date
+            ? this.selectedDate
+            : new Date(this.selectedDate || Date.now());
+        const dateStr = this.formatDateForApi(currentDate);
+
+        const branchSlotEntries = await Promise.all(
+          enabledBranches.map(async (branch) => {
+            try {
+              const slots = await this.getDoctorSlotsWithCache({
+                doctorId: this.selectedDoctor.id,
+                clinicId,
+                branchId: branch.id,
+                dateStr,
+              });
+              return [String(branch.id), slots];
+            } catch (e) {
+              return [String(branch.id), []];
+            }
+          })
+        );
+
+        const branchSlotsMap = Object.fromEntries(branchSlotEntries);
+        const branchesWithAvailableSlots = enabledBranches.filter((branch) => {
+          const slots = branchSlotsMap[String(branch.id)] || [];
+          return Array.isArray(slots) && slots.some((slot) => this.isSlotAvailable(slot));
+        });
+
+        if (!branchesWithAvailableSlots.length) {
+          this.selectedBranch = null;
+          this.slots = [];
+          this.selectedSlot = null;
+          return;
+        }
+
+        const currentBranchId = this.selectedBranch?.id;
+        const nextBranch =
+          branchesWithAvailableSlots.find(
+            (branch) => Number(branch.id) === Number(currentBranchId)
+          ) || branchesWithAvailableSlots[0];
+
+        this.selectedBranch = nextBranch;
+        this.slots = branchSlotsMap[String(nextBranch.id)] || [];
+        this.selectedSlot = null;
+      } finally {
+        this.loadingSlots = false;
       }
     },
     async loadSlots() {
@@ -450,17 +550,75 @@ export default {
       this.loadingSlots = true;
       try {
         const dateStr = this.formatDateForApi(this.selectedDate);
-        const response = await bookingApi.getDoctorSlots(
-          this.selectedDoctor.id,
+        this.slots = await this.getDoctorSlotsWithCache({
+          doctorId: this.selectedDoctor.id,
+          clinicId: this.selectedClinic?.id || null,
+          branchId: this.selectedBranch?.id || null,
           dateStr,
-          this.selectedClinic?.id || null,
-          this.selectedBranch?.id || null
-        );
-        this.slots = response.data || response || [];
+        });
         this.selectedSlot = null;
       } finally {
         this.loadingSlots = false;
       }
+    },
+    getSlotsCacheKey({ doctorId, clinicId = null, branchId = null, dateStr }) {
+      return [
+        String(doctorId ?? "none"),
+        String(clinicId ?? "none"),
+        String(branchId ?? "none"),
+        String(dateStr ?? "none"),
+      ].join("|");
+    },
+    getSlotsFromCache(key) {
+      const cached = this.slotsCacheByQuery[key];
+      if (!cached) {
+        return null;
+      }
+
+      const ttlMs = 30 * 1000;
+      if (Date.now() - cached.ts > ttlMs) {
+        delete this.slotsCacheByQuery[key];
+        return null;
+      }
+
+      return cached.slots;
+    },
+    setSlotsToCache(key, slots) {
+      this.slotsCacheByQuery[key] = {
+        ts: Date.now(),
+        slots: Array.isArray(slots) ? slots : [],
+      };
+    },
+    async getDoctorSlotsWithCache({
+      doctorId,
+      clinicId = null,
+      branchId = null,
+      dateStr,
+    }) {
+      if (!doctorId || !dateStr) {
+        return [];
+      }
+
+      const key = this.getSlotsCacheKey({
+        doctorId,
+        clinicId,
+        branchId,
+        dateStr,
+      });
+      const cachedSlots = this.getSlotsFromCache(key);
+      if (cachedSlots) {
+        return cachedSlots;
+      }
+
+      const response = await bookingApi.getDoctorSlots(
+        doctorId,
+        dateStr,
+        clinicId,
+        branchId
+      );
+      const slots = response.data || response || [];
+      this.setSlotsToCache(key, slots);
+      return slots;
     },
     isSlotAvailable(slot) {
       if (!slot) return false;
@@ -543,6 +701,7 @@ export default {
         !this.selectedBranch?.id ||
         !this.clinicDoctors.length
       ) {
+        this.clinicDoctorShiftMap = {};
         this.selectedDoctor = null;
         this.slots = [];
         this.selectedSlot = null;
@@ -556,13 +715,12 @@ export default {
         const resolved = await Promise.all(
           this.clinicDoctors.map(async (doctor) => {
             try {
-              const response = await bookingApi.getDoctorSlots(
-                doctor.id,
+              const slots = await this.getDoctorSlotsWithCache({
+                doctorId: doctor.id,
+                clinicId: this.selectedClinic.id,
+                branchId: this.selectedBranch.id,
                 dateStr,
-                this.selectedClinic.id,
-                this.selectedBranch.id
-              );
-              const slots = response.data || response || [];
+              });
               const firstAvailable = slots
                 .filter((slot) => this.isSlotAvailable(slot))
                 .sort(
@@ -589,6 +747,15 @@ export default {
               this.slotComparableValue(b.firstAvailable)
           );
 
+        this.clinicDoctorShiftMap = resolved.reduce((acc, item) => {
+          const doctorId = item?.doctor?.id;
+          if (doctorId != null) {
+            acc[String(doctorId)] =
+              Array.isArray(item.slots) && item.slots.length > 0;
+          }
+          return acc;
+        }, {});
+
         const selected = withAvailable[0] || resolved[0] || null;
 
         if (!selected) {
@@ -614,6 +781,7 @@ export default {
       }
     },
     handleLeaveRequest() {
+      this.formSourceStep = "start";
       this.currentStep = "form";
     },
     async handleDoctorSelect(doctor) {
@@ -683,7 +851,11 @@ export default {
     async handleDateSelect(date) {
       this.selectedDate = date;
       if (this.currentStep === "doctor-schedule") {
-        await this.loadSlots();
+        if (this.selectedClinic?.id) {
+          await this.selectDoctorFlowBranchByDate(this.selectedClinic.id);
+        } else {
+          await this.loadSlots();
+        }
         return;
       }
       if (this.currentStep === "clinic-schedule") {
@@ -731,17 +903,23 @@ export default {
       await this.setDefaultDoctorForClinicFlow();
     },
     goToForm() {
+      this.formSourceStep = this.currentStep;
       this.currentStep = "form";
     },
     goBackFromForm() {
-      if (this.selectedClinic && !this.selectedDoctor) {
+      const sourceStep = this.formSourceStep;
+      this.formSourceStep = null;
+
+      if (sourceStep === "clinic-schedule") {
         this.currentStep = "clinic-schedule";
         return;
       }
-      if (this.selectedDoctor) {
+
+      if (sourceStep === "doctor-schedule") {
         this.currentStep = "doctor-schedule";
         return;
       }
+
       this.currentStep = "start";
     },
     async handleFormSubmit(formData) {
@@ -805,7 +983,9 @@ export default {
       this.branches = [];
       this.cityBranches = [];
       this.clinicDoctors = [];
+      this.clinicDoctorShiftMap = {};
       this.isSubmitting = false;
+      this.formSourceStep = null;
     },
     formatDateForApi(date) {
       const year = date.getFullYear();

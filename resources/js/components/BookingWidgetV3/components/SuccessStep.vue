@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-white rounded-[24px] px-10 pt-10 pb-10">
+  <div class="bg-white min-w-80 md:min-w-[400px]">
     <div class="text-center py-8">
       <div class="mb-6 flex justify-center">
         <div class="size-20 rounded-full bg-green-100 flex items-center justify-center">

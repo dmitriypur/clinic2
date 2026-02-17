@@ -10,7 +10,7 @@
 
             <div class="bg-gray-50 rounded-lg p-6 border border-gray-200 mb-8">
                 <p class="text-sm text-subdued mb-4">
-                    Эта страница доступна только в dev-окружении. Открывает новую форму записи в модальном окне.
+                    Страница доступна только авторизованным сотрудникам админки и закрыта от индексации.
                 </p>
                 <button
                     @click="bookingWidgetV3Active = true"
@@ -34,5 +34,10 @@
             name: "{{ $city->name ?? 'Москва' }}"
         };
     </script>
+    @endpush
+
+    @push('header-scripts')
+    <meta name="robots" content="noindex,nofollow,noarchive,nosnippet,noimageindex">
+    <meta name="googlebot" content="noindex,nofollow,noarchive,nosnippet,noimageindex">
     @endpush
 </x-app-layout>

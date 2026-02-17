@@ -29,7 +29,7 @@
               v-for="(doctor, index) in doctors"
               :key="doctor.id || index"
               type="button"
-              class="min-w-[74px] rounded-[8px] border px-[10px] py-3 text-base font-semibold leading-[1.2] transition-colors"
+              class="min-w-[74px] shrink-0 rounded-[8px] border px-[10px] py-3 text-base font-semibold leading-[1.2] transition-colors"
               :class="doctorTabClass(doctor)"
               @click="$emit('select-doctor', doctor)"
             >
@@ -142,13 +142,13 @@
           <div class="mt-[23px]">
             <v-date-picker
               trim-weeks
+              :key="calendarRenderKey"
               v-model="internalDate"
               :min-date="minDate"
               color="orange"
               is-expanded
               @input="handleDate"
               class="booking-calendar"
-              key="today"
               :theme="{ highlight: { color: 'orange' } }"
             />
           </div>
@@ -159,26 +159,32 @@
             Время
           </div>
 
-          <div v-if="loadingDoctors" class="mt-6 text-center text-interactive">
-            Загрузка врачей...
-          </div>
-
-          <div v-else-if="loading" class="mt-6 text-center text-interactive">
-            Загрузка слотов...
-          </div>
-
-          <div v-else class="mx-auto mt-4 grid grid-cols-4 md:grid-cols-5 w-full max-w-[444px] flex-wrap gap-1">
-            <button
-              v-for="slot in slots"
-              :key="slotKey(slot)"
-              type="button"
-              class="h-7 rounded-md border border-surface-subdued text-base font-semibold leading-[1.2]"
-              :class="slotClass(slot)"
-              :disabled="!isSlotAvailable(slot)"
-              @click="$emit('select-slot', slot)"
+          <div class="mx-auto mt-4 w-full max-w-[444px] min-h-[60px]">
+            <div
+              v-if="loadingDoctors || loading"
+              class="grid grid-cols-4 md:grid-cols-5 gap-1"
+              aria-hidden="true"
             >
-              {{ slot.time }}
-            </button>
+              <div
+                v-for="n in skeletonSlotsCount"
+                :key="`clinic-slot-skeleton-${n}`"
+                class="h-7 rounded-md bg-surface-subdued animate-pulse"
+              ></div>
+            </div>
+
+            <div v-else class="grid grid-cols-4 md:grid-cols-5 w-full flex-wrap gap-1">
+              <button
+                v-for="slot in slots"
+                :key="slotKey(slot)"
+                type="button"
+                class="h-7 rounded-md border border-surface-subdued text-base font-semibold leading-[1.2]"
+                :class="slotClass(slot)"
+                :disabled="!isSlotAvailable(slot)"
+                @click="$emit('select-slot', slot)"
+              >
+                {{ slot.time }}
+              </button>
+            </div>
           </div>
 
           <div class="mx-auto mt-8 flex flex-col md:flex-row w-full max-w-[444px] gap-4 md:mt-10">
@@ -208,6 +214,10 @@ export default {
     doctors: {
       type: Array,
       default: () => [],
+    },
+    doctorShiftMap: {
+      type: Object,
+      default: () => ({}),
     },
     selectedDoctorId: {
       type: [String, Number],
@@ -282,6 +292,16 @@ export default {
       const value = date.toLocaleDateString("ru-RU", { month: "long", year: "numeric" });
       return value ? `${value.charAt(0).toUpperCase()}${value.slice(1)}` : "";
     },
+    calendarRenderKey() {
+      const date = this.internalDate instanceof Date
+        ? this.internalDate
+        : new Date(this.internalDate || Date.now());
+
+      return `clinic-calendar-${date.getFullYear()}-${date.getMonth() + 1}`;
+    },
+    skeletonSlotsCount() {
+      return 10;
+    },
     selectedDoctorName() {
       if (!this.activeDoctor) return "Выберите врача";
       return this.activeDoctor.name || this.activeDoctor.full_name || "Выберите врача";
@@ -326,11 +346,27 @@ export default {
       return doctor?.tab_label || `Врач ${index + 1}`;
     },
     doctorTabClass(doctor) {
+      const hasShifts = this.hasDoctorShifts(doctor);
+
       if (this.activeDoctor && doctor?.id === this.activeDoctor?.id) {
-        return "border-transparent text-white bg-[radial-gradient(ellipse_at_center,_rgba(255,164,118,1)_0%,_rgba(255,150,89,1)_25%,_rgba(255,135,59,1)_50%,_rgba(255,121,30,1)_75%,_rgba(255,113,15,1)_87.5%,_rgba(255,106,0,1)_100%)]";
+        return hasShifts
+          ? "border-[#FF9B00] text-white bg-[radial-gradient(ellipse_at_center,_rgba(255,164,118,1)_0%,_rgba(255,150,89,1)_25%,_rgba(255,135,59,1)_50%,_rgba(255,121,30,1)_75%,_rgba(255,113,15,1)_87.5%,_rgba(255,106,0,1)_100%)]"
+          : "border-transparent text-white bg-[radial-gradient(ellipse_at_center,_rgba(255,164,118,1)_0%,_rgba(255,150,89,1)_25%,_rgba(255,135,59,1)_50%,_rgba(255,121,30,1)_75%,_rgba(255,113,15,1)_87.5%,_rgba(255,106,0,1)_100%)]";
+      }
+
+      if (hasShifts) {
+        return "border-[#FF9B00] bg-white text-interactive hover:border-[#FF9B00]";
       }
 
       return "border-[rgba(29,29,29,0.2)] bg-white text-interactive hover:border-[#FF9B00]";
+    },
+    hasDoctorShifts(doctor) {
+      const doctorId = doctor?.id;
+      if (doctorId == null) {
+        return false;
+      }
+
+      return Boolean(this.doctorShiftMap[String(doctorId)]);
     },
     handleDate(date) {
       if (!date) {

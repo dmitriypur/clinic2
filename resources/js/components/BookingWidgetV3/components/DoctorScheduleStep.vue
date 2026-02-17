@@ -45,14 +45,22 @@
           </div>
 
           <div class="relative mt-2 ">
-            <div v-if="loadingBranches" class="grid h-full place-items-center text-interactive">
-              Загрузка филиалов...
+            <div
+              v-if="loadingBranches"
+              class="doctor-schedule-step__branches-scroll max-h-64 min-h-[272px] space-y-2 overflow-y-auto pr-3"
+              aria-hidden="true"
+            >
+              <div
+                v-for="n in branchSkeletonCount"
+                :key="`doctor-branch-skeleton-${n}`"
+                class="h-[64px] w-full rounded-[12px] border-2 border-surface-subdued bg-surface-subdued animate-pulse"
+              ></div>
             </div>
 
             <div
               v-else
               ref="branchesList"
-              class="doctor-schedule-step__branches-scroll h-full space-y-2 overflow-y-auto pr-3 max-h-64"
+              class="doctor-schedule-step__branches-scroll h-full max-h-64 min-h-[272px] space-y-2 overflow-y-auto pr-3"
               @scroll="handleBranchScroll"
             >
               <button
@@ -117,6 +125,7 @@
 
           <div class="mt-[23px]">
             <v-date-picker
+              :key="calendarRenderKey"
               v-model="internalDate"
               :min-date="minDate"
               color="orange"
@@ -132,22 +141,32 @@
             Время
           </div>
 
-          <div v-if="loading" class="mt-6 text-center text-interactive">
-            Загрузка слотов...
-          </div>
-
-          <div v-else class="mx-auto mt-4 grid grid-cols-4 md:grid-cols-5 w-full max-w-[444px] flex-wrap gap-1">
-            <button
-              v-for="slot in slots"
-              :key="slotKey(slot)"
-              type="button"
-              class="h-7 rounded-md border border-surface-subdued text-base font-semibold leading-[1.2]"
-              :class="slotClass(slot)"
-              :disabled="!isSlotAvailable(slot)"
-              @click="$emit('select-slot', slot)"
+          <div class="mx-auto mt-4 w-full max-w-[444px] min-h-[60px]">
+            <div
+              v-if="loading"
+              class="grid grid-cols-4 md:grid-cols-5 gap-1"
+              aria-hidden="true"
             >
-              {{ slot.time }}
-            </button>
+              <div
+                v-for="n in skeletonSlotsCount"
+                :key="`doctor-slot-skeleton-${n}`"
+                class="h-7 rounded-md bg-surface-subdued animate-pulse"
+              ></div>
+            </div>
+
+            <div v-else class="grid grid-cols-4 md:grid-cols-5 w-full flex-wrap gap-1">
+              <button
+                v-for="slot in slots"
+                :key="slotKey(slot)"
+                type="button"
+                class="h-7 rounded-md border border-surface-subdued text-base font-semibold leading-[1.2]"
+                :class="slotClass(slot)"
+                :disabled="!isSlotAvailable(slot)"
+                @click="$emit('select-slot', slot)"
+              >
+                {{ slot.time }}
+              </button>
+            </div>
           </div>
 
           <div class="mx-auto mt-8 flex flex-col md:flex-row w-full max-w-[444px] gap-4 md:mt-10">
@@ -247,6 +266,13 @@ export default {
 
       return value ? `${value.charAt(0).toUpperCase()}${value.slice(1)}` : "";
     },
+    calendarRenderKey() {
+      const date = this.internalDate instanceof Date
+        ? this.internalDate
+        : new Date(this.internalDate || Date.now());
+
+      return `doctor-calendar-${date.getFullYear()}-${date.getMonth() + 1}`;
+    },
     doctorName() {
       return this.doctor?.name || this.doctor?.full_name || "Выберите врача";
     },
@@ -257,6 +283,12 @@ export default {
         this.doctor?.photo ||
         null
       );
+    },
+    branchSkeletonCount() {
+      return 4;
+    },
+    skeletonSlotsCount() {
+      return 10;
     },
   },
   methods: {
