@@ -1,107 +1,161 @@
 <template>
-  <div class="bg-white rounded-[24px] px-10 pt-10 pb-10">
-    <StepHeader chipText="Шаг №3" @close="$emit('close')">
-      Выберите дату и время
-    </StepHeader>
+  <DoctorScheduleStepLegacy
+    v-if="shouldUseLegacyLayout"
+    v-bind="legacyProps"
+    v-on="$listeners"
+  />
 
-    <div class="mt-8 grid grid-cols-1 lg:grid-cols-[400px_24px_444px] gap-0 items-start">
-      <div>
-        <div class="flex items-center gap-[25px] rounded-[12px] border-2 border-[#EBF0F3] bg-white px-6 py-2">
-          <div class="h-[60px] w-[60px] overflow-hidden rounded-[8px] bg-white"></div>
-          <p class="text-[16px] leading-[1.2] font-semibold text-[#1F3462] whitespace-pre-line">
-            {{ doctor?.name || 'Выберите врача' }}
-          </p>
-        </div>
+  <div v-else class="doctor-schedule-step bg-white">
+    <div class="flex items-start justify-between gap-4">
+      <div class="w-full flex flex-col-reverse md:flex-row flex-wrap items-center gap-3 md:gap-6">
+        <h2 class="text-center text-[28px] font-semibold leading-[1.2] text-interactive md:text-[34px]">
+          Выберите дату, время и филиал
+        </h2>
+        <span
+          class="inline-flex h-[22px] items-center justify-center rounded-[4px] bg-[#F6F7F9] px-5 text-xs font-semibold leading-[1.2] text-[#1D1D1D] shadow-[0_0_1.8px_0_rgba(31,52,98,0.26)]"
+        >
+          Шаг №3
+        </span>
+      </div>
+    </div>
 
-        <div class="mt-8 text-center text-[20px] leading-[1.2] font-semibold text-[#1F3462]">
-          Доступные филиалы
-        </div>
-        <p class="mt-2 text-center text-sm text-[#1F3462]/70">
-          {{ clinicTitle }}
-        </p>
+    <div class="hidden md:block mt-5 h-px w-full bg-surface-subdued md:mt-7"></div>
 
-        <div class="relative mt-[7px] h-[388px]">
-          <div v-if="loadingBranches" class="h-full grid place-items-center text-[#1F3462]">
-            Загрузка филиалов...
+    <div class="pb-6 pt-6 md:pb-10 md:pt-[34px]">
+      <div class="grid grid-cols-1 items-start gap-8 lg:grid-cols-[400px_444px] lg:justify-between lg:gap-[40px]">
+        <div>
+          <div class="flex items-center gap-[25px] rounded-[12px] border-2 border-surface-subdued bg-white pl-1 pr-6 py-2">
+            <div class="h-[60px] w-[60px] overflow-hidden rounded-[8px] bg-white">
+              <img
+                v-if="doctorAvatar"
+                :src="doctorAvatar"
+                :alt="doctorName"
+                class="h-full w-full object-cover"
+                loading="lazy"
+              />
+            </div>
+
+            <p class="text-base font-semibold leading-[1.2] text-interactive whitespace-pre-line">
+              {{ doctorName }}
+            </p>
           </div>
-          <div v-else class="h-full overflow-y-auto pr-2 space-y-[7px]">
-            <button
-              v-for="branch in branches"
-              :key="branch.id"
-              class="h-[64px] w-full rounded-[12px] border-2 px-6 py-[13px] text-left"
-              :class="{
-                'border-[#EBF0F3] bg-white': selectedBranchId !== branch.id,
-                'border-[#EBF0F3] bg-[#EBF0F3]': selectedBranchId === branch.id,
-                'opacity-40 cursor-not-allowed': branch.enabled === false,
-              }"
-              :disabled="branch.enabled === false"
-              @click="$emit('select-branch', branch)"
+
+          <div class="mt-6 text-center text-xl font-semibold leading-[1.2] text-interactive md:mt-8">
+            Филиалы
+          </div>
+
+          <div class="relative mt-2 ">
+            <div v-if="loadingBranches" class="grid h-full place-items-center text-interactive">
+              Загрузка филиалов...
+            </div>
+
+            <div
+              v-else
+              ref="branchesList"
+              class="doctor-schedule-step__branches-scroll h-full space-y-2 overflow-y-auto pr-3 max-h-64"
+              @scroll="handleBranchScroll"
             >
-              <span class="text-[16px] leading-[1.2] font-semibold text-[#1F3462]">
-                {{ branch.address || branch.name || branch.title || "Филиал" }}
-              </span>
+              <button
+                v-for="branch in branches"
+                :key="branch.id"
+                type="button"
+                class="h-[64px] w-full rounded-[12px] border-2 px-6 py-[13px] text-left"
+                :class="{
+                  'border-surface-subdued bg-white': selectedBranchId !== branch.id,
+                  'border-surface-subdued bg-surface-subdued': selectedBranchId === branch.id,
+                  'opacity-40 cursor-not-allowed': branch.enabled === false,
+                }"
+                :disabled="branch.enabled === false"
+                @click="$emit('select-branch', branch)"
+              >
+                <span class="text-base font-semibold leading-[1.2] text-interactive">
+                  {{ branchLabel(branch) }}
+                </span>
+              </button>
+            </div>
+
+            <div class="pointer-events-none absolute bottom-0 left-0 h-[71px] w-full bg-gradient-to-b from-white/0 to-white"></div>
+
+            <div class="pointer-events-none absolute right-[2px] top-0 hidden h-full w-1 lg:block">
+              <div
+                v-if="showBranchScrollThumb && !loadingBranches"
+                class="absolute h-6 w-1 rounded-[28px] bg-interactive"
+                :style="{ top: `${branchScrollThumbTop}px` }"
+              ></div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="flex items-center justify-center gap-4">
+            <button
+              type="button"
+              class="grid h-6 w-6 place-items-center rounded text-interactive transition-colors hover:bg-surface-subdued"
+              aria-label="Предыдущий месяц"
+              @click="goToPrevMonth"
+            >
+              <svg viewBox="0 0 16 16" class="h-4 w-4" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M10 3L5 8L10 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </button>
+
+            <div class="text-xl font-semibold leading-[1.2] text-interactive">
+              {{ monthTitle }}
+            </div>
+
+            <button
+              type="button"
+              class="grid h-6 w-6 place-items-center rounded text-interactive transition-colors hover:bg-surface-subdued"
+              aria-label="Следующий месяц"
+              @click="goToNextMonth"
+            >
+              <svg viewBox="0 0 16 16" class="h-4 w-4" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M6 3L11 8L6 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
             </button>
           </div>
-          <div class="pointer-events-none absolute bottom-0 left-0 h-[71px] w-full bg-gradient-to-b from-white/0 to-white"></div>
-        </div>
-      </div>
 
-      <div class="hidden lg:flex justify-center pt-[133px]">
-        <div class="hidden h-[24px] w-[4px] rounded-[28px] bg-[#1F3462]"></div>
-      </div>
-
-      <div class="pt-[34px] lg:pt-0">
-        <div class="flex items-center justify-center gap-4">
-          <button class="grid h-8 w-8 place-items-center rounded-lg text-[#1F3462] hover:bg-slate-50" aria-label="Prev">
-            ‹
-          </button>
-          <div class="text-[20px] leading-[1.2] font-semibold text-[#1F3462]">
-            {{ monthTitle }}
+          <div class="mt-[23px]">
+            <v-date-picker
+              v-model="internalDate"
+              :min-date="minDate"
+              color="orange"
+              is-expanded
+              @input="handleDate"
+              class="booking-calendar"
+            />
           </div>
-          <button class="grid h-8 w-8 place-items-center rounded-lg text-[#1F3462] hover:bg-slate-50" aria-label="Next">
-            ›
-          </button>
-        </div>
 
-        <div class="mt-[27px]">
-          <v-date-picker
-            v-model="internalDate"
-            :min-date="minDate"
-            color="orange"
-            is-expanded
-            @input="handleDate"
-            class="booking-calendar"
-          />
-        </div>
+          <div class="hidden md:block mt-2 h-px w-full bg-surface-subdued"></div>
 
-        <div class="mt-6 h-px w-full bg-[#EBF0F3]"></div>
+          <div class="md:mt-6 text-center text-base font-semibold leading-[1.2] text-interactive">
+            Время
+          </div>
 
-        <div class="mt-6 text-center text-[16px] leading-[1.2] font-semibold text-[#1F3462]">
-          Время
-        </div>
+          <div v-if="loading" class="mt-6 text-center text-interactive">
+            Загрузка слотов...
+          </div>
 
-        <div v-if="loading" class="mt-6 text-center text-[#1F3462]">
-          Загрузка слотов...
-        </div>
+          <div v-else class="mx-auto mt-4 grid grid-cols-4 md:grid-cols-5 w-full max-w-[444px] flex-wrap gap-1">
+            <button
+              v-for="slot in slots"
+              :key="slotKey(slot)"
+              type="button"
+              class="h-7 rounded-md border border-surface-subdued text-base font-semibold leading-[1.2]"
+              :class="slotClass(slot)"
+              :disabled="!isSlotAvailable(slot)"
+              @click="$emit('select-slot', slot)"
+            >
+              {{ slot.time }}
+            </button>
+          </div>
 
-        <div v-else class="mt-4 flex flex-wrap gap-1 w-[444px] max-w-full justify-center">
-          <button
-            v-for="slot in slots"
-            :key="slot.id || slot.datetime || slot.time"
-            class="h-[27px] w-[85px] rounded-[4px] border border-[#EBF0F3] text-[16px] font-semibold"
-            :class="slotClass(slot)"
-            :disabled="!isSlotAvailable(slot)"
-            @click="$emit('select-slot', slot)"
-          >
-            {{ slot.time }}
-          </button>
-        </div>
-
-        <div class="mt-10 flex gap-4">
-          <SecondaryButton @click="$emit('back')">Назад</SecondaryButton>
-          <PrimaryButton :disabled="!selectedSlot" @click="$emit('next')">
-            Записаться на приём
-          </PrimaryButton>
+          <div class="mx-auto mt-8 flex flex-col md:flex-row w-full max-w-[444px] gap-4 md:mt-10">
+            <SecondaryButton @click="$emit('back')">Назад</SecondaryButton>
+            <PrimaryButton :disabled="!selectedSlot" @click="$emit('next')">
+              Далее
+            </PrimaryButton>
+          </div>
         </div>
       </div>
     </div>
@@ -109,12 +163,12 @@
 </template>
 
 <script>
-const StepHeader = () => import("./shared/StepHeader.vue");
+const DoctorScheduleStepLegacy = () => import("./DoctorScheduleStepLegacy.vue");
 const PrimaryButton = () => import("./shared/PrimaryButton.vue");
 const SecondaryButton = () => import("./shared/SecondaryButton.vue");
 
 export default {
-  components: { StepHeader, PrimaryButton, SecondaryButton },
+  components: { DoctorScheduleStepLegacy, PrimaryButton, SecondaryButton },
   props: {
     doctor: {
       type: Object,
@@ -152,25 +206,127 @@ export default {
       type: Boolean,
       default: false,
     },
+    useLegacyLayout: {
+      type: Boolean,
+      default: false,
+    },
   },
   data() {
     return {
       internalDate: this.selectedDate || new Date(),
       minDate: new Date(),
+      branchScrollThumbTop: 0,
+      showBranchScrollThumb: false,
     };
   },
   computed: {
-    monthTitle() {
-      const date = this.internalDate || new Date();
-      return date.toLocaleDateString("ru-RU", { month: "long", year: "numeric" });
+    legacyProps() {
+      const { useLegacyLayout, ...rest } = this.$props;
+      return rest;
     },
-    clinicTitle() {
-      return this.clinic?.name || "Клиника не выбрана";
+    shouldUseLegacyLayout() {
+      if (this.useLegacyLayout) {
+        return true;
+      }
+
+      if (typeof window === "undefined") {
+        return false;
+      }
+
+      return Boolean(window?.config?.booking?.useLegacyDoctorScheduleStep);
+    },
+    monthTitle() {
+      const date = this.internalDate instanceof Date
+        ? this.internalDate
+        : new Date(this.internalDate || Date.now());
+
+      const value = date.toLocaleDateString("ru-RU", {
+        month: "long",
+        year: "numeric",
+      });
+
+      return value ? `${value.charAt(0).toUpperCase()}${value.slice(1)}` : "";
+    },
+    doctorName() {
+      return this.doctor?.name || this.doctor?.full_name || "Выберите врача";
+    },
+    doctorAvatar() {
+      return (
+        this.doctor?.avatar_url ||
+        this.doctor?.avatar_image ||
+        this.doctor?.photo ||
+        null
+      );
     },
   },
   methods: {
     handleDate(date) {
+      if (!date) {
+        return;
+      }
+
+      this.internalDate = date;
       this.$emit("select-date", date);
+    },
+    goToPrevMonth() {
+      const nextDate = new Date(this.internalDate || new Date());
+      nextDate.setMonth(nextDate.getMonth() - 1);
+      this.handleDate(nextDate);
+    },
+    goToNextMonth() {
+      const nextDate = new Date(this.internalDate || new Date());
+      nextDate.setMonth(nextDate.getMonth() + 1);
+      this.handleDate(nextDate);
+    },
+    branchLabel(branch) {
+      if (!branch) {
+        return "Филиал";
+      }
+
+      return branch.address || branch.name || branch.title || "Филиал";
+    },
+    handleBranchScroll() {
+      this.updateBranchScrollThumb();
+    },
+    updateBranchScrollThumb() {
+      const el = this.$refs.branchesList;
+      if (!el) {
+        this.showBranchScrollThumb = false;
+        this.branchScrollThumbTop = 0;
+        return;
+      }
+
+      const hasOverflow = el.scrollHeight > el.clientHeight + 1;
+      this.showBranchScrollThumb = hasOverflow;
+
+      if (!hasOverflow) {
+        this.branchScrollThumbTop = 0;
+        return;
+      }
+
+      const thumbHeight = 24;
+      const maxTrack = Math.max(el.clientHeight - thumbHeight, 0);
+      const maxScroll = Math.max(el.scrollHeight - el.clientHeight, 1);
+
+      this.branchScrollThumbTop = Math.round((el.scrollTop / maxScroll) * maxTrack);
+    },
+    slotKey(slot) {
+      return slot?.id || slot?.datetime || slot?.time;
+    },
+    isSameSlot(slot) {
+      if (!slot || !this.selectedSlot) {
+        return false;
+      }
+
+      if (slot.id != null && this.selectedSlot.id != null) {
+        return slot.id === this.selectedSlot.id;
+      }
+
+      if (slot.datetime && this.selectedSlot.datetime) {
+        return slot.datetime === this.selectedSlot.datetime;
+      }
+
+      return slot.time === this.selectedSlot.time;
     },
     isSlotAvailable(slot) {
       if (!slot) return false;
@@ -233,18 +389,177 @@ export default {
     },
     slotClass(slot) {
       if (!this.isSlotAvailable(slot)) {
-        return "text-[#1F3462]/40 bg-[#EBF0F3]";
+        return "text-interactive/40 bg-surface-subdued";
       }
-      if (this.selectedSlot && this.selectedSlot.id === slot.id) {
+
+      if (this.isSameSlot(slot)) {
         return "text-white bg-[radial-gradient(ellipse_at_center,_rgba(255,164,118,1)_0%,_rgba(255,150,89,1)_25%,_rgba(255,135,59,1)_50%,_rgba(255,121,30,1)_75%,_rgba(255,113,15,1)_87.5%,_rgba(255,106,0,1)_100%)]";
       }
-      return "text-[#1F3462]";
+
+      return "text-interactive";
     },
+  },
+  mounted() {
+    this.$nextTick(() => {
+      this.updateBranchScrollThumb();
+    });
+
+    window.addEventListener("resize", this.updateBranchScrollThumb);
+  },
+  beforeDestroy() {
+    window.removeEventListener("resize", this.updateBranchScrollThumb);
   },
   watch: {
     selectedDate(newVal) {
-      if (newVal) this.internalDate = newVal;
+      if (newVal) {
+        this.internalDate = newVal;
+      }
+    },
+    branches() {
+      this.$nextTick(() => {
+        this.updateBranchScrollThumb();
+      });
+    },
+    loadingBranches() {
+      this.$nextTick(() => {
+        this.updateBranchScrollThumb();
+      });
     },
   },
 };
 </script>
+
+<style>
+.doctor-schedule-step {
+  --calendar-cell-width: 60px;
+}
+
+.doctor-schedule-step__branches-scroll {
+  scrollbar-width: none;
+}
+
+.doctor-schedule-step__branches-scroll::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+.doctor-schedule-step .booking-calendar .vc-arrows-container.title-center{
+  display: none;
+}
+.doctor-schedule-step .booking-calendar  {
+  border: 0;
+  width: calc(var(--calendar-cell-width) * 7 + 24px);
+  max-width: 100%;
+}
+
+.doctor-schedule-step .booking-calendar .vc-header {
+  display: none;
+}
+
+.doctor-schedule-step .booking-calendar .vc-weeks {
+  gap: 4px;
+  grid-template-columns: repeat(7, minmax(0, var(--calendar-cell-width)));
+  justify-content: center;
+  padding: 0;
+}
+
+.doctor-schedule-step .booking-calendar .vc-weekday,
+.doctor-schedule-step .booking-calendar .vc-day {
+  width: var(--calendar-cell-width);
+  min-width: var(--calendar-cell-width);
+  height: 27px;
+  min-height: 27px;
+  margin: 0;
+  padding: 0;
+}
+
+.doctor-schedule-step .booking-calendar .vc-weekday {
+  align-items: center;
+  background: #ebf0f3;
+  border-radius: 4px;
+  color: #1f3462;
+  display: flex;
+  font-family: "Gilroy", sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  justify-content: center;
+  line-height: 1.2;
+  text-transform: capitalize;
+}
+
+.doctor-schedule-step .booking-calendar .vc-day-content {
+  align-items: center;
+  border: 1px solid #ebf0f3;
+  border-radius: 4px;
+  color: #1f3462;
+  display: flex;
+  font-family: "Gilroy", sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  height: 27px;
+  justify-content: center;
+  line-height: 1.2;
+  margin: 0;
+  width: var(--calendar-cell-width);
+}
+
+.doctor-schedule-step .booking-calendar .vc-day-content:hover {
+  background: #f6f7f9;
+}
+
+.doctor-schedule-step .booking-calendar .vc-day-content:focus {
+  background: transparent;
+}
+
+.doctor-schedule-step .booking-calendar .vc-day.in-prev-month .vc-day-content,
+.doctor-schedule-step .booking-calendar .vc-day.in-next-month .vc-day-content,
+.doctor-schedule-step .booking-calendar .vc-day .vc-day-content.is-disabled {
+  color: rgba(0, 0, 0, 0.3);
+}
+
+.doctor-schedule-step .booking-calendar .vc-highlight,
+.doctor-schedule-step .booking-calendar .vc-highlight-bg-solid,
+.doctor-schedule-step .booking-calendar .vc-highlight-content-solid {
+  background: radial-gradient(
+    ellipse at center,
+    rgba(255, 164, 118, 1) 0%,
+    rgba(255, 150, 89, 1) 25%,
+    rgba(255, 135, 59, 1) 50%,
+    rgba(255, 121, 30, 1) 75%,
+    rgba(255, 113, 15, 1) 87.5%,
+    rgba(255, 106, 0, 1) 100%
+  ) !important;
+  border-radius: 4px;
+}
+
+.doctor-schedule-step .booking-calendar .vc-highlight,
+.doctor-schedule-step .booking-calendar .vc-highlight-bg-solid,
+.doctor-schedule-step .booking-calendar .vc-highlight-content-solid {
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: 4px !important; /* или 0, если нужен совсем квадрат */
+}
+
+.doctor-schedule-step .booking-calendar .vc-day .vc-day-content.is-highlighted,
+.doctor-schedule-step .booking-calendar .vc-day .vc-day-content.is-selected,
+.doctor-schedule-step .booking-calendar .vc-day .vc-highlight-content-solid {
+  color: #ffffff !important;
+}
+
+@media (max-width: 1023px) {
+  .doctor-schedule-step {
+    --calendar-cell-width: 52px;
+  }
+}
+
+@media (max-width: 767px) {
+  .doctor-schedule-step {
+    --calendar-cell-width: 46px;
+  }
+}
+
+@media (max-width: 479px) {
+  .doctor-schedule-step {
+    --calendar-cell-width: 40px;
+  }
+}
+</style>

@@ -29,7 +29,7 @@
         @click="$emit('select', doctor)"
       >
         <div class="w-full flex items-center gap-2 md:gap-4 cursor-pointer">
-          <div class="h-14 w-14 min-w-14 overflow-hidden rounded-full bg-surface-subdued md:h-16 md:w-16 md:min-w-16">
+          <div class="h-14 w-14 min-w-14 overflow-hidden rounded-lg md:rounded-full md:bg-surface-subdued md:h-16 md:w-16 md:min-w-16">
             <img
               v-if="doctor.avatar_url"
               :src="doctor.avatar_url"
@@ -66,7 +66,7 @@
 
     <div v-if="loading" class="mt-4 text-sm text-[#1F3462]">Загрузка...</div>
 
-    <div class="mt-6 flex gap-4">
+    <div class="mt-6 flex flex-col md:flex-row gap-4">
       <SecondaryButton @click="$emit('back')">Назад</SecondaryButton>
       <PrimaryButton :disabled="!selectedDoctorId" @click="$emit('next')">
         Продолжить

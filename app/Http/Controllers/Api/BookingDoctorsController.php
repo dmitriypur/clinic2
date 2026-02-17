@@ -25,7 +25,7 @@ class BookingDoctorsController extends Controller
             return response()->json(['data' => []]);
         }
 
-        $doctors = Doctor::query()
+        $doctors = Doctor::withoutGlobalScopes()
             ->with('media')
             ->whereIn('uuid', $uuids->all())
             ->get()

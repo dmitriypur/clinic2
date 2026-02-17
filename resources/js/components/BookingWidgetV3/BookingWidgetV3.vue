@@ -144,6 +144,7 @@ export default {
       slots: [],
       doctorFlowBranches: [],
       allCities: [],
+      doctorsCacheByCity: {},
       loadingClinics: false,
       loadingCityBranches: false,
       loadingDoctors: false,
@@ -201,8 +202,7 @@ export default {
       async handler(val) {
         if (val) {
           await this.initCities();
-          await this.loadClinics();
-          await this.loadDoctorsByCity();
+          await Promise.all([this.loadClinics(), this.loadDoctorsByCity()]);
         } else {
           this.resetState();
         }
@@ -323,24 +323,19 @@ export default {
     },
     async loadDoctorsByCity() {
       if (!this.currentCityId) return;
+
+      const cached = this.doctorsCacheByCity[this.currentCityId];
+      if (Array.isArray(cached) && cached.length) {
+        this.doctors = cached;
+        return;
+      }
+
       this.loadingDoctors = true;
       try {
-        if (!this.clinics.length) {
-          await this.loadClinics();
-        }
-
-        const doctorGroups = await Promise.all(
-          this.clinics.map(async (clinic) => {
-            try {
-              const response = await bookingApi.getClinicDoctors(clinic.id);
-              return response.data || response || [];
-            } catch (e) {
-              return [];
-            }
-          })
-        );
-
-        this.doctors = await this.enrichDoctorsWithSiteData(doctorGroups.flat());
+        const response = await bookingApi.getDoctorsByCity(this.currentCityId);
+        const doctors = response.data || response || [];
+        this.doctors = await this.enrichDoctorsWithSiteData(doctors);
+        this.doctorsCacheByCity[this.currentCityId] = this.doctors;
       } finally {
         this.loadingDoctors = false;
       }
@@ -404,9 +399,11 @@ export default {
       if (!clinicId) return;
       this.loadingDoctorFlowBranches = true;
       try {
-        const response = await bookingApi.getClinicBranches(clinicId, this.currentCityId);
+        const response = await bookingApi.getClinicBranches(
+          clinicId,
+          this.currentCityId
+        );
         const branches = response.data || response || [];
-
         if (!this.selectedDoctor) {
           this.doctorFlowBranches = branches.map((branch) => ({
             ...branch,
@@ -424,7 +421,9 @@ export default {
                 branch.id
               );
               const doctors = doctorResponse.data || doctorResponse || [];
-              const hasDoctor = doctors.some((doctor) => doctor.id === this.selectedDoctor.id);
+              const hasDoctor = doctors.some(
+                (doctor) => doctor.id === this.selectedDoctor.id
+              );
               return { ...branch, enabled: hasDoctor };
             } catch (e) {
               return { ...branch, enabled: false };
@@ -432,26 +431,19 @@ export default {
           })
         );
 
-        this.doctorFlowBranches = checkedBranches;
+        const sorted = checkedBranches.sort((a, b) => {
+          const aEnabled = a.enabled !== false;
+          const bEnabled = b.enabled !== false;
+          if (aEnabled === bEnabled) {
+            return 0;
+          }
+          return aEnabled ? -1 : 1;
+        });
+
+        this.doctorFlowBranches = sorted;
       } finally {
         this.loadingDoctorFlowBranches = false;
       }
-    },
-    async markClinicsForDoctor(doctorId) {
-      if (!doctorId || this.clinics.length === 0) return;
-      const results = await Promise.all(
-        this.clinics.map(async (clinic) => {
-          try {
-            const response = await bookingApi.getClinicDoctors(clinic.id);
-            const list = response.data || response || [];
-            const hasDoctor = list.some((d) => d.id === doctorId);
-            return { ...clinic, enabled: hasDoctor };
-          } catch (e) {
-            return { ...clinic, enabled: false };
-          }
-        })
-      );
-      this.clinics = results;
     },
     async loadSlots() {
       if (!this.selectedDoctor || !this.selectedDate) return;
@@ -626,9 +618,6 @@ export default {
     },
     async handleDoctorSelect(doctor) {
       this.selectedDoctor = doctor;
-      if (this.currentStep === "doctor-select") {
-        await this.markClinicsForDoctor(doctor.id);
-      }
       if (this.currentStep === "doctor-schedule" && this.selectedClinic?.id) {
         await this.loadDoctorFlowBranches(this.selectedClinic.id);
       }
@@ -693,6 +682,10 @@ export default {
     },
     async handleDateSelect(date) {
       this.selectedDate = date;
+      if (this.currentStep === "doctor-schedule") {
+        await this.loadSlots();
+        return;
+      }
       if (this.currentStep === "clinic-schedule") {
         await this.setDefaultDoctorForClinicFlow();
         return;
@@ -716,11 +709,17 @@ export default {
       if (!this.selectedClinic && enabledClinic) {
         this.selectedClinic = enabledClinic;
       }
-      if (this.selectedClinic?.id) {
-        await this.loadDoctorFlowBranches(this.selectedClinic.id);
-      }
+
       this.currentStep = "doctor-schedule";
-      await this.loadSlots();
+
+      const clinicId = this.selectedClinic?.id || null;
+      if (clinicId) {
+        await this.loadDoctorFlowBranches(clinicId);
+      } else {
+        this.doctorFlowBranches = [];
+        this.slots = [];
+        this.selectedSlot = null;
+      }
     },
     async goToClinicSchedule() {
       this.currentStep = "clinic-schedule";

@@ -1,129 +1,192 @@
 <template>
-  <div class="bg-white rounded-[24px] px-10 pt-10 pb-10">
-    <StepHeader chipText="Шаг №3" @close="$emit('close')">
-      Выберите дату, время и специалиста
-    </StepHeader>
+  <ClinicScheduleStepLegacy
+    v-if="shouldUseLegacyLayout"
+    v-bind="legacyProps"
+    v-on="$listeners"
+  />
 
-    <div class="mt-8 grid grid-cols-1 lg:grid-cols-[400px_24px_444px] gap-0 items-start">
-      <div>
-        <div v-if="doctors.length" class="flex gap-2 relative">
-          <button
-            v-for="(doctor, index) in doctors"
-            :key="doctor.id"
-            @click="$emit('select-doctor', doctor)"
-            :class="[
-              'flex-1 h-12 text-base font-medium rounded-lg border-2',
-              selectedDoctorId === doctor.id
-                ? 'bg-[#FF8C00] text-white border-[#FF8C00]'
-                : 'bg-white text-[#1F3462] border-[#EBF0F3]',
-            ]"
+  <div v-else class="clinic-schedule-step overflow-hidden bg-white">
+    <div class="flex items-start justify-between gap-4">
+        <div class="w-full flex flex-col-reverse md:flex-row flex-wrap items-center gap-3 md:gap-6">
+          <h2 class="text-center text-[28px] font-semibold leading-[1.2] text-interactive md:text-[34px]">
+            Выберите дату и время
+          </h2>
+          <span
+            class="inline-flex h-[22px] items-center justify-center rounded-[4px] bg-[#F6F7F9] px-5 text-xs font-semibold leading-[1.2] text-[#1D1D1D] shadow-[0_0_1.8px_0_rgba(31,52,98,0.26)]"
           >
-            Врач {{ index + 1 }}
-          </button>
+            Шаг №3
+          </span>
         </div>
-        <div v-else class="rounded-[12px] border border-[#EBF0F3] bg-[#F6F7F9] px-4 py-3 text-sm font-medium text-[#1F3462]">
-          В выбранном филиале врачей нет
-        </div>
+      </div>
 
-        <div class="mt-4" v-if="doctors.length">
+    <div class="hidden md:block mt-5 h-px w-full bg-surface-subdued md:mt-7"></div>
+
+    <div class="pb-6 pt-6 md:pb-10 md:pt-[30px]">
+      <div class="grid grid-cols-1 items-start gap-8 lg:grid-cols-[400px_444px] lg:justify-between lg:gap-[40px]">
+        <div>
+          <div v-if="doctors.length" class="clinic-schedule-step__doctors-scroll flex gap-2 overflow-x-auto pb-1">
+            <button
+              v-for="(doctor, index) in doctors"
+              :key="doctor.id || index"
+              type="button"
+              class="min-w-[74px] rounded-[8px] border px-[10px] py-3 text-base font-semibold leading-[1.2] transition-colors"
+              :class="doctorTabClass(doctor)"
+              @click="$emit('select-doctor', doctor)"
+            >
+              {{ doctorTabTitle(doctor, index) }}
+            </button>
+          </div>
+
           <div
-            class="flex flex-col p-4 bg-[#F6F7F9] border border-white rounded-[20px] h-full shadow-calendar overflow-hidden"
+            v-else
+            class="rounded-[12px] border border-surface-subdued bg-[#F6F7F9] px-4 py-3 text-sm font-medium text-interactive"
           >
-            <div class="relative h-full z-10">
-              <div class="text-[10px] opacity-40 mb-2">100% пациентов рекомендуют врача</div>
-              <p class="text-lg font-bold mt-1 text-[#1F3462]">
+            В выбранном филиале врачей нет
+          </div>
+
+          <div v-if="doctors.length" class="relative mt-3 h-auto overflow-hidden rounded-[16px] border border-[rgba(29,29,29,0.2)] bg-white">
+            <div class="absolute bottom-0 right-0 h-[250px] w-[220px] overflow-hidden">
+              <img
+                v-if="doctorAvatar"
+                :src="doctorAvatar"
+                :alt="selectedDoctorName"
+                class="h-full w-full object-cover object-top"
+                loading="lazy"
+              />
+            </div>
+
+            <div class="relative z-10 p-3.5">
+              <div class="flex flex-col gap-[6px]">
+                <div class="flex gap-[3px] text-[#FF8A3B]">
+                  <svg
+                    v-for="star in 5"
+                    :key="star"
+                    viewBox="0 0 20 20"
+                    class="h-4 w-4"
+                    fill="currentColor"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path d="M10 1.6L12.6 6.9L18.4 7.8L14.2 11.8L15.2 17.5L10 14.8L4.8 17.5L5.8 11.8L1.6 7.8L7.4 6.9L10 1.6Z"/>
+                  </svg>
+                </div>
+
+                <p class="text-[12px] font-semibold leading-[1.2] text-interactive/60">
+                  100% пациентов <br>рекомендуют врача
+                </p>
+              </div>
+
+              <p class="mt-[12px] text-[24px] font-semibold leading-[1.2] text-interactive whitespace-pre-line">
                 {{ selectedDoctorName }}
               </p>
 
-              <div class="flex gap-2 mt-4 relative z-10">
-                <div v-if="selectedDoctor?.avatar_url" class="w-1/2">
-                  <img
-                  :src="selectedDoctor?.avatar_url"
-                  :alt="selectedDoctor?.name || 'Фото врача'"
-                  class="h-full w-full object-cover"
-                  loading="lazy"
-                />
+              <div class="flex gap-2.5 flex-col relative mt-6">
+                <div
+                  v-for="chip in doctorChips"
+                  :key="chip.title"
+                  class="bg-transparent backdrop-blur-sm border border-l-[10px] py-3 px-2 rounded-md relative overflow-hidden before:absolute  before:white-to-gray-gradient before:inset-0 before:accessibility:content-[none] before:opacity-15 before:-z-10"
+                  :class="chip.borderClass"
+                  style="background: rgba(243, 250, 255, 0.3)"
+                >
+                  <p class="text-[12px] font-semibold leading-[1.2] text-interactive">
+                    {{ chip.title }}:
+                  </p>
+                  <p class="text-[14px] font-normal leading-[1.4] text-interactive">
+                    {{ chip.value }}
+                  </p>
                 </div>
-                <ul class="flex gap-1.5 flex-col ml-auto w-64">
-                  <li class="bg-white py-1.5 px-3.5 rounded-md text-[#1F3462]">
-                    <p class="text-[10px] font-normal leading-[100%] opacity-60">Специальность:</p>
-                    <p class="text-xs font-semibold leading-[14px]">{{ selectedDoctor?.speciality || selectedDoctor?.specialization || '—' }}</p>
-                  </li>
-                  <li class="bg-white py-1.5 px-3.5 rounded-md text-[#1F3462]">
-                    <p class="text-xs font-normal leading-[100%] opacity-60">Врачебный стаж:</p>
-                    <p class="text-[13px] font-semibold leading-4 mt-0.5">{{ selectedDoctor?.seniority || selectedDoctor?.experience || '—' }}</p>
-                  </li>
-                  <li class="bg-white py-1.5 px-3.5 rounded-md text-[#1F3462]">
-                    <p class="text-xs font-normal leading-[100%] opacity-60">Ведёт приём:</p>
-                    <p class="text-[13px] font-semibold leading-4 mt-0.5">{{ selectedDoctor?.receives || '—' }}</p>
-                  </li>
-                </ul>
               </div>
+            </div>
+
+            <div
+              class="absolute right-3.5 top-3.5 flex inline-flex items-center gap-1.5 rounded-lg border border-interactive px-3 py-1.5 z-10"
+              :class="hasVideoVisit ? 'text-interactive cursor-pointer' : 'text-interactive/40 border-interactive/40'"
+            >
+              <svg width="15" height="20" viewBox="0 0 15 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M11.0562 9.34246C11.0562 10.3122 10.6819 11.2421 10.0156 11.9278C9.34937 12.6135 8.44574 12.9987 7.50352 12.9987C6.56131 12.9987 5.65768 12.6135 4.99143 11.9278C4.32519 11.2421 3.95089 10.3122 3.95089 9.34246C3.95089 8.37276 4.32519 7.44278 4.99143 6.7571C5.65768 6.07142 6.56131 5.6862 7.50352 5.6862C8.44574 5.6862 9.34937 6.07142 10.0156 6.7571C10.6819 7.44278 11.0562 8.37276 11.0562 9.34246Z" :fill="hasVideoVisit ? '#1F3462' : '#1f346266'"/>
+              <path d="M15 17.0625V5.48437L9.375 0H2.5C1.83696 0 1.20107 0.256807 0.732233 0.713927C0.263392 1.17105 0 1.79103 0 2.4375V17.0625C0 17.709 0.263392 18.329 0.732233 18.7861C1.20107 19.2432 1.83696 19.5 2.5 19.5H12.5C13.163 19.5 13.7989 19.2432 14.2678 18.7861C14.7366 18.329 15 17.709 15 17.0625ZM9.375 3.65625C9.375 4.1411 9.57254 4.60609 9.92417 4.94893C10.2758 5.29177 10.7527 5.48437 11.25 5.48437H13.75V16.7639C13.75 16.7639 12.5 14.625 7.5 14.625C2.5 14.625 1.25 16.7639 1.25 16.7639V2.4375C1.25 2.11427 1.3817 1.80427 1.61612 1.57571C1.85054 1.34715 2.16848 1.21875 2.5 1.21875H9.375V3.65625Z" :fill="hasVideoVisit ? '#1F3462' : '#1f346266'"/>
+              </svg>
+              <span class="text-[12px] font-semibold leading-[1.2]">Видео-визитка</span>
             </div>
           </div>
         </div>
-      </div>
 
-      <div class="hidden lg:flex justify-center pt-[133px]">
-        <div class="hidden h-[24px] w-[4px] rounded-[28px] bg-[#1F3462]"></div>
-      </div>
+        <div>
+          <div class="flex items-center justify-center gap-4">
+            <button
+              type="button"
+              class="grid h-6 w-6 place-items-center rounded text-interactive transition-colors hover:bg-surface-subdued"
+              aria-label="Предыдущий месяц"
+              @click="goToPrevMonth"
+            >
+              <svg viewBox="0 0 16 16" class="h-4 w-4" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M10 3L5 8L10 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </button>
 
-      <div class="pt-[34px] lg:pt-0">
-        <div class="flex items-center justify-center gap-4">
-          <button class="grid h-8 w-8 place-items-center rounded-lg text-[#1F3462] hover:bg-slate-50" aria-label="Prev">
-            ‹
-          </button>
-          <div class="text-[20px] leading-[1.2] font-semibold text-[#1F3462]">
-            {{ monthTitle }}
+            <div class="text-[20px] font-semibold leading-[1.2] text-interactive">
+              {{ monthTitle }}
+            </div>
+
+            <button
+              type="button"
+              class="grid h-6 w-6 place-items-center rounded text-interactive transition-colors hover:bg-surface-subdued"
+              aria-label="Следующий месяц"
+              @click="goToNextMonth"
+            >
+              <svg viewBox="0 0 16 16" class="h-4 w-4" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M6 3L11 8L6 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </button>
           </div>
-          <button class="grid h-8 w-8 place-items-center rounded-lg text-[#1F3462] hover:bg-slate-50" aria-label="Next">
-            ›
-          </button>
-        </div>
 
-        <div class="mt-[27px]">
-          <v-date-picker
-            v-model="internalDate"
-            :min-date="minDate"
-            color="orange"
-            is-expanded
-            @input="handleDate"
-            class="booking-calendar"
-          />
-        </div>
+          <div class="mt-[23px]">
+            <v-date-picker
+              trim-weeks
+              v-model="internalDate"
+              :min-date="minDate"
+              color="orange"
+              is-expanded
+              @input="handleDate"
+              class="booking-calendar"
+              key="today"
+              :theme="{ highlight: { color: 'orange' } }"
+            />
+          </div>
 
-        <div class="mt-6 h-px w-full bg-[#EBF0F3]"></div>
+          <div class="hidden md:block mt-6 h-px w-full bg-surface-subdued"></div>
 
-        <div class="mt-6 text-center text-[16px] leading-[1.2] font-semibold text-[#1F3462]">
-          Время
-        </div>
+          <div class="mt-6 text-center text-base font-semibold leading-[1.2] text-interactive">
+            Время
+          </div>
 
-        <div v-if="loadingDoctors" class="mt-6 text-center text-[#1F3462]">
-          Загрузка врачей...
-        </div>
+          <div v-if="loadingDoctors" class="mt-6 text-center text-interactive">
+            Загрузка врачей...
+          </div>
 
-        <div v-else-if="loading" class="mt-6 text-center text-[#1F3462]">
-          Загрузка слотов...
-        </div>
+          <div v-else-if="loading" class="mt-6 text-center text-interactive">
+            Загрузка слотов...
+          </div>
 
-        <div v-else class="mt-4 flex flex-wrap gap-1 w-[444px] max-w-full justify-center">
-          <button
-            v-for="slot in slots"
-            :key="slot.id || slot.datetime || slot.time"
-            class="h-[27px] w-[85px] rounded-[4px] border border-[#EBF0F3] text-[16px] font-semibold"
-            :class="slotClass(slot)"
-            :disabled="!isSlotAvailable(slot)"
-            @click="$emit('select-slot', slot)"
-          >
-            {{ slot.time }}
-          </button>
-        </div>
+          <div v-else class="mx-auto mt-4 grid grid-cols-4 md:grid-cols-5 w-full max-w-[444px] flex-wrap gap-1">
+            <button
+              v-for="slot in slots"
+              :key="slotKey(slot)"
+              type="button"
+              class="h-7 rounded-md border border-surface-subdued text-base font-semibold leading-[1.2]"
+              :class="slotClass(slot)"
+              :disabled="!isSlotAvailable(slot)"
+              @click="$emit('select-slot', slot)"
+            >
+              {{ slot.time }}
+            </button>
+          </div>
 
-        <div class="mt-10 flex gap-4">
-          <SecondaryButton @click="$emit('back')">Назад</SecondaryButton>
-          <PrimaryButton :disabled="!selectedSlot || !doctors.length" @click="$emit('next')">
-            Записаться на приём
-          </PrimaryButton>
+          <div class="mx-auto mt-8 flex flex-col md:flex-row w-full max-w-[444px] gap-4 md:mt-10">
+            <SecondaryButton @click="$emit('back')">Назад</SecondaryButton>
+            <PrimaryButton :disabled="!selectedSlot || !doctors.length" @click="$emit('next')">
+              Далее
+            </PrimaryButton>
+          </div>
         </div>
       </div>
     </div>
@@ -131,12 +194,12 @@
 </template>
 
 <script>
-const StepHeader = () => import("./shared/StepHeader.vue");
+const ClinicScheduleStepLegacy = () => import("./ClinicScheduleStepLegacy.vue");
 const PrimaryButton = () => import("./shared/PrimaryButton.vue");
 const SecondaryButton = () => import("./shared/SecondaryButton.vue");
 
 export default {
-  components: { StepHeader, PrimaryButton, SecondaryButton },
+  components: { ClinicScheduleStepLegacy, PrimaryButton, SecondaryButton },
   props: {
     selectedDoctor: {
       type: Object,
@@ -170,6 +233,10 @@ export default {
       type: Boolean,
       default: false,
     },
+    useLegacyLayout: {
+      type: Boolean,
+      default: false,
+    },
   },
   data() {
     return {
@@ -178,18 +245,128 @@ export default {
     };
   },
   computed: {
+    legacyProps() {
+      const { useLegacyLayout, ...rest } = this.$props;
+      return rest;
+    },
+    shouldUseLegacyLayout() {
+      if (this.useLegacyLayout) {
+        return true;
+      }
+
+      if (typeof window === "undefined") {
+        return false;
+      }
+
+      return Boolean(window?.config?.booking?.useLegacyClinicScheduleStep);
+    },
+    activeDoctor() {
+      if (this.selectedDoctor && Object.keys(this.selectedDoctor).length) {
+        return this.selectedDoctor;
+      }
+
+      if (this.selectedDoctorId != null) {
+        const byId = this.doctors.find((doctor) => doctor?.id === this.selectedDoctorId);
+        if (byId) {
+          return byId;
+        }
+      }
+
+      return this.doctors[0] || null;
+    },
     monthTitle() {
-      const date = this.internalDate || new Date();
-      return date.toLocaleDateString("ru-RU", { month: "long", year: "numeric" });
+      const date = this.internalDate instanceof Date
+        ? this.internalDate
+        : new Date(this.internalDate || Date.now());
+
+      const value = date.toLocaleDateString("ru-RU", { month: "long", year: "numeric" });
+      return value ? `${value.charAt(0).toUpperCase()}${value.slice(1)}` : "";
     },
     selectedDoctorName() {
-      if (!this.selectedDoctor) return "Выберите врача";
-      return this.selectedDoctor.name || this.selectedDoctor.full_name || "Выберите врача";
+      if (!this.activeDoctor) return "Выберите врача";
+      return this.activeDoctor.name || this.activeDoctor.full_name || "Выберите врача";
+    },
+    doctorAvatar() {
+      return (
+        this.activeDoctor?.avatar_url ||
+        this.activeDoctor?.avatar_image ||
+        this.activeDoctor?.photo ||
+        null
+      );
+    },
+    hasVideoVisit() {
+      return Boolean(this.activeDoctor?.video_url);
+    },
+    doctorChips() {
+      return [
+        {
+          title: "Специальность",
+          value: this.activeDoctor?.speciality || this.activeDoctor?.specialization || "—",
+          borderClass: "border-l-blue-label w-8/12",
+        },
+        {
+          title: "Ведёт приём",
+          value: this.activeDoctor?.receives || this.activeDoctor?.extra?.receives || "—",
+          borderClass: "border-l-action-primary w-6/12",
+        },
+        {
+          title: "Врачебный стаж",
+          value:
+            this.activeDoctor?.seniority ||
+            this.activeDoctor?.experience ||
+            this.activeDoctor?.extra?.seniority ||
+            "—",
+          borderClass: "border-l-blue-label w-6/12 md:w-5/12",
+        },
+      ];
     },
   },
   methods: {
+    doctorTabTitle(doctor, index) {
+      return doctor?.tab_label || `Врач ${index + 1}`;
+    },
+    doctorTabClass(doctor) {
+      if (this.activeDoctor && doctor?.id === this.activeDoctor?.id) {
+        return "border-transparent text-white bg-[radial-gradient(ellipse_at_center,_rgba(255,164,118,1)_0%,_rgba(255,150,89,1)_25%,_rgba(255,135,59,1)_50%,_rgba(255,121,30,1)_75%,_rgba(255,113,15,1)_87.5%,_rgba(255,106,0,1)_100%)]";
+      }
+
+      return "border-[rgba(29,29,29,0.2)] bg-white text-interactive hover:border-[#FF9B00]";
+    },
     handleDate(date) {
+      if (!date) {
+        return;
+      }
+
+      this.internalDate = date;
       this.$emit("select-date", date);
+    },
+    goToPrevMonth() {
+      const nextDate = new Date(this.internalDate || new Date());
+      nextDate.setMonth(nextDate.getMonth() - 1);
+      this.handleDate(nextDate);
+    },
+    goToNextMonth() {
+      const nextDate = new Date(this.internalDate || new Date());
+      nextDate.setMonth(nextDate.getMonth() + 1);
+      this.handleDate(nextDate);
+    },
+    slotKey(slot) {
+      return slot?.id || slot?.datetime || slot?.time;
+    },
+    isSameSlot(slot) {
+      if (!slot || !this.selectedSlot) {
+        return false;
+      }
+
+      if (slot.id != null && this.selectedSlot.id != null) {
+        return slot.id === this.selectedSlot.id;
+      }
+
+      if (slot.datetime && this.selectedSlot.datetime) {
+        return slot.datetime === this.selectedSlot.datetime;
+      }
+
+      return slot.time === this.selectedSlot.time;
     },
     isSlotAvailable(slot) {
       if (!slot) return false;
@@ -203,15 +380,9 @@ export default {
       const parseStatus = (value) => String(value || "").toLowerCase();
       const status = parseStatus(slot.status);
 
-      const hasIsAvailable = Object.prototype.hasOwnProperty.call(
-        slot,
-        "is_available"
-      );
+      const hasIsAvailable = Object.prototype.hasOwnProperty.call(slot, "is_available");
       const hasFree = Object.prototype.hasOwnProperty.call(slot, "free");
-      const hasIsOccupied = Object.prototype.hasOwnProperty.call(
-        slot,
-        "is_occupied"
-      );
+      const hasIsOccupied = Object.prototype.hasOwnProperty.call(slot, "is_occupied");
       const hasIsPast = Object.prototype.hasOwnProperty.call(slot, "is_past");
 
       const available = hasIsAvailable
@@ -219,9 +390,7 @@ export default {
         : hasFree
         ? isTrue(slot.free)
         : status
-        ? !["occupied", "booked", "busy", "closed", "disabled"].includes(
-            status
-          )
+        ? !["occupied", "booked", "busy", "closed", "disabled"].includes(status)
         : true;
 
       const occupied = hasIsOccupied
@@ -240,18 +409,159 @@ export default {
     },
     slotClass(slot) {
       if (!this.isSlotAvailable(slot)) {
-        return "text-[#1F3462]/40 bg-[#EBF0F3]";
+        return "text-interactive/40 bg-surface-subdued";
       }
-      if (this.selectedSlot && this.selectedSlot.id === slot.id) {
+
+      if (this.isSameSlot(slot)) {
         return "text-white bg-[radial-gradient(ellipse_at_center,_rgba(255,164,118,1)_0%,_rgba(255,150,89,1)_25%,_rgba(255,135,59,1)_50%,_rgba(255,121,30,1)_75%,_rgba(255,113,15,1)_87.5%,_rgba(255,106,0,1)_100%)]";
       }
-      return "text-[#1F3462]";
+
+      return "text-interactive";
     },
   },
   watch: {
     selectedDate(newVal) {
-      if (newVal) this.internalDate = newVal;
+      if (newVal) {
+        this.internalDate = newVal;
+      }
     },
   },
 };
 </script>
+
+<style>
+.clinic-schedule-step {
+  --calendar-cell-width: 60px;
+}
+
+.clinic-schedule-step__doctors-scroll {
+  scrollbar-width: none;
+}
+
+.clinic-schedule-step__doctors-scroll::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.clinic-schedule-step .booking-calendar .vc-arrows-container.title-center{
+  display: none;
+}
+
+.clinic-schedule-step .booking-calendar {
+  border: 0;
+  width: calc(var(--calendar-cell-width) * 7 + 24px);
+  max-width: 100%;
+}
+
+.clinic-schedule-step .booking-calendar .vc-header {
+  display: none;
+}
+
+.clinic-schedule-step .booking-calendar .vc-weeks {
+  gap: 4px;
+  grid-template-columns: repeat(7, minmax(0, var(--calendar-cell-width)));
+  justify-content: center;
+  padding: 0;
+}
+
+.clinic-schedule-step .booking-calendar .vc-weekday,
+.clinic-schedule-step .booking-calendar .vc-day {
+  width: var(--calendar-cell-width);
+  min-width: var(--calendar-cell-width);
+  height: 27px;
+  min-height: 27px;
+  margin: 0;
+  padding: 0;
+}
+
+.clinic-schedule-step .booking-calendar .vc-weekday {
+  align-items: center;
+  background: #ebf0f3;
+  border-radius: 4px;
+  color: #1f3462;
+  display: flex;
+  font-family: "Gilroy", sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  justify-content: center;
+  line-height: 1.2;
+  text-transform: capitalize;
+}
+
+.clinic-schedule-step .booking-calendar .vc-day-content {
+  align-items: center;
+  border: 1px solid #ebf0f3;
+  border-radius: 4px;
+  color: #1f3462;
+  display: flex;
+  font-family: "Gilroy", sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  height: 27px;
+  justify-content: center;
+  line-height: 1.2;
+  margin: 0;
+  width: var(--calendar-cell-width);
+}
+
+.clinic-schedule-step .booking-calendar .vc-day-content:hover {
+  background: #f6f7f9;
+}
+
+.clinic-schedule-step .booking-calendar .vc-day-content:focus {
+  background: transparent;
+}
+
+.clinic-schedule-step .booking-calendar .vc-day.in-prev-month .vc-day-content,
+.clinic-schedule-step .booking-calendar .vc-day.in-next-month .vc-day-content,
+.clinic-schedule-step .booking-calendar .vc-day .vc-day-content.is-disabled {
+  color: rgba(0, 0, 0, 0.3);
+}
+
+.clinic-schedule-step .booking-calendar .vc-highlight,
+.clinic-schedule-step .booking-calendar .vc-highlight-bg-solid,
+.clinic-schedule-step .booking-calendar .vc-highlight-content-solid {
+  background: radial-gradient(
+    ellipse at center,
+    rgba(255, 164, 118, 1) 0%,
+    rgba(255, 150, 89, 1) 25%,
+    rgba(255, 135, 59, 1) 50%,
+    rgba(255, 121, 30, 1) 75%,
+    rgba(255, 113, 15, 1) 87.5%,
+    rgba(255, 106, 0, 1) 100%
+  ) !important;
+  border-radius: 4px;
+}
+
+.clinic-schedule-step .booking-calendar .vc-highlight,
+.clinic-schedule-step .booking-calendar .vc-highlight-bg-solid,
+.clinic-schedule-step .booking-calendar .vc-highlight-content-solid {
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: 4px !important; /* или 0, если нужен совсем квадрат */
+}
+
+.clinic-schedule-step .booking-calendar .vc-day .vc-day-content.is-highlighted,
+.clinic-schedule-step .booking-calendar .vc-day .vc-day-content.is-selected,
+.clinic-schedule-step .booking-calendar .vc-day .vc-highlight-content-solid {
+  color: #ffffff !important;
+}
+
+@media (max-width: 1023px) {
+  .clinic-schedule-step {
+    --calendar-cell-width: 52px;
+  }
+}
+
+@media (max-width: 767px) {
+  .clinic-schedule-step {
+    --calendar-cell-width: 46px;
+  }
+}
+
+@media (max-width: 479px) {
+  .clinic-schedule-step {
+    --calendar-cell-width: 40px;
+  }
+}
+</style>

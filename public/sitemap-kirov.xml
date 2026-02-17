@@ -2,43 +2,43 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1" xmlns:video="http://www.google.com/schemas/sitemap-video/1.1" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">
     <url>
         <loc>http://127.0.0.1:8000/kirov</loc>
-        <lastmod>2026-02-11T15:18:50+03:00</lastmod>
+        <lastmod>2026-02-13T16:55:44+03:00</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.8</priority>
             </url>
     <url>
         <loc>http://127.0.0.1:8000/kirov/about</loc>
-        <lastmod>2026-02-11T15:18:50+03:00</lastmod>
+        <lastmod>2026-02-13T16:55:44+03:00</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.8</priority>
             </url>
     <url>
         <loc>http://127.0.0.1:8000/kirov/services</loc>
-        <lastmod>2026-02-11T15:18:50+03:00</lastmod>
+        <lastmod>2026-02-13T16:55:44+03:00</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.8</priority>
             </url>
     <url>
         <loc>http://127.0.0.1:8000/kirov/doctors</loc>
-        <lastmod>2026-02-11T15:18:50+03:00</lastmod>
+        <lastmod>2026-02-13T16:55:44+03:00</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.8</priority>
             </url>
     <url>
         <loc>http://127.0.0.1:8000/kirov/contacts</loc>
-        <lastmod>2026-02-11T15:18:50+03:00</lastmod>
+        <lastmod>2026-02-13T16:55:44+03:00</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.8</priority>
             </url>
     <url>
         <loc>http://127.0.0.1:8000/kirov/reviews</loc>
-        <lastmod>2026-02-11T15:18:50+03:00</lastmod>
+        <lastmod>2026-02-13T16:55:44+03:00</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.8</priority>
             </url>
     <url>
         <loc>http://127.0.0.1:8000/kirov/promotions</loc>
-        <lastmod>2026-02-11T15:18:50+03:00</lastmod>
+        <lastmod>2026-02-13T16:55:44+03:00</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.8</priority>
             </url>
@@ -73,14 +73,116 @@
         <priority>0.6</priority>
             </url>
     <url>
-        <loc>http://127.0.0.1:8000/kirov/doctors/33</loc>
-        <lastmod>2026-02-11T15:18:37+03:00</lastmod>
+        <loc>http://127.0.0.1:8000/kirov/doctors/34</loc>
+        <lastmod>2026-02-12T09:12:41+03:00</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.6</priority>
             </url>
     <url>
-        <loc>http://127.0.0.1:8000/kirov/doctors/34</loc>
-        <lastmod>2026-02-11T15:18:37+03:00</lastmod>
+        <loc>http://127.0.0.1:8000/kirov/doctors/35</loc>
+        <lastmod>2026-02-13T16:55:38+03:00</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.6</priority>
+            </url>
+    <url>
+        <loc>http://127.0.0.1:8000/kirov/doctors/36</loc>
+        <lastmod>2026-02-13T16:55:38+03:00</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.6</priority>
+            </url>
+    <url>
+        <loc>http://127.0.0.1:8000/kirov/doctors/37</loc>
+        <lastmod>2026-02-13T16:55:38+03:00</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.6</priority>
+            </url>
+    <url>
+        <loc>http://127.0.0.1:8000/kirov/doctors/38</loc>
+        <lastmod>2026-02-13T16:55:38+03:00</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.6</priority>
+            </url>
+    <url>
+        <loc>http://127.0.0.1:8000/kirov/doctors/39</loc>
+        <lastmod>2026-02-13T16:55:38+03:00</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.6</priority>
+            </url>
+    <url>
+        <loc>http://127.0.0.1:8000/kirov/doctors/40</loc>
+        <lastmod>2026-02-13T16:55:38+03:00</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.6</priority>
+            </url>
+    <url>
+        <loc>http://127.0.0.1:8000/kirov/doctors/41</loc>
+        <lastmod>2026-02-13T16:55:38+03:00</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.6</priority>
+            </url>
+    <url>
+        <loc>http://127.0.0.1:8000/kirov/doctors/42</loc>
+        <lastmod>2026-02-13T16:55:38+03:00</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.6</priority>
+            </url>
+    <url>
+        <loc>http://127.0.0.1:8000/kirov/doctors/43</loc>
+        <lastmod>2026-02-13T16:55:38+03:00</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.6</priority>
+            </url>
+    <url>
+        <loc>http://127.0.0.1:8000/kirov/doctors/44</loc>
+        <lastmod>2026-02-13T16:55:38+03:00</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.6</priority>
+            </url>
+    <url>
+        <loc>http://127.0.0.1:8000/kirov/doctors/45</loc>
+        <lastmod>2026-02-13T16:55:38+03:00</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.6</priority>
+            </url>
+    <url>
+        <loc>http://127.0.0.1:8000/kirov/doctors/46</loc>
+        <lastmod>2026-02-13T16:55:38+03:00</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.6</priority>
+            </url>
+    <url>
+        <loc>http://127.0.0.1:8000/kirov/doctors/47</loc>
+        <lastmod>2026-02-13T16:55:38+03:00</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.6</priority>
+            </url>
+    <url>
+        <loc>http://127.0.0.1:8000/kirov/doctors/48</loc>
+        <lastmod>2026-02-13T16:55:38+03:00</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.6</priority>
+            </url>
+    <url>
+        <loc>http://127.0.0.1:8000/kirov/doctors/49</loc>
+        <lastmod>2026-02-13T16:55:38+03:00</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.6</priority>
+            </url>
+    <url>
+        <loc>http://127.0.0.1:8000/kirov/doctors/50</loc>
+        <lastmod>2026-02-13T16:55:38+03:00</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.6</priority>
+            </url>
+    <url>
+        <loc>http://127.0.0.1:8000/kirov/doctors/51</loc>
+        <lastmod>2026-02-13T16:55:38+03:00</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.6</priority>
+            </url>
+    <url>
+        <loc>http://127.0.0.1:8000/kirov/doctors/52</loc>
+        <lastmod>2026-02-13T16:55:38+03:00</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.6</priority>
             </url>
