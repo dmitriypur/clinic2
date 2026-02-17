@@ -11,6 +11,7 @@ use App\Http\Resources\ReviewResource;
 use App\Models\Doctor;
 use App\Models\Page;
 use App\Models\Review;
+use App\Services\CityService;
 
 class ReviewController extends Controller
 {
@@ -18,9 +19,21 @@ class ReviewController extends Controller
     {
         $data = $request->validated();
         $count_items = 12 * (!isset($data['perpage']) ? 1 : $data['perpage']);
+        $currentCity = app(CityService::class)->getCurrentCity();
 
         $filters = app()->make(ReviewFilter::class, ['queryParams' => array_filter($data)]);
-        $reviews = Review::filter($filters)->with(['doctor', 'pages'])->orderByDesc('get_date')->paginate($count_items);
+        $reviewsQuery = Review::query()
+            ->filter($filters)
+            ->with(['doctor', 'pages'])
+            ->orderByDesc('get_date');
+
+        if ($currentCity) {
+            $reviewsQuery->whereHas('doctor.cities', function ($query) use ($currentCity) {
+                $query->where('cities.id', $currentCity->id);
+            });
+        }
+
+        $reviews = $reviewsQuery->paginate($count_items);
 
         if(isset($data['perpage'])){
             return ReviewResource::collection($reviews);

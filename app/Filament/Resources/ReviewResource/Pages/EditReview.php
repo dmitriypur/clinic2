@@ -30,5 +30,6 @@ class EditReview extends EditRecord
     protected function afterSave(): void
     {
         Cache::forget('reviews');
+        Cache::forget('reviews_with_doctor_cities');
     }
 }

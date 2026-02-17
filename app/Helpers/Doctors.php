@@ -15,10 +15,24 @@ class Doctors
             $slug = 'all';
         }
 
-        return Cache::remember(
-            "doctors-{$slug}",
+        $cacheKey = "doctors-{$slug}";
+
+        $doctors = Cache::remember(
+            $cacheKey,
             3600,
             fn() => Doctor::query()->publiclyVisible()->with('media')->get()
         );
+
+        // Самовосстановление на случай устаревшего пустого кеша после изменения city_doctor.
+        if ($currentCity && $doctors->isEmpty()) {
+            Cache::forget($cacheKey);
+            $doctors = Cache::remember(
+                $cacheKey,
+                3600,
+                fn() => Doctor::query()->publiclyVisible()->with('media')->get()
+            );
+        }
+
+        return $doctors;
     }
 }

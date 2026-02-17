@@ -14,9 +14,6 @@
                     @push('scripts')
                         {!! Clinic::schema()->physician($doctor) !!}
                     @endpush
-                    @if (!$doctor->hasMedia())
-                        @continue
-                    @endif
                     <div class="swiper-slide mb-2 !h-auto">
                         <x-doctor-card-alt :doctor="$doctor"></x-doctor-card-alt>
                     </div>
@@ -24,7 +21,7 @@
 
             </div>
         </div>
-        <a href="/doctors" class="text-base font-semibold text-center md:text-right block text-action-primary underline mt-4 md:mt-6">Все врачи</a>
+        <a href="{{ city_route('pages.show', ['handle' => 'doctors']) }}" class="text-base font-semibold text-center md:text-right block text-action-primary underline mt-4 md:mt-6">Все врачи</a>
         <div
             class="lg:block lg:absolute left-0 right-0 xl:-left-12 xl:-right-12 lg:top-1/2 lg:-translate-y-1/2 mt-4 lg:mt-0 z-0">
             <div class="[&_>_.swiper-button-disabled]:opacity-0 flex justify-center gap-10 lg:justify-between">

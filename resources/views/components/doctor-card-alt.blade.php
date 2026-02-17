@@ -11,7 +11,7 @@
                 </div>
                 <p class="text-xs leading-tight text-interactive/60 mt-1.5">100% пациентов рекомендуют врача</p>
             </div>
-            <a href="{{route('doctor.show', [$doctor->id])}}" class="flex items-center gap-x-2.5 py-1.5 px-3 border border-interactive rounded-xl [&_svg]:accessibility:hidden accessibility:border-none accessibility:p-0">
+            <a href="{{ city_route('doctor.show', [$doctor->id]) }}" class="flex items-center gap-x-2.5 py-1.5 px-3 border border-interactive rounded-xl [&_svg]:accessibility:hidden accessibility:border-none accessibility:p-0">
                 <x-icon.doctor-card></x-icon.doctor-card>
                 <p class="text-xs"><b>Карточка</b> врача</p>
             </a>

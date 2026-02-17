@@ -57,8 +57,8 @@
                     <p class="hidden md:block md:text-3xl md:text-center md:font-semibold md:mb-6">Выберите
                         специалиста</p>
 
-                    <div class="w-1/2 md:w-full md:bg-blue-gray md:rounded-2xl md:pt-24 md:pb-5 md:px-28">
-                        <div class="md:grid md:grid-cols-{{ count($filter['doctors']) }} md:gap-6 lg:gap-14">
+                    <div class="w-1/2 md:w-full md:bg-blue-gray md:rounded-2xl md:pt-6 md:pb-5 md:px-28">
+                        <div class="md:grid grid-flow-col auto-cols-[minmax(224px,224px)] overflow-x-auto gap-14 md:pt-16">
                             <div @click="toggleVisible"
                                  :class="['md:hidden flex items-center gap-3 rounded-lg text-sm font-medium mb-2', isVisible ? 'bg-white border border-interactive' : 'bg-white/45']">
                                 <div
@@ -69,7 +69,7 @@
                             </div>
                             @foreach ($filter['doctors'] as $id => $doctor)
                                 <filter-list inline-template @add-resource="addDoctor" v-show="isVisible">
-                                    <div class="h-full w-auto cursor-pointer mb-2 md:mb-0"
+                                    <div class="w-full h-full cursor-pointer mb-2 md:mb-0"
                                          @click="toggle({{ $doctor->id }})">
                                         <div :class="classDoctor">
                                             {{ $doctor->avatar_image }}

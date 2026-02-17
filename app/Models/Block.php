@@ -226,13 +226,24 @@ class Block extends Model implements HasMedia, Sortable
 
     public function getDoctorsAttribute()
     {
-        if (!($this->type === BlockType::DOCTORS_ALT) || !($this->payload['doctors'] ?? false)) {
+        if ($this->type !== BlockType::DOCTORS_ALT) {
             return null;
         }
 
-        $doctorIds = $this->payload['doctors'];
+        $doctors = Doctors::getDoctors();
+        $doctorIds = collect($this->payload['doctors'] ?? [])->filter()->values();
 
-        return Doctors::getDoctors()->whereIn('id', $doctorIds);
+        // Если в блоке указаны конкретные врачи - показываем их.
+        // Если после фильтра по городу они не найдены, не оставляем блок пустым:
+        // показываем всех доступных врачей текущего города.
+        if ($doctorIds->isNotEmpty()) {
+            $selectedDoctors = $doctors->whereIn('id', $doctorIds->all())->values();
+            if ($selectedDoctors->isNotEmpty()) {
+                return $selectedDoctors;
+            }
+        }
+
+        return $doctors->values();
     }
 
     public function getReviewsAttribute(): Collection|null
@@ -252,10 +263,23 @@ class Block extends Model implements HasMedia, Sortable
     public function getReviewsAltAttribute(): Collection|null
     {
         $isHome = request()->is('/');
-        $reviews = Cache::remember('reviews', 2592000, fn() => Review::with(['doctor', 'pages'])->get());
+        $reviews = Cache::remember('reviews_with_doctor_cities', 2592000, fn() => Review::with(['doctor.cities', 'pages'])->get());
 
         if ($this->type !== BlockType::REVIEWS_ALT) {
             return null;
+        }
+
+        $currentCity = app(\App\Services\CityService::class)->getCurrentCity();
+        if ($currentCity) {
+            $reviews = $reviews->filter(function ($review) use ($currentCity) {
+                $doctor = $review->doctor;
+
+                if (!$doctor || !$doctor->relationLoaded('cities')) {
+                    return false;
+                }
+
+                return $doctor->cities->contains('id', $currentCity->id);
+            })->values();
         }
 
         if ($isHome) {

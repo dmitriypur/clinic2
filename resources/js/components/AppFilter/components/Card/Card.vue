@@ -14,7 +14,7 @@ export default {
         <div v-if="review.resource"
              class="accessibility:border-none accessibility:p-0 flex items-center rounded-md pr-2 text-base font-medium gap-2 border border-surface-subdued">
           <div class="accessibility:hidden  w-auto min-w-10 h-10 px-1 rounded-md bg-surface-subdued flex items-center justify-center">
-            <img :src="review.resources[0]" :alt="review.resources[1]">
+            <img :src="'/' + review.resources[0]" :alt="review.resources[1]">
           </div>
           {{ review.resources[1] }}
         </div>

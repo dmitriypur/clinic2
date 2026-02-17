@@ -24,10 +24,12 @@ class Review extends Model
     {
         static::saved(function () {
             \Illuminate\Support\Facades\Cache::forget('reviews');
+            \Illuminate\Support\Facades\Cache::forget('reviews_with_doctor_cities');
         });
 
         static::deleted(function () {
             \Illuminate\Support\Facades\Cache::forget('reviews');
+            \Illuminate\Support\Facades\Cache::forget('reviews_with_doctor_cities');
         });
     }
 
