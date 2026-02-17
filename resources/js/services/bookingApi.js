@@ -48,9 +48,11 @@ class BookingApiService {
    * Получить список врачей по городу
    * GET /api/v1/cities/{city_id}/doctors
    */
-  async getDoctorsByCity(cityId) {
+  async getDoctorsByCity(cityId, birthDate = null) {
     try {
-      const response = await this.client.get(`/cities/${cityId}/doctors`);
+      const response = await this.client.get(`/cities/${cityId}/doctors`, {
+        params: birthDate ? { birth_date: birthDate } : undefined,
+      });
       return response.data;
     } catch (error) {
       throw this.handleError(error);
@@ -59,14 +61,16 @@ class BookingApiService {
 
   /**
    * Получить слоты врача на дату
-   * GET /api/v1/doctors/{doctor_id}/slots?date=YYYY-MM-DD
+   * GET /api/v1/doctors/{doctor_id}/slots?date=YYYY-MM-DD&clinic_id=&branch_id=
    */
-  async getDoctorSlots(doctorId, date) {
+  async getDoctorSlots(doctorId, date, clinicId = null, branchId = null) {
     try {
       const response = await this.client.get(`/doctors/${doctorId}/slots`, {
-        params: { 
+        params: {
           date,
-          _t: new Date().getTime() // Cache busting
+          clinic_id: clinicId || undefined,
+          branch_id: branchId || undefined,
+          _t: new Date().getTime(),
         },
       });
       return response.data;
@@ -111,6 +115,69 @@ class BookingApiService {
   async getClinicsByCity(cityId) {
     try {
       const response = await this.client.get(`/cities/${cityId}/clinics`);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Получить филиалы клиники
+   * GET /api/v1/clinics/{clinic_id}/branches?city_id=
+   */
+  async getClinicBranches(clinicId, cityId = null) {
+    try {
+      const response = await this.client.get(`/clinics/${clinicId}/branches`, {
+        params: cityId ? { city_id: cityId } : undefined,
+      });
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Получить врачей клиники
+   * GET /api/v1/clinics/{clinic_id}/doctors
+   */
+  async getClinicDoctors(clinicId, birthDate = null, branchId = null) {
+    try {
+      const response = await this.client.get(`/clinics/${clinicId}/doctors`, {
+        params: {
+          birth_date: birthDate || undefined,
+          branch_id: branchId || undefined,
+        },
+      });
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Получить локальные данные врачей сайта по UUID (external_id)
+   * GET /api/booking/doctors?uuids=a,b,c
+   */
+  async getSiteDoctorsByUuids(uuids = []) {
+    try {
+      const normalized = Array.from(
+        new Set(
+          (uuids || [])
+            .map((uuid) => String(uuid || "").trim().toLowerCase())
+            .filter(Boolean)
+        )
+      );
+
+      if (!normalized.length) {
+        return { data: [] };
+      }
+
+      const response = await axios.get("/api/booking/doctors", {
+        params: {
+          uuids: normalized.join(","),
+        },
+      });
+
       return response.data;
     } catch (error) {
       throw this.handleError(error);

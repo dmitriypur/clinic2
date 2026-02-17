@@ -121,6 +121,9 @@ class Clinic
             'state' => resolve(InitialFrontendState::class)->forUser(Auth::user()),
             'detectedCity' => $detectedCity,
             'cities' => $preparedCities,
+            'booking' => [
+                'allowedClinicIds' => config('zrenie-clinic.booking_allowed_clinic_ids', []),
+            ],
         ];
     }
 

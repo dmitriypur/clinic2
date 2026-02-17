@@ -37,6 +37,8 @@ const OnlineAppointmentForm = () =>
   import("./components/OnlineAppointmentForm/OnlineAppointmentForm.vue");
 const BookingWidgetV2 = () =>
   import("./components/BookingWidgetV2/BookingWidgetV2.vue");
+const BookingWidgetV3 = () =>
+  import("./components/BookingWidgetV3/BookingWidgetV3.vue");
 const DoctorCard = () => import("./components/DoctorCard/DoctorCard.vue");
 const SearchLive = () => import("./components/SearchLive/SearchLive.vue");
 const CityConfirmationModal = () =>
@@ -82,6 +84,7 @@ new Vue({
     CertificateForm,
     OnlineAppointmentForm,
     BookingWidgetV2,
+    BookingWidgetV3,
     ImageLazy,
     SearchLive,
     AccessibilityToggle,
@@ -102,6 +105,7 @@ new Vue({
     callbackModalTarget: null,
     loginModalActive: false,
     bookingWidgetV2Active: false,
+    bookingWidgetV3Active: false,
     currentCityId: null,
     showToTopButton: false,
   },

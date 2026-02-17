@@ -867,7 +867,7 @@
         }
     }
 
-    .btn-gradient, .orange-gr, .orange-gr-nohover{
+    .btn-gradient, .orange-gr, .orange-gr-nohover, .btn-white::before{
         background: radial-gradient(71.86% 71.86% at 50.75% 49.25%, #FFA759 0%, #FF8212 100%);
     }
     .orange-gr:hover{
@@ -923,7 +923,8 @@
     .btn-gradient::before{
         background: radial-gradient(44.03% 44.03% at 50% 50%, #FFA759 0%, #FF6A00 100%);
     }
-    .btn-gradient:hover::before{
+
+    .btn-gradient:hover::before, .btn-white:hover::before{
         opacity: 1;
     }
     .btn-blue-gradient::before{

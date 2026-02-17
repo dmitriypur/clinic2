@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\DoctorController;
+use App\Http\Controllers\Api\BookingDoctorsController;
 use App\Http\Controllers\Auth\VerificationCodeController;
 use App\Http\Controllers\CallbackController;
 use App\Http\Controllers\MakingAnAppointmentController;
@@ -12,6 +13,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('review-filter', App\Http\Controllers\Api\ReviewController::class);
 Route::get('doctors/{doctor:ulid}', DoctorController::class);
+Route::get('booking/doctors', BookingDoctorsController::class);
 Route::get('schedule', ScheduleController::class);
 
 Route::post('/making-an-appointment', MakingAnAppointmentController::class);
