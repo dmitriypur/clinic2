@@ -65,12 +65,12 @@ export default {
         })
     },
 
-    addDoctor(id) {
-      this.toggleItem(this.filters.doctors, id)
-      this.sendFilter(this.$refs.handle.role)
-    },
     addResource(id) {
       this.toggleItem(this.filters.resources, id)
+      this.sendFilter(this.$refs.handle.role)
+    },
+    addDoctor(id) {
+      this.toggleItem(this.filters.doctors, id)
       this.sendFilter(this.$refs.handle.role)
     },
     addService(id) {

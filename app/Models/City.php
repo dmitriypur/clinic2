@@ -107,4 +107,9 @@ class City extends Model
     {
         return $this->belongsToMany(Block::class, 'city_block');
     }
+
+    public function reviews(): BelongsToMany
+    {
+        return $this->belongsToMany(Review::class);
+    }
 }

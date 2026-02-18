@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\ResourcesForReviews;
 use App\Models\Traits\Filterable;
+use App\Models\Traits\HasCityScope;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -18,18 +19,16 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  */
 class Review extends Model
 {
-    use HasFactory, Filterable;
+    use HasFactory, Filterable, HasCityScope;
 
     protected static function booted()
     {
         static::saved(function () {
-            \Illuminate\Support\Facades\Cache::forget('reviews');
-            \Illuminate\Support\Facades\Cache::forget('reviews_with_doctor_cities');
+            self::clearReviewsCache();
         });
 
         static::deleted(function () {
-            \Illuminate\Support\Facades\Cache::forget('reviews');
-            \Illuminate\Support\Facades\Cache::forget('reviews_with_doctor_cities');
+            self::clearReviewsCache();
         });
     }
 
@@ -58,6 +57,23 @@ class Review extends Model
     public function pages(): BelongsToMany
     {
         return $this->belongsToMany(Page::class);
+    }
+
+    public function cities(): BelongsToMany
+    {
+        return $this->belongsToMany(City::class);
+    }
+
+    private static function clearReviewsCache(): void
+    {
+        \Illuminate\Support\Facades\Cache::forget('reviews');
+        \Illuminate\Support\Facades\Cache::forget('reviews_with_doctor_cities');
+        \Illuminate\Support\Facades\Cache::forget('reviews_with_cities_global');
+
+        $cityService = app(\App\Services\CityService::class);
+        foreach ($cityService->getActiveCities()->pluck('slug') as $slug) {
+            \Illuminate\Support\Facades\Cache::forget("reviews_with_cities_{$slug}");
+        }
     }
 
     public function getDoctorInitialsAttribute()

@@ -253,7 +253,8 @@ class Block extends Model implements HasMedia, Sortable
         }
 
         $reviewIds = $this->payload['reviews'];
-        $cacheKey = 'block_reviews_' . md5(implode(',', $reviewIds));
+        $citySlug = app(\App\Services\CityService::class)->getCurrentCity()?->slug ?? 'global';
+        $cacheKey = 'block_reviews_' . $citySlug . '_' . md5(implode(',', $reviewIds));
 
         return Cache::remember($cacheKey, 3600, function () use ($reviewIds) {
             return Review::with(['doctor', 'pages'])->whereIn('id', $reviewIds)->get();
@@ -263,24 +264,13 @@ class Block extends Model implements HasMedia, Sortable
     public function getReviewsAltAttribute(): Collection|null
     {
         $isHome = request()->is('/');
-        $reviews = Cache::remember('reviews_with_doctor_cities', 2592000, fn() => Review::with(['doctor.cities', 'pages'])->get());
-
         if ($this->type !== BlockType::REVIEWS_ALT) {
             return null;
         }
 
-        $currentCity = app(\App\Services\CityService::class)->getCurrentCity();
-        if ($currentCity) {
-            $reviews = $reviews->filter(function ($review) use ($currentCity) {
-                $doctor = $review->doctor;
-
-                if (!$doctor || !$doctor->relationLoaded('cities')) {
-                    return false;
-                }
-
-                return $doctor->cities->contains('id', $currentCity->id);
-            })->values();
-        }
+        $citySlug = app(\App\Services\CityService::class)->getCurrentCity()?->slug ?? 'global';
+        $cacheKey = "reviews_with_cities_{$citySlug}";
+        $reviews = Cache::remember($cacheKey, 2592000, fn() => Review::with(['doctor', 'pages'])->get());
 
         if ($isHome) {
             // Композитная сортировка: сначала is_home, потом get_date

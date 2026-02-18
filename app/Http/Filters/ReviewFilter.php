@@ -6,7 +6,6 @@ use Illuminate\Database\Eloquent\Builder;
 
 class ReviewFilter extends AbstractFilter
 {
-
     const DOCTORS = 'doctors';
     const RESOURCES = 'resources';
     const SERVICES = 'services';

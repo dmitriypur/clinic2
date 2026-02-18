@@ -31,5 +31,11 @@ class EditReview extends EditRecord
     {
         Cache::forget('reviews');
         Cache::forget('reviews_with_doctor_cities');
+        Cache::forget('reviews_with_cities_global');
+
+        $cityService = app(\App\Services\CityService::class);
+        foreach ($cityService->getActiveCities()->pluck('slug') as $slug) {
+            Cache::forget("reviews_with_cities_{$slug}");
+        }
     }
 }

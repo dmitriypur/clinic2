@@ -4,6 +4,7 @@ namespace App\Models\Traits;
 
 use App\Services\CityService;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Schema;
 
 trait HasCityScope
 {
@@ -14,6 +15,15 @@ trait HasCityScope
         }
 
         static::addGlobalScope('city', function (Builder $builder) {
+            $table = $builder->getModel()->getTable();
+            $pivotTable = self::getCityPivotTableName($table);
+
+            // Если pivot-таблица еще не создана (например, миграция не применена),
+            // не накладываем city-scope, чтобы избежать SQL ошибок.
+            if (!Schema::hasTable($pivotTable)) {
+                return;
+            }
+
             $cityService = app(CityService::class);
             $currentCity = $cityService->getCurrentCity();
 
