@@ -9,7 +9,7 @@
 </template>
 
 <script>
-import Modal from '../Modal'
+const Modal = () => import('../Modal')
 import axios from "axios";
 import Skeleton from "./components/Skeleton/Skeleton.vue";
 import DoctorMarkup from "./components/DoctorMarkup/DoctorMarkup.vue";

@@ -110,7 +110,7 @@
 </template>
 
 <script>
-import Modal from '../Modal'
+const Modal = () => import('../Modal')
 import {classNames} from '../../utilities/css'
 import {Form} from '../../utilities/form'
 import {StarIcon} from "./components";

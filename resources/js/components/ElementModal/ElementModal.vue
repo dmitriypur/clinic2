@@ -54,7 +54,7 @@
 
 <script>
 import {eventBus} from '../../eventBus'
-import Modal from '../Modal'
+const Modal = () => import('../Modal')
 
 export default {
   components: {Modal},

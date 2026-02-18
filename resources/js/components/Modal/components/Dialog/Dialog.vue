@@ -44,7 +44,7 @@ export default {
   computed: {
     className() {
       return classNames(
-        "bg-surface pointer-events-auto relative rounded-xl md:rounded-3xl inset-x-0 bottom-0 flex flex-col w-full max-h-[95vh] bg-surface shadow-lg md:w-max mx-auto",
+        "bg-surface pointer-events-auto relative rounded-xl md:rounded-3xl inset-x-0 bottom-0 flex flex-col w-full max-h-[95vh] shadow-lg md:max-w-max mx-auto",
         !this.limitHeight && "h-full"
       );
     },

@@ -29,7 +29,7 @@
 </template>
 
 <script>
-import Modal from '../Modal'
+const Modal = () => import('../Modal')
 import phoneInput from '../../mixins/phoneInput'
 import {classNames} from '../../utilities/css'
 import {Code, PhoneNumber} from './components'
