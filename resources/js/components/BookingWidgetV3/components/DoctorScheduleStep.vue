@@ -1,11 +1,5 @@
 <template>
-  <DoctorScheduleStepLegacy
-    v-if="shouldUseLegacyLayout"
-    v-bind="legacyProps"
-    v-on="$listeners"
-  />
-
-  <div v-else class="doctor-schedule-step bg-white">
+  <div class="doctor-schedule-step bg-white">
     <div class="flex items-start justify-between gap-4">
       <div class="w-full flex flex-col-reverse md:flex-row flex-wrap items-center gap-3 md:gap-6">
         <h2 class="text-center text-[28px] font-semibold leading-[1.2] text-interactive md:text-[34px]">
@@ -128,6 +122,7 @@
               :key="calendarRenderKey"
               v-model="internalDate"
               :min-date="minDate"
+              :attributes="calendarAttributes"
               color="orange"
               is-expanded
               @input="handleDate"
@@ -187,12 +182,17 @@
 </template>
 
 <script>
-const DoctorScheduleStepLegacy = () => import("./DoctorScheduleStepLegacy.vue");
+import { addMonthsSafe } from "../utils/dateUtils";
+import {
+  areSameSlot,
+  isSlotAvailable as isSlotAvailableUtil,
+} from "../utils/slotUtils";
+
 const PrimaryButton = () => import("./shared/PrimaryButton.vue");
 const SecondaryButton = () => import("./shared/SecondaryButton.vue");
 
 export default {
-  components: { DoctorScheduleStepLegacy, PrimaryButton, SecondaryButton },
+  components: { PrimaryButton, SecondaryButton },
   props: {
     doctor: {
       type: Object,
@@ -214,6 +214,10 @@ export default {
       type: [Date, null],
       default: null,
     },
+    highlightedDates: {
+      type: Array,
+      default: () => [],
+    },
     slots: {
       type: Array,
       default: () => [],
@@ -230,10 +234,6 @@ export default {
       type: Boolean,
       default: false,
     },
-    useLegacyLayout: {
-      type: Boolean,
-      default: false,
-    },
   },
   data() {
     return {
@@ -244,21 +244,6 @@ export default {
     };
   },
   computed: {
-    legacyProps() {
-      const { useLegacyLayout, ...rest } = this.$props;
-      return rest;
-    },
-    shouldUseLegacyLayout() {
-      if (this.useLegacyLayout) {
-        return true;
-      }
-
-      if (typeof window === "undefined") {
-        return false;
-      }
-
-      return Boolean(window?.config?.booking?.useLegacyDoctorScheduleStep);
-    },
     monthTitle() {
       const date = this.internalDate instanceof Date
         ? this.internalDate
@@ -295,6 +280,21 @@ export default {
     skeletonSlotsCount() {
       return 10;
     },
+    calendarAttributes() {
+      if (!Array.isArray(this.highlightedDates) || !this.highlightedDates.length) {
+        return [];
+      }
+
+      return [
+        {
+          key: "doctor-available-dates",
+          dates: this.highlightedDates,
+          content: {
+            class: "booking-calendar-day-has-slots",
+          },
+        },
+      ];
+    },
   },
   methods: {
     handleDate(date) {
@@ -306,13 +306,11 @@ export default {
       this.$emit("select-date", date);
     },
     goToPrevMonth() {
-      const nextDate = new Date(this.internalDate || new Date());
-      nextDate.setMonth(nextDate.getMonth() - 1);
+      const nextDate = addMonthsSafe(this.internalDate, -1);
       this.handleDate(nextDate);
     },
     goToNextMonth() {
-      const nextDate = new Date(this.internalDate || new Date());
-      nextDate.setMonth(nextDate.getMonth() + 1);
+      const nextDate = addMonthsSafe(this.internalDate, 1);
       this.handleDate(nextDate);
     },
     branchLabel(branch) {
@@ -351,78 +349,10 @@ export default {
       return slot?.id || slot?.datetime || slot?.time;
     },
     isSameSlot(slot) {
-      if (!slot || !this.selectedSlot) {
-        return false;
-      }
-
-      if (slot.id != null && this.selectedSlot.id != null) {
-        return slot.id === this.selectedSlot.id;
-      }
-
-      if (slot.datetime && this.selectedSlot.datetime) {
-        return slot.datetime === this.selectedSlot.datetime;
-      }
-
-      return slot.time === this.selectedSlot.time;
+      return areSameSlot(slot, this.selectedSlot);
     },
     isSlotAvailable(slot) {
-      if (!slot) return false;
-
-      const isTrue = (value) =>
-        value === true ||
-        value === 1 ||
-        value === "1" ||
-        String(value).toLowerCase() === "true";
-
-      const parseStatus = (value) => String(value || "").toLowerCase();
-      const status = parseStatus(slot.status);
-
-      const hasIsAvailable = Object.prototype.hasOwnProperty.call(
-        slot,
-        "is_available"
-      );
-      const hasFree = Object.prototype.hasOwnProperty.call(slot, "free");
-      const hasIsOccupied = Object.prototype.hasOwnProperty.call(
-        slot,
-        "is_occupied"
-      );
-      const hasIsPast = Object.prototype.hasOwnProperty.call(slot, "is_past");
-
-      const availabilitySignals = [];
-      if (hasIsAvailable) {
-        availabilitySignals.push(isTrue(slot.is_available));
-      }
-      if (hasFree) {
-        availabilitySignals.push(isTrue(slot.free));
-      }
-      if (status) {
-        if (["free", "available", "open"].includes(status)) {
-          availabilitySignals.push(true);
-        }
-        if (
-          ["occupied", "booked", "busy", "closed", "disabled"].includes(status)
-        ) {
-          availabilitySignals.push(false);
-        }
-      }
-
-      const available = availabilitySignals.length
-        ? availabilitySignals.some(Boolean)
-        : true;
-
-      const occupied = hasIsOccupied
-        ? isTrue(slot.is_occupied)
-        : status
-        ? ["occupied", "booked", "busy"].includes(status)
-        : false;
-
-      const past = hasIsPast
-        ? isTrue(slot.is_past)
-        : slot.datetime
-        ? new Date(slot.datetime).getTime() < Date.now()
-        : false;
-
-      return available && !occupied && !past;
+      return isSlotAvailableUtil(slot);
     },
     slotClass(slot) {
       if (!this.isSlotAvailable(slot)) {
@@ -529,7 +459,6 @@ export default {
   border-radius: 4px;
   color: #1f3462;
   display: flex;
-  font-family: "Gilroy", sans-serif;
   font-size: 16px;
   font-weight: 600;
   height: 27px;
@@ -580,6 +509,10 @@ export default {
 .doctor-schedule-step .booking-calendar .vc-day .vc-day-content.is-selected,
 .doctor-schedule-step .booking-calendar .vc-day .vc-highlight-content-solid {
   color: #ffffff !important;
+}
+.doctor-schedule-step .booking-calendar .vc-day-content.booking-calendar-day-has-slots {
+  color: #F5841F !important;
+  font-weight: 600 !important;
 }
 
 @media (max-width: 1023px) {

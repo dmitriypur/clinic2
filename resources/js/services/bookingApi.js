@@ -80,6 +80,32 @@ class BookingApiService {
   }
 
   /**
+   * Получить агрегированную доступность слотов для календаря
+   * GET /api/v1/booking/calendar-availability
+   */
+  async getCalendarAvailability({
+    doctorId,
+    dateFrom,
+    dateTo,
+  }) {
+    try {
+      const response = await this.client.get(
+        "/booking/calendar-availability",
+        {
+          params: {
+            doctor_id: doctorId,
+            date_from: dateFrom,
+            date_to: dateTo,
+          },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
    * Проверить доступность слота (опционально, для 1С)
    * POST /api/v1/applications/check-slot
    */

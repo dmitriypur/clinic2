@@ -43,6 +43,7 @@
         :branches="doctorFlowBranches"
         :selectedBranchId="selectedBranch?.id"
         :selectedDate="selectedDate"
+        :highlightedDates="doctorFlowHighlightedDates"
         :slots="slots"
         :selectedSlot="selectedSlot"
         :loading="loadingSlots"
@@ -61,6 +62,7 @@
         :doctorShiftMap="clinicDoctorShiftMap"
         :selectedDoctorId="selectedDoctor?.id"
         :selectedDate="selectedDate"
+        :highlightedDates="clinicFlowHighlightedDates"
         :slots="slots"
         :selectedSlot="selectedSlot"
         :loadingDoctors="loadingDoctors"
@@ -149,6 +151,8 @@ export default {
       clinicDoctorShiftMap: {},
       slots: [],
       doctorFlowBranches: [],
+      doctorFlowHighlightedDates: [],
+      clinicFlowHighlightedDates: [],
       allCities: [],
       doctorsCacheByCity: {},
       siteDoctorsCacheByUuids: {},
@@ -853,9 +857,11 @@ export default {
       this.selectedDoctor = doctor;
       if (this.currentStep === "doctor-schedule" && this.selectedClinic?.id) {
         await this.loadDoctorFlowBranches(this.selectedClinic.id);
+        await this.updateDoctorFlowHighlightedDates();
       }
       if (this.currentStep === "clinic-schedule") {
         await this.loadSlots();
+        await this.updateClinicFlowHighlightedDates();
       }
     },
     async handleClinicSelect(clinic) {
@@ -868,6 +874,7 @@ export default {
       if (this.currentStep === "doctor-schedule") {
         await this.loadDoctorFlowBranches(clinic.id);
         await this.loadSlots();
+        await this.updateDoctorFlowHighlightedDates();
       }
     },
     async handleBranchSelect(branch) {
@@ -901,6 +908,7 @@ export default {
 
       if (this.currentStep === "doctor-schedule") {
         await this.loadSlots();
+        await this.updateDoctorFlowHighlightedDates();
         return;
       }
 
@@ -911,6 +919,7 @@ export default {
           this.clinicDoctors = [];
         }
         await this.setDefaultDoctorForClinicFlow();
+        await this.updateClinicFlowHighlightedDates();
       }
     },
     async handleDateSelect(date) {
@@ -921,10 +930,12 @@ export default {
         } else {
           await this.loadSlots();
         }
+        await this.updateDoctorFlowHighlightedDates();
         return;
       }
       if (this.currentStep === "clinic-schedule") {
         await this.setDefaultDoctorForClinicFlow({ keepSelectedDoctor: true });
+        await this.updateClinicFlowHighlightedDates();
         return;
       }
       await this.loadSlots();
@@ -957,6 +968,7 @@ export default {
         this.slots = [];
         this.selectedSlot = null;
       }
+      await this.updateDoctorFlowHighlightedDates();
     },
     async goToClinicSchedule() {
       this.currentStep = "clinic-schedule";
@@ -966,6 +978,7 @@ export default {
         this.clinicDoctors = [];
       }
       await this.setDefaultDoctorForClinicFlow();
+      await this.updateClinicFlowHighlightedDates();
     },
     goToForm() {
       this.formSourceStep = this.currentStep;
@@ -1049,8 +1062,129 @@ export default {
       this.cityBranches = [];
       this.clinicDoctors = [];
       this.clinicDoctorShiftMap = {};
+      this.doctorFlowHighlightedDates = [];
+      this.clinicFlowHighlightedDates = [];
       this.isSubmitting = false;
       this.formSourceStep = null;
+    },
+    async updateDoctorFlowHighlightedDates() {
+      if (
+        this.currentStep !== "doctor-schedule" ||
+        !this.selectedDoctor?.id ||
+        !this.selectedClinic?.id
+      ) {
+        this.doctorFlowHighlightedDates = [];
+        return;
+      }
+
+      const base =
+        this.selectedDate instanceof Date
+          ? this.selectedDate
+          : new Date(this.selectedDate || Date.now());
+
+      const start = new Date(base.getFullYear(), base.getMonth(), 1);
+      const end = new Date(base.getFullYear(), base.getMonth() + 1, 0);
+
+      const dateFrom = this.formatDateForApi(start);
+      const dateTo = this.formatDateForApi(end);
+
+      try {
+        const response = await bookingApi.getCalendarAvailability({
+          doctorId: this.selectedDoctor.id,
+          dateFrom,
+          dateTo,
+        });
+
+        const items = Array.isArray(response?.data)
+          ? response.data
+          : Array.isArray(response?.items)
+          ? response.items
+          : Array.isArray(response)
+          ? response
+          : [];
+        const dates = items
+          .filter((item) => Number(item?.available_slots || 0) > 0 && item?.date)
+          .map((item) => {
+            const parts = String(item.date).split("-");
+            if (parts.length !== 3) {
+              return null;
+            }
+            const [year, month, day] = parts.map((part) => Number(part));
+            if (!year || !month || !day) {
+              return null;
+            }
+            return new Date(year, month - 1, day);
+          })
+          .filter((value) => value instanceof Date && !Number.isNaN(value.getTime()));
+
+        this.doctorFlowHighlightedDates = dates;
+        console.log(
+          "[BookingWidgetV3] doctorFlowHighlightedDates",
+          dates.map((d) => this.formatDateForApi(d))
+        );
+      } catch (e) {
+        this.doctorFlowHighlightedDates = [];
+      }
+    },
+    async updateClinicFlowHighlightedDates() {
+      if (
+        this.currentStep !== "clinic-schedule" ||
+        !this.selectedDoctor?.id ||
+        !this.selectedClinic?.id ||
+        !this.selectedBranch?.id
+      ) {
+        this.clinicFlowHighlightedDates = [];
+        return;
+      }
+
+      const base =
+        this.selectedDate instanceof Date
+          ? this.selectedDate
+          : new Date(this.selectedDate || Date.now());
+
+      const start = new Date(base.getFullYear(), base.getMonth(), 1);
+      const end = new Date(base.getFullYear(), base.getMonth() + 1, 0);
+
+      const dateFrom = this.formatDateForApi(start);
+      const dateTo = this.formatDateForApi(end);
+
+      try {
+        const response = await bookingApi.getCalendarAvailability({
+          doctorId: this.selectedDoctor.id,
+          dateFrom,
+          dateTo,
+        });
+
+        const items = Array.isArray(response?.data)
+          ? response.data
+          : Array.isArray(response?.items)
+          ? response.items
+          : Array.isArray(response)
+          ? response
+          : [];
+        const dates = items
+          .filter((item) => Number(item?.available_slots || 0) > 0 && item?.date)
+          .map((item) => {
+            const parts = String(item.date).split("-");
+            if (parts.length !== 3) {
+              return null;
+            }
+            const [year, month, day] = parts.map((part) => Number(part));
+            if (!year || !month || !day) {
+              return null;
+            }
+            return new Date(year, month - 1, day);
+          })
+          .filter((value) => value instanceof Date && !Number.isNaN(value.getTime()));
+
+        this.clinicFlowHighlightedDates = dates;
+        console.log(
+          "[BookingWidgetV3] clinicFlowHighlightedDates",
+          dates.map((d) => this.formatDateForApi(d))
+        );
+      } catch (e) {
+        this.clinicFlowHighlightedDates = [];
+      }
     },
     formatDateForApi(date) {
       const year = date.getFullYear();

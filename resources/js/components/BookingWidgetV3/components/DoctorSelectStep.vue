@@ -56,14 +56,14 @@
             <IconCheck class="w-4 h-4 md:w-6 md:h-6" />
           </div>
         </div>
-        <div class="hidden md:flex md:items-center md:gap-2 md:mt-3 text-xs">
-          <div class="bg-light-gray p-1 border border-interactive/10 rounded-md flex-1 text-center text-nowrap">
+        <div class="hidden md:flex md:items-stretch md:gap-2 md:mt-3 text-xs">
+          <div class="bg-light-gray p-1 border border-interactive/10 rounded-md flex-1 flex items-center justify-center">
             {{ doctor.speciality || doctor.specialization || "Специалист" }}
           </div>
-          <div class="bg-light-gray p-1 border border-interactive/10 rounded-md flex-1 text-center text-nowrap">
+          <div class="bg-light-gray p-1 border border-interactive/10 rounded-md flex-1 flex items-center justify-center">
             {{ doctor.receives || doctor.extra?.receives || "—" }}
           </div>
-          <div class="bg-light-gray p-1 border border-interactive/10 rounded-md flex-1 text-center text-nowrap">
+          <div class="bg-light-gray p-1 border border-interactive/10 rounded-md flex-1 flex items-center justify-center">
             Стаж: {{ doctor.seniority || doctor.extra?.seniority || "—" }}
           </div>
         </div>
