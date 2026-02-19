@@ -55,7 +55,9 @@ Vue.use(VueObserveVisibility);
 Vue.use(YmapPlugin);
 Vue.use(VueLazyload);
 Vue.use(VueTheMask);
-Vue.use(VCalendar);
+Vue.use(VCalendar, {
+  locale: "ru-RU",
+});
 
 new Vue({
   components: {
