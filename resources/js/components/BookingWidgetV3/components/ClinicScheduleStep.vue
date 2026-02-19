@@ -167,7 +167,7 @@
             Время
           </div>
 
-          <div class="mx-auto mt-4 w-full max-w-[444px] min-h-[60px]">
+          <div class="mx-auto mt-4 w-full max-w-[444px] min-h-[92px]">
             <div
               v-if="loadingDoctors || loading"
               class="grid grid-cols-4 md:grid-cols-5 gap-1"
@@ -178,6 +178,11 @@
                 :key="`clinic-slot-skeleton-${n}`"
                 class="h-7 rounded-md bg-surface-subdued animate-pulse"
               ></div>
+            </div>
+
+            <div v-else-if="!slots.length" class="text-center">
+              <p class="font-semibold">Данный врач не принимает в выбранный день</p>
+              <p class="text-sm text-interactive/50">Пожалуйста выберите другой день</p>
             </div>
 
             <div v-else class="grid grid-cols-4 md:grid-cols-5 w-full flex-wrap gap-1">

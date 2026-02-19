@@ -739,7 +739,8 @@ export default {
       }
       return Number.MAX_SAFE_INTEGER;
     },
-    async setDefaultDoctorForClinicFlow() {
+    async setDefaultDoctorForClinicFlow(options = {}) {
+      const keepSelectedDoctor = options.keepSelectedDoctor === true;
       if (this.currentStep !== "clinic-schedule") {
         return;
       }
@@ -803,18 +804,35 @@ export default {
           return acc;
         }, {});
 
-        const selected = withAvailable[0] || resolved[0] || null;
+        let selectedEntry = null;
 
-        if (!selected) {
+        if (keepSelectedDoctor && this.selectedDoctor?.id != null) {
+          selectedEntry =
+            resolved.find(
+              (item) => item?.doctor?.id === this.selectedDoctor.id
+            ) || null;
+        }
+
+        if (!selectedEntry && this.clinicDoctors[0]?.id != null) {
+          const firstDoctorId = this.clinicDoctors[0].id;
+          selectedEntry =
+            resolved.find((item) => item?.doctor?.id === firstDoctorId) || null;
+        }
+
+        if (!selectedEntry) {
+          selectedEntry = withAvailable[0] || resolved[0] || null;
+        }
+
+        if (!selectedEntry) {
           this.selectedDoctor = null;
           this.slots = [];
           this.selectedSlot = null;
           return;
         }
 
-        this.selectedDoctor = selected.doctor;
-        this.slots = selected.slots;
-        this.selectedSlot = selected.firstAvailable || null;
+        this.selectedDoctor = selectedEntry.doctor;
+        this.slots = selectedEntry.slots;
+        this.selectedSlot = selectedEntry.firstAvailable || null;
       } finally {
         this.loadingSlots = false;
       }
@@ -906,7 +924,7 @@ export default {
         return;
       }
       if (this.currentStep === "clinic-schedule") {
-        await this.setDefaultDoctorForClinicFlow();
+        await this.setDefaultDoctorForClinicFlow({ keepSelectedDoctor: true });
         return;
       }
       await this.loadSlots();
