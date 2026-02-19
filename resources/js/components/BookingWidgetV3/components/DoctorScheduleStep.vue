@@ -515,6 +515,10 @@ export default {
   font-weight: 600 !important;
 }
 
+.doctor-schedule-step .booking-calendar .vc-highlights + .vc-day-content{
+  color: #ffffff !important;
+}
+
 @media (max-width: 1023px) {
   .doctor-schedule-step {
     --calendar-cell-width: 52px;
