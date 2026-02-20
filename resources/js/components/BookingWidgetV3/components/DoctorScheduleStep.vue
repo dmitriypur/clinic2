@@ -17,7 +17,7 @@
 
     <div class="pb-6 pt-6 md:pb-10 md:pt-[34px]">
       <div class="grid grid-cols-1 items-start gap-8 lg:grid-cols-[400px_444px] lg:justify-between lg:gap-[40px]">
-        <div>
+        <div v-show="showBranchPane">
           <div class="flex items-center gap-[25px] rounded-[12px] border-2 border-surface-subdued bg-white pl-1 pr-6 py-2">
             <div class="h-[60px] w-[60px] overflow-hidden rounded-[8px] bg-white">
               <img
@@ -86,9 +86,16 @@
               ></div>
             </div>
           </div>
+
+          <div class="mx-auto mt-8 flex w-full max-w-[444px] flex-col gap-4 md:hidden">
+            <SecondaryButton @click="$emit('back')">Назад</SecondaryButton>
+            <PrimaryButton :disabled="!canProceedFromBranch" @click="goToMobileCalendarStage">
+              Далее
+            </PrimaryButton>
+          </div>
         </div>
 
-        <div>
+        <div v-show="showCalendarPane">
           <div class="flex items-center justify-center gap-4">
             <button
               type="button"
@@ -170,7 +177,7 @@
           </div>
 
           <div class="mx-auto mt-8 flex flex-col md:flex-row w-full max-w-[444px] gap-4">
-            <SecondaryButton @click="$emit('back')">Назад</SecondaryButton>
+            <SecondaryButton @click="handleBackClick">Назад</SecondaryButton>
             <PrimaryButton :disabled="!selectedSlot" @click="$emit('next')">
               Далее
             </PrimaryButton>
@@ -241,9 +248,24 @@ export default {
       minDate: new Date(),
       branchScrollThumbTop: 0,
       showBranchScrollThumb: false,
+      viewportWidth:
+        typeof window !== "undefined" ? window.innerWidth : 1024,
+      mobileStage: "branch",
     };
   },
   computed: {
+    isMobile() {
+      return this.viewportWidth < 768;
+    },
+    showBranchPane() {
+      return !this.isMobile || this.mobileStage === "branch";
+    },
+    showCalendarPane() {
+      return !this.isMobile || this.mobileStage === "calendar";
+    },
+    canProceedFromBranch() {
+      return Boolean(this.selectedBranchId);
+    },
     monthTitle() {
       const date = this.internalDate instanceof Date
         ? this.internalDate
@@ -323,6 +345,25 @@ export default {
     handleBranchScroll() {
       this.updateBranchScrollThumb();
     },
+    handleResize() {
+      this.viewportWidth = window.innerWidth;
+      this.updateBranchScrollThumb();
+    },
+    goToMobileCalendarStage() {
+      if (!this.canProceedFromBranch) {
+        return;
+      }
+
+      this.mobileStage = "calendar";
+    },
+    handleBackClick() {
+      if (this.isMobile && this.mobileStage === "calendar") {
+        this.mobileStage = "branch";
+        return;
+      }
+
+      this.$emit("back");
+    },
     updateBranchScrollThumb() {
       const el = this.$refs.branchesList;
       if (!el) {
@@ -371,10 +412,10 @@ export default {
       this.updateBranchScrollThumb();
     });
 
-    window.addEventListener("resize", this.updateBranchScrollThumb);
+    window.addEventListener("resize", this.handleResize);
   },
   beforeDestroy() {
-    window.removeEventListener("resize", this.updateBranchScrollThumb);
+    window.removeEventListener("resize", this.handleResize);
   },
   watch: {
     selectedDate(newVal) {

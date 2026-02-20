@@ -87,6 +87,8 @@ class BookingApiService {
     doctorId,
     dateFrom,
     dateTo,
+    clinicId = null,
+    branchId = null,
   }) {
     try {
       const response = await this.client.get(
@@ -96,6 +98,8 @@ class BookingApiService {
             doctor_id: doctorId,
             date_from: dateFrom,
             date_to: dateTo,
+            clinic_id: clinicId || undefined,
+            branch_id: branchId || undefined,
           },
         }
       );

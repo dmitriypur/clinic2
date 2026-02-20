@@ -88,6 +88,14 @@
         @submit="handleFormSubmit"
       />
 
+      <CallbackFormNew
+        v-else-if="currentStep === 'leave-request'"
+        button-content="Отправить"
+        target="otpravka-formy"
+        :showOnlineLink="true"
+        @open-online="goToStart"
+      />
+
       <SuccessStep
         v-else-if="currentStep === 'success'"
         :doctorName="selectedDoctor?.name"
@@ -111,6 +119,7 @@ const ClinicSelectStep = () => import("./components/ClinicSelectStep.vue");
 const DoctorScheduleStep = () => import("./components/DoctorScheduleStep.vue");
 const ClinicScheduleStep = () => import("./components/ClinicScheduleStep.vue");
 const PatientFormStep = () => import("./components/PatientFormStep.vue");
+const CallbackFormNew = () => import("../CallbackForm/CallbackFormNew.vue");
 const SuccessStep = () => import("./components/SuccessStep.vue");
 
 export default {
@@ -123,6 +132,7 @@ export default {
     DoctorScheduleStep,
     ClinicScheduleStep,
     PatientFormStep,
+    CallbackFormNew,
     SuccessStep,
   },
   props: {
@@ -577,8 +587,16 @@ export default {
         });
 
         if (!branchesWithAvailableSlots.length) {
-          this.selectedBranch = null;
-          this.slots = [];
+          const currentBranchId = this.selectedBranch?.id;
+          const fallbackBranch =
+            enabledBranches.find(
+              (branch) => Number(branch.id) === Number(currentBranchId)
+            ) || enabledBranches[0] || null;
+
+          this.selectedBranch = fallbackBranch;
+          this.slots = fallbackBranch
+            ? branchSlotsMap[String(fallbackBranch.id)] || []
+            : [];
           this.selectedSlot = null;
           return;
         }
@@ -850,8 +868,7 @@ export default {
       }
     },
     handleLeaveRequest() {
-      this.formSourceStep = "start";
-      this.currentStep = "form";
+      this.currentStep = "leave-request";
     },
     async handleDoctorSelect(doctor) {
       this.selectedDoctor = doctor;
@@ -926,7 +943,11 @@ export default {
       this.selectedDate = date;
       if (this.currentStep === "doctor-schedule") {
         if (this.selectedClinic?.id) {
-          await this.selectDoctorFlowBranchByDate(this.selectedClinic.id);
+          if (this.selectedBranch?.id) {
+            await this.loadSlots();
+          } else {
+            await this.selectDoctorFlowBranchByDate(this.selectedClinic.id);
+          }
         } else {
           await this.loadSlots();
         }
@@ -1071,7 +1092,8 @@ export default {
       if (
         this.currentStep !== "doctor-schedule" ||
         !this.selectedDoctor?.id ||
-        !this.selectedClinic?.id
+        !this.selectedClinic?.id ||
+        !this.selectedBranch?.id
       ) {
         this.doctorFlowHighlightedDates = [];
         return;
@@ -1093,6 +1115,8 @@ export default {
           doctorId: this.selectedDoctor.id,
           dateFrom,
           dateTo,
+          clinicId: this.selectedClinic.id,
+          branchId: this.selectedBranch.id,
         });
 
         const items = Array.isArray(response?.data)
@@ -1153,6 +1177,8 @@ export default {
           doctorId: this.selectedDoctor.id,
           dateFrom,
           dateTo,
+          clinicId: this.selectedClinic.id,
+          branchId: this.selectedBranch.id,
         });
 
         const items = Array.isArray(response?.data)
