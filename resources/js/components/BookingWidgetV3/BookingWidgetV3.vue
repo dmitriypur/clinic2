@@ -91,7 +91,7 @@
       <CallbackFormNew
         v-else-if="currentStep === 'leave-request'"
         button-content="Отправить"
-        target="otpravka-formy"
+        :target="callbackFormTarget"
         :showOnlineLink="true"
         @open-online="goToStart"
       />
@@ -144,6 +144,10 @@ export default {
       type: String,
       default: null, // 'doctor' | 'clinic'
     },
+    callbackTarget: {
+      type: String,
+      default: null,
+    },
   },
   data() {
     return {
@@ -180,35 +184,55 @@ export default {
   },
   computed: {
     currentCityId() {
-      const localCityName =
-        window.currentCity?.name ||
-        window.config?.state?.currentCity?.name ||
-        "Москва";
-
       if (!this.allCities || !this.allCities.length) {
         return null;
       }
 
       // Нормализация имени (убираем "г." и приводим к нижнему регистру)
       const normalize = (str) => str ? str.toLowerCase().replace(/^г\.\s*/, '').trim() : '';
-      const targetName = normalize(localCityName);
+      const configuredCities = Array.isArray(window.config?.cities)
+        ? window.config.cities
+        : [];
+      const currentConfiguredCity =
+        configuredCities.find((city) => city?.is_current) || null;
 
-      // 1. Ищем совпадение по имени в списке API
-      const matchedCity = this.allCities.find(
-        (c) => normalize(c.name) === targetName
-      );
+      const cityNameCandidates = [
+        window.currentCity?.name,
+        currentConfiguredCity?.name,
+        window.config?.state?.currentCity?.name,
+      ].filter(Boolean);
 
-      if (matchedCity) {
-        return matchedCity.id;
+      for (const cityName of cityNameCandidates) {
+        const targetName = normalize(cityName);
+        if (!targetName) {
+          continue;
+        }
+
+        // 1. Пытаемся найти точное совпадение имени города
+        const matchedCity = this.allCities.find(
+          (city) => normalize(city?.name) === targetName
+        );
+        if (matchedCity) {
+          return matchedCity.id;
+        }
+
+        // 2. Если точного нет, пробуем мягкое совпадение
+        const partialMatch = this.allCities.find((city) => {
+          const sourceName = normalize(city?.name);
+          return sourceName.includes(targetName) || targetName.includes(sourceName);
+        });
+        if (partialMatch) {
+          return partialMatch.id;
+        }
       }
 
-      // 2. Если не нашли, пробуем найти Москву как дефолт
-      const moscow = this.allCities.find(c => normalize(c.name).includes('москва'));
+      // 3. Если не нашли, пробуем найти Москву как дефолт
+      const moscow = this.allCities.find((city) => normalize(city?.name).includes("москва"));
       if (moscow) {
         return moscow.id;
       }
 
-      // 3. Если совсем ничего не нашли, берем первый город из API
+      // 4. Если совсем ничего не нашли, берем первый город из API
       return this.allCities[0].id;
     },
     allowedClinicIds() {
@@ -220,6 +244,9 @@ export default {
       return list
         .map((id) => Number(id))
         .filter((id) => Number.isFinite(id));
+    },
+    callbackFormTarget() {
+      return this.callbackTarget || "otpravka-formy";
     },
   },
   watch: {

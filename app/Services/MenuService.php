@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Clinic;
 use App\Helpers\Doctors;
+use App\Models\Doctor;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Request;
 
@@ -43,6 +44,19 @@ class MenuService
             if (isset($item['data']['id'])) {
                 $doctors = Doctors::getDoctors();
                 $doctor = $doctors->firstWhere('id', $item['data']['id']);
+
+                if (!$doctor) {
+                    $doctorIdOrHandle = (string) $item['data']['id'];
+                    $doctor = Doctor::query()
+                        ->withoutGlobalScope('city')
+                        ->publiclyVisible()
+                        ->with('media')
+                        ->where(function ($query) use ($doctorIdOrHandle) {
+                            $query->where('id', $doctorIdOrHandle)
+                                ->orWhere('handle', $doctorIdOrHandle);
+                        })
+                        ->first();
+                }
                 
                 if ($doctor) {
                     $item['data']['doctor'] = [

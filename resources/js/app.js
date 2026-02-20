@@ -107,6 +107,7 @@ new Vue({
     loginModalActive: false,
     bookingWidgetV2Active: false,
     bookingWidgetV3Active: false,
+    bookingWidgetV3Target: null,
     currentCityId: null,
     showToTopButton: false,
   },
@@ -252,6 +253,17 @@ new Vue({
     showCallbackModal(phone = null, target = null) {
       this.callbackModalPhone = phone || window.config.state.user?.phone || "";
       this.callbackModalTarget = target;
+
+      const bookingFormVariant = window.config?.booking?.formVariant || "old";
+      if (bookingFormVariant === "new") {
+        this.callbackModalActive = false;
+        this.bookingWidgetV3Target = target;
+        this.bookingWidgetV3Active = true;
+        return;
+      }
+
+      this.bookingWidgetV3Active = false;
+      this.bookingWidgetV3Target = null;
       this.callbackModalActive = true;
     },
 
@@ -260,6 +272,11 @@ new Vue({
       this.callbackModalPhone = window.config.state.user?.phone || "";
       this.callbackModalName = window.config.state.user?.name || "";
       this.callbackModalTarget = "";
+    },
+
+    closeBookingWidgetV3() {
+      this.bookingWidgetV3Active = false;
+      this.bookingWidgetV3Target = null;
     },
 
     showLoginModal() {

@@ -11,6 +11,8 @@ class GeneralSettings extends Settings
 
     public string $yandex_map_api_key;
 
+    public string $booking_form_variant;
+
     public ?string $favicon;
 
     public array $licenses;

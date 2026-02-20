@@ -51,6 +51,19 @@ class ManageGeneralSettings extends SettingsPage
                                     TextInput::make('site_name')->label('Название сайта')->required(),
                                 ]),
 
+                                Forms\Components\Section::make('Форма записи')->schema([
+                                    Forms\Components\Select::make('booking_form_variant')
+                                        ->label('Вариант формы по кнопкам записи')
+                                        ->options([
+                                            'old' => 'Старая',
+                                            'new' => 'Новая',
+                                        ])
+                                        ->native(false)
+                                        ->default('old')
+                                        ->required()
+                                        ->helperText('Переключает, что открывается через showCallbackModal(): старая форма или новый виджет.'),
+                                ]),
+
                                 Forms\Components\Section::make('Продвижение сайта')->schema([
                                     TextInput::make('promotion_company')->label('Название компании'),
                                     TextInput::make('promotion_company_url')->label('Ссылка'),

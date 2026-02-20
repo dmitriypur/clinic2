@@ -4,6 +4,7 @@ namespace App;
 
 use App\Contracts\Services\Schema\Schema;
 use App\Models\Review;
+use App\Settings\GeneralSettings;
 use App\Settings\SeoSettings;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Auth;
@@ -66,6 +67,7 @@ class Clinic
 
     public static function scriptVariables(): array
     {
+        $generalSettings = app(GeneralSettings::class);
         $cityService = app(\App\Services\CityService::class);
         $currentCity = $cityService->getCurrentCity();
         $cities = $cityService->getActiveCities();
@@ -123,6 +125,7 @@ class Clinic
             'cities' => $preparedCities,
             'booking' => [
                 'allowedClinicIds' => config('zrenie-clinic.booking_allowed_clinic_ids', []),
+                'formVariant' => $generalSettings->booking_form_variant ?? 'old',
             ],
         ];
     }

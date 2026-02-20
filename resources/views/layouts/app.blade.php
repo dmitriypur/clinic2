@@ -115,6 +115,14 @@
                              :target="callbackModalTarget"
                              @close="closeCallbackModal"></online-appointment-form>
 
+    @unless(request()->routeIs('booking.widget.v3.demo'))
+        <booking-widget-v3
+            :open="bookingWidgetV3Active"
+            :callback-target="bookingWidgetV3Target"
+            @close="closeBookingWidgetV3"
+        ></booking-widget-v3>
+    @endunless
+
     @guest
         <login-modal :open="loginModalActive"
                      @close="closeLoginModal"></login-modal>

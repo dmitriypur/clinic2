@@ -42,21 +42,18 @@ export default {
       this.activeSecond = [index, second];
       this.previewImage = img;
 
-      const activeItem = this.menuItems.find(item => item.active === true);
-      if (activeItem && activeItem.is_doctor_grid && activeItem.children.length > 0) {
-        const activeChild = activeItem.children.find(item => item.active === true);
+      const findFirstDoctor = (menuItem) =>
+        menuItem?.children?.find((child) => child?.data?.doctor)?.data?.doctor || null;
 
-        if(activeChild) {
-          this.selectedDoctor = activeChild.data.doctor;
-        }else{
-          this.selectedDoctor = activeItem.children[0].data.doctor;
-        }
-      }else{
-        const doctors = this.menuItems.find(item => item.is_doctor_grid);
-        if (doctors && doctors.children.length > 0) {
-          this.selectedDoctor = doctors.children[0].data.doctor;
-        }
+      const activeItem = this.menuItems.find((item) => item.active === true);
+      if (activeItem && activeItem.is_doctor_grid && activeItem.children.length > 0) {
+        const activeChild = activeItem.children.find((item) => item.active === true);
+        this.selectedDoctor = activeChild?.data?.doctor || findFirstDoctor(activeItem);
+        return;
       }
+
+      const doctors = this.menuItems.find((item) => item.is_doctor_grid);
+      this.selectedDoctor = findFirstDoctor(doctors);
     },
     setActiveSecond(top, second, img) {
       this.activeSecond = [top, second];
