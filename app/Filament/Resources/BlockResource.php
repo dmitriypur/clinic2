@@ -1229,14 +1229,6 @@ class BlockResource extends Resource
                                 ->toMediaCollection($image->collection_name);
                         });
 
-                        //                        collect($replica->images)->each(function ($item) use ($replica, $record) {
-                        //                            $image = $record->getFirstMedia($item['uuid']);
-                        //                            $replica
-                        //                                ->addMediaFromStream($image->stream())
-                        //                                ->usingFileName($image->file_name)
-                        //                                ->toMediaCollection($item['uuid']);
-                        //                        });
-
                         $record
                             ->forceFill([
                                 'page_id' => Session::get(

@@ -295,7 +295,17 @@ class Block extends Model implements HasMedia, Sortable
         $cacheKey = 'block_author_' . $slug . '_' . $authorId;
 
         return Cache::remember($cacheKey, 3600, function () use ($authorId) {
-            return Doctors::getDoctors()->where('id', $authorId)->first();
+            $author = Doctors::getDoctors()->firstWhere('id', $authorId);
+
+            if ($author) {
+                return $author;
+            }
+
+            return Doctor::query()
+                ->withoutGlobalScope('city')
+                ->publiclyVisible()
+                ->with('media')
+                ->find($authorId);
         });
     }
 

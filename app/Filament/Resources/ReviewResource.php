@@ -14,9 +14,11 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Actions\ReplicateAction;
 use Filament\Tables\Columns\SelectColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
 
 class ReviewResource extends Resource
@@ -116,6 +118,16 @@ class ReviewResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+                ReplicateAction::make()
+                    ->label('Копировать')
+                    ->icon('heroicon-o-document-duplicate')
+                    ->after(function (Model $replica, Model $record): void {
+                        /** @var Review $replica */
+                        /** @var Review $record */
+                        $replica->pages()->sync($record->pages()->pluck('pages.id')->toArray());
+                        $replica->cities()->sync($record->cities()->pluck('cities.id')->toArray());
+                        self::clearReviewCaches();
+                    }),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

@@ -1,13 +1,26 @@
 @push('header-scripts')
-    @if(isset($tag))
-        <link rel="canonical" href="{{ url('tags/' . $tag->handle) }}">
-    @elseif(isset($page->seo['canonical']) && $page->seo['canonical'] !== '')
-        <link rel="canonical"
-              href="{{ url($category->handle) }}{{ $page->seo['canonical'] != $category->handle ? '/'.$page->seo['canonical'] : '' }}">
-    @else
-        <link rel="canonical"
-              href="{{ url($category->handle) }}{{ $page->handle != $category->handle ? '/'.$page->handle : '' }}">
-    @endif
+    @php
+        $cityService = app(\App\Services\CityService::class);
+        $isPostsType = isset($page) && $page->type === \App\Enums\PageType::Posts;
+        $isPostsOrTagsListingRoute = request()->routeIs('stati.index') || request()->routeIs('tag.index');
+
+        if (isset($tag)) {
+            $canonicalPath = 'tags/' . $tag->handle;
+        } elseif (isset($page->seo['canonical']) && $page->seo['canonical'] !== '') {
+            $canonicalPath = $category->handle .
+                ($page->seo['canonical'] != $category->handle ? '/' . ltrim($page->seo['canonical'], '/') : '');
+        } else {
+            $canonicalPath = $category->handle .
+                ($page->handle != $category->handle ? '/' . $page->handle : '');
+        }
+
+        $canonicalPath = '/' . ltrim($canonicalPath, '/');
+        $canonicalHref = ($isPostsType || $isPostsOrTagsListingRoute)
+            ? url($canonicalPath)
+            : url($cityService->addCityPrefix($canonicalPath));
+    @endphp
+
+    <link rel="canonical" href="{{ $canonicalHref }}">
 
     @if(isset($category->seo['noindex']) && !!$category->seo['noindex'])
         <meta name="robots" content="noindex">

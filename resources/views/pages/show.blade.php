@@ -1,11 +1,19 @@
 @push('header-scripts')
-    @if(isset($page->seo['canonical']) && $page->seo['canonical'] !== '')
-        <link rel="canonical"
-              href="{{ url($page->seo['canonical']) }}">
-    @else
-        <link rel="canonical"
-              href="{{ url()->current() }}">
-    @endif
+    @php
+        $cityService = app(\App\Services\CityService::class);
+        $rawCanonical = isset($page->seo['canonical']) && $page->seo['canonical'] !== ''
+            ? $page->seo['canonical']
+            : request()->path();
+
+        if (filter_var($rawCanonical, FILTER_VALIDATE_URL)) {
+            $canonicalHref = $rawCanonical;
+        } else {
+            $canonicalPath = '/' . ltrim((string) $rawCanonical, '/');
+            $canonicalHref = url($cityService->addCityPrefix($canonicalPath));
+        }
+    @endphp
+
+    <link rel="canonical" href="{{ $canonicalHref }}">
 
     @if(isset($page->seo['noindex']) && !!$page->seo['noindex'])
         <meta name="robots" content="noindex">
