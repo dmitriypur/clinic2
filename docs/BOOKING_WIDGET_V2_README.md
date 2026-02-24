@@ -78,16 +78,10 @@
 В `.env` можно настроить URL API (опционально):
 
 ```env
-# Production API
 VITE_BOOKING_API_URL=https://adminzrenie.ru/api/v1
-
-# Development/Testing API
-# VITE_BOOKING_API_URL=https://app.fondzrenie.ru/api/v1
 ```
 
-По умолчанию:
-- **Development**: используется `https://app.fondzrenie.ru/api/v1`
-- **Production**: используется `https://adminzrenie.ru/api/v1`
+По умолчанию используется `https://adminzrenie.ru/api/v1`.
 
 ### 3. Сборка проекта
 

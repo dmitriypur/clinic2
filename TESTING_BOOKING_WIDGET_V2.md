@@ -62,19 +62,19 @@ http://localhost:8888/booking-widget-v2-demo
 
 #### Получение врачей
 ```
-GET https://app.fondzrenie.ru/api/v1/cities/1/doctors
+GET https://adminzrenie.ru/api/v1/cities/1/doctors
 Status: 200
 ```
 
 #### Получение слотов
 ```
-GET https://app.fondzrenie.ru/api/v1/doctors/{id}/slots?date=2024-01-15
+GET https://adminzrenie.ru/api/v1/doctors/{id}/slots?date=2024-01-15
 Status: 200
 ```
 
 #### Создание заявки
 ```
-POST https://app.fondzrenie.ru/api/v1/applications
+POST https://adminzrenie.ru/api/v1/applications
 Status: 200 или 201
 ```
 

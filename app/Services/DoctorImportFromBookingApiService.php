@@ -243,9 +243,7 @@ class DoctorImportFromBookingApiService
 
     protected function resolveBaseUrl(): string
     {
-        return config('app.env') === 'production'
-            ? 'https://adminzrenie.ru/api/v1'
-            : 'https://app.fondzrenie.ru/api/v1';
+        return 'https://adminzrenie.ru/api/v1';
     }
 
     protected function allowedClinicIds(): array

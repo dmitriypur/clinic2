@@ -34,8 +34,6 @@ const VideoNew = () => import("./components/VideoNew/VideoNew.vue");
 const VideoModal = () => import("./components/VideoModal/VideoModal.vue");
 const Faq = () => import("./components/Faq/Faq.vue");
 const AppFilter = () => import("./components/AppFilter/AppFilter.vue");
-const BookingWidgetV2 = () =>
-  import("./components/BookingWidgetV2/BookingWidgetV2.vue");
 const BookingWidgetV3 = () =>
   import("./components/BookingWidgetV3/BookingWidgetV3.vue");
 const DoctorCard = () => import("./components/DoctorCard/DoctorCard.vue");
@@ -84,7 +82,6 @@ new Vue({
     CallbackForm,
     CertificateForm,
     OnlineAppointmentForm,
-    BookingWidgetV2,
     BookingWidgetV3,
     ImageLazy,
     SearchLive,

@@ -6,11 +6,7 @@ import axios from "axios";
  */
 class BookingApiService {
   constructor() {
-    // Используем тестовый API по умолчанию, можно переключить на prod
-    this.baseURL =
-      typeof process !== "undefined" && process.env.NODE_ENV === "production"
-        ? "https://adminzrenie.ru/api/v1"
-        : "https://app.fondzrenie.ru/api/v1";
+    this.baseURL = "https://adminzrenie.ru/api/v1";
 
     this.client = axios.create({
       baseURL: this.baseURL,

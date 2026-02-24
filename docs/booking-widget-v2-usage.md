@@ -102,11 +102,6 @@ export default {
 VITE_BOOKING_API_URL=https://adminzrenie.ru/api/v1
 ```
 
-Для разработки используется тестовый API:
-```
-https://app.fondzrenie.ru/api/v1
-```
-
 ## Структура данных заявки
 
 При отправке формы создается заявка со следующими полями:
