@@ -16,7 +16,7 @@
       </span>
     </div>
 
-    <div class="mt-6 h-[352px] overflow-y-auto pr-1 md:w-[450px]">
+    <div class="mt-6 h-[272px] overflow-y-auto pr-1 md:w-[450px]">
       <div
         v-for="doctor in filteredDoctors"
         :key="doctor.id"

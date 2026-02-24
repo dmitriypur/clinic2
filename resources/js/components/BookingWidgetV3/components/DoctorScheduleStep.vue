@@ -2,7 +2,7 @@
   <div class="doctor-schedule-step bg-white">
     <div class="flex items-start justify-between gap-4">
       <div class="w-full flex flex-col-reverse md:flex-row flex-wrap items-center gap-3 md:gap-6">
-        <h2 class="text-center text-[28px] font-semibold leading-[1.2] text-interactive md:text-[34px]">
+        <h2 class="hidden md:block text-center text-[28px] font-semibold leading-[1.2] text-interactive md:text-[34px]">
           Выберите дату, время и филиал
         </h2>
         <span
@@ -18,21 +18,70 @@
     <div class="pb-6 pt-6 md:pb-10 md:pt-[34px]">
       <div class="grid grid-cols-1 items-start gap-8 lg:grid-cols-[400px_444px] lg:justify-between lg:gap-[40px]">
         <div v-show="showBranchPane">
-          <div class="flex items-center gap-[25px] rounded-[12px] border-2 border-surface-subdued bg-white pl-1 pr-6 py-2">
-            <div class="h-[60px] w-[60px] overflow-hidden rounded-[8px] bg-white">
-              <img
-                v-if="doctorAvatar"
-                :src="doctorAvatar"
-                :alt="doctorName"
-                class="h-full w-full object-cover"
-                loading="lazy"
-              />
-            </div>
+          <div class="rounded-[12px] border-2 border-surface-subdued bg-white p-2">
+            <div class="flex items-center gap-[25px]">
+              <div class="h-auto w-[60px] overflow-hidden rounded-[8px] bg-white">
+                <img
+                  v-if="doctorAvatar"
+                  :src="doctorAvatar"
+                  :alt="doctorName"
+                  class="h-full w-full object-cover"
+                  loading="lazy"
+                />
+              </div>
+              <p class="text-base font-semibold leading-[1.2] text-interactive whitespace-pre-line">
+                {{ doctorName }}
+              </p>
 
-            <p class="text-base font-semibold leading-[1.2] text-interactive whitespace-pre-line">
-              {{ doctorName }}
-            </p>
+              <div class="ml-auto">
+                <button
+                  v-if="hasVideoVisit"
+                  type="button"
+                  class="flex items-center justify-center"
+                  @click="handleOpenVideo"
+                >
+                  <svg width="15" height="20" viewBox="0 0 15 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                      d="M11.0562 9.34246C11.0562 10.3122 10.6819 11.2421 10.0156 11.9278C9.34937 12.6135 8.44574 12.9987 7.50352 12.9987C6.56131 12.9987 5.65768 12.6135 4.99143 11.9278C4.32519 11.2421 3.95089 10.3122 3.95089 9.34246C3.95089 8.37276 4.32519 7.44278 4.99143 6.7571C5.65768 6.07142 6.56131 5.6862 7.50352 5.6862C8.44574 5.6862 9.34937 6.07142 10.0156 6.7571C10.6819 7.44278 11.0562 8.37276 11.0562 9.34246Z"
+                      :fill="hasVideoVisit ? '#1F3462' : '#1f346266'"
+                    />
+                    <path
+                      d="M15 17.0625V5.48437L9.375 0H2.5C1.83696 0 1.20107 0.256807 0.732233 0.713927C0.263392 1.17105 0 1.79103 0 2.4375V17.0625C0 17.709 0.263392 18.329 0.732233 18.7861C1.20107 19.2432 1.83696 19.5 2.5 19.5H12.5C13.163 19.5 13.7989 19.2432 14.2678 18.7861C14.7366 18.329 15 17.709 15 17.0625ZM9.375 3.65625C9.375 4.1411 9.57254 4.60609 9.92417 4.94893C10.2758 5.29177 10.7527 5.48437 11.25 5.48437H13.75V16.7639C13.75 16.7639 12.5 14.625 7.5 14.625C2.5 14.625 1.25 16.7639 1.25 16.7639V2.4375C1.25 2.11427 1.3817 1.80427 1.61612 1.57571C1.85054 1.34715 2.16848 1.21875 2.5 1.21875H9.375V3.65625Z"
+                      :fill="hasVideoVisit ? '#1F3462' : '#1f346266'"
+                    />
+                  </svg>
+                </button>
+                
+                <div
+                  v-else
+                  class="flex items-center justify-center text-interactive/40 cursor-default"
+                >
+                  <svg width="15" height="20" viewBox="0 0 15 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                      d="M11.0562 9.34246C11.0562 10.3122 10.6819 11.2421 10.0156 11.9278C9.34937 12.6135 8.44574 12.9987 7.50352 12.9987C6.56131 12.9987 5.65768 12.6135 4.99143 11.9278C4.32519 11.2421 3.95089 10.3122 3.95089 9.34246C3.95089 8.37276 4.32519 7.44278 4.99143 6.7571C5.65768 6.07142 6.56131 5.6862 7.50352 5.6862C8.44574 5.6862 9.34937 6.07142 10.0156 6.7571C10.6819 7.44278 11.0562 8.37276 11.0562 9.34246Z"
+                      fill="#1f346266"
+                    />
+                    <path
+                      d="M15 17.0625V5.48437L9.375 0H2.5C1.83696 0 1.20107 0.256807 0.732233 0.713927C0.263392 1.17105 0 1.79103 0 2.4375V17.0625C0 17.709 0.263392 18.329 0.732233 18.7861C1.20107 19.2432 1.83696 19.5 2.5 19.5H12.5C13.163 19.5 13.7989 19.2432 14.2678 18.7861C14.7366 18.329 15 17.709 15 17.0625ZM9.375 3.65625C9.375 4.1411 9.57254 4.60609 9.92417 4.94893C10.2758 5.29177 10.7527 5.48437 11.25 5.48437H13.75V16.7639C13.75 16.7639 12.5 14.625 7.5 14.625C2.5 14.625 1.25 16.7639 1.25 16.7639V2.4375C1.25 2.11427 1.3817 1.80427 1.61612 1.57571C1.85054 1.34715 2.16848 1.21875 2.5 1.21875H9.375V3.65625Z"
+                      fill="#1f346266"
+                    />
+                  </svg>
+                </div>
+              </div>
+            </div>
+            <div class="flex flex-wrap gap-2 mt-2">
+              <div class="w-full bg-light-gray p-1 border border-interactive/10 rounded-md text-sm flex items-center justify-center">
+                {{ doctor.speciality || doctor.specialization || "Специалист" }}
+              </div>
+              <div class="w-[calc(50%-0.25rem)] bg-light-gray p-1 border border-interactive/10 rounded-md text-sm flex items-center justify-center">
+                {{ doctor.receives || doctor.extra?.receives || "—" }}
+              </div>
+              <div class="w-[calc(50%-0.25rem)] bg-light-gray p-1 border border-interactive/10 rounded-md text-sm flex items-center justify-center">
+                Стаж: {{ doctor.seniority || doctor.extra?.seniority || "—" }}
+              </div>
+            </div>
           </div>
+          
 
           <div class="mt-6 text-center text-xl font-semibold leading-[1.2] text-interactive md:mt-8">
             Филиалы
@@ -54,7 +103,7 @@
             <div
               v-else
               ref="branchesList"
-              class="doctor-schedule-step__branches-scroll h-full max-h-64 min-h-[272px] space-y-2 overflow-y-auto pr-3"
+              class="doctor-schedule-step__branches-scroll h-full max-h-64 max-h-[272px] space-y-2 overflow-y-auto pr-3"
               @scroll="handleBranchScroll"
             >
               <button
@@ -189,6 +238,7 @@
 </template>
 
 <script>
+import { eventBus } from "@/eventBus";
 import { addMonthsSafe } from "../utils/dateUtils";
 import {
   areSameSlot,
@@ -296,6 +346,12 @@ export default {
         null
       );
     },
+    hasVideoVisit() {
+      return Boolean(this.doctor?.video_url);
+    },
+    doctorUrl() {
+      return this.doctor?.id || null;
+    },
     branchSkeletonCount() {
       return 4;
     },
@@ -319,6 +375,13 @@ export default {
     },
   },
   methods: {
+    handleOpenVideo() {
+      if (!this.hasVideoVisit) {
+        return;
+      }
+
+      eventBus.$emit("showVideoModal", this.doctor.video_url);
+    },
     handleDate(date) {
       if (!date) {
         return;

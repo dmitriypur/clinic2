@@ -2,7 +2,7 @@
   <div class="clinic-schedule-step overflow-hidden bg-white">
     <div class="flex items-start justify-between gap-4">
         <div class="w-full flex flex-col-reverse md:flex-row flex-wrap items-center gap-3 md:gap-6">
-          <h2 class="text-center text-[28px] font-semibold leading-[1.2] text-interactive md:text-[34px]">
+          <h2 class="hidden md:block text-center text-[28px] font-semibold leading-[1.2] text-interactive md:text-[34px]">
             Выберите дату и время
           </h2>
           <span
@@ -16,7 +16,7 @@
     <div class="hidden md:block mt-5 h-px w-full bg-surface-subdued md:mt-7"></div>
 
     <div class="pb-6 pt-6 md:pb-10 md:pt-[30px]">
-      <div class="grid grid-cols-1 items-start gap-8 lg:grid-cols-[400px_444px] lg:justify-between lg:gap-[40px]">
+      <div class="grid grid-cols-1 items-start gap-4 lg:grid-cols-[400px_444px] lg:justify-between lg:gap-10">
         <div>
           <div v-if="doctors.length" class="clinic-schedule-step__doctors-scroll flex gap-2 overflow-x-auto pb-1">
             <button
@@ -38,7 +38,38 @@
             В выбранном филиале врачей нет
           </div>
 
-          <div v-if="doctors.length" class="relative mt-3 h-auto overflow-hidden rounded-[16px] border border-[rgba(29,29,29,0.2)] bg-white">
+          <div class="w-full flex items-center gap-4 md:hidden cursor-pointer rounded-xl border-2 bg-white px-2 py-1 mt-2">
+            <div class="h-auto w-14 min-w-14 overflow-hidden rounded-lg md:rounded-full md:bg-surface-subdued md:h-16 md:w-16 md:min-w-16">
+              <img
+                v-if="doctorAvatar"
+                :src="doctorAvatar"
+                :alt="selectedDoctorName"
+                class="h-full w-full object-cover"
+                loading="lazy"
+              />
+            </div>
+            <div class="w-2/3 md:w-1/2">
+              <button
+                type="button"
+                class="text-xs font-semibold mb-1"
+                :class="hasVideoVisit ? 'text-action-primary hover:underline cursor-pointer' : 'text-subdued cursor-default'"
+                :disabled="!hasVideoVisit"
+                @click="handleOpenVideo"
+              >
+                Видео-визитка
+              </button>
+              <div class="text-sm md:text-base font-semibold leading-tight">
+                <template v-if="selectedDoctorNameParts.last">
+                  {{ selectedDoctorNameParts.main }}<br>{{ selectedDoctorNameParts.last }}
+                </template>
+                <template v-else>
+                  {{ selectedDoctorName }}
+                </template>
+              </div>
+            </div>
+          </div>
+
+          <div v-if="doctors.length" class="hidden md:block relative mt-3 h-auto overflow-hidden rounded-[16px] border border-[rgba(29,29,29,0.2)] bg-white">
             <div class="absolute bottom-0 -right-12 md:right-0 h-[250px] w-[220px] overflow-hidden z-20">
               <img
                 v-if="doctorAvatar"
@@ -158,7 +189,7 @@
 
           <div class="hidden md:block mt-6 h-px w-full bg-surface-subdued"></div>
 
-          <div class="mt-6 text-center text-base font-semibold leading-[1.2] text-interactive">
+          <div class="mt-4 md:mt-6 text-center text-base font-semibold leading-[1.2] text-interactive">
             Время
           </div>
 
@@ -195,7 +226,7 @@
             </div>
           </div>
 
-          <div class="mx-auto mt-8 flex flex-col md:flex-row w-full max-w-[444px] gap-4 md:mt-10">
+          <div class="mx-auto mt-6 flex flex-col md:flex-row w-full max-w-[444px] gap-4 md:mt-10">
             <SecondaryButton @click="$emit('back')">Назад</SecondaryButton>
             <PrimaryButton :disabled="!selectedSlot || !doctors.length" @click="$emit('next')">
               Далее

@@ -81,7 +81,7 @@
       {{ generalError }}
     </div>
 
-    <div class="mt-10 flex gap-4">
+    <div class="mx-auto mt-8 flex flex-col md:flex-row w-full max-w-[444px] gap-4">
       <SecondaryButton @click="$emit('back')">Назад</SecondaryButton>
       <PrimaryButton :disabled="isSubmitting" @click="handleSubmit">
         {{ isSubmitting ? "Отправка..." : "Записаться" }}
