@@ -137,15 +137,23 @@ class CityResource extends Resource
 
                 Section::make('SEO склонения')
                     ->schema([
+                        TextInput::make('seo_cases.nominative')
+                            ->label('Именительный падеж (кто/что?)')
+                            ->placeholder('Москва')
+                            ->helperText('Используется в описаниях: "Этот город Москва"'),
                         TextInput::make('seo_cases.prepositional')
                             ->label('Предложный падеж (где?)')
-                            ->placeholder('в Санкт-Петербурге')
-                            ->helperText('Используется в заголовках: "Лечение ... в Санкт-Петербурге"'),
+                            ->placeholder('в Москве')
+                            ->helperText('Используется в заголовках: "Лечение в Москве"'),
 
                         TextInput::make('seo_cases.genitive')
                             ->label('Родительный падеж (кого/чего?)')
-                            ->placeholder('Санкт-Петербурга')
-                            ->helperText('Используется в описаниях: "Клиника ... Санкт-Петербурга"'),
+                            ->placeholder('Москвы')
+                            ->helperText('Используется в описаниях: "Клиника Москвы"'),
+                        TextInput::make('seo_cases.accusative')
+                            ->label('Винительный падеж (кого/что?)')
+                            ->placeholder('Москву')
+                            ->helperText('Используется в описаниях: "Ехать в Москву"'),
                     ])->columns(2),
 
                 Section::make('UTM Телефоны')
