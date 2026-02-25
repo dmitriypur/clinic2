@@ -5,7 +5,7 @@
     closeButtonHiddenOnMobile
     @close="handleClose"
   >
-    <div class="h-auto">
+    <div class="relative h-auto">
       <StartStep
         v-if="currentStep === 'start'"
         :mode="mode"
@@ -105,6 +105,16 @@
         :appointmentTime="selectedSlot?.time"
         @close="handleClose"
       />
+
+      <div
+        v-if="transitionLoading"
+        class="absolute inset-0 z-30 flex min-h-[260px] items-center justify-center bg-white/85 backdrop-blur-[1px]"
+      >
+        <div class="flex flex-col items-center gap-3 text-interactive">
+          <span class="h-8 w-8 animate-spin rounded-full border-2 border-surface-subdued border-t-action-primary"></span>
+          <p class="text-sm font-semibold">Подбираем доступные варианты...</p>
+        </div>
+      </div>
     </div>
   </Modal>
 </template>
@@ -180,6 +190,7 @@ export default {
       loadingDoctorFlowBranches: false,
       isSubmitting: false,
       formSourceStep: null,
+      transitionLoading: false,
     };
   },
   computed: {
@@ -255,7 +266,7 @@ export default {
         if (val) {
           await this.initCities();
           await Promise.all([this.loadClinics(), this.loadDoctorsByCity()]);
-          this.applyInitialMode();
+          await this.applyInitialMode();
         } else {
           this.resetState();
         }
@@ -267,7 +278,42 @@ export default {
     },
   },
   methods: {
-    applyInitialMode() {
+    async withTransitionLoader(task) {
+      const showDelayMs = 100;
+      const minVisibleMs = 100;
+
+      let showTimer = null;
+      let shownAt = 0;
+      let didShow = false;
+
+      showTimer = setTimeout(() => {
+        didShow = true;
+        shownAt = Date.now();
+        this.transitionLoading = true;
+      }, showDelayMs);
+
+      try {
+        return await task();
+      } finally {
+        if (showTimer) {
+          clearTimeout(showTimer);
+        }
+
+        if (!didShow) {
+          this.transitionLoading = false;
+          return;
+        }
+
+        const visibleForMs = Date.now() - shownAt;
+        const remainingMs = Math.max(minVisibleMs - visibleForMs, 0);
+        if (remainingMs > 0) {
+          await new Promise((resolve) => setTimeout(resolve, remainingMs));
+        }
+
+        this.transitionLoading = false;
+      }
+    },
+    async applyInitialMode() {
       if (!this.open || this.currentStep !== "start") {
         return;
       }
@@ -278,9 +324,26 @@ export default {
       }
 
       if (this.mode === "clinic") {
-        this.currentStep = "clinic-select";
-        this.loadCityBranches();
+        await this.withTransitionLoader(async () => {
+          await this.openClinicFlowWithAutoBranchSkip();
+        });
       }
+    },
+    async openClinicFlowWithAutoBranchSkip() {
+      await this.loadCityBranches();
+
+      if (this.cityBranches.length > 1) {
+        this.currentStep = "clinic-select";
+        return;
+      }
+
+      if (this.cityBranches.length === 1) {
+        await this.handleBranchSelect(this.cityBranches[0]);
+      } else {
+        this.selectedClinic = null;
+        this.selectedBranch = null;
+      }
+      await this.goToClinicSchedule();
     },
     isClinicAllowed(clinicId) {
       if (!this.allowedClinicIds.length) {
@@ -886,12 +949,13 @@ export default {
         this.loadingSlots = false;
       }
     },
-    handleModeSelect(mode) {
+    async handleModeSelect(mode) {
       if (mode === "doctor") {
         this.currentStep = "doctor-select";
       } else if (mode === "clinic") {
-        this.currentStep = "clinic-select";
-        this.loadCityBranches();
+        await this.withTransitionLoader(async () => {
+          await this.openClinicFlowWithAutoBranchSkip();
+        });
       }
     },
     handleLeaveRequest() {
@@ -997,26 +1061,37 @@ export default {
     goToDoctorSelect() {
       this.currentStep = "doctor-select";
     },
-    goToClinicSelect() {
+    async goToClinicSelect() {
+      if (!this.cityBranches.length) {
+        await this.loadCityBranches();
+      }
+
+      if (this.cityBranches.length <= 1) {
+        this.currentStep = "start";
+        return;
+      }
+
       this.currentStep = "clinic-select";
     },
     async goToDoctorSchedule() {
-      const enabledClinic = this.clinics.find((clinic) => clinic.enabled !== false);
-      if (!this.selectedClinic && enabledClinic) {
-        this.selectedClinic = enabledClinic;
-      }
+      await this.withTransitionLoader(async () => {
+        const enabledClinic = this.clinics.find((clinic) => clinic.enabled !== false);
+        if (!this.selectedClinic && enabledClinic) {
+          this.selectedClinic = enabledClinic;
+        }
 
-      this.currentStep = "doctor-schedule";
+        const clinicId = this.selectedClinic?.id || null;
+        if (clinicId) {
+          await this.loadDoctorFlowBranches(clinicId);
+        } else {
+          this.doctorFlowBranches = [];
+          this.slots = [];
+          this.selectedSlot = null;
+        }
 
-      const clinicId = this.selectedClinic?.id || null;
-      if (clinicId) {
-        await this.loadDoctorFlowBranches(clinicId);
-      } else {
-        this.doctorFlowBranches = [];
-        this.slots = [];
-        this.selectedSlot = null;
-      }
-      await this.updateDoctorFlowHighlightedDates();
+        this.currentStep = "doctor-schedule";
+        await this.updateDoctorFlowHighlightedDates();
+      });
     },
     async goToClinicSchedule() {
       this.currentStep = "clinic-schedule";
@@ -1114,6 +1189,7 @@ export default {
       this.clinicFlowHighlightedDates = [];
       this.isSubmitting = false;
       this.formSourceStep = null;
+      this.transitionLoading = false;
     },
     async updateDoctorFlowHighlightedDates() {
       if (

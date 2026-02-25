@@ -307,11 +307,17 @@ export default {
     isMobile() {
       return this.viewportWidth < 768;
     },
+    availableBranches() {
+      return (this.branches || []).filter((branch) => branch?.enabled !== false);
+    },
+    isSingleBranchForMobile() {
+      return this.isMobile && this.availableBranches.length <= 1;
+    },
     showBranchPane() {
-      return !this.isMobile || this.mobileStage === "branch";
+      return !this.isMobile || (!this.isSingleBranchForMobile && this.mobileStage === "branch");
     },
     showCalendarPane() {
-      return !this.isMobile || this.mobileStage === "calendar";
+      return !this.isMobile || this.isSingleBranchForMobile || this.mobileStage === "calendar";
     },
     canProceedFromBranch() {
       return Boolean(this.selectedBranchId);
@@ -410,6 +416,7 @@ export default {
     },
     handleResize() {
       this.viewportWidth = window.innerWidth;
+      this.syncMobileStage();
       this.updateBranchScrollThumb();
     },
     goToMobileCalendarStage() {
@@ -420,12 +427,25 @@ export default {
       this.mobileStage = "calendar";
     },
     handleBackClick() {
-      if (this.isMobile && this.mobileStage === "calendar") {
+      if (
+        this.isMobile &&
+        this.mobileStage === "calendar" &&
+        !this.isSingleBranchForMobile
+      ) {
         this.mobileStage = "branch";
         return;
       }
 
       this.$emit("back");
+    },
+    syncMobileStage() {
+      if (!this.isMobile) {
+        return;
+      }
+
+      if (this.isSingleBranchForMobile) {
+        this.mobileStage = "calendar";
+      }
     },
     updateBranchScrollThumb() {
       const el = this.$refs.branchesList;
@@ -471,6 +491,7 @@ export default {
     },
   },
   mounted() {
+    this.syncMobileStage();
     this.$nextTick(() => {
       this.updateBranchScrollThumb();
     });
@@ -487,11 +508,16 @@ export default {
       }
     },
     branches() {
+      this.syncMobileStage();
       this.$nextTick(() => {
         this.updateBranchScrollThumb();
       });
     },
+    selectedBranchId() {
+      this.syncMobileStage();
+    },
     loadingBranches() {
+      this.syncMobileStage();
       this.$nextTick(() => {
         this.updateBranchScrollThumb();
       });
