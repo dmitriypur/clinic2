@@ -96,6 +96,8 @@ class PageService
 
     public function getPageSeoData(Page $page): array
     {
+        $page = $page->withResolvedCitySeoVariables();
+
         return [
             'title' => $page->seo['title'] ?? $page->title,
             'description' => $page->seo['description'] ?? null,

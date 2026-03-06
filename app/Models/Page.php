@@ -7,6 +7,7 @@ use App\Enums\PageType;
 use App\Jobs\RegenerateSitemap;
 use App\Models\Traits\Filterable;
 use App\Models\Traits\HasCityScope;
+use App\Support\CitySeoVariables;
 use App\Settings\SeoSettings;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -246,5 +247,25 @@ class Page extends Model implements HasMedia
     public function getSeoDescription(): string
     {
         return $this->seo['description'] ?? '';
+    }
+
+    public function withResolvedCitySeoVariables(): self
+    {
+        $page = clone $this;
+        $replacer = app(CitySeoVariables::class);
+
+        $page->title = $replacer->replace((string) $page->title) ?? '';
+        $page->body_html = $replacer->replace($page->body_html);
+
+        if ($page->getRawOriginal('breadcrumbs_title') !== null) {
+            $page->breadcrumbs_title = $replacer->replace((string) $page->getRawOriginal('breadcrumbs_title')) ?? '';
+        }
+
+        $seo = (array) ($page->seo ?? []);
+        $seo['title'] = $replacer->replace($seo['title'] ?? null);
+        $seo['description'] = $replacer->replace($seo['description'] ?? null);
+        $page->seo = $seo;
+
+        return $page;
     }
 }

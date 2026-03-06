@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Enums\PageType;
+use App\Filament\Resources\Concerns\HasCitySeoVariablesHint;
 use App\Filament\Resources\PageResource\Pages;
 use App\Filament\Resources\PageResource\RelationManagers;
 use App\Models\Page;
@@ -20,6 +21,8 @@ use Illuminate\Support\Str;
 
 class PageResource extends Resource
 {
+    use HasCitySeoVariablesHint;
+
     protected static ?string $model = Page::class;
 
     protected static ?string $recordTitleAttribute = 'title';
@@ -45,6 +48,7 @@ class PageResource extends Resource
                 Section::make()->schema([
                     Forms\Components\TextInput::make('title')
                         ->label('Заголовок')
+                        ->helperText(self::citySeoVariablesHintText())
                         ->required(),
 
                     Forms\Components\TextInput::make('breadcrumbs_title')
@@ -52,7 +56,8 @@ class PageResource extends Resource
                         ->helperText('По-умолчанию берется заголовок'),
 
                     Forms\Components\RichEditor::make('body_html')
-                        ->label('Текст страницы'),
+                        ->label('Текст страницы')
+                        ->helperText(self::citySeoVariablesHintText()),
 
                     Forms\Components\Checkbox::make('is_price_page')
                         ->label('Страница с прайс-листом')
@@ -82,7 +87,8 @@ class PageResource extends Resource
                 ]),
 
                 Section::make('SEO')->schema([
-                    Forms\Components\TextInput::make('seo.title'),
+                    Forms\Components\TextInput::make('seo.title')
+                        ->helperText(self::citySeoVariablesHintText()),
 
                     Forms\Components\TextInput::make('handle')
                         ->label('URL псевдоним')
@@ -120,7 +126,8 @@ class PageResource extends Resource
                             return (string)Str::of(strlen($state))
                                 ->append(' / ')
                                 ->append(160 . ' ')
-                                ->append('символов');
+                                ->append('символов. ')
+                                ->append(self::citySeoVariablesHintText());
                         })
                         ->reactive(),
 

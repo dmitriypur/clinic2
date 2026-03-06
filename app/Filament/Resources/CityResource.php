@@ -137,10 +137,6 @@ class CityResource extends Resource
 
                 Section::make('SEO склонения')
                     ->schema([
-                        TextInput::make('seo_cases.nominative')
-                            ->label('Именительный падеж (кто/что?)')
-                            ->placeholder('Москва')
-                            ->helperText('Используется в описаниях: "Этот город Москва"'),
                         TextInput::make('seo_cases.prepositional')
                             ->label('Предложный падеж (где?)')
                             ->placeholder('в Москве')

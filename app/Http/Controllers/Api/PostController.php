@@ -48,7 +48,7 @@ class PostController extends Controller
         $page = Page::query()
             ->where('type', PageType::Blog)
             ->where('active', true)
-            ->first();
+            ->first()?->withResolvedCitySeoVariables();
 
         if($handle){
             $tag = Tag::query()->where('handle', $handle)->firstOrFail();
@@ -80,8 +80,8 @@ class PostController extends Controller
 
         return view('posts.show')->with([
             'page' => $page,
-            'title' => $page->seo['title'] ?? $page->title,
-            'description' => $page->seo['description'] ?? '',
+            'title' => $page?->seo['title'] ?? $page?->title,
+            'description' => $page?->seo['description'] ?? '',
             'filter' => $filter,
             'categories' => $categories,
             'category' => $categoryCurrent,

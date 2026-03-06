@@ -24,7 +24,7 @@ class PageController extends Controller
 
     public function __invoke(?string $category, ?string $handle = null): View|\Illuminate\Http\RedirectResponse
     {
-        $page = $this->resolvePage($category, $handle);
+        $page = $this->resolvePage($category, $handle)->withResolvedCitySeoVariables();
         $redirect = $this->maybeRedirectCanonical($page, $category, $handle);
         if ($redirect) {
             return $redirect;
