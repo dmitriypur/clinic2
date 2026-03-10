@@ -21,4 +21,5 @@ export {default as TextAccordion} from "./TextAccordion";
 export {default as CertificateForm} from "./CertificateForm";
 export {default as OnlineAppointmentForm} from "./OnlineAppointmentForm";
 export {default as CitySwitcher} from "./CitySwitcher";
+export {default as InfiniteDoctorsList} from "./InfiniteDoctorsList";
 // Компоненты SearchLive и AccessibilityToggle импортируются динамически в TopBar.vue

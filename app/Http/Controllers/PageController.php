@@ -15,8 +15,8 @@ use Illuminate\Support\Facades\Cache;
 
 class PageController extends Controller
 {
-    private const CACHE_TTL = 2592000; // 30 дней
-    private const DOCTORS_PER_PAGE = 5;
+    public const CACHE_TTL = 2592000; // 30 дней
+    public const DOCTORS_PER_PAGE = 3;
 
     public function __construct(
         private readonly PageService $pageService
