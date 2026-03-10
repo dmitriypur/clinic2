@@ -20,6 +20,7 @@ use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Actions\ReplicateAction;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Str;
 
@@ -38,6 +39,45 @@ class BlockResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-s-cube';
 
     protected static ?int $navigationSort = 2;
+
+    protected static function getDoctorOptionsQuery(?array $cityIds = null, ?string $search = null)
+    {
+        $cityIds = collect($cityIds ?? [])
+            ->filter()
+            ->values();
+
+        return Doctor::query()
+            ->publiclyVisible()
+            ->when($cityIds->isNotEmpty(), function ($query) use ($cityIds) {
+                $query->where(function ($doctorQuery) use ($cityIds) {
+                    $doctorQuery
+                        ->whereHas('cities', fn($cityQuery) => $cityQuery->whereIn('cities.id', $cityIds))
+                        ->orDoesntHave('cities');
+                });
+            })
+            ->when(
+                filled($search),
+                fn($query) => $query->where(function ($doctorQuery) use ($search) {
+                    $doctorQuery
+                        ->where('surname', 'like', "%{$search}%")
+                        ->orWhere('name', 'like', "%{$search}%")
+                        ->orWhereRaw("CONCAT(surname, ' ', name) LIKE ?", ["%{$search}%"]);
+                })
+            )
+            ->orderBy('surname')
+            ->orderBy('name');
+    }
+
+    protected static function getDoctorLabels(array $doctorIds): array
+    {
+        return Doctor::query()
+            ->whereIn('id', $doctorIds)
+            ->orderBy('surname')
+            ->orderBy('name')
+            ->get()
+            ->mapWithKeys(fn(Doctor $doctor) => [$doctor->id => trim($doctor->surname . ' ' . $doctor->name)])
+            ->all();
+    }
 
     public static function form(Form $form): Form
     {
@@ -96,6 +136,7 @@ class BlockResource extends Resource
                         ->relationship('cities', 'name')
                         ->multiple()
                         ->preload()
+                        ->live()
                         ->helperText('Если пусто - блок доступен во всех городах'),
 
                     Forms\Components\Select::make('type')
@@ -123,11 +164,23 @@ class BlockResource extends Resource
                         ),
 
 
-                    Forms\Components\Select::make('payload.doctors')
+                    Forms\Components\Select::make('payload.excluded_doctors')
                         ->multiple()
                         ->columnSpanFull()
-                        ->label('Специалисты')
-                        ->options(Doctor::query()->pluck('surname', 'id'))
+                        ->label('Исключить специалистов')
+                        ->options(fn(Forms\Get $get): array => static::getDoctorOptionsQuery($get('cities'))
+                            ->limit(200)
+                            ->get()
+                            ->mapWithKeys(fn(Doctor $doctor) => [$doctor->id => trim($doctor->surname . ' ' . $doctor->name)])
+                            ->all())
+                        ->searchable()
+                        ->getSearchResultsUsing(fn(string $search, Forms\Get $get): array => static::getDoctorOptionsQuery($get('cities'), $search)
+                            ->limit(50)
+                            ->get()
+                            ->mapWithKeys(fn(Doctor $doctor) => [$doctor->id => trim($doctor->surname . ' ' . $doctor->name)])
+                            ->all())
+                        ->getOptionLabelsUsing(fn(array $values): array => static::getDoctorLabels($values))
+                        ->helperText('Если поле пустое, блок покажет всех активных врачей выбранного города. В списке доступны врачи выбранных городов и врачи без привязки к городу.')
                         ->hidden(
                             fn(Forms\Get $get) => !in_array(
                                 BlockType::from($get('type')),
@@ -1240,7 +1293,87 @@ class BlockResource extends Resource
                         Session::forget('original_replicate_page_id');
                     }),
             ])
-            ->bulkActions([Tables\Actions\DeleteBulkAction::make()]);
+            ->bulkActions([
+                Tables\Actions\BulkAction::make('excludeDoctorsAltDoctors')
+                    ->label('Исключить врачей')
+                    ->icon('heroicon-o-user-minus')
+                    ->color('warning')
+                    ->requiresConfirmation()
+                    ->form([
+                        Forms\Components\Select::make('city_ids')
+                            ->label('Фильтр по городам')
+                            ->options(\App\Models\City::query()->where('active', true)->orderBy('name')->pluck('name', 'id'))
+                            ->multiple()
+                            ->searchable()
+                            ->live(),
+                        Forms\Components\Select::make('doctor_ids')
+                            ->label('Специалисты для исключения')
+                            ->multiple()
+                            ->required()
+                            ->options(fn(Forms\Get $get): array => static::getDoctorOptionsQuery($get('city_ids'))
+                                ->limit(200)
+                                ->get()
+                                ->mapWithKeys(fn(Doctor $doctor) => [$doctor->id => trim($doctor->surname . ' ' . $doctor->name)])
+                                ->all())
+                            ->searchable()
+                            ->getSearchResultsUsing(fn(string $search, Forms\Get $get): array => static::getDoctorOptionsQuery($get('city_ids'), $search)
+                                ->limit(50)
+                                ->get()
+                                ->mapWithKeys(fn(Doctor $doctor) => [$doctor->id => trim($doctor->surname . ' ' . $doctor->name)])
+                                ->all())
+                            ->getOptionLabelsUsing(fn(array $values): array => static::getDoctorLabels($values))
+                            ->helperText('Выбранные врачи будут добавлены в список исключений у всех отмеченных блоков типа "Специалисты (альтернативный)".'),
+                    ])
+                    ->modalHeading('Исключить врачей у выбранных блоков')
+                    ->modalDescription('Добавляет выбранных врачей в `payload.excluded_doctors` без удаления уже заданных исключений.')
+                    ->action(function (Collection $records, array $data): void {
+                        $selectedDoctorIds = collect($data['doctor_ids'] ?? [])
+                            ->filter()
+                            ->values();
+
+                        if ($selectedDoctorIds->isEmpty()) {
+                            return;
+                        }
+
+                        $records
+                            ->where('type', BlockType::DOCTORS_ALT)
+                            ->each(function (Block $block) use ($selectedDoctorIds): void {
+                                $payload = $block->payload ?? [];
+                                $excludedDoctorIds = collect($payload['excluded_doctors'] ?? [])
+                                    ->merge($selectedDoctorIds)
+                                    ->filter()
+                                    ->unique()
+                                    ->values()
+                                    ->all();
+
+                                $payload['excluded_doctors'] = $excludedDoctorIds;
+
+                                $block->forceFill([
+                                    'payload' => $payload,
+                                ])->save();
+                            });
+                    }),
+                Tables\Actions\BulkAction::make('clearDoctorsAltSelection')
+                    ->label('Очистить выбранных врачей')
+                    ->icon('heroicon-o-users')
+                    ->color('warning')
+                    ->requiresConfirmation()
+                    ->modalHeading('Очистить список врачей')
+                    ->modalDescription('У выбранных блоков типа "Специалисты (альтернативный)" будет очищен старый список `payload.doctors`. После этого блок начнет работать по новой схеме: все врачи текущего города минус исключенные.')
+                    ->action(function (Collection $records): void {
+                        $records
+                            ->where('type', BlockType::DOCTORS_ALT)
+                            ->each(function (Block $block): void {
+                                $payload = $block->payload ?? [];
+                                unset($payload['doctors']);
+
+                                $block->forceFill([
+                                    'payload' => $payload,
+                                ])->save();
+                            });
+                    }),
+                Tables\Actions\DeleteBulkAction::make(),
+            ]);
     }
 
     public static function getRelations(): array

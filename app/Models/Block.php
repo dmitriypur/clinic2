@@ -6,6 +6,7 @@ use App\Clinic;
 use App\Enums\BlockType;
 use App\Enums\PageType;
 use App\Helpers\Doctors;
+use App\Models\Doctor;
 use App\Models\Traits\HasCityScope;
 use App\Settings\GeneralSettings;
 use App\Settings\SeoSettings;
@@ -65,12 +66,12 @@ class Block extends Model implements HasMedia, Sortable
 
         static::updated(function ($block) {
             Cache::forget('services_with_media_and_prices');
-            $block->page?->clearCache();
+            $block->page()->with('category')->first()?->clearCache();
         });
 
         static::deleted(function ($block) {
             Cache::forget('services_with_media_and_prices');
-            $block->page?->clearCache();
+            $block->page()->with('category')->first()?->clearCache();
         });
     }
 
@@ -231,11 +232,20 @@ class Block extends Model implements HasMedia, Sortable
         }
 
         $doctors = Doctors::getDoctors();
+        $excludedDoctorIds = collect($this->payload['excluded_doctors'] ?? [])
+            ->filter()
+            ->values();
+
+        if ($excludedDoctorIds->isNotEmpty()) {
+            return $doctors
+                ->reject(fn (Doctor $doctor) => $excludedDoctorIds->contains($doctor->id))
+                ->values();
+        }
+
         $doctorIds = collect($this->payload['doctors'] ?? [])->filter()->values();
 
-        // Если в блоке указаны конкретные врачи - показываем их.
-        // Если после фильтра по городу они не найдены, не оставляем блок пустым:
-        // показываем всех доступных врачей текущего города.
+        // Поддержка старых блоков: если раньше был задан whitelist врачей,
+        // сохраняем это поведение, пока блок не будет пересохранен в новом режиме исключений.
         if ($doctorIds->isNotEmpty()) {
             $selectedDoctors = $doctors->whereIn('id', $doctorIds->all())->values();
             if ($selectedDoctors->isNotEmpty()) {
