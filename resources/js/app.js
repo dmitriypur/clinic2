@@ -22,6 +22,7 @@ import {
   TopBar,
   ImageLazy,
   CitySwitcher,
+  InfiniteDoctorsList,
 } from "./components";
 import OnlineAppointmentForm from "./components/OnlineAppointmentForm/OnlineAppointmentForm.vue";
 
@@ -88,6 +89,7 @@ new Vue({
     AccessibilityToggle,
     CitySwitcher,
     CityConfirmationModal,
+    InfiniteDoctorsList,
   },
 
   data: {
