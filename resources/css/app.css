@@ -70,9 +70,11 @@
     button::before, a.btn-blue-gradient::before, a.btn-gradient::before{
         content: '';
         position: absolute;
-        inset: 0;
+        top: 0;
+        left: -100%;
+        width: 200%;
+        height: 100%;
         transition: all .3s;
-        opacity: 0;
         z-index: -1;
     }
 
@@ -868,7 +870,7 @@
     }
 
     .btn-gradient, .orange-gr, .orange-gr-nohover, .btn-white::before{
-        background: radial-gradient(71.86% 71.86% at 50.75% 49.25%, #FFA759 0%, #FF8212 100%);
+        background: linear-gradient(270deg, #FF9A00 0%, #FF7D00 100%);
     }
     .orange-gr:hover{
         background: radial-gradient(71.86% 71.86% at 50.75% 49.25%, #FFA759 0%, #ee770d 100%);
@@ -921,17 +923,23 @@
 
     
     .btn-gradient::before{
-        background: radial-gradient(44.03% 44.03% at 50% 50%, #FFA759 0%, #FF6A00 100%);
+        background: linear-gradient(270deg, #FF9A00 0%, #FF7D00 50%, #FF9A00 100%);
     }
 
-    .btn-gradient:hover::before, .btn-white:hover::before{
+    .btn-gradient:hover::before{
+        left: 0;
+    }
+    .btn-white::before{
+        opacity: 0;
+    }
+    .btn-white:hover::before{
         opacity: 1;
     }
     .btn-blue-gradient::before{
-        background: radial-gradient(44.03% 44.03% at 50% 50%, #65B3EB 0%, #3062B9 100%);
+        background: linear-gradient(270deg, #65B3EB 0%, #3981F1 50%, #65B3EB 100%);
     }
     .btn-blue-gradient:hover::before{
-        opacity: 1;
+        left: 0;
     }
     .coating__card-list ul li{
         position: relative;
