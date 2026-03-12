@@ -202,7 +202,7 @@ new Vue({
   methods: {
     autoOpenBookingWidgetV3FromUrl() {
       const shouldOpenBookingWidget =
-        window.location.hash.trim().toLowerCase() === "#open-widget";
+        window.location.hash.trim().toLowerCase() === "#appointment-form";
 
       if (!shouldOpenBookingWidget) {
         return;
