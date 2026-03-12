@@ -52,7 +52,10 @@ class PostController extends Controller
 
         if($handle){
             $tag = Tag::query()->where('handle', $handle)->firstOrFail();
-            $posts = $tag->pages()->with(['tags', 'media'])->paginate($count_items);
+            $posts = $tag->pages()
+                ->where('active', true)
+                ->with(['tags', 'media'])
+                ->paginate($count_items);
             return view('posts.show')->with([
                 'page' => $page,
                 'title' => $tag->seo['title'] ?? $tag->title,
@@ -66,7 +69,12 @@ class PostController extends Controller
         }
 
         $filters = app()->make(PostFilter::class, ['queryParams' => array_filter($data)]);
-        $posts = Page::filter($filters)->where('category_id', $categoryCurrent->id)->orderByDesc('created_at')->with(['tags', 'media', 'category'])->paginate($count_items);
+        $posts = Page::filter($filters)
+            ->where('active', true)
+            ->where('category_id', $categoryCurrent->id)
+            ->orderByDesc('created_at')
+            ->with(['tags', 'media', 'category'])
+            ->paginate($count_items);
 
         if(isset($data['perpage'])){
             return PostResource::collection($posts);

@@ -85,3 +85,10 @@ php vendor/bin/envoy run rollback
 - New npm packages should be added with exact versions. The repository enforces this through `.npmrc`.
 - Frontend builds should use the Node.js version from `.nvmrc` and the npm version from `package.json -> packageManager`.
 - PHP dependency resolution is fixed to `8.1.22` via `config.platform.php` in `composer.json`.
+
+## Deployment Notes
+
+- `Envoy` opens a separate SSH connection per task. To avoid repeated password prompts, configure SSH keys for `forge@zrenie.clinic` and enable your local ssh-agent.
+- If needed, add SSH multiplexing in your local `~/.ssh/config` for this host (`ControlMaster auto`, `ControlPersist`, `ControlPath`).
+- Backup notifications use the regular Laravel mailer. Set `BACKUP_NOTIFICATION_MAIL_TO` on the server `.env` to the address that should receive backup status emails.
+- If backups complete but log `Sending notification failed`, verify the production `MAIL_*` SMTP settings first.

@@ -211,11 +211,11 @@ return [
         'notifiable' => \Spatie\Backup\Notifications\Notifiable::class,
 
         'mail' => [
-            'to' => 'alex.i.lukin@yandex.ru',
+            'to' => env('BACKUP_NOTIFICATION_MAIL_TO', env('MAIL_FROM_ADDRESS', 'alex.i.lukin@yandex.ru')),
 
             'from' => [
                 'address' => env('MAIL_FROM_ADDRESS', 'alex.i.lukin@yandex.ru'),
-                'name' => env('MAIL_FROM_NAME', 'Example'),
+                'name' => env('MAIL_FROM_NAME', env('APP_NAME', 'Laravel')),
             ],
         ],
 
