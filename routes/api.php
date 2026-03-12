@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\DoctorController;
+use App\Http\Controllers\Api\Integrations\ServiceIntegrationController;
 use App\Http\Controllers\Api\BookingDoctorsController;
 use App\Http\Controllers\Auth\VerificationCodeController;
 use App\Http\Controllers\CallbackController;
@@ -23,3 +24,12 @@ Route::post('/send-verification-code', VerificationCodeController::class);
 
 Route::put('user', [UserController::class, 'update']);
 Route::put('user/reset-password', UserPasswordController::class);
+
+Route::prefix('integrations/services')
+    ->middleware('services.integration')
+    ->group(function () {
+        Route::get('tree', [ServiceIntegrationController::class, 'tree']);
+        Route::get('search', [ServiceIntegrationController::class, 'search']);
+        Route::post('apply', [ServiceIntegrationController::class, 'apply']);
+        Route::get('{uuid}', [ServiceIntegrationController::class, 'show']);
+    });
