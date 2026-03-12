@@ -65,6 +65,7 @@ class Kernel extends HttpKernel
         'city' => \App\Http\Middleware\SetCityMiddleware::class,
         'guest' => \App\Http\Middleware\RedirectIfAuthenticated::class,
         'password.confirm' => \Illuminate\Auth\Middleware\RequirePassword::class,
+        'services.integration.city' => \App\Http\Middleware\SetServicesIntegrationCity::class,
         'services.integration' => \App\Http\Middleware\EnsureServicesIntegrationToken::class,
         'signed' => \App\Http\Middleware\ValidateSignature::class,
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,

@@ -9,6 +9,7 @@
 ```dotenv
 SERVICES_INTEGRATION_TOKEN=change-me
 SERVICES_INTEGRATION_ALLOWED_IPS=127.0.0.1
+SERVICES_INTEGRATION_DEFAULT_CITY_SLUG=moskva
 ```
 
 Передавайте его как `Bearer token`:
@@ -21,11 +22,28 @@ curl -H "Authorization: Bearer change-me" \
 ## Методы чтения
 
 - `GET /api/integrations/services/tree`
+- `GET /api/integrations/services/parents`
 - `GET /api/integrations/services/search?q=лазер`
+- `GET /api/integrations/services/{uuid}/children`
 - `GET /api/integrations/services/{uuid}`
+
+Все методы чтения и записи могут принимать `city_slug` в query string.
+
+Правило по городам:
+
+- если у услуги или подуслуги `city_slugs = []`, значит она доступна во всех городах;
+- если у цены `city_slug = null`, значит эта цена действует во всех городах;
+- в ответах API это дополнительно отмечается флагом `available_in_all_cities = true`.
+
+Примеры:
+
+- `GET /api/integrations/services/search?q=приём&city_slug=moskva`
+- `GET /api/integrations/services/children-by-title?q=Приём детского офтальмолога&city_slug=kirov`
+- `POST /api/integrations/services/preview?city_slug=moskva`
 
 ## Метод записи
 
+- `POST /api/integrations/services/preview`
 - `POST /api/integrations/services/apply`
 
 Поддерживаемые типы операций:
@@ -80,12 +98,18 @@ curl -H "Authorization: Bearer change-me" \
 2. Запустить `ollama serve`.
 3. Подключить это API к небольшой агентной обвязке или UI, который умеет вызывать HTTP-инструменты.
 4. Дать модели список инструментов:
+   - `get_service_parents`
    - `search_services`
+   - `get_service_children`
    - `get_service`
-   - `get_service_tree`
+   - `preview_service_changes`
    - `apply_service_changes`
 
-Модель должна сначала читать данные, затем вызывать `apply` с `dry_run=true`, и только после этого отправлять финальный запрос на изменение.
+Модель должна сначала читать данные, затем вызывать `preview`, и только после этого отправлять финальный запрос на изменение через `apply`.
+
+Если пользователь пишет "для Москвы" или "для Кирова", модель должна передавать соответствующий `city_slug` во все запросы чтения, `preview` и `apply`.
+
+Если у услуги, подуслуги или цены нет привязки к городу, модель должна считать её общей для всех городов, а не отсутствующей.
 
 ## Быстрая локальная проверка
 

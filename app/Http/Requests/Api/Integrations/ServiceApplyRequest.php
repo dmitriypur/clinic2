@@ -16,6 +16,7 @@ class ServiceApplyRequest extends FormRequest
     {
         return [
             'dry_run' => ['nullable', 'boolean'],
+            'compact' => ['nullable', 'boolean'],
             'operations' => ['required', 'array', 'min:1'],
             'operations.*.type' => ['required', 'string', 'in:create_service,update_service,delete_service,upsert_price,delete_price'],
             'operations.*.ref' => ['nullable', 'string', 'max:100'],

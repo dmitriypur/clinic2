@@ -15,6 +15,117 @@ class ServiceIntegrationService
 {
     protected array $refs = [];
 
+    public function getParents(bool $includeInactive = true): array
+    {
+        $query = Service::query()
+            ->whereNull('parent_id')
+            ->orderBy('sort_order')
+            ->withCount('children')
+            ->with('cities:id,slug,name');
+
+        if (! $includeInactive) {
+            $query->where('is_active', true);
+        }
+
+        return [
+            'services' => $query
+                ->get()
+                ->map(fn (Service $service) => $this->serializeParentSummary($service))
+                ->values()
+                ->all(),
+            'cities' => $this->serializeCities(),
+        ];
+    }
+
+    public function getChildren(string $uuid): array
+    {
+        $service = Service::query()
+            ->with([
+                'cities:id,slug,name',
+                'children' => function ($query) {
+                    $query->orderBy('sort_order')
+                        ->with([
+                            'cities:id,slug,name',
+                            'prices.city:id,slug,name',
+                        ]);
+                },
+            ])
+            ->where('uuid', $uuid)
+            ->first();
+
+        if (! $service) {
+            throw (new ModelNotFoundException)->setModel(Service::class, [$uuid]);
+        }
+
+        return [
+            'service' => $this->serializeParentSummary($service),
+            'children' => $service->children
+                ->map(fn (Service $child) => $this->serializeChildSummary($child))
+                ->values()
+                ->all(),
+        ];
+    }
+
+    public function getChildrenByParentTitle(string $title): array
+    {
+        $normalizedTitle = trim($title);
+
+        $matches = Service::query()
+            ->whereNull('parent_id')
+            ->whereRaw('LOWER(title) = ?', [mb_strtolower($normalizedTitle)])
+            ->with([
+                'cities:id,slug,name',
+                'children' => function ($query) {
+                    $query->orderBy('sort_order')
+                        ->with([
+                            'cities:id,slug,name',
+                            'prices.city:id,slug,name',
+                        ]);
+                },
+            ])
+            ->get();
+
+        if ($matches->isEmpty()) {
+            $matches = Service::query()
+                ->whereNull('parent_id')
+                ->where('title', 'like', "%{$normalizedTitle}%")
+                ->with([
+                    'cities:id,slug,name',
+                    'children' => function ($query) {
+                        $query->orderBy('sort_order')
+                            ->with([
+                                'cities:id,slug,name',
+                                'prices.city:id,slug,name',
+                            ]);
+                    },
+                ])
+                ->get();
+        }
+
+        if ($matches->isEmpty()) {
+            throw (new ModelNotFoundException)->setModel(Service::class, [$title]);
+        }
+
+        if ($matches->count() > 1) {
+            return [
+                'matches' => $matches
+                    ->map(fn (Service $service) => $this->serializeParentSummary($service))
+                    ->values()
+                    ->all(),
+            ];
+        }
+
+        $service = $matches->first();
+
+        return [
+            'service' => $this->serializeParentSummary($service),
+            'children' => $service->children
+                ->map(fn (Service $child) => $this->serializeChildSummary($child))
+                ->values()
+                ->all(),
+        ];
+    }
+
     public function getTree(bool $includeInactive = true): array
     {
         $query = Service::query()
@@ -53,7 +164,10 @@ class ServiceIntegrationService
     public function search(string $query, int $limit = 20): array
     {
         $services = Service::query()
-            ->with('parent:id,uuid,title')
+            ->with([
+                'parent:id,uuid,title',
+                'cities:id,slug,name',
+            ])
             ->where(function ($builder) use ($query) {
                 $builder->where('title', 'like', "%{$query}%")
                     ->orWhere('uuid', 'like', "%{$query}%");
@@ -71,6 +185,8 @@ class ServiceIntegrationService
             'level' => $service->parent_id === null ? 'parent' : 'child',
             'parent_uuid' => $service->parent?->uuid,
             'parent_title' => $service->parent?->title,
+            'city_slugs' => $service->cities->pluck('slug')->values()->all(),
+            'available_in_all_cities' => $service->cities->isEmpty(),
         ])->values()->all();
     }
 
@@ -99,10 +215,10 @@ class ServiceIntegrationService
         return $this->serializeService($service, true);
     }
 
-    public function applyOperations(array $operations, bool $dryRun = false): array
+    public function applyOperations(array $operations, bool $dryRun = false, bool $compact = false): array
     {
         $this->refs = [];
-        $runner = fn () => $this->runOperations($operations);
+        $runner = fn () => $this->runOperations($operations, $compact);
 
         if ($dryRun) {
             DB::beginTransaction();
@@ -136,24 +252,24 @@ class ServiceIntegrationService
         ];
     }
 
-    protected function runOperations(array $operations): array
+    protected function runOperations(array $operations, bool $compact = false): array
     {
         $results = [];
 
         foreach ($operations as $index => $operation) {
-            $results[] = $this->runOperation($operation, $index);
+            $results[] = $this->runOperation($operation, $index, $compact);
         }
 
         return $results;
     }
 
-    protected function runOperation(array $operation, int $index): array
+    protected function runOperation(array $operation, int $index, bool $compact = false): array
     {
         return match ($operation['type']) {
-            'create_service' => $this->createService($operation, $index),
-            'update_service' => $this->updateService($operation, $index),
-            'delete_service' => $this->deleteService($operation, $index),
-            'upsert_price' => $this->upsertPrice($operation, $index),
+            'create_service' => $this->createService($operation, $index, $compact),
+            'update_service' => $this->updateService($operation, $index, $compact),
+            'delete_service' => $this->deleteService($operation, $index, $compact),
+            'upsert_price' => $this->upsertPrice($operation, $index, $compact),
             'delete_price' => $this->deletePrice($operation, $index),
             default => throw new ServiceIntegrationException(
                 "Неподдерживаемый тип операции [{$operation['type']}].",
@@ -163,7 +279,7 @@ class ServiceIntegrationService
         };
     }
 
-    protected function createService(array $operation, int $index): array
+    protected function createService(array $operation, int $index, bool $compact = false): array
     {
         $parent = $this->resolveParent($operation, $index);
 
@@ -196,11 +312,13 @@ class ServiceIntegrationService
             'operation_index' => $index,
             'type' => 'create_service',
             'status' => 'created',
-            'service' => $this->freshSerializedService($service->uuid),
+            'service' => $compact
+                ? $this->compactService($service->fresh(['parent:id,uuid,title', 'cities:id,slug,name']))
+                : $this->freshSerializedService($service->uuid),
         ];
     }
 
-    protected function updateService(array $operation, int $index): array
+    protected function updateService(array $operation, int $index, bool $compact = false): array
     {
         $service = $this->resolveService($operation, $index);
 
@@ -260,14 +378,18 @@ class ServiceIntegrationService
             'operation_index' => $index,
             'type' => 'update_service',
             'status' => 'updated',
-            'service' => $this->freshSerializedService($service->uuid),
+            'service' => $compact
+                ? $this->compactService($service->fresh(['parent:id,uuid,title', 'cities:id,slug,name']))
+                : $this->freshSerializedService($service->uuid),
         ];
     }
 
-    protected function deleteService(array $operation, int $index): array
+    protected function deleteService(array $operation, int $index, bool $compact = false): array
     {
         $service = $this->resolveService($operation, $index);
-        $serviceData = $this->freshSerializedService($service->uuid);
+        $serviceData = $compact
+            ? $this->compactService($service->loadMissing(['parent:id,uuid,title', 'cities:id,slug,name']))
+            : $this->freshSerializedService($service->uuid);
         $childUuids = $service->children()->pluck('uuid')->all();
 
         if ($childUuids !== [] && ! Arr::get($operation, 'cascade_children', false)) {
@@ -293,7 +415,7 @@ class ServiceIntegrationService
         ];
     }
 
-    protected function upsertPrice(array $operation, int $index): array
+    protected function upsertPrice(array $operation, int $index, bool $compact = false): array
     {
         $service = $this->resolveService($operation, $index);
         $city = $this->resolveCity(Arr::get($operation, 'city_slug'), $index);
@@ -327,7 +449,9 @@ class ServiceIntegrationService
             'operation_index' => $index,
             'type' => 'upsert_price',
             'status' => $price->wasRecentlyCreated ? 'created' : 'updated',
-            'service' => $this->freshSerializedService($service->uuid),
+            'service' => $compact
+                ? $this->compactService($service->fresh(['parent:id,uuid,title', 'cities:id,slug,name']))
+                : $this->freshSerializedService($service->uuid),
             'price' => $this->serializePrice($price->fresh(['city:id,slug,name'])),
         ];
     }
@@ -504,11 +628,55 @@ class ServiceIntegrationService
         ];
     }
 
+    protected function compactService(Service $service): array
+    {
+        return [
+            'uuid' => $service->uuid,
+            'title' => $service->title,
+            'parent_uuid' => $service->relationLoaded('parent') ? $service->parent?->uuid : null,
+            'is_active' => (bool) $service->is_active,
+            'sort_order' => (int) $service->sort_order,
+            'city_slugs' => $service->cities->pluck('slug')->values()->all(),
+            'available_in_all_cities' => $service->cities->isEmpty(),
+        ];
+    }
+
+    protected function serializeParentSummary(Service $service): array
+    {
+        return [
+            'uuid' => $service->uuid,
+            'title' => $service->title,
+            'is_active' => (bool) $service->is_active,
+            'sort_order' => (int) $service->sort_order,
+            'city_slugs' => $service->cities->pluck('slug')->values()->all(),
+            'available_in_all_cities' => $service->cities->isEmpty(),
+            'children_count' => (int) ($service->children_count ?? 0),
+        ];
+    }
+
+    protected function serializeChildSummary(Service $service): array
+    {
+        return [
+            'uuid' => $service->uuid,
+            'title' => $service->title,
+            'is_active' => (bool) $service->is_active,
+            'sort_order' => (int) $service->sort_order,
+            'city_slugs' => $service->cities->pluck('slug')->values()->all(),
+            'available_in_all_cities' => $service->cities->isEmpty(),
+            'prices' => $service->prices
+                ->sortBy(fn (ServicePrice $price) => $price->city?->slug ?? '')
+                ->map(fn (ServicePrice $price) => $this->serializePrice($price))
+                ->values()
+                ->all(),
+        ];
+    }
+
     protected function serializePrice(ServicePrice $price): array
     {
         return [
             'city_slug' => $price->city?->slug,
             'city_name' => $price->city?->name,
+            'available_in_all_cities' => $price->city === null,
             'price' => (int) $price->price,
             'old_price' => $price->old_price === null ? null : (int) $price->old_price,
             'price_from' => (bool) $price->price_from,

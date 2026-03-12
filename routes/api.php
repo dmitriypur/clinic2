@@ -26,10 +26,14 @@ Route::put('user', [UserController::class, 'update']);
 Route::put('user/reset-password', UserPasswordController::class);
 
 Route::prefix('integrations/services')
-    ->middleware('services.integration')
+    ->middleware(['services.integration', 'services.integration.city'])
     ->group(function () {
         Route::get('tree', [ServiceIntegrationController::class, 'tree']);
+        Route::get('parents', [ServiceIntegrationController::class, 'parents']);
         Route::get('search', [ServiceIntegrationController::class, 'search']);
+        Route::get('children-by-title', [ServiceIntegrationController::class, 'childrenByTitle']);
+        Route::post('preview', [ServiceIntegrationController::class, 'preview']);
+        Route::get('{uuid}/children', [ServiceIntegrationController::class, 'children']);
         Route::post('apply', [ServiceIntegrationController::class, 'apply']);
         Route::get('{uuid}', [ServiceIntegrationController::class, 'show']);
     });
