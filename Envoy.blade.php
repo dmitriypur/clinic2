@@ -22,6 +22,7 @@ return "echo '\033[32m" .$message. "\033[0m';\n";
 @macro('deploy')
 startDeployment
 cloneRepository
+verifyEnvironment
 runComposer
 runNpm
 generateAssets
@@ -66,6 +67,43 @@ git read-tree -mu HEAD
 # Mark release
 cd {{ $newReleaseDir }}
 echo "{{ $newReleaseName }}" > public/release-name.txt
+@endtask
+
+@task('verifyEnvironment', ['on' => 'remote'])
+{{ logMessage("🔎  Verifying runtime versions...") }}
+cd {{ $newReleaseDir }}
+
+[ -f composer.json ] || { echo "composer.json отсутствует — прерываю деплой"; exit 1; }
+[ -f package.json ] || { echo "package.json отсутствует — прерываю деплой"; exit 1; }
+[ -f .nvmrc ] || { echo ".nvmrc отсутствует — прерываю деплой"; exit 1; }
+
+EXPECTED_PHP=$(php -r '$composer = json_decode(file_get_contents("composer.json"), true); echo $composer["config"]["platform"]["php"] ?? "";')
+EXPECTED_NODE=$(tr -d "[:space:]" < .nvmrc)
+EXPECTED_NPM=$(php -r '$package = json_decode(file_get_contents("package.json"), true); $manager = $package["packageManager"] ?? ""; echo preg_replace("/^npm@/", "", $manager);')
+
+[ -n "$EXPECTED_PHP" ] || { echo "Не удалось определить ожидаемую версию PHP из composer.json"; exit 1; }
+[ -n "$EXPECTED_NODE" ] || { echo "Не удалось определить ожидаемую версию Node.js из .nvmrc"; exit 1; }
+[ -n "$EXPECTED_NPM" ] || { echo "Не удалось определить ожидаемую версию npm из package.json"; exit 1; }
+
+command -v php >/dev/null 2>&1 || { echo "php не найден — прерываю деплой"; exit 1; }
+command -v node >/dev/null 2>&1 || { echo "node не найден — прерываю деплой"; exit 1; }
+command -v npm >/dev/null 2>&1 || { echo "npm не найден — прерываю деплой"; exit 1; }
+
+ACTUAL_PHP=$(php -r 'echo PHP_MAJOR_VERSION . "." . PHP_MINOR_VERSION . "." . PHP_RELEASE_VERSION;')
+ACTUAL_NODE=$(node -v | sed 's/^v//')
+ACTUAL_NPM=$(npm --version)
+
+echo "Expected PHP:  $EXPECTED_PHP"
+echo "Actual PHP:    $ACTUAL_PHP"
+[ "$ACTUAL_PHP" = "$EXPECTED_PHP" ] || { echo "Версия PHP не совпадает — прерываю деплой"; exit 1; }
+
+echo "Expected Node: $EXPECTED_NODE"
+echo "Actual Node:   $ACTUAL_NODE"
+[ "$ACTUAL_NODE" = "$EXPECTED_NODE" ] || { echo "Версия Node.js не совпадает — прерываю деплой"; exit 1; }
+
+echo "Expected npm:  $EXPECTED_NPM"
+echo "Actual npm:    $ACTUAL_NPM"
+[ "$ACTUAL_NPM" = "$EXPECTED_NPM" ] || { echo "Версия npm не совпадает — прерываю деплой"; exit 1; }
 @endtask
 
 @task('runComposer', ['on' => 'remote'])

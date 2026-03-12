@@ -77,3 +77,11 @@ To rollback to the previous release (in case of failure):
 php vendor/bin/envoy run rollback
 ```
 
+## Dependency Policy
+
+- `composer.lock` and `package-lock.json` must always stay in the repository.
+- Production deploy must use `composer install` and `npm ci`. Do not use `composer update` or `npm install` on the server.
+- Direct dependencies in `composer.json` and `package.json` are pinned to exact versions. Update them only in a separate dependency update task with testing.
+- New npm packages should be added with exact versions. The repository enforces this through `.npmrc`.
+- Frontend builds should use the Node.js version from `.nvmrc` and the npm version from `package.json -> packageManager`.
+- PHP dependency resolution is fixed to `8.1.22` via `config.platform.php` in `composer.json`.
