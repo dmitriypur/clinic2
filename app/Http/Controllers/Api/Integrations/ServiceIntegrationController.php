@@ -94,7 +94,7 @@ class ServiceIntegrationController extends Controller
                 $this->serviceIntegrationService->applyOperations(
                     $request->input('operations', []),
                     true,
-                    $request->boolean('compact', true)
+                    true
                 )
             );
         } catch (ServiceIntegrationException $exception) {
@@ -112,7 +112,7 @@ class ServiceIntegrationController extends Controller
                 $this->serviceIntegrationService->applyOperations(
                     $request->input('operations', []),
                     $request->boolean('dry_run'),
-                    $request->boolean('compact', false)
+                    true
                 )
             );
         } catch (ServiceIntegrationException $exception) {

@@ -396,6 +396,7 @@ class ServiceIntegrationApiTest extends TestCase
             ->postJson('/api/integrations/services/apply', $payload)
             ->assertOk()
             ->assertJsonPath('results.0.service.title', 'SMILE')
+            ->assertJsonMissingPath('results.0.service.children')
             ->assertJsonPath('results.3.service.title', 'Катаракта')
             ->assertJsonPath('results.5.status', 'deleted');
 
