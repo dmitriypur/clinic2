@@ -48,7 +48,7 @@ class Page extends Model implements HasMedia
         });
 
         static::deleting(function (Page $page) {
-            $page->blocks()->with('media')->get()->each(function (Block $block) {
+            $page->blocks()->with('media')->get()->each(function (Block $block) use ($page) {
                 $block->setRelation('page', $page);
                 $block->delete();
             });
