@@ -22,7 +22,6 @@ return "echo '\033[32m" .$message. "\033[0m';\n";
 @macro('deploy')
 startDeployment
 cloneRepository
-verifyEnvironment
 runComposer
 runNpm
 generateAssets
@@ -69,48 +68,11 @@ cd {{ $newReleaseDir }}
 echo "{{ $newReleaseName }}" > public/release-name.txt
 @endtask
 
-@task('verifyEnvironment', ['on' => 'remote'])
-{{ logMessage("🔎  Verifying runtime versions...") }}
-cd {{ $newReleaseDir }}
-
-[ -f composer.json ] || { echo "composer.json отсутствует — прерываю деплой"; exit 1; }
-[ -f package.json ] || { echo "package.json отсутствует — прерываю деплой"; exit 1; }
-[ -f .nvmrc ] || { echo ".nvmrc отсутствует — прерываю деплой"; exit 1; }
-
-EXPECTED_PHP=$(php -r '$composer = json_decode(file_get_contents("composer.json"), true); echo $composer["config"]["platform"]["php"] ?? "";')
-EXPECTED_NODE=$(tr -d "[:space:]" < .nvmrc)
-EXPECTED_NPM=$(php -r '$package = json_decode(file_get_contents("package.json"), true); $manager = $package["packageManager"] ?? ""; echo preg_replace("/^npm@/", "", $manager);')
-
-[ -n "$EXPECTED_PHP" ] || { echo "Не удалось определить ожидаемую версию PHP из composer.json"; exit 1; }
-[ -n "$EXPECTED_NODE" ] || { echo "Не удалось определить ожидаемую версию Node.js из .nvmrc"; exit 1; }
-[ -n "$EXPECTED_NPM" ] || { echo "Не удалось определить ожидаемую версию npm из package.json"; exit 1; }
-
-command -v php >/dev/null 2>&1 || { echo "php не найден — прерываю деплой"; exit 1; }
-command -v node >/dev/null 2>&1 || { echo "node не найден — прерываю деплой"; exit 1; }
-command -v npm >/dev/null 2>&1 || { echo "npm не найден — прерываю деплой"; exit 1; }
-
-ACTUAL_PHP=$(php -r 'echo PHP_MAJOR_VERSION . "." . PHP_MINOR_VERSION . "." . PHP_RELEASE_VERSION;')
-ACTUAL_NODE=$(node -v | sed 's/^v//')
-ACTUAL_NPM=$(npm --version)
-
-echo "Expected PHP:  $EXPECTED_PHP"
-echo "Actual PHP:    $ACTUAL_PHP"
-[ "$ACTUAL_PHP" = "$EXPECTED_PHP" ] || { echo "Версия PHP не совпадает — прерываю деплой"; exit 1; }
-
-echo "Expected Node: $EXPECTED_NODE"
-echo "Actual Node:   $ACTUAL_NODE"
-[ "$ACTUAL_NODE" = "$EXPECTED_NODE" ] || { echo "Версия Node.js не совпадает — прерываю деплой"; exit 1; }
-
-echo "Expected npm:  $EXPECTED_NPM"
-echo "Actual npm:    $ACTUAL_NPM"
-[ "$ACTUAL_NPM" = "$EXPECTED_NPM" ] || { echo "Версия npm не совпадает — прерываю деплой"; exit 1; }
-@endtask
-
 @task('runComposer', ['on' => 'remote'])
 {{ logMessage("🚚  Running Composer...") }}
 cd {{ $newReleaseDir }}
 [ -f composer.lock ] || { echo "composer.lock отсутствует — прерываю деплой"; exit 1; }
-composer install --prefer-dist --no-dev --no-progress --no-interaction --no-scripts --no-plugins -o
+php8.1 $(which composer) install --prefer-dist --no-dev --no-progress --no-interaction --no-scripts --no-plugins -o
 @endtask
 
 @task('runNpm', ['on' => 'remote'])
@@ -145,19 +107,19 @@ ln -nfs {{ $baseDir }}/.env .env
 @task('optimizeInstallation', ['on' => 'remote'])
 {{ logMessage("✨  Optimizing installation...") }}
 cd {{ $newReleaseDir }}
-php artisan clear-compiled
+php8.1 artisan clear-compiled
 @endtask
 
 @task('backupDatabase', ['on' => 'remote'])
 {{ logMessage("📀  Backing up database...") }}
 cd {{ $newReleaseDir }}
-php artisan backup:run
+php8.1 artisan backup:run
 @endtask
 
 @task('migrateDatabase', ['on' => 'remote'])
 {{ logMessage("🙈  Migrating database...") }}
 cd {{ $newReleaseDir }}
-php artisan migrate --force
+php8.1 artisan migrate --force
 @endtask
 
 @task('blessNewRelease', ['on' => 'remote'])
@@ -165,12 +127,12 @@ php artisan migrate --force
 ln -nfs {{ $newReleaseDir }} {{ $currentDir }}
 cd {{ $newReleaseDir }}
 
-php artisan sitemap:generate
-php artisan view:clear
-php artisan config:clear
-php artisan cache:clear
-php artisan config:cache
-php artisan event:cache
+php8.1 artisan sitemap:generate
+php8.1 artisan view:clear
+php8.1 artisan config:clear
+php8.1 artisan cache:clear
+php8.1 artisan config:cache
+php8.1 artisan event:cache
 
 sudo service php8.1-fpm restart
 sudo service supervisor restart all
@@ -192,11 +154,11 @@ ls -dt {{ $releasesDir }}/* | tail -n +4 | xargs -d "\n" rm -rf
 {{ logMessage("💻  Deploying code changes...") }}
 cd {{ $currentDir }}
 git pull origin {{ $branch }}
-php artisan view:clear
-php artisan config:clear
-php artisan cache:clear
-php artisan config:cache
-php artisan event:cache
+php8.1 artisan view:clear
+php8.1 artisan config:clear
+php8.1 artisan cache:clear
+php8.1 artisan config:cache
+php8.1 artisan event:cache
 sudo service php8.1-fpm restart
 sudo service supervisor restart all
 @endtask
@@ -218,11 +180,11 @@ ln -nfs $PREVIOUS {{ $currentDir }}
 
 # Reset caches for the restored version
 cd $PREVIOUS
-php artisan view:clear
-php artisan config:clear
-php artisan cache:clear
-php artisan config:cache
-php artisan event:cache
+php8.1 artisan view:clear
+php8.1 artisan config:clear
+php8.1 artisan cache:clear
+php8.1 artisan config:cache
+php8.1 artisan event:cache
 
 # Restart services
 sudo service php8.1-fpm restart
