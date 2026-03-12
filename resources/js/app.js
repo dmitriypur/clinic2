@@ -142,6 +142,8 @@ new Vue({
       this.mountSwiper();
     }, 100);
 
+    this.autoOpenBookingWidgetV3FromUrl();
+
     GLightbox({
       touchNavigation: true,
       loop: false,
@@ -198,6 +200,18 @@ new Vue({
   },
 
   methods: {
+    autoOpenBookingWidgetV3FromUrl() {
+      const shouldOpenBookingWidget =
+        window.location.hash.trim().toLowerCase() === "#open-widget";
+
+      if (!shouldOpenBookingWidget) {
+        return;
+      }
+
+      this.callbackModalActive = false;
+      this.bookingWidgetV3Active = true;
+    },
+
     toTop() {
       window.scrollTo({
         top: 0,
