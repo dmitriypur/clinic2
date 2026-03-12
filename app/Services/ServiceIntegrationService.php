@@ -313,7 +313,7 @@ class ServiceIntegrationService
             'type' => 'create_service',
             'status' => 'created',
             'service' => $compact
-                ? $this->compactService($service->fresh(['parent:id,uuid,title', 'cities:id,slug,name']))
+                ? $this->compactServiceResult($service->fresh(['parent:id,uuid,title', 'cities:id,slug,name']))
                 : $this->freshSerializedService($service->uuid),
         ];
     }
@@ -379,7 +379,7 @@ class ServiceIntegrationService
             'type' => 'update_service',
             'status' => 'updated',
             'service' => $compact
-                ? $this->compactService($service->fresh(['parent:id,uuid,title', 'cities:id,slug,name']))
+                ? $this->compactServiceResult($service->fresh(['parent:id,uuid,title', 'cities:id,slug,name']))
                 : $this->freshSerializedService($service->uuid),
         ];
     }
@@ -388,7 +388,7 @@ class ServiceIntegrationService
     {
         $service = $this->resolveService($operation, $index);
         $serviceData = $compact
-            ? $this->compactService($service->loadMissing(['parent:id,uuid,title', 'cities:id,slug,name']))
+            ? $this->compactServiceResult($service->loadMissing(['parent:id,uuid,title', 'cities:id,slug,name']))
             : $this->freshSerializedService($service->uuid);
         $childUuids = $service->children()->pluck('uuid')->all();
 
@@ -450,9 +450,11 @@ class ServiceIntegrationService
             'type' => 'upsert_price',
             'status' => $price->wasRecentlyCreated ? 'created' : 'updated',
             'service' => $compact
-                ? $this->compactService($service->fresh(['parent:id,uuid,title', 'cities:id,slug,name']))
+                ? $this->compactServiceResult($service->fresh(['parent:id,uuid,title', 'cities:id,slug,name']))
                 : $this->freshSerializedService($service->uuid),
-            'price' => $this->serializePrice($price->fresh(['city:id,slug,name'])),
+            'price' => $compact
+                ? $this->compactPriceResult($price->fresh(['city:id,slug,name']))
+                : $this->serializePrice($price->fresh(['city:id,slug,name'])),
         ];
     }
 
@@ -641,6 +643,15 @@ class ServiceIntegrationService
         ];
     }
 
+    protected function compactServiceResult(Service $service): array
+    {
+        return [
+            'uuid' => $service->uuid,
+            'title' => $service->title,
+            'parent_uuid' => $service->relationLoaded('parent') ? $service->parent?->uuid : null,
+        ];
+    }
+
     protected function serializeParentSummary(Service $service): array
     {
         return [
@@ -680,6 +691,15 @@ class ServiceIntegrationService
             'price' => (int) $price->price,
             'old_price' => $price->old_price === null ? null : (int) $price->old_price,
             'price_from' => (bool) $price->price_from,
+        ];
+    }
+
+    protected function compactPriceResult(ServicePrice $price): array
+    {
+        return [
+            'city_slug' => $price->city?->slug,
+            'price' => (int) $price->price,
+            'old_price' => $price->old_price === null ? null : (int) $price->old_price,
         ];
     }
 
