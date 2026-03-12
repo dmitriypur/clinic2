@@ -15,7 +15,7 @@
                 </div>
                 <div class="text-center sm:text-left">
                     <p class="text-interactive">Автор статьи:</p>
-                    @if($block->payload['url'])
+                    @if(!empty($block->payload['url']))
                         <a href="{{ city_route('pages.show', ['handle' => $block->payload['url']]) }}"
                            class="text-lg md:text-xl font-semibold text-action-primary underline hover:text-action-primary-hovered">
                             {{ $author->full_name }}

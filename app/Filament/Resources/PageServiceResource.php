@@ -146,7 +146,18 @@ class PageServiceResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('title')->label('Заголовок'),
+                Tables\Columns\TextColumn::make('title')
+                    ->label('Заголовок')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('created_at')
+                    ->label('Создано')
+                    ->dateTime('d.m.Y H:i')
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('updated_at')
+                    ->label('Обновлено')
+                    ->dateTime('d.m.Y H:i')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 SelectFilter::make('cities')
@@ -160,7 +171,8 @@ class PageServiceResource extends Resource
             ])
             ->bulkActions([
                 Tables\Actions\DeleteBulkAction::make(),
-            ]);
+            ])
+            ->defaultSort('created_at', 'desc');
     }
 
     public static function getRelations(): array

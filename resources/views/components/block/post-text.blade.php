@@ -9,8 +9,8 @@
         @endif
 
         <div class="md:text-xl content-block flex flex-col-reverse md:block">
-            @if($block->getResponsiveImage('default', $block->title) !== null)
-                <div class="relative z-10 md:float-right md:min-w-80 md:max-w-md [&_img]:w-full mt-4 md:mt-0 md:ml-8 md:mb-4 overflow-hidden rounded-lg md:rounded-2xl">
+            @if($block->has_image)
+                <div class="relative z-10 md:min-w-80 md:max-w-md [&_img]:w-full mt-4 md:mt-0 md:mb-4 overflow-hidden rounded-lg md:rounded-2xl {{ $block->image_class }}">
                     {{ $block->getResponsiveImage('default', $block->title) }}
                 </div>
             @endif

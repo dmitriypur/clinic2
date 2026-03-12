@@ -47,6 +47,17 @@ class Page extends Model implements HasMedia
             $page->clearCache();
         });
 
+        static::deleting(function (Page $page) {
+            $page->blocks()->with('media')->get()->each(function (Block $block) {
+                $block->setRelation('page', $page);
+                $block->delete();
+            });
+
+            $page->tags()->detach();
+            $page->cities()->detach();
+            $page->reviews()->detach();
+        });
+
         static::deleted(function (Page $page) {
             $page->clearCache();
         });
