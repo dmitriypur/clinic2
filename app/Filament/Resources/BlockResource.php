@@ -261,19 +261,27 @@ class BlockResource extends Resource
                         ])
                         ->default('bg-surface')
                         ->hidden(
-                            fn(Forms\Get $get) => !in_array(
-                                BlockType::from($get('type')),
-                                [BlockType::POST_TEXT,]
-                            )
+                            fn(Forms\Get $get) => BlockType::tryFrom((string) $get('type')) !== BlockType::POST_TEXT
+                        ),
+                    Forms\Components\Select::make('payload.image_position')
+                        ->label('Позиция изображения')
+                        ->options([
+                            'none' => 'Без изображения',
+                            'right' => 'Справа',
+                            'left' => 'Слева',
+                        ])
+                        ->default('right')
+                        ->hidden(
+                            fn(Forms\Get $get) => BlockType::tryFrom((string) $get('type')) !== BlockType::POST_TEXT
                         ),
 
                     Forms\Components\Textarea::make('body_html')
                         ->label(fn(Forms\Get $get) => $get('type') === BlockType::HTML_CODE ? 'HTML-код' : 'Текст')
                         ->hidden(
-                            fn(Forms\Get $get) => !in_array(BlockType::from($get('type')), [
+                            fn(Forms\Get $get) => !in_array(BlockType::tryFrom((string) $get('type')), [
                                 BlockType::HTML_CODE,
                                 BlockType::TEXT_WITH_IMAGE_ALT,
-                            ]))
+                            ], true))
                         ->columnSpan('full'),
 
                     Forms\Components\Repeater::make('payload.tags')

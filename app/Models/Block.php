@@ -66,13 +66,24 @@ class Block extends Model implements HasMedia, Sortable
 
         static::updated(function ($block) {
             Cache::forget('services_with_media_and_prices');
-            $block->page()->with('category')->first()?->clearCache();
+            $block->resolvePageForCache()?->clearCache();
         });
 
         static::deleted(function ($block) {
             Cache::forget('services_with_media_and_prices');
-            $block->page()->with('category')->first()?->clearCache();
+            $block->resolvePageForCache()?->clearCache();
         });
+    }
+
+    private function resolvePageForCache(): ?Page
+    {
+        $page = $this->getRelationValue('page');
+
+        if ($page instanceof Page) {
+            return $page;
+        }
+
+        return $this->page()->with('category')->first();
     }
 
     public function registerMediaConversions(Media $media = null): void
@@ -163,6 +174,25 @@ class Block extends Model implements HasMedia, Sortable
     public function getShowPageTitleAttribute()
     {
         return data_get($this->settings, 'show_page_title', false);
+    }
+
+    public function getImagePositionAttribute(): string
+    {
+        return data_get($this->payload, 'image_position', 'right');
+    }
+
+    public function getHasImageAttribute(): bool
+    {
+        return $this->getFirstMedia('default') !== null && $this->image_position !== 'none';
+    }
+
+    public function getImageClassAttribute(): string
+    {
+        return match ($this->image_position) {
+            'left' => 'md:float-left md:mr-8',
+            'right' => 'md:float-right md:ml-8',
+            default => '',
+        };
     }
 
     public function getPricesAttribute()
