@@ -18,6 +18,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Str;
 
@@ -98,7 +99,12 @@ class PageServiceResource extends Resource
                     Forms\Components\TextInput::make('handle')
                         ->label('URL псевдоним')
                         ->prefix(config('app.url') . '/')
+                        ->required()
                         ->unique(ignorable: fn($record) => $record)
+                        ->validationMessages([
+                            'required' => 'Укажите URL псевдоним страницы.',
+                            'unique' => 'Страница с таким URL уже существует.',
+                        ])
                         ->afterStateUpdated(function (Get $get, Set $set, $record) {
                             if ($record) {
                                 $set('show_redirect', true);
@@ -168,6 +174,18 @@ class PageServiceResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\ReplicateAction::make()
+                    ->label('Копировать')
+                    ->icon('heroicon-o-document-duplicate')
+                    ->excludeAttributes(['handle'])
+                    ->beforeReplicaSaved(function (Page $record, Page $replica): void {
+                        $replica->title = self::buildDuplicatedTitle($record->title);
+                        $replica->handle = self::buildDuplicatedHandle($record->handle);
+                    })
+                    ->after(function (Page $replica, Page $record): void {
+                        self::syncPageRelations($replica, $record);
+                        self::replicateBlocks($replica, $record);
+                    }),
             ])
             ->bulkActions([
                 Tables\Actions\DeleteBulkAction::make(),
@@ -189,5 +207,50 @@ class PageServiceResource extends Resource
             'create' => PageServiceResource\Pages\CreatePageService::route('/create'),
             'edit' => PageServiceResource\Pages\EditPageService::route('/{record}/edit'),
         ];
+    }
+
+    protected static function syncPageRelations(Page $replica, Page $record): void
+    {
+        $replica->cities()->sync($record->cities()->pluck('cities.id')->all());
+        $replica->tags()->sync($record->tags()->pluck('tags.id')->all());
+        $replica->reviews()->sync($record->reviews()->pluck('reviews.id')->all());
+
+        foreach ($record->media as $media) {
+            $media->copy($replica, $media->collection_name, $media->disk);
+        }
+    }
+
+    protected static function replicateBlocks(Page $replica, Page $record): void
+    {
+        $record->blocks()->with(['cities', 'media'])->get()->each(function (Model $block) use ($replica): void {
+            $blockReplica = $block->replicate();
+            $blockReplica->page_id = $replica->getKey();
+            $blockReplica->save();
+
+            $blockReplica->cities()->sync($block->cities->pluck('id')->all());
+
+            foreach ($block->media as $media) {
+                $media->copy($blockReplica, $media->collection_name, $media->disk);
+            }
+        });
+    }
+
+    protected static function buildDuplicatedTitle(string $title): string
+    {
+        return Str::finish($title, ' ') . '(копия)';
+    }
+
+    protected static function buildDuplicatedHandle(string $handle): string
+    {
+        $baseHandle = Str::limit($handle, 200, '');
+        $candidate = $baseHandle . '-copy';
+        $suffix = 2;
+
+        while (Page::query()->where('handle', $candidate)->exists()) {
+            $candidate = Str::limit($baseHandle, 196, '') . '-' . $suffix;
+            $suffix++;
+        }
+
+        return $candidate;
     }
 }

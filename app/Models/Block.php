@@ -186,15 +186,6 @@ class Block extends Model implements HasMedia, Sortable
         return $this->getFirstMedia('default') !== null && $this->image_position !== 'none';
     }
 
-    public function getImageClassAttribute(): string
-    {
-        return match ($this->image_position) {
-            'left' => 'md:float-left md:mr-8',
-            'right' => 'md:float-right md:ml-8',
-            default => '',
-        };
-    }
-
     public function getPricesAttribute()
     {
         if ($this->type !== BlockType::PRICE_LIST) {
