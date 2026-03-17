@@ -26,7 +26,9 @@ class ReviewResource extends JsonResource
             'name' => $this->name,
             'body_html' => $this->body_html,
             'rating' => $this->rating,
-            'pages' => $this->resource->pages->pluck('title', 'handle'),
+            'pages' => $this->resource->resolvedPages()->mapWithKeys(
+                fn ($page) => [$page->handle => $page->title]
+            ),
             'get_date' => Carbon::parse($this->get_date)->format('d.m.Y'),
             'link_resource' => $this->link_resource,
             'doctor' => str_replace('.', '', trim($this->doctorInitials)),

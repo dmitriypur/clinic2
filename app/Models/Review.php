@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\ResourcesForReviews;
 use App\Models\Traits\Filterable;
 use App\Models\Traits\HasCityScope;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -57,6 +58,13 @@ class Review extends Model
     public function pages(): BelongsToMany
     {
         return $this->belongsToMany(Page::class);
+    }
+
+    public function resolvedPages(): Collection
+    {
+        $pages = $this->relationLoaded('pages') ? $this->pages : $this->pages()->get();
+
+        return $pages->map(fn (Page $page) => $page->withResolvedCitySeoVariables());
     }
 
     public function cities(): BelongsToMany

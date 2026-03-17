@@ -43,7 +43,15 @@ class ReviewController extends Controller
                 ->publiclyVisible()
                 ->with('media')
                 ->get(),
-            'services' => Page::query()->whereNot('handle', '=', 'services')->where('type', '=', PageType::Services)->where('active', '=', 1)->orderBy('sorting')->pluck('title', 'id'),
+            'services' => Page::query()
+                ->whereNot('handle', '=', 'services')
+                ->where('type', '=', PageType::Services)
+                ->where('active', '=', 1)
+                ->orderBy('sorting')
+                ->get()
+                ->mapWithKeys(fn (Page $servicePage) => [
+                    $servicePage->id => $servicePage->withResolvedCitySeoVariables()->title,
+                ]),
         ];
 
         return view('pages.show')->with([

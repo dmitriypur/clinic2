@@ -52,7 +52,7 @@
 
         </div>
         <div class="mt-auto flex flex-wrap gap-2">
-            @foreach($review->pages as $page)
+            @foreach($review->resolvedPages() as $page)
                 @if(isset($block))
                     <div
                         class="bg-surface-subdued py-1 px-3 text-sm inline-block rounded-md">
