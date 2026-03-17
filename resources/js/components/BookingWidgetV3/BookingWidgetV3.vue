@@ -45,6 +45,7 @@
         :selectedDate="selectedDate"
         :highlightedDates="doctorFlowHighlightedDates"
         :slots="slots"
+        :emptySlotsMessage="doctorFlowEmptySlotsMessage"
         :selectedSlot="selectedSlot"
         :loading="loadingSlots"
         :loadingBranches="loadingDoctorFlowBranches"
@@ -64,6 +65,7 @@
         :selectedDate="selectedDate"
         :highlightedDates="clinicFlowHighlightedDates"
         :slots="slots"
+        :emptySlotsMessage="clinicFlowEmptySlotsMessage"
         :selectedSlot="selectedSlot"
         :loadingDoctors="loadingDoctors"
         :loading="loadingSlots"
@@ -177,6 +179,8 @@ export default {
       doctorFlowBranches: [],
       doctorFlowHighlightedDates: [],
       clinicFlowHighlightedDates: [],
+      doctorFlowLastAvailableDate: null,
+      clinicFlowLastAvailableDate: null,
       allCities: [],
       doctorsCacheByCity: {},
       siteDoctorsCacheByUuids: {},
@@ -259,6 +263,12 @@ export default {
     callbackFormTarget() {
       return this.callbackTarget || "otpravka-formy";
     },
+    doctorFlowEmptySlotsMessage() {
+      return this.getEmptySlotsMessage(this.doctorFlowLastAvailableDate);
+    },
+    clinicFlowEmptySlotsMessage() {
+      return this.getEmptySlotsMessage(this.clinicFlowLastAvailableDate);
+    },
   },
   watch: {
     open: {
@@ -278,6 +288,54 @@ export default {
     },
   },
   methods: {
+    getEmptySlotsMessage(lastAvailableDate) {
+      if (
+        this.loadingSlots ||
+        (Array.isArray(this.slots) && this.slots.length > 0) ||
+        !(this.selectedDate instanceof Date) ||
+        Number.isNaN(this.selectedDate.getTime()) ||
+        !(lastAvailableDate instanceof Date) ||
+        Number.isNaN(lastAvailableDate.getTime())
+      ) {
+        return "Данный врач не принимает в выбранный день";
+      }
+
+      const selectedDayTs = new Date(
+        this.selectedDate.getFullYear(),
+        this.selectedDate.getMonth(),
+        this.selectedDate.getDate()
+      ).getTime();
+      const lastAvailableDayTs = new Date(
+        lastAvailableDate.getFullYear(),
+        lastAvailableDate.getMonth(),
+        lastAvailableDate.getDate()
+      ).getTime();
+
+      return selectedDayTs > lastAvailableDayTs
+        ? "Расписание на эту дату ещё не доступно"
+        : "Данный врач не принимает в выбранный день";
+    },
+    extractLastAvailableDate(items = []) {
+      const dates = items
+        .filter((item) => Number(item?.available_slots || 0) > 0 && item?.date)
+        .map((item) => {
+          const parts = String(item.date).split("-");
+          if (parts.length !== 3) {
+            return null;
+          }
+
+          const [year, month, day] = parts.map((part) => Number(part));
+          if (!year || !month || !day) {
+            return null;
+          }
+
+          return new Date(year, month - 1, day);
+        })
+        .filter((value) => value instanceof Date && !Number.isNaN(value.getTime()))
+        .sort((a, b) => a.getTime() - b.getTime());
+
+      return dates[dates.length - 1] || null;
+    },
     async withTransitionLoader(task) {
       const showDelayMs = 100;
       const minVisibleMs = 100;
@@ -1187,6 +1245,8 @@ export default {
       this.clinicDoctorShiftMap = {};
       this.doctorFlowHighlightedDates = [];
       this.clinicFlowHighlightedDates = [];
+      this.doctorFlowLastAvailableDate = null;
+      this.clinicFlowLastAvailableDate = null;
       this.isSubmitting = false;
       this.formSourceStep = null;
       this.transitionLoading = false;
@@ -1199,6 +1259,7 @@ export default {
         !this.selectedBranch?.id
       ) {
         this.doctorFlowHighlightedDates = [];
+        this.doctorFlowLastAvailableDate = null;
         return;
       }
 
@@ -1245,6 +1306,16 @@ export default {
           .filter((value) => value instanceof Date && !Number.isNaN(value.getTime()));
 
         this.doctorFlowHighlightedDates = dates;
+        const lastAvailableDate = this.extractLastAvailableDate(items);
+        if (
+          lastAvailableDate &&
+          (
+            !(this.doctorFlowLastAvailableDate instanceof Date) ||
+            lastAvailableDate.getTime() > this.doctorFlowLastAvailableDate.getTime()
+          )
+        ) {
+          this.doctorFlowLastAvailableDate = lastAvailableDate;
+        }
         console.log(
           "[BookingWidgetV3] doctorFlowHighlightedDates",
           dates.map((d) => this.formatDateForApi(d))
@@ -1261,6 +1332,7 @@ export default {
         !this.selectedBranch?.id
       ) {
         this.clinicFlowHighlightedDates = [];
+        this.clinicFlowLastAvailableDate = null;
         return;
       }
 
@@ -1307,6 +1379,16 @@ export default {
           .filter((value) => value instanceof Date && !Number.isNaN(value.getTime()));
 
         this.clinicFlowHighlightedDates = dates;
+        const lastAvailableDate = this.extractLastAvailableDate(items);
+        if (
+          lastAvailableDate &&
+          (
+            !(this.clinicFlowLastAvailableDate instanceof Date) ||
+            lastAvailableDate.getTime() > this.clinicFlowLastAvailableDate.getTime()
+          )
+        ) {
+          this.clinicFlowLastAvailableDate = lastAvailableDate;
+        }
         console.log(
           "[BookingWidgetV3] clinicFlowHighlightedDates",
           dates.map((d) => this.formatDateForApi(d))

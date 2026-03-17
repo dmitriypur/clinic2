@@ -206,8 +206,13 @@
             </div>
 
             <div v-else-if="!slots.length" class="text-center">
-              <p class="font-semibold">Данный врач не принимает в выбранный день</p>
-              <p class="text-sm text-interactive/50">Пожалуйста выберите другой день</p>
+              <p class="font-semibold">{{ emptySlotsMessage }}</p>
+              <p
+                v-if="emptySlotsMessage === 'Данный врач не принимает в выбранный день'"
+                class="text-sm text-interactive/50"
+              >
+                Пожалуйста выберите другой день
+              </p>
             </div>
 
             <div v-else class="grid grid-cols-4 md:grid-cols-5 w-full flex-wrap gap-1">
@@ -278,6 +283,10 @@ export default {
     slots: {
       type: Array,
       default: () => [],
+    },
+    emptySlotsMessage: {
+      type: String,
+      default: "Данный врач не принимает в выбранный день",
     },
     selectedSlot: {
       type: Object,
