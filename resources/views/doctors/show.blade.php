@@ -1,11 +1,23 @@
 @push('header-scripts')
-    @if(isset($doctor->seo['canonical']) && $doctor->seo['canonical'] !== '')
-        <link rel="canonical"
-              href="{{ Clinic::relativeUrl(url($doctor->seo['canonical'])) }}">
-    @else
-        <link rel="canonical"
-              href="{{ Clinic::relativeUrl(url()->current()) }}">
-    @endif
+    @php
+        $rawCanonical = data_get($doctor->seo, 'canonical');
+
+        if ($rawCanonical && filter_var($rawCanonical, FILTER_VALIDATE_URL)) {
+            $canonicalHref = $rawCanonical;
+        } elseif ($rawCanonical) {
+            $canonicalPath = ltrim((string) $rawCanonical, '/');
+
+            if ($canonicalPath !== '' && !str_starts_with($canonicalPath, 'doctors/')) {
+                $canonicalPath = 'doctors/' . $canonicalPath;
+            }
+
+            $canonicalHref = city_url('/' . $canonicalPath);
+        } else {
+            $canonicalHref = city_route('doctor.show', ['handle' => $doctor->handle ?? $doctor->id]);
+        }
+    @endphp
+
+    <link rel="canonical" href="{{ $canonicalHref }}">
 
     @if(isset($doctor->seo['noindex']) && !!$doctor->seo['noindex'])
         <meta name="robots" content="noindex">

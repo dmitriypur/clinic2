@@ -94,6 +94,23 @@ if (!function_exists('city_route')) {
     }
 }
 
+if (!function_exists('city_url')) {
+    function city_url(?string $path): ?string
+    {
+        if (!$path) {
+            return null;
+        }
+
+        if (preg_match('~^(?:[a-z][a-z0-9+.-]*:)?//~i', $path) || str_starts_with($path, '#') || str_starts_with($path, 'mailto:') || str_starts_with($path, 'tel:')) {
+            return $path;
+        }
+
+        $cityService = app(\App\Services\CityService::class);
+
+        return url($cityService->addCityPrefix($path));
+    }
+}
+
 if (!function_exists('home_route')) {
     function home_route()
     {
