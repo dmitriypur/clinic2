@@ -104,16 +104,17 @@ $contentRoutes = function () {
              return response()->file($path);
         }
 
+        $cityIsActive = \App\Models\City::where('slug', $city)
+            ->where('active', true)
+            ->exists();
+
+        if (!$cityIsActive) {
+            abort(404);
+        }
+
         $filename = "sitemap-{$city}.xml";
         $path = public_path($filename);
         if (!file_exists($path)) {
-            $cityExists = \App\Models\City::where('slug', $city)->exists();
-            if (!$cityExists) {
-                abort(404);
-            }
-            // Если файл специфичной карты не найден, отдаем глобальную (как запасной вариант)
-            // ИЛИ 404, если мы хотим быть строгими.
-            // Для целей отладки лучше пока отдавать 404 с сообщением
             abort(404, "Sitemap for city '{$city}' not found");
         }
         return response()->file($path);

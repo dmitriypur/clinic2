@@ -37,6 +37,7 @@ class GenerateSitemap extends Command
         try {
             // Получаем все активные города
             $cities = $cityService->getActiveCities();
+            $expectedCitySitemapFiles = [];
 
             // Перебираем каждый город и создаем для него отдельный файл
             foreach ($cities as $city) {
@@ -49,6 +50,7 @@ class GenerateSitemap extends Command
                 } else {
                     $filename = "sitemap-{$city->slug}.xml";
                     $prefix = '/' . $city->slug;
+                    $expectedCitySitemapFiles[] = $filename;
                 }
 
                 $this->info("Генерация {$filename} для города {$city->name}...");
@@ -63,6 +65,7 @@ class GenerateSitemap extends Command
                 $sitemap->writeToFile(public_path($filename));
             }
 
+            $this->deleteStaleCitySitemaps($expectedCitySitemapFiles);
             $this->info("Все карты сайта успешно сгенерированы.");
 
         } catch (\Exception $e) {
@@ -172,5 +175,21 @@ class GenerateSitemap extends Command
         }
         
         return rtrim(config('app.url'), '/') . $prefix . '/' . $path;
+    }
+
+    private function deleteStaleCitySitemaps(array $expectedCitySitemapFiles): void
+    {
+        $existingCitySitemaps = glob(public_path('sitemap-*.xml')) ?: [];
+
+        foreach ($existingCitySitemaps as $existingCitySitemap) {
+            $filename = basename($existingCitySitemap);
+
+            if (in_array($filename, $expectedCitySitemapFiles, true)) {
+                continue;
+            }
+
+            @unlink($existingCitySitemap);
+            $this->info("Удален устаревший файл {$filename}.");
+        }
     }
 }

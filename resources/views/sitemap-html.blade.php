@@ -11,7 +11,7 @@
                     <ul class="list-disc ml-4">
                         @foreach($otherPages as $page)
                             <li>
-                                <a href="{{ $page->handle }}"
+                                <a href="{{ $page->getUrl() }}"
                                    class="text-interactive underline hover:no-underline text-sm lg:text-base">{{ $page->title }}</a>
                             </li>
                         @endforeach
@@ -23,7 +23,7 @@
                     <ul class="list-disc ml-4">
                         @foreach($servicesPages as $page)
                             <li>
-                                <a href="{{ $page->handle }}"
+                                <a href="{{ $page->getUrl() }}"
                                    class="text-interactive underline hover:no-underline text-sm lg:text-base">{{ $page->title }}</a>
                             </li>
                         @endforeach

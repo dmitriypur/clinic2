@@ -16,7 +16,10 @@ class SitemapHtmlController extends Controller
      */
     public function __invoke(): View
     {
-        $pages = Page::where('active', true)->with(['tags', 'category'])->get();
+        $pages = Page::where('active', true)
+            ->with(['tags', 'category'])
+            ->get()
+            ->map(fn (Page $page) => $page->withResolvedCitySeoVariables());
 
         // Разделяем страницы по типам
         $servicesPages = $pages->where('type', PageType::Services);
