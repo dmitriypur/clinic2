@@ -49,7 +49,7 @@
                     @foreach($results as $post)
                         <div class="mb-2 border p-4 bg-white">
                             <div class="card-body">
-                                <h5 class="text-2xl font-bold"><a href="{{ city_route('pages.show', ['handle' => $post->handle]) }}">{{ $post->title }}</a>
+                                <h5 class="text-2xl font-bold"><a href="{{ $post->getUrl() }}">{{ $post->title }}</a>
                                 </h5>
                             </div>
                         </div>

@@ -28,7 +28,12 @@ class DoctorController extends Controller
             abort(404);
         }
 
-        $doctorsPage = Page::query()->where('type', PageType::Doctors)->first();
+        $doctor = $doctor->withResolvedCitySeoVariables();
+
+        $doctorsPage = Page::query()
+            ->where('type', PageType::Doctors)
+            ->firstOrFail()
+            ->withResolvedCitySeoVariables();
 
         return view('doctors.show', compact('doctor', 'doctorsPage'));
     }

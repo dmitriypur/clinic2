@@ -83,21 +83,7 @@ class MenuService
 
             // Проверяем, что это внутренняя ссылка (не начинается с http, mailto, tel, #)
             if (!preg_match('/^(http|https|mailto|tel|#)/', $url)) {
-                // Добавляем префикс только если город выбран и он не дефолтный
-                if ($currentCity && !$currentCity->is_default) {
-                    $slug = $currentCity->slug;
-                    // Убираем начальный слеш для чистого соединения
-                    $cleanUrl = ltrim($url, '/');
-
-                    // Если ссылка пустая (главная страница)
-                    if (empty($cleanUrl)) {
-                        $item['data']['url'] = $slug;
-                    } 
-                    // Если ссылка не начинается уже с этого слага (защита от дублирования)
-                    elseif (!str_starts_with($cleanUrl, $slug . '/')) {
-                        $item['data']['url'] = $slug . '/' . $cleanUrl;
-                    }
-                }
+                $item['data']['url'] = ltrim($cityService->addCityPrefix($url), '/');
             }
         }
 

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Jobs\RegenerateSitemap;
+use App\Support\CitySeoVariables;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -47,5 +48,21 @@ class Category extends Model
             ->generateSlugsFrom('title')
             ->saveSlugsTo('handle')
             ->doNotGenerateSlugsOnUpdate();
+    }
+
+    public function withResolvedCitySeoVariables(): self
+    {
+        $category = clone $this;
+        $replacer = app(CitySeoVariables::class);
+
+        $category->title = $replacer->replace((string) $category->title) ?? '';
+        $category->body_html = $replacer->replace($category->body_html);
+
+        $seo = (array) ($category->seo ?? []);
+        $seo['title'] = $replacer->replace($seo['title'] ?? null);
+        $seo['description'] = $replacer->replace($seo['description'] ?? null);
+        $category->seo = $seo;
+
+        return $category;
     }
 }

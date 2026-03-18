@@ -3,6 +3,7 @@
 namespace App\View\Components;
 
 use App\Clinic;
+use App\Support\CitySeoVariables;
 use App\Settings\GeneralSettings;
 use App\Settings\SeoSettings;
 use App\Services\MenuService;
@@ -50,6 +51,10 @@ class AppLayout extends Component
         if (!$this->image) {
             $this->image = url('images/preview-new.jpg');
         }
+
+        $citySeoVariables = app(CitySeoVariables::class);
+        $this->title = $citySeoVariables->replace($this->title);
+        $this->description = $citySeoVariables->replace($this->description);
 
     }
 

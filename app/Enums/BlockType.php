@@ -119,6 +119,8 @@ enum BlockType: int
 
     case TEXT_WITH_IMAGE_NEW = 63;
 
+    case BRANCH = 64;
+
 
 
     public function getLabel(): string
@@ -183,7 +185,8 @@ enum BlockType: int
             self::GRID_CONTACTS => 'Сетка контактов',
             self::LIST_TEXT_WITH_LINK => 'Список текст со ссылкой',
             self::BANNER_SELECTION_GLASSES => 'Блок "Баннер для страницы Подбор очков"',
-            self::TEXT_WITH_IMAGE_NEW => 'Текстc изображением (новый дизайн)'
+            self::TEXT_WITH_IMAGE_NEW => 'Текстc изображением (новый дизайн)',
+            self::BRANCH => 'Филиалы',
         };
     }
 

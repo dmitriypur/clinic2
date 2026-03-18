@@ -19,11 +19,15 @@ class SearchController extends Controller
                 ->orWhereHas('blocks', function($q) use ($search) {
                     $q->where('body_html', 'like', "%{$search}%")->orWhere('payload', 'like', "%{$search}%");
                 })
+                ->with('category')
                 ->with(['blocks' => function($q) use ($search) {
                     $q->where('body_html', 'like', "%{$search}%")->orWhere('payload', 'like', "%{$search}%");
                 }])
-                ->select('handle', 'title')
                 ->paginate(30);
+
+            $results->setCollection(
+                $results->getCollection()->map(fn (Page $page) => $page->withResolvedCitySeoVariables())
+            );
         }
 
         return view('search.results', compact('results', 'search'));
@@ -43,12 +47,19 @@ class SearchController extends Controller
             ->orWhereHas('blocks', function($q) use ($query) {
                 $q->where('body_html', 'like', "%{$query}%")->orWhere('payload', 'like', "%{$query}%");
             })
+            ->with('category')
             ->with(['blocks' => function($q) use ($query) {
                 $q->where('body_html', 'like', "%{$query}%")->orWhere('payload', 'like', "%{$query}%");
             }])
-            ->select('handle', 'title')
             ->limit(5)
-            ->get();
+            ->get()
+            ->map(fn (Page $page) => $page->withResolvedCitySeoVariables())
+            ->map(fn (Page $page) => [
+                'id' => $page->id,
+                'title' => $page->title,
+                'handle' => $page->getUrl(),
+            ])
+            ->values();
 
         return response()->json($results);
     }

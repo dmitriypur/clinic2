@@ -31,6 +31,7 @@ class PostController extends Controller
         }
 
         $categories = Categories::getCategories();
+        $categories = $categories->map(fn (Page|\App\Models\Category $category) => $category->withResolvedCitySeoVariables());
         $categoryCurrent = null;
 
         if (!$handle) {
@@ -51,11 +52,16 @@ class PostController extends Controller
             ->first()?->withResolvedCitySeoVariables();
 
         if($handle){
-            $tag = Tag::query()->where('handle', $handle)->firstOrFail();
+            $tag = Tag::query()->where('handle', $handle)->firstOrFail()->withResolvedCitySeoVariables();
             $posts = $tag->pages()
                 ->where('active', true)
                 ->with(['tags', 'media'])
                 ->paginate($count_items);
+
+            $posts->setCollection(
+                $posts->getCollection()->map(fn (Page $post) => $post->withResolvedCitySeoVariables())
+            );
+
             return view('posts.show')->with([
                 'page' => $page,
                 'title' => $tag->seo['title'] ?? $tag->title,
@@ -75,6 +81,10 @@ class PostController extends Controller
             ->orderByDesc('created_at')
             ->with(['tags', 'media', 'category'])
             ->paginate($count_items);
+
+        $posts->setCollection(
+            $posts->getCollection()->map(fn (Page $post) => $post->withResolvedCitySeoVariables())
+        );
 
         if(isset($data['perpage'])){
             return PostResource::collection($posts);

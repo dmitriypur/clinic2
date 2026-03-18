@@ -213,23 +213,20 @@ class Page extends Model implements HasMedia
     public function getUrl()
     {
         $cityService = app(\App\Services\CityService::class);
-        $currentCity = $cityService->getCurrentCity();
-        $prefix = '';
-
-        if ($currentCity && !$currentCity->is_default) {
-            $prefix = $currentCity->slug . '/';
-        }
+        $path = '/' . ltrim($this->handle, '/');
 
         if ($this->relationLoaded('category') && $this->category) {
-            return url("/{$prefix}{$this->category->handle}/{$this->handle}");
+            $path = "/{$this->category->handle}/{$this->handle}";
+            return url($cityService->addCityPrefix($path));
         }
 
         if (!$this->relationLoaded('category') && $this->category_id) {
             $this->load('category');
-            return url("/{$prefix}{$this->category->handle}/{$this->handle}");
+            $path = "/{$this->category->handle}/{$this->handle}";
+            return url($cityService->addCityPrefix($path));
         }
 
-        return url("/{$prefix}{$this->handle}");
+        return url($cityService->addCityPrefix($path));
     }
 
     // Добавить в модель Page

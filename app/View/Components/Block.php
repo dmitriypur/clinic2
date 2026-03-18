@@ -32,6 +32,18 @@ class Block extends Component
         return view('components.block');
     }
 
+    public function shouldRender(): bool
+    {
+        if ($this->block->type !== BlockType::BRANCH) {
+            return true;
+        }
+
+        $currentCity = app(\App\Services\CityService::class)->getCurrentCity();
+        $branches = collect($currentCity->branches ?? [])->filter(fn ($branch) => is_array($branch));
+
+        return $branches->isNotEmpty();
+    }
+
     public function subdued(): bool
     {
         return data_get($this->block->settings, 'background') === strval(BlockBackgroundType::SUBDUED->value);

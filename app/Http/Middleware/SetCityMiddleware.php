@@ -8,11 +8,15 @@ use App\Services\GeoIpService;
 use Closure;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\View;
 use Symfony\Component\HttpFoundation\Response;
 
 class SetCityMiddleware
 {
+    private const CITY_COOKIE_LIFETIME_MINUTES = 60 * 24 * 365;
+    private const SELECTED_CITY_COOKIE = 'selected_city';
+
     public function __construct(
         protected CityService $cityService,
         protected GeoIpService $geoIpService,
@@ -33,17 +37,15 @@ class SetCityMiddleware
                 abort(404);
             }
 
+            $this->rememberCity($city);
+
+            if ($this->cityService->isGlobalPath($this->pathWithoutCityPrefix($request->path(), $citySlug))) {
+                return $this->redirectToUnprefixedPath($request, $citySlug, 301);
+            }
+
             // Если город дефолтный, делаем редирект на URL без префикса
             if ($city->is_default) {
-                $path = $request->path();
-                // Удаляем слаг города из начала пути
-                $newPath = preg_replace('#^' . preg_quote($citySlug, '#') . '/?#', '', $path);
-
-                // Сохраняем query parameters если есть
-                $query = $request->getQueryString();
-                $target = '/' . $newPath . ($query ? '?' . $query : '');
-
-                return redirect($target, 301);
+                return $this->redirectToUnprefixedPath($request, $citySlug, 301);
             }
 
             $this->cityService->setCurrentCity($city);
@@ -51,11 +53,14 @@ class SetCityMiddleware
             // Удаляем параметр city, чтобы он не попадал в контроллеры как аргумент
             $request->route()->forgetParameter('city');
         } else {
-            $defaultCity = $this->cityService->getDefaultCity();
-            $this->cityService->setCurrentCity($defaultCity);
+            $this->cityService->setCurrentCity($this->resolveCurrentCityWithoutPrefix($request));
 
             // Определение города по IP для первого визита
-            if (!$request->cookie('city_confirmed') && $this->cityService->getActiveCities()->count() > 1) {
+            if (
+                !$request->cookie('city_confirmed')
+                && !$request->cookie(self::SELECTED_CITY_COOKIE)
+                && $this->cityService->getActiveCities()->count() > 1
+            ) {
                 $detectedCity = null;
                 // Тестовый режим для локальной разработки
                 if (config('app.env') === 'local' && $request->has('test_city')) {
@@ -99,6 +104,8 @@ class SetCityMiddleware
             return null;
         }
 
+        $this->rememberCity($forcedCity);
+
         $segments = $request->segments();
         $activeCitySlugs = $this->cityService->getActiveCities()->pluck('slug')->all();
 
@@ -107,15 +114,59 @@ class SetCityMiddleware
         }
 
         $cleanPath = implode('/', $segments);
-        $targetPath = $forcedCity->is_default
+        $targetPath = $this->cityService->isGlobalPath($cleanPath)
             ? ($cleanPath ? '/' . $cleanPath : '/')
-            : '/' . $forcedCity->slug . ($cleanPath ? '/' . $cleanPath : '');
+            : ($forcedCity->is_default
+                ? ($cleanPath ? '/' . $cleanPath : '/')
+                : '/' . $forcedCity->slug . ($cleanPath ? '/' . $cleanPath : ''));
 
         $query = $request->query();
         unset($query['force_city']);
         $queryString = http_build_query($query);
         $targetUrl = $targetPath . ($queryString ? '?' . $queryString : '');
 
-        return redirect($targetUrl)->cookie('city_confirmed', 'true', 60 * 24 * 365);
+        return redirect($targetUrl);
+    }
+
+    private function resolveCurrentCityWithoutPrefix(Request $request): ?City
+    {
+        $defaultCity = $this->cityService->getDefaultCity();
+
+        if (!$this->cityService->isGlobalPath($request->path())) {
+            return $defaultCity;
+        }
+
+        return $this->resolveRememberedCity($request) ?? $defaultCity;
+    }
+
+    private function resolveRememberedCity(Request $request): ?City
+    {
+        $selectedCitySlug = $request->cookie(self::SELECTED_CITY_COOKIE);
+
+        if (!$selectedCitySlug) {
+            return null;
+        }
+
+        return $this->cityService->getCityBySlug($selectedCitySlug);
+    }
+
+    private function rememberCity(City $city): void
+    {
+        Cookie::queue('city_confirmed', 'true', self::CITY_COOKIE_LIFETIME_MINUTES);
+        Cookie::queue(self::SELECTED_CITY_COOKIE, $city->slug, self::CITY_COOKIE_LIFETIME_MINUTES);
+    }
+
+    private function redirectToUnprefixedPath(Request $request, string $citySlug, int $status): RedirectResponse
+    {
+        $newPath = $this->pathWithoutCityPrefix($request->path(), $citySlug);
+        $target = $newPath === '' ? '/' : '/' . ltrim($newPath, '/');
+        $query = $request->getQueryString();
+
+        return redirect($target . ($query ? '?' . $query : ''), $status);
+    }
+
+    private function pathWithoutCityPrefix(string $path, string $citySlug): string
+    {
+        return ltrim((string) preg_replace('#^' . preg_quote($citySlug, '#') . '/?#', '', $path), '/');
     }
 }

@@ -30,7 +30,9 @@ class SitemapHtmlController extends Controller
             ->publiclyVisible()
             ->with('media')
             ->get();
-        $tags = Tag::has('pages')->get();
+        $tags = Tag::has('pages')
+            ->get()
+            ->map(fn (Tag $tag) => $tag->withResolvedCitySeoVariables());
 
         return view('sitemap-html', compact('servicesPages', 'postsPages', 'otherPages', 'doctors', 'tags'));
     }

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Jobs\RegenerateSitemap;
 use App\Models\Traits\HasCityScope;
+use App\Support\CitySeoVariables;
 use App\Settings\SeoSettings;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
@@ -217,5 +218,23 @@ class Doctor extends Model implements HasMedia
             Str::afterLast($this->video_url, '/') .
             '?autoplay=1'
             : $this->video_url;
+    }
+
+    public function withResolvedCitySeoVariables(): self
+    {
+        $doctor = clone $this;
+        $replacer = app(CitySeoVariables::class);
+
+        $doctor->speciality = $replacer->replace((string) $doctor->speciality) ?? '';
+        $doctor->job_title = $replacer->replace($doctor->job_title);
+        $doctor->excerpt = $replacer->replace($doctor->excerpt);
+        $doctor->bio = $replacer->replace($doctor->bio);
+
+        $seo = (array) ($doctor->seo ?? []);
+        $seo['title'] = $replacer->replace($seo['title'] ?? null);
+        $seo['description'] = $replacer->replace($seo['description'] ?? null);
+        $doctor->seo = $seo;
+
+        return $doctor;
     }
 }

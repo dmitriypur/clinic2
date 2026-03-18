@@ -90,14 +90,22 @@ class Clinic
         $preparedPath = ltrim($preparedPath, '/');
 
 
-        $queryString = request()->getQueryString();
-        $query = $queryString ? '?' . $queryString : '';
+        $queryParams = request()->query();
+        unset($queryParams['force_city']);
+        $isGlobalPath = $cityService->isGlobalPath($preparedPath);
 
-        $preparedCities = $cities->map(function($city) use ($preparedPath, $query, $currentCity) {
+        $preparedCities = $cities->map(function($city) use ($preparedPath, $queryParams, $currentCity, $isGlobalPath) {
             $path = $preparedPath ? '/' . $preparedPath : '';
             $url = $city->is_default
-                ? url($path . $query)
-                : url($city->slug . $path . $query);
+                ? url($path)
+                : url($city->slug . $path);
+
+            if ($isGlobalPath) {
+                $globalQuery = array_merge($queryParams, ['force_city' => $city->slug]);
+                $url = url($path ?: '/') . (count($globalQuery) ? '?' . http_build_query($globalQuery) : '');
+            } elseif (count($queryParams)) {
+                $url .= '?' . http_build_query($queryParams);
+            }
 
             return [
                 'id' => $city->id,
@@ -112,8 +120,15 @@ class Clinic
         if ($detectedCity) {
             $path = $preparedPath ? '/' . $preparedPath : '';
             $detectedCity->url = $detectedCity->is_default
-                ? url($path . $query)
-                : url($detectedCity->slug . $path . $query);
+                ? url($path)
+                : url($detectedCity->slug . $path);
+
+            if ($isGlobalPath) {
+                $globalQuery = array_merge($queryParams, ['force_city' => $detectedCity->slug]);
+                $detectedCity->url = url($path ?: '/') . (count($globalQuery) ? '?' . http_build_query($globalQuery) : '');
+            } elseif (count($queryParams)) {
+                $detectedCity->url .= '?' . http_build_query($queryParams);
+            }
         }
 
         return [

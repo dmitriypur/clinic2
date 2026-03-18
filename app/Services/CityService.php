@@ -7,6 +7,14 @@ use Illuminate\Support\Facades\Cache;
 
 class CityService
 {
+    private const GLOBAL_PATH_PREFIXES = [
+        'stati',
+        'directory',
+        'tags',
+        'search',
+        'live-search',
+    ];
+
     private ?City $currentCity = null;
 
     public function setCurrentCity(?City $city): void
@@ -49,14 +57,20 @@ class CityService
      */
     public function addCityPrefix(string $path): string
     {
+        $normalizedPath = '/' . ltrim($path, '/');
+
+        if ($this->isGlobalPath($normalizedPath)) {
+            return $normalizedPath === '//' ? '/' : $normalizedPath;
+        }
+
         $city = $this->getCurrentCity();
 
         // Если город не выбран или является дефолтным - возвращаем путь как есть
         if (!$city || $city->is_default) {
-            return $path;
+            return $normalizedPath;
         }
 
-        $cleanPath = ltrim($path, '/');
+        $cleanPath = ltrim($normalizedPath, '/');
         $slug = $city->slug;
 
         // Защита от дублирования префикса
@@ -69,5 +83,22 @@ class CityService
         }
 
         return '/' . $slug . '/' . $cleanPath;
+    }
+
+    public function isGlobalPath(string $path): bool
+    {
+        $cleanPath = trim($path, '/');
+
+        if ($cleanPath === '') {
+            return false;
+        }
+
+        foreach (self::GLOBAL_PATH_PREFIXES as $prefix) {
+            if ($cleanPath === $prefix || str_starts_with($cleanPath, $prefix . '/')) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

@@ -1,6 +1,7 @@
 @props(['currentCity', 'cities'])
 
 @php
+    $cityService = app(\App\Services\CityService::class);
     $currentPath = request()->path();
     if ($currentPath === '/') {
         $currentPath = '';
@@ -16,15 +17,23 @@
         }
     }
 
-    $queryString = request()->getQueryString();
-    $query = $queryString ? '?' . $queryString : '';
+    $queryParams = request()->query();
+    unset($queryParams['force_city']);
+    $isGlobalPath = $cityService->isGlobalPath($currentPath);
 
     // Prepare data for Vue component
-    $preparedCities = $cities->map(function($city) use ($currentPath, $query, $currentCity) {
+    $preparedCities = $cities->map(function($city) use ($currentPath, $queryParams, $currentCity, $isGlobalPath) {
         $path = $currentPath ? '/' . $currentPath : '';
         $url = $city->is_default
-            ? url($path . $query)
-            : url($city->slug . $path . $query);
+            ? url($path)
+            : url($city->slug . $path);
+
+        if ($isGlobalPath) {
+            $globalQuery = array_merge($queryParams, ['force_city' => $city->slug]);
+            $url = url($path ?: '/') . (count($globalQuery) ? '?' . http_build_query($globalQuery) : '');
+        } elseif (count($queryParams)) {
+            $url .= '?' . http_build_query($queryParams);
+        }
 
         return [
             'id' => $city->id,

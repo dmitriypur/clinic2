@@ -35,7 +35,8 @@ class ReviewController extends Controller
             ->where('handle', 'reviews')
             ->where('active', true)
             ->with(['blocks.media'])
-            ->first();
+            ->firstOrFail()
+            ->withResolvedCitySeoVariables();
 
         $filter = [
             'resources' => [ResourcesForReviews::icons(), ResourcesForReviews::toArray()],

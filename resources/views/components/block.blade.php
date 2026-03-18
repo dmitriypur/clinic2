@@ -75,6 +75,10 @@
             <x-block.contacts :block="$block"/>
             @break
 
+        @case(\App\Enums\BlockType::BRANCH)
+            <x-block.branch :block="$block"/>
+            @break
+
         @case(\App\Enums\BlockType::CAROUSEL)
             <x-block.carousel :block="$block"/>
             @break
