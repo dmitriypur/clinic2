@@ -11,6 +11,9 @@
                     alt="Центр детского зрения «Ангелы зрения» фото"
                     title="Центр детского зрения «Ангелы зрения»"
                     src="{{ asset('images/hero.webp') }}"
+                    fetchpriority="high"
+                    loading="eager"
+                    decoding="async"
                     width="450" height="445" class="z-10">
             </div>
             <div class="text-sm lg:text-xl space-y-4 lg:space-y-9 z-10">

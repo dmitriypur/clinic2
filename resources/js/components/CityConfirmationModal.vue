@@ -44,16 +44,67 @@ export default {
     },
 
     mounted() {
-        this.detectedCity = window.config.detectedCity;
         this.cities = window.config.cities;
-        const cityConfirmed = Cookies.get('city_confirmed');
+        this.detectedCity = this.resolveDetectedCity(window.config.detectedCity);
+        const cityConfirmed = Cookies.get('city_confirmed') || Cookies.get('selected_city');
 
         if (this.detectedCity && !cityConfirmed) {
             this.showModal = true;
+            return;
+        }
+
+        if (!cityConfirmed && this.cities.length > 1) {
+            this.fetchDetectedCity();
         }
     },
 
     methods: {
+        resolveDetectedCity(city) {
+            if (!city) {
+                return null;
+            }
+
+            const cityUrl = this.cities.find((item) => item.slug === city.slug)?.url || city.url;
+
+            return {
+                ...city,
+                url: cityUrl,
+            };
+        },
+        async fetchDetectedCity() {
+            try {
+                const params = new URLSearchParams(window.location.search);
+                const testCity = params.get('test_city');
+                const url = new URL('/city-detection', window.location.origin);
+
+                if (testCity) {
+                    url.searchParams.set('test_city', testCity);
+                }
+
+                const response = await fetch(url.toString(), {
+                    headers: {
+                        Accept: 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    credentials: 'same-origin',
+                });
+
+                if (!response.ok) {
+                    return;
+                }
+
+                const payload = await response.json();
+                this.detectedCity = this.resolveDetectedCity(payload?.detectedCity || null);
+                window.config.detectedCity = this.detectedCity;
+
+                if (this.detectedCity && !Cookies.get('city_confirmed') && !Cookies.get('selected_city')) {
+                    this.showModal = true;
+                    this.step = 'confirm';
+                }
+            } catch (e) {
+                // Detection failure should not block the page.
+            }
+        },
         setCookie() {
             Cookies.set('city_confirmed', 'true', { expires: 365 });
         },

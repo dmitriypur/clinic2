@@ -1,10 +1,10 @@
 <div class="w-full bg-transparent bg-center bg-no-repeat overflow-hidden relative">
-    <image-lazy inline-template>
+    <image-lazy inline-template :eager="true">
     <div class="absolute top-0 left-0 md:left-[60%] lg:left-[50%] w-full h-full md:w-[1200px] lg:w-[1920px] mx-auto md:-translate-x-1/2 rounded-3xl overflow-hidden" ref="container">
         <picture>
             <source :srcset="isLoaded ? '{{$block->getFirstMediaUrl('pic')}}' : ''" media="(max-width: 767px)">
             <source :srcset="isLoaded ? '{{$block->getFirstMediaUrl('bg')}}' : ''">
-            <img :src="isLoaded ? '{{$block->getFirstMediaUrl('bg')}}' : ''" class="w-full h-full object-cover" alt="{{ $block->payload['service_hero_title'] }}" width="1920" height="530">
+            <img :src="isLoaded ? '{{$block->getFirstMediaUrl('bg')}}' : ''" class="w-full h-full object-cover" alt="{{ $block->payload['service_hero_title'] }}" fetchpriority="high" loading="eager" decoding="async" width="1920" height="530">
         </picture>
     </div>
     </image-lazy>

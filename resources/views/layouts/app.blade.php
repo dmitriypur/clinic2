@@ -34,26 +34,7 @@
     <meta name="msapplication-TileColor" content="#ffffff">
     <meta name="theme-color" content="#f5841f">
 
-    @vite(['resources/css/app.css', 'resources/js/app.js', 'node_modules/glightbox/dist/css/glightbox.css'])
-
-    {{-- Server-side IP detection compliant with 152-FZ --}}
-    @php
-        $userIp = request()->ip();
-        // Резервные проверки для прокси (Cloudflare, Nginx, балансировщики нагрузки)
-        // Это гарантирует получение реального IP-адреса, даже если TrustProxies не настроен для конкретного балансировщика нагрузки
-
-        if (isset($_SERVER["HTTP_CF_CONNECTING_IP"])) {
-            $userIp = $_SERVER["HTTP_CF_CONNECTING_IP"];
-        } elseif (isset($_SERVER["HTTP_X_REAL_IP"])) {
-            $userIp = $_SERVER["HTTP_X_REAL_IP"];
-        } elseif (isset($_SERVER["HTTP_X_FORWARDED_FOR"])) {
-            $ips = explode(',', $_SERVER["HTTP_X_FORWARDED_FOR"]);
-            $userIp = trim($ips[0]);
-        }
-    @endphp
-    <script>
-        window.userIp = "{{ $userIp }}";
-    </script>
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     @if (isset($seoSettings->header_scripts) && count($seoSettings->header_scripts))
         @foreach ($seoSettings->header_scripts as $script)
@@ -97,6 +78,7 @@
 
     @php
         $headerView = $headerView ?? 'parts.header-new';
+        $usesLegacyBookingForm = ($settings->booking_form_variant ?? 'old') === 'old';
     @endphp
 
     @if($showHeader)
@@ -109,11 +91,19 @@
         @include('parts.footer')
     @endif
 
-    <online-appointment-form :open="callbackModalActive"
-                             :phone="callbackModalPhone"
-                             :name="callbackModalName"
-                             :target="callbackModalTarget"
-                             @close="closeCallbackModal"></online-appointment-form>
+    @if($usesLegacyBookingForm)
+        <online-appointment-form :open="callbackModalActive"
+                                 :phone="callbackModalPhone"
+                                 :name="callbackModalName"
+                                 :target="callbackModalTarget"
+                                 @close="closeCallbackModal"></online-appointment-form>
+    @endif
+
+    <callback-modal-new :open="callbackModalNewActive"
+                        :phone="callbackModalPhone"
+                        :name="callbackModalName"
+                        :target="callbackModalTarget"
+                        @close="closeCallbackFormNew"></callback-modal-new>
 
     @unless(request()->routeIs('booking.widget.v3.demo'))
         <booking-widget-v3
@@ -145,11 +135,6 @@
 </div>
 
 @stack('scripts')
-@if (isset($seoSettings->scripts) && count($seoSettings->scripts))
-        @foreach ($seoSettings->scripts as $script)
-            {!! $script['value'] !!}
-        @endforeach
-@endif
 
 {!! Clinic::schema()->localBusiness($settings) !!}
 {!! Clinic::schema()->medicalOrganization($settings) !!}

@@ -1,9 +1,6 @@
 import Vue from "vue";
-import Swiper from "swiper";
-import { Autoplay, Navigation, Pagination } from "swiper/modules";
 import YmapPlugin from "vue-yandex-maps";
 import LightBox from "vue-image-lightbox";
-import GLightbox from "glightbox";
 import VueTheMask from "vue-the-mask";
 import VCalendar from "v-calendar";
 
@@ -24,11 +21,12 @@ import {
   CitySwitcher,
   InfiniteDoctorsList,
 } from "./components";
-import OnlineAppointmentForm from "./components/OnlineAppointmentForm/OnlineAppointmentForm.vue";
 
 const CallbackForm = () => import("./components/CallbackForm/CallbackForm.vue");
 const CallbackModal = () =>
   import("./components/CallbackModal/CallbackModal.vue");
+const CallbackModalNew = () =>
+  import("./components/CallbackModal/CallbackModalNew.vue");
 const CallToAction = () => import("./components/CallToAction/CallToAction.vue");
 const VideoComponent = () => import("./components/Video/Video.vue");
 const VideoNew = () => import("./components/VideoNew/VideoNew.vue");
@@ -43,6 +41,8 @@ const CityConfirmationModal = () =>
   import("./components/CityConfirmationModal.vue");
 const AccessibilityToggle = () =>
   import("./components/AccessibilityToggle/AccessibilityToggle.vue");
+const OnlineAppointmentForm = () =>
+  import("./components/OnlineAppointmentForm/OnlineAppointmentForm.vue");
 
 import { eventBus } from "./eventBus";
 import VueObserveVisibility from "vue-observe-visibility";
@@ -65,6 +65,7 @@ new Vue({
     ServiceCard,
     TopBar,
     CallbackModal,
+    CallbackModalNew,
     LoginModal,
     DoctorModal,
     DoctorCard,
@@ -100,6 +101,7 @@ new Vue({
     doctor: null,
     reviewModalActive: false,
     callbackModalActive: false,
+    callbackModalNewActive: false,
     callbackModalName: window.config.state.user?.name,
     callbackModalPhone: window.config.state.user?.phone,
     callbackModalTarget: null,
@@ -118,8 +120,19 @@ new Vue({
       self.showCallbackModal(phone, target);
     });
 
+    eventBus.$on(
+      "showCallbackFormNew",
+      function (phone = null, target = null) {
+        self.showCallbackFormNew(phone, target);
+      }
+    );
+
     eventBus.$on("closeCallbackModal", function () {
       self.closeCallbackModal();
+    });
+
+    eventBus.$on("closeCallbackFormNew", function () {
+      self.closeCallbackFormNew();
     });
 
     eventBus.$on("showLoginModal", function () {
@@ -143,13 +156,7 @@ new Vue({
     }, 100);
 
     this.autoOpenBookingWidgetV3FromUrl();
-
-    GLightbox({
-      touchNavigation: true,
-      loop: false,
-      autoplayVideos: false,
-      selector: ".glightbox",
-    });
+    this.mountLightbox();
 
     const links = [...document.links].filter(
       (link) => link.href.includes(this.baseUrl) && link.href.includes("#")
@@ -266,6 +273,7 @@ new Vue({
     showCallbackModal(phone = null, target = null) {
       this.callbackModalPhone = phone || window.config.state.user?.phone || "";
       this.callbackModalTarget = target;
+      this.callbackModalNewActive = false;
 
       const bookingFormVariant = window.config?.booking?.formVariant || "old";
       if (bookingFormVariant === "new") {
@@ -280,8 +288,25 @@ new Vue({
       this.callbackModalActive = true;
     },
 
+    showCallbackFormNew(phone = null, target = null) {
+      this.callbackModalPhone = phone || window.config.state.user?.phone || "";
+      this.callbackModalName = window.config.state.user?.name || "";
+      this.callbackModalTarget = target;
+      this.callbackModalActive = false;
+      this.callbackModalNewActive = true;
+      this.bookingWidgetV3Active = false;
+      this.bookingWidgetV3Target = null;
+    },
+
     closeCallbackModal() {
       this.callbackModalActive = false;
+      this.callbackModalPhone = window.config.state.user?.phone || "";
+      this.callbackModalName = window.config.state.user?.name || "";
+      this.callbackModalTarget = "";
+    },
+
+    closeCallbackFormNew() {
+      this.callbackModalNewActive = false;
       this.callbackModalPhone = window.config.state.user?.phone || "";
       this.callbackModalName = window.config.state.user?.name || "";
       this.callbackModalTarget = "";
@@ -317,7 +342,35 @@ new Vue({
       this.doctor = doctor;
     },
 
-    mountSwiper() {
+    async mountLightbox() {
+      if (!document.querySelector(".glightbox")) {
+        return;
+      }
+
+      const [{ default: GLightbox }] = await Promise.all([
+        import("glightbox"),
+        import("glightbox/dist/css/glightbox.css"),
+      ]);
+
+      GLightbox({
+        touchNavigation: true,
+        loop: false,
+        autoplayVideos: false,
+        selector: ".glightbox",
+      });
+    },
+
+    async mountSwiper() {
+      if (!document.querySelector('[class*="swiper"]')) {
+        return;
+      }
+
+      const [{ default: Swiper }, { Autoplay, Navigation, Pagination }] =
+        await Promise.all([
+          import("swiper"),
+          import("swiper/modules"),
+        ]);
+
       new Swiper(".doctors-swiper", {
         modules: [Navigation, Pagination],
         loop: true,

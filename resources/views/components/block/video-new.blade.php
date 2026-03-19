@@ -29,7 +29,7 @@
                         </span>
                     </button>
                 </div>
-                <video v-if="isLoaded" ref="video" class="w-full aspect-video" preload="auto" playsinline=""
+                <video v-if="isLoaded" ref="video" class="w-full aspect-video" preload="metadata" playsinline=""
                        poster="{{$block->getFirstMediaUrl('cover')  }}"
                        @play="hideBackdrop = true" @pause="hideBackdrop = false" @ended="videoEnded"
                        :controls="hideBackdrop">

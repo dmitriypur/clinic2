@@ -182,9 +182,13 @@ export default {
       doctorFlowLastAvailableDate: null,
       clinicFlowLastAvailableDate: null,
       allCities: [],
+      clinicsCacheByCity: {},
+      cityBranchesCacheByCity: {},
       doctorsCacheByCity: {},
       siteDoctorsCacheByUuids: {},
       slotsCacheByQuery: {},
+      clinicsCacheTtlMs: 60 * 1000,
+      cityBranchesCacheTtlMs: 60 * 1000,
       doctorsCacheTtlMs: 60 * 1000,
       siteDoctorsCacheTtlMs: 60 * 1000,
       loadingClinics: false,
@@ -275,7 +279,6 @@ export default {
       async handler(val) {
         if (val) {
           await this.initCities();
-          await Promise.all([this.loadClinics(), this.loadDoctorsByCity()]);
           await this.applyInitialMode();
         } else {
           this.resetState();
@@ -288,6 +291,25 @@ export default {
     },
   },
   methods: {
+    getCacheEntry(cache, key, ttlMs) {
+      const cached = cache[key];
+      if (!cached) {
+        return null;
+      }
+
+      if (Date.now() - cached.ts > ttlMs) {
+        delete cache[key];
+        return null;
+      }
+
+      return cached.data;
+    },
+    setCacheEntry(cache, key, data) {
+      cache[key] = {
+        ts: Date.now(),
+        data,
+      };
+    },
     getEmptySlotsMessage(lastAvailableDate) {
       if (
         this.loadingSlots ||
@@ -377,7 +399,9 @@ export default {
       }
 
       if (this.mode === "doctor") {
-        this.currentStep = "doctor-select";
+        await this.withTransitionLoader(async () => {
+          await this.openDoctorFlow();
+        });
         return;
       }
 
@@ -402,6 +426,13 @@ export default {
         this.selectedBranch = null;
       }
       await this.goToClinicSchedule();
+    },
+    async openDoctorFlow() {
+      this.currentStep = "doctor-select";
+
+      if (!this.doctors.length) {
+        await this.loadDoctorsByCity();
+      }
     },
     isClinicAllowed(clinicId) {
       if (!this.allowedClinicIds.length) {
@@ -542,6 +573,19 @@ export default {
     },
     async loadClinics() {
       if (!this.currentCityId) return;
+
+      const cacheKey = String(this.currentCityId);
+      const cached = this.getCacheEntry(
+        this.clinicsCacheByCity,
+        cacheKey,
+        this.clinicsCacheTtlMs
+      );
+
+      if (cached) {
+        this.clinics = cached;
+        return;
+      }
+
       this.loadingClinics = true;
       try {
         const response = await bookingApi.getClinicsByCity(this.currentCityId);
@@ -549,6 +593,7 @@ export default {
         this.clinics = list
           .filter((clinic) => this.isClinicAllowed(clinic.id))
           .map((c) => ({ ...c, enabled: true }));
+        this.setCacheEntry(this.clinicsCacheByCity, cacheKey, this.clinics);
       } finally {
         this.loadingClinics = false;
       }
@@ -609,6 +654,18 @@ export default {
           await this.loadClinics();
         }
 
+        const cacheKey = String(this.currentCityId || "default");
+        const cached = this.getCacheEntry(
+          this.cityBranchesCacheByCity,
+          cacheKey,
+          this.cityBranchesCacheTtlMs
+        );
+
+        if (cached) {
+          this.cityBranches = cached;
+          return;
+        }
+
         const branchGroups = await Promise.all(
           this.clinics.map(async (clinic) => {
             try {
@@ -630,6 +687,11 @@ export default {
         );
 
         this.cityBranches = branchGroups.flat();
+        this.setCacheEntry(
+          this.cityBranchesCacheByCity,
+          cacheKey,
+          this.cityBranches
+        );
       } finally {
         this.loadingCityBranches = false;
       }
@@ -1009,7 +1071,9 @@ export default {
     },
     async handleModeSelect(mode) {
       if (mode === "doctor") {
-        this.currentStep = "doctor-select";
+        await this.withTransitionLoader(async () => {
+          await this.openDoctorFlow();
+        });
       } else if (mode === "clinic") {
         await this.withTransitionLoader(async () => {
           await this.openClinicFlowWithAutoBranchSkip();
@@ -1116,8 +1180,8 @@ export default {
     goToStart() {
       this.currentStep = "start";
     },
-    goToDoctorSelect() {
-      this.currentStep = "doctor-select";
+    async goToDoctorSelect() {
+      await this.openDoctorFlow();
     },
     async goToClinicSelect() {
       if (!this.cityBranches.length) {
@@ -1133,6 +1197,10 @@ export default {
     },
     async goToDoctorSchedule() {
       await this.withTransitionLoader(async () => {
+        if (!this.clinics.length) {
+          await this.loadClinics();
+        }
+
         const enabledClinic = this.clinics.find((clinic) => clinic.enabled !== false);
         if (!this.selectedClinic && enabledClinic) {
           this.selectedClinic = enabledClinic;

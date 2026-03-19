@@ -141,6 +141,10 @@ export default {
       eventBus.$emit('showCallbackModal', null, 'otpravka-formy')
     },
 
+    showCallbackFormNew(phone = null, target = null) {
+      eventBus.$emit('showCallbackFormNew', phone, target)
+    },
+
     closeCallbackModal() {
       eventBus.$emit('closeCallbackModal')
     },

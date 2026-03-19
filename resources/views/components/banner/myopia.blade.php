@@ -3,7 +3,7 @@
         <picture>
             <source srcset="{{$block->getFirstMediaUrl('pic')}}" media="(max-width: 767px)">
             <source srcset="{{$block->getFirstMediaUrl('bg')}}">
-            <img srcset="{{$block->getFirstMediaUrl('bg')}}" class="w-full h-full object-cover" alt="{{ $block->payload['service_hero_title'] }}">
+            <img srcset="{{$block->getFirstMediaUrl('bg')}}" class="w-full h-full object-cover" alt="{{ $block->payload['service_hero_title'] }}" fetchpriority="high" loading="eager" decoding="async">
         </picture>
     </div>
     <div class="container relative py-12 md:py-20">

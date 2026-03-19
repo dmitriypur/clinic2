@@ -1,6 +1,20 @@
 <script>
 
 export default {
+  props: {
+    eager: {
+      type: Boolean,
+      default: false,
+    },
+    threshold: {
+      type: Number,
+      default: 0,
+    },
+    rootMargin: {
+      type: String,
+      default: "0px",
+    },
+  },
 
   data() {
     return {
@@ -11,12 +25,17 @@ export default {
 
   methods: {
     initIntersectionObserver() {
+      if (this.eager) {
+        this.loadVideo();
+        return;
+      }
+
       if ('IntersectionObserver' in window) {
         this.observer = new IntersectionObserver(
           this.handleIntersection,
           {
             root: null,
-            rootMargin: '0px',
+            rootMargin: this.rootMargin,
             threshold: this.threshold
           }
         );

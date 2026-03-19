@@ -1,8 +1,8 @@
-<image-lazy inline-template>
+<image-lazy inline-template :eager="true">
     <div class="w-full bg-white overflow-hidden relative" ref="container">
         {{-- Фоновое изображение только для десктопа --}}
         <div class="hidden md:block absolute inset-0 w-full h-full">
-            <img src="{{ asset('images/hero-bg.jpg') }}" class="w-full h-full object-cover object-center" alt="">
+            <img src="{{ asset('images/hero-bg.jpg') }}" class="w-full h-full object-cover object-center" loading="eager" decoding="async" alt="">
         </div>
 
         <div class="container relative z-10">
@@ -33,7 +33,7 @@
                     <picture>
                         <source srcset="{{$block->getFirstMediaUrl('pic')}}" media="(max-width: 767px)">
                         <source srcset="{{$block->getFirstMediaUrl('bg')}}">
-                        <img srcset="{{$block->getFirstMediaUrl('bg')}}" class="md:absolute w-full h-auto lg:h-full lg:object-cover xl:object-contain left-0 bottom-0" alt="{{ $block->payload['service_hero_title'] }}">
+                        <img srcset="{{$block->getFirstMediaUrl('bg')}}" class="md:absolute w-full h-auto lg:h-full lg:object-cover xl:object-contain left-0 bottom-0" alt="{{ $block->payload['service_hero_title'] }}" fetchpriority="high" loading="eager" decoding="async">
                     </picture>
                 </div>
             </div>

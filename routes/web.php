@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\PostController;
 use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\CityDetectionController;
 use App\Http\Controllers\DoctorController;
 use App\Http\Controllers\FormController;
 use App\Http\Controllers\FormRobotsTxtController;
@@ -37,6 +38,7 @@ Route::domain('form.' . parse_url(config('app.url'), PHP_URL_HOST))->group(funct
 });
 
 Route::get('robots.txt', RobotsTxtController::class);
+Route::get('city-detection', CityDetectionController::class)->name('city.detection');
 
 Route::post('login', [LoginController::class, 'login'])->name('login');
 Route::post('logout', [LoginController::class, 'logout'])->name('logout');

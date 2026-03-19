@@ -1,11 +1,11 @@
 <div class="container relative">
-    <image-lazy inline-template>
+    <image-lazy inline-template :eager="true">
     <div class="absolute top-0 left-0 w-full h-full mx-auto" ref="container">
         <picture>
             <source :srcset="isLoaded ? '{{$block->getFirstMediaUrl('pic')}}' : ''" media="(max-width: 767px)">
             <source :srcset="isLoaded ? '{{$block->getFirstMediaUrl('bg')}}' : ''">
             <img :src="isLoaded ? '{{$block->getFirstMediaUrl('bg')}}' : ''" class="w-full h-full object-cover"
-                 alt="{{ $block->title }}" width="1280" height="495">
+                 alt="{{ $block->title }}" fetchpriority="high" loading="eager" decoding="async" width="1280" height="495">
         </picture>
     </div>
     </image-lazy>
