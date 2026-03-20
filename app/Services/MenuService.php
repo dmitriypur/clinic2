@@ -77,8 +77,15 @@ class MenuService
             }
         }
 
+        if (($item['type'] ?? '') === 'file' && !empty($item['data']['file'])) {
+            $item['data']['url'] = route('menu-files.download', [
+                'encodedPath' => base64_encode($item['data']['file']),
+            ]);
+            $item['data']['download'] = true;
+        }
+
         // Добавляем префикс города, если он выбран
-        if (isset($item['data']['url'])) {
+        if (isset($item['data']['url']) && ($item['type'] ?? '') !== 'file') {
             $url = $item['data']['url'];
 
             // Проверяем, что это внутренняя ссылка (не начинается с http, mailto, tel, #)

@@ -17,7 +17,8 @@
                         @foreach ($footerMenu->items as $item)
                             <li class="first:col-span-full md:first:col-span-1">
                                 <a href="{{ $item['data']['url'] }}"
-                                   target="{{ $item['data']['target'] }}"
+                                   target="{{ $item['data']['target'] ?? '' }}"
+                                   @if(!empty($item['data']['download'])) download @endif
                                    class="text-action-primary text-2xl py-1 flex items-center justify-center md:justify-start gap-x-2 lg:p-0 font-semibold md:mb-2"
                                    itemprop="url">
                                         <span
@@ -30,6 +31,8 @@
                                             @if(!isset($child['data']['custom-attr']))
                                                 <li>
                                                     <a href="{{ $child['data']['url'] }}"
+                                                       target="{{ $child['data']['target'] ?? '' }}"
+                                                       @if(!empty($child['data']['download'])) download @endif
                                                        class="whitespace-nowrap py-1 block hover:underline font-medium {{ $child['active'] ? 'text-action-primary hover:text-action-primary-hovered' : 'text-interactive hover:text-interactive-hovered' }}">{{ $child['label'] }}</a>
                                                 </li>
                                             @else
@@ -83,4 +86,3 @@
         </div>
     </div>
 </footer>
-

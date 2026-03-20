@@ -6,6 +6,8 @@
                 <span class="relative flex items-center lg:[&_span]:hover:-rotate-90 [&_.test]:hover:block">
                     <div class="test absolute -left-6 top-0 {{ $second['active'] ? 'block' : 'hidden' }}">&#10230;</div>
                     <a href="{{ $second['data']['url'] }}"
+                       target="{{ $second['data']['target'] ?? '' }}"
+                       @if(!empty($second['data']['download'])) download @endif
                        class="block flex-auto py-1 hover:text-interactive font-medium transition-color duration-300 {{ $second['active'] ? 'text-interactive' : 'text-interactive/50' }}"
                        @mouseenter="setActiveSecond('{{ $menuIndex }}', '{{ $secondIndex }}', '{{ $second['data']['image'] ?? '' }}'); selectDoctor({{ isset($second['data']['doctor']) ? json_encode($second['data']['doctor']) : 'null' }})"
                        @mouseleave="selectDoctor(null)">

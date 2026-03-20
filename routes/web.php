@@ -7,6 +7,7 @@ use App\Http\Controllers\CityDetectionController;
 use App\Http\Controllers\DoctorController;
 use App\Http\Controllers\FormController;
 use App\Http\Controllers\FormRobotsTxtController;
+use App\Http\Controllers\MenuFileDownloadController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\Profile\BonusesController;
 use App\Http\Controllers\Profile\HistoryController;
@@ -59,6 +60,7 @@ Route::middleware('auth')->group(function () {
 });
 Route::get('/admin/yml-feed/download/{filename}', [YmlFeedController::class, 'downloadFeed'])->name('yml-feed.download');
 Route::get('/yml-feed/doctors', [YmlFeedController::class, 'showDoctorsFeed'])->name('yml-feed.show');
+Route::get('/menu-files/download/{encodedPath}', MenuFileDownloadController::class)->name('menu-files.download');
 
 // --- Content Routes (Multicity) ---
 

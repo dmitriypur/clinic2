@@ -11,6 +11,8 @@
         @foreach ($children as $third)
             <li class="border-b">
                 <a href="{{ $third['data']['url'] }}"
+                   target="{{ $third['data']['target'] ?? '' }}"
+                   @if(!empty($third['data']['download'])) download @endif
                    class="block py-1 hover:text-blue-label font-medium transition-color duration-300 {{ $third['active'] ? 'text-blue-label' : 'text-interactive/50' }}"
                    @mouseenter="previewImage = '{{ $third['data']['image'] ?? '' }}'">
                     {{ $third['label'] }}

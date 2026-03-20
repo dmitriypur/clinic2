@@ -81,6 +81,18 @@ class AdminPanelProvider extends PanelProvider
                         ->dehydrateStateUsing(fn ($state) => is_array($state) ? (array_values($state)[0] ?? null) : $state),
                     TextInput::make('target')->hidden(),
                 ], 'doctor')
+                ->itemType('Файл', [
+                    FileUpload::make('file')
+                        ->label('Файл')
+                        ->directory('menu-files')
+                        ->required()
+                        ->dehydrateStateUsing(fn ($state) => is_array($state) ? (array_values($state)[0] ?? null) : $state),
+                    Select::make('cities')
+                        ->label('Города')
+                        ->multiple()
+                        ->options(fn () => City::pluck('name', 'id')),
+                    TextInput::make('target')->hidden(),
+                ], 'file')
                 ->itemType('JS', [
                     TextInput::make('custom-attr')->label('Аттрибут'),
                     Select::make('cities')

@@ -5,11 +5,15 @@
             <li>
                 @if ($child['children'])
                     <a href="{{ $child['data']['url'] }}"
+                       target="{{ $child['data']['target'] ?? '' }}"
+                       @if(!empty($child['data']['download'])) download @endif
                        class="whitespace-nowrap py-2 block hover:underline font-medium">{{ $child['label'] }}</a>
 
                     <x-menu-items :index="$childIndex" :children="$child['children']"></x-menu-items>
                 @else
                     <a href="{{ $child['data']['url'] }}"
+                       target="{{ $child['data']['target'] ?? '' }}"
+                       @if(!empty($child['data']['download'])) download @endif
                        class="whitespace-nowrap py-2 block hover:underline font-medium">{{ $child['label'] }}</a>
                 @endif
             </li>

@@ -17,6 +17,8 @@
                             @foreach ($item['children'] as $child)
                                 <li>
                                     <a href="{{ $child['data']['url'] }}"
+                                        target="{{ $child['data']['target'] ?? '' }}"
+                                        @if(!empty($child['data']['download'])) download @endif
                                         class="whitespace-nowrap py-2 block hover:underline font-medium {{ $child['active'] ? 'text-action-primary hover:text-action-primary-hovered' : 'text-interactive hover:text-interactive-hovered' }}">{{ $child['label'] }}</a>
                                 </li>
                             @endforeach
@@ -24,6 +26,7 @@
                     </div>
                 @else
                     <a href="{{ $item['data']['url'] }}" target="{{ $item['data']['target'] }}"
+                        @if(!empty($item['data']['download'])) download @endif
                         class="group/link relative py-2 block lg:flex lg:py-4 lg:text-lg lg:after:absolute after:bottom-0 after:left-0 after:h-[3px] after:w-full font-medium {{ $item['active'] ? 'text-action-primary hover:after:bg-action-primary' : 'text-interactive lg:hover:after:bg-interactive' }}"
                         itemprop="url">
                         <span
