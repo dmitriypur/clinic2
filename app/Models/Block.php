@@ -10,6 +10,7 @@ use App\Models\Doctor;
 use App\Models\Traits\HasCityScope;
 use App\Settings\GeneralSettings;
 use App\Settings\SeoSettings;
+use App\Support\CitySeoVariables;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -148,6 +149,18 @@ class Block extends Model implements HasMedia, Sortable
     public function getImageUrl(string $collection): string
     {
         return $this->getFirstMediaUrl($collection);
+    }
+
+    public function withResolvedCitySeoVariables(): self
+    {
+        $block = clone $this;
+        $replacer = app(CitySeoVariables::class);
+
+        $block->title = $replacer->replace((string) $block->title) ?? '';
+        $block->body_html = $replacer->replace($block->body_html);
+        $block->payload = $this->resolveCitySeoVariablesInValue($block->payload, $replacer);
+
+        return $block;
     }
 
 
@@ -479,5 +492,22 @@ class Block extends Model implements HasMedia, Sortable
     public function elementToSpanWrap($element): string
     {
         return preg_replace('/(.*?)(?:\()(.*?)(?:\))/', '$1<span class="text-interactive/50">($2)</span>', $element);
+    }
+
+    private function resolveCitySeoVariablesInValue(mixed $value, CitySeoVariables $replacer): mixed
+    {
+        if (is_string($value)) {
+            return $replacer->replace($value);
+        }
+
+        if (!is_array($value)) {
+            return $value;
+        }
+
+        foreach ($value as $key => $nestedValue) {
+            $value[$key] = $this->resolveCitySeoVariablesInValue($nestedValue, $replacer);
+        }
+
+        return $value;
     }
 }

@@ -10,6 +10,7 @@ use App\Models\Traits\HasCityScope;
 use App\Support\CitySeoVariables;
 use App\Settings\SeoSettings;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -273,6 +274,15 @@ class Page extends Model implements HasMedia
         $seo['title'] = $replacer->replace($seo['title'] ?? null);
         $seo['description'] = $replacer->replace($seo['description'] ?? null);
         $page->seo = $seo;
+
+        if ($page->relationLoaded('blocks')) {
+            $page->setRelation(
+                'blocks',
+                new Collection(
+                    $page->blocks->map(fn (Block $block) => $block->withResolvedCitySeoVariables())->all()
+                )
+            );
+        }
 
         return $page;
     }
