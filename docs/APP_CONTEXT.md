@@ -15,6 +15,11 @@
 - Отдельно есть админ-панель на Filament для управления контентом, услугами, врачами, городами, отзывами, меню и настройками.
 
 ## Что изменилось (последнее)
+- 2026-03-20: ускорена админская страница `Настройки виджета`: таблица филиалов больше не блокирует первый рендер синхронным вызовом booking API в `mount()`, а запускает sync через `wire:init` уже после показа локальных данных; сама синхронизация филиалов теперь забирает ветки клиник параллельно и пишет их в БД через batch `upsert`, а таблица врачей выбирает только нужные поля вместо `doctors.*`.
+- 2026-03-20: добит цикл popup выбора города после подтверждения/переключения: `App\Clinic::scriptVariables()` теперь не прокидывает stale `detectedCity` при наличии `city_confirmed`/`selected_city`, очищает session `detected_city` и убирает `test_city` из сгенерированных городских URL; `CityDetectionController` тоже забывает `detected_city`, если город уже подтверждён.
+- 2026-03-20: исправлен цикл popup выбора города при переключении с дефолтной Москвы на другой город: `App\Clinic::scriptVariables()` теперь передаёт в `window.config.cities` признак `is_default`, а `CityConfirmationModal` закрывает popup только для явно non-default текущего города; `CitySwitcher` и `CityConfirmationModal` до навигации ставят `city_confirmed` и `selected_city`, поэтому после выбора города popup не должен открываться повторно; при отсутствии geo-detection сайт остаётся в дефолтной Москве без fallback-popup.
+- 2026-03-20: для `BookingWidgetV3` добавлена минимальная сортировка без изменения логики компонента: врачи сортируются по `city_doctor.sort_order` отдельно по городу, филиалы — по локальной таблице `booking_widget_branch_orders`, а order-map текущего города прокидывается из backend в `window.config.booking`, после чего `resources/js/services/bookingApi.js` применяет стабильную сортировку к уже привычным ответам внешнего booking API.
+- 2026-03-20: в Filament добавлена отдельная страница `Настройки виджета` (`/admin/booking-widget-settings`) с выбором города и двумя inline-таблицами: порядок врачей и порядок филиалов; список филиалов подтягивается из booking API автоматически, без ручной синхронизации кнопкой.
 - 2026-03-20: city SEO-переменные теперь резолвятся не только у `Page`, но и централизованно у связанных `Block`: подстановка работает в `title`, `body_html` и строковых значениях `payload` на публичных страницах/постах без изменения данных в БД.
 - 2026-03-20: исправлен рендер `target` и `download` в шаблонах footer-меню; нижнее меню теперь корректно применяет `target = _blank` и скачивание файлов как для верхних, так и для дочерних пунктов.
 - 2026-03-20: исправлен рендер `target` в Blade-шаблонах меню; теперь для пунктов типа `Ссылка` значение `target` применяется не только к верхнему уровню, но и к dropdown/mega-menu ссылкам.
@@ -75,6 +80,10 @@
   - SEO;
   - city scope;
   - используется в публичных страницах, расписании, отзывах и YML-фиде.
+- `BookingWidgetBranchOrder`:
+  - локальная таблица порядка филиалов для нового виджета записи;
+  - хранит `city_id + clinic_id + branch_id + clinic_name + title + sort_order`;
+  - используется только в админке и proxy-эндпоинтах `booking-widget`.
 - `Review`:
   - отзывы;
   - могут быть связаны с врачом, страницами и городами;
@@ -108,6 +117,7 @@
   - `city_promotion`
   - `city_block`
   - `city_review`
+- В `city_doctor` для виджета записи добавлен nullable `sort_order`.
 
 ## Мультигород
 ### Основная логика
@@ -300,6 +310,16 @@ Middleware:
   - умеет работать в `dry_run`.
 
 ### Прочие сервисы
+- `BookingWidgetApiService`
+  - тонкий cached-client к внешнему booking API (`adminzrenie.ru/api/v1`) для синхронизации филиалов в админке.
+- `BookingWidgetOrderingService`
+  - собирает `doctorSortOrders` и `branchSortOrders` для текущего города;
+  - order-map прокидывается в `window.config.booking` через `Clinic::scriptVariables()`.
+- `BookingWidgetBranchSyncService`
+  - подтягивает филиалы из booking API в локальную таблицу `booking_widget_branch_orders` для выбранного города;
+  - фильтрует клиники по `BOOKING_ALLOWED_CLINIC_IDS`;
+  - вызывается из админской страницы `Настройки виджета` автоматически после первого рендера;
+  - забирает ветки клиник параллельно и обновляет локальную таблицу через `upsert`, без серии `updateOrCreate`.
 - `MenuService`
   - фильтрует и готовит меню под текущий город;
   - добавляет городские URL;
@@ -344,6 +364,14 @@ Middleware:
 - `InfiniteDoctorsList`
 - `AccessibilityToggle`
 
+### BookingWidgetV3
+- Логика `resources/js/components/BookingWidgetV3/BookingWidgetV3.vue` сохранена как на `main`.
+- Из frontend-слоя изменён только `resources/js/services/bookingApi.js`:
+  - `getDoctorsByCity()`
+  - `getClinicBranches()`
+  - `getClinicDoctors()`
+- Эти методы по-прежнему ходят напрямую во внешний booking API, но перед возвратом применяют сортировку по backend order-map текущего города.
+
 ### Blade-макет
 - Основной layout: `resources/views/layouts/app.blade.php`
 - Что делает:
@@ -382,6 +410,7 @@ Middleware:
   - `ManageGeneralSettings`
   - `ManageSeoSettings`
   - `PublicFileManager`
+  - `BookingWidgetSettings`
 
 ## Настройки и env
 ### Основные env/config
@@ -389,6 +418,7 @@ Middleware:
   - `CLINIC_UUID`
   - `UNF_BASE_URL`
   - `LO_TOKEN`
+  - `BOOKING_API_BASE_URL`
   - `BOOKING_ALLOWED_CLINIC_IDS`
   - `SMS_AERO_USER_LOGIN`
   - `SMS_AERO_API_KEY`
@@ -409,6 +439,8 @@ Middleware:
 - `cities`
 - `booking.allowedClinicIds`
 - `booking.formVariant`
+- `booking.doctorSortOrders`
+- `booking.branchSortOrders`
 
 `booking.formVariant` влияет на сценарий `showCallbackModal()` для кнопок записи, но ссылка «Перезвоните мне» в `resources/views/components/phone-new.blade.php` открывает отдельную модалку через событие `showCallbackFormNew`.
 
@@ -435,6 +467,7 @@ Middleware:
 ### Прочее
 - кеши врачей по городам;
 - кеши отзывов по городам.
+- короткий кеш ответов `BookingWidgetApiService` для синхронизации филиалов в админке (`booking-widget-api:*`, TTL 60 сек).
 
 ### Инвалидация
 - `City`, `Page`, `Block`, `Doctor`, `Service`, `ServicePrice`, `Review` очищают связанные кеши в model events/observers.
@@ -517,6 +550,8 @@ Middleware:
 - Часть URL и поведения зависит от города, а часть маршрутов специально глобальная.
 - В layout и city-настройках есть поддержка `header_scripts` и `body_scripts`, поэтому любые изменения в SEO/scripts нужно проверять и в глобальных настройках, и в `City`.
 - Подстановка city-переменных в блоках выполняется только при публичном рендере через `withResolvedCitySeoVariables()`; исходные значения `blocks.title`, `blocks.body_html` и `blocks.payload` в БД и админке не переписываются.
+- Для нового порядка виджета не менялась логика `BookingWidgetV3.vue`; источник истины для порядка находится в backend/admin, а публичный frontend применяет только готовые order-map без дополнительной бизнес-логики шагов.
+- В админке `Настройки виджета` филиалы могут обновляться фоновым Livewire-запросом сразу после открытия/смены города; первый рендер приходит из локальной БД без блокировки внешним booking API.
 
 ## Журнал изменений
 - 2026-03-20: в `App\Models\Block` добавлен централизованный резолв city SEO-переменных для `title`, `body_html` и строковых значений `payload`; `App\Models\Page::withResolvedCitySeoVariables()` теперь применяет его ко всем загруженным блокам, а unit-тест `tests/Unit/PageCitySeoVariablesTest.php` покрывает рекурсивную подстановку.

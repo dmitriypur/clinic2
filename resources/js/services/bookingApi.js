@@ -27,6 +27,85 @@ class BookingApiService {
     );
   }
 
+  getDoctorSortOrders() {
+    return window.config?.booking?.doctorSortOrders || {};
+  }
+
+  getBranchSortOrders() {
+    return window.config?.booking?.branchSortOrders || {};
+  }
+
+  normalizeDoctorUuid(doctor) {
+    const raw = doctor?.external_id || doctor?.uuid || null;
+
+    return raw ? String(raw).trim().toLowerCase() : null;
+  }
+
+  sortListByOrder(list, resolveOrder) {
+    return [...(list || [])]
+      .map((item, index) => ({
+        item,
+        index,
+        sortOrder: resolveOrder(item),
+      }))
+      .sort((left, right) => {
+        if (left.sortOrder === null && right.sortOrder === null) {
+          return left.index - right.index;
+        }
+
+        if (left.sortOrder === null) {
+          return 1;
+        }
+
+        if (right.sortOrder === null) {
+          return -1;
+        }
+
+        if (left.sortOrder === right.sortOrder) {
+          return left.index - right.index;
+        }
+
+        return left.sortOrder - right.sortOrder;
+      })
+      .map(({ item }) => item);
+  }
+
+  sortDoctors(list) {
+    const orders = this.getDoctorSortOrders();
+
+    return this.sortListByOrder(list, (doctor) => {
+      const uuid = this.normalizeDoctorUuid(doctor);
+      const order = uuid ? orders[uuid] : null;
+
+      return Number.isFinite(Number(order)) ? Number(order) : null;
+    });
+  }
+
+  sortBranches(list, clinicId) {
+    const clinicOrders = this.getBranchSortOrders()?.[String(clinicId)] || {};
+
+    return this.sortListByOrder(list, (branch) => {
+      const order = clinicOrders[String(branch?.id)];
+
+      return Number.isFinite(Number(order)) ? Number(order) : null;
+    });
+  }
+
+  replaceResponseData(payload, list) {
+    if (Array.isArray(payload)) {
+      return list;
+    }
+
+    if (payload && typeof payload === "object" && Array.isArray(payload.data)) {
+      return {
+        ...payload,
+        data: list,
+      };
+    }
+
+    return payload;
+  }
+
   /**
    * Получить список городов
    * GET /api/v1/cities
@@ -49,7 +128,10 @@ class BookingApiService {
       const response = await this.client.get(`/cities/${cityId}/doctors`, {
         params: birthDate ? { birth_date: birthDate } : undefined,
       });
-      return response.data;
+      const payload = response.data;
+      const list = Array.isArray(payload?.data) ? payload.data : payload || [];
+
+      return this.replaceResponseData(payload, this.sortDoctors(list));
     } catch (error) {
       throw this.handleError(error);
     }
@@ -156,7 +238,10 @@ class BookingApiService {
       const response = await this.client.get(`/clinics/${clinicId}/branches`, {
         params: cityId ? { city_id: cityId } : undefined,
       });
-      return response.data;
+      const payload = response.data;
+      const list = Array.isArray(payload?.data) ? payload.data : payload || [];
+
+      return this.replaceResponseData(payload, this.sortBranches(list, clinicId));
     } catch (error) {
       throw this.handleError(error);
     }
@@ -174,7 +259,10 @@ class BookingApiService {
           branch_id: branchId || undefined,
         },
       });
-      return response.data;
+      const payload = response.data;
+      const list = Array.isArray(payload?.data) ? payload.data : payload || [];
+
+      return this.replaceResponseData(payload, this.sortDoctors(list));
     } catch (error) {
       throw this.handleError(error);
     }

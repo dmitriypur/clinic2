@@ -19,6 +19,7 @@
 
     $queryParams = request()->query();
     unset($queryParams['force_city']);
+    unset($queryParams['test_city']);
     $isGlobalPath = $cityService->isGlobalPath($currentPath);
 
     // Prepare data for Vue component
