@@ -46,7 +46,12 @@ export default {
     mounted() {
         this.cities = window.config.cities;
         this.detectedCity = this.resolveDetectedCity(window.config.detectedCity);
+        const currentCity = this.getCurrentCity();
         const cityConfirmed = Cookies.get('city_confirmed') || Cookies.get('selected_city');
+
+        if (currentCity && currentCity.is_default === false) {
+            return;
+        }
 
         if (this.detectedCity && !cityConfirmed) {
             this.showModal = true;
@@ -59,6 +64,9 @@ export default {
     },
 
     methods: {
+        getCurrentCity() {
+            return this.cities.find((city) => city?.is_current) || null;
+        },
         resolveDetectedCity(city) {
             if (!city) {
                 return null;
@@ -105,12 +113,22 @@ export default {
                 // Detection failure should not block the page.
             }
         },
-        setCookie() {
-            Cookies.set('city_confirmed', 'true', { expires: 365 });
+        setCityCookies(citySlug = null) {
+            const options = {
+                expires: 365,
+                path: '/',
+            };
+
+            Cookies.set('city_confirmed', 'true', options);
+
+            if (citySlug) {
+                Cookies.set('selected_city', citySlug, options);
+            }
         },
 
         confirmCity() {
-            this.setCookie();
+            this.showModal = false;
+            this.setCityCookies(this.detectedCity?.slug || null);
             window.location.href = this.detectedCity.url;
         },
 
@@ -119,7 +137,8 @@ export default {
         },
 
         selectCity(city) {
-            this.setCookie();
+            this.showModal = false;
+            this.setCityCookies(city?.slug || null);
             window.location.href = city.url;
         }
     }

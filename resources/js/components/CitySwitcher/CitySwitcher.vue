@@ -25,6 +25,7 @@
           <a v-for="city in cities" 
              :key="city.id" 
              :href="city.url"
+             @click="rememberCity(city)"
              class="block px-4 py-2 text-sm text-gray-700 hover:bg-surface-subdued hover:text-action-primary"
              :class="{ 'bg-surface-subdued text-action-primary font-medium': city.is_current }">
             {{ city.name }}
@@ -36,6 +37,8 @@
 </template>
 
 <script>
+import Cookies from "js-cookie";
+
 export default {
   name: 'CitySwitcher',
   directives: {
@@ -71,6 +74,18 @@ export default {
   methods: {
     toggle() {
       this.open = !this.open
+    },
+    rememberCity(city) {
+      const options = {
+        expires: 365,
+        path: '/',
+      };
+
+      Cookies.set('city_confirmed', 'true', options)
+
+      if (city?.slug) {
+        Cookies.set('selected_city', city.slug, options)
+      }
     },
     close() {
       this.open = false

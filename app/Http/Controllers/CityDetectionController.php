@@ -24,6 +24,8 @@ class CityDetectionController extends Controller
             || $request->cookie(self::SELECTED_CITY_COOKIE)
             || $this->cityService->getActiveCities()->count() <= 1
         ) {
+            $request->session()->forget('detected_city');
+
             return response()->json(['detectedCity' => null]);
         }
 

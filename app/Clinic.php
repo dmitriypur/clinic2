@@ -4,6 +4,7 @@ namespace App;
 
 use App\Contracts\Services\Schema\Schema;
 use App\Models\Review;
+use App\Services\BookingWidgetOrderingService;
 use App\Settings\GeneralSettings;
 use App\Settings\SeoSettings;
 use Illuminate\Http\Client\PendingRequest;
@@ -69,6 +70,7 @@ class Clinic
     {
         $generalSettings = app(GeneralSettings::class);
         $cityService = app(\App\Services\CityService::class);
+        $bookingWidgetOrderingService = app(BookingWidgetOrderingService::class);
         $currentCity = $cityService->getCurrentCity();
         $cities = $cityService->getActiveCities();
 
@@ -92,6 +94,7 @@ class Clinic
 
         $queryParams = request()->query();
         unset($queryParams['force_city']);
+        unset($queryParams['test_city']);
         $isGlobalPath = $cityService->isGlobalPath($preparedPath);
 
         $preparedCities = $cities->map(function($city) use ($preparedPath, $queryParams, $currentCity, $isGlobalPath) {
@@ -112,11 +115,18 @@ class Clinic
                 'name' => $city->name,
                 'slug' => $city->slug,
                 'url' => $url,
+                'is_default' => (bool) $city->is_default,
                 'is_current' => $currentCity && $currentCity->id === $city->id
             ];
         })->values();
 
-        $detectedCity = session()->get('detected_city');
+        $hasConfirmedCity = request()->hasCookie('city_confirmed') || request()->hasCookie('selected_city');
+
+        if ($hasConfirmedCity && request()->hasSession()) {
+            request()->session()->forget('detected_city');
+        }
+
+        $detectedCity = $hasConfirmedCity ? null : session()->get('detected_city');
         if ($detectedCity) {
             $path = $preparedPath ? '/' . $preparedPath : '';
             $detectedCity->url = $detectedCity->is_default
@@ -141,6 +151,8 @@ class Clinic
             'booking' => [
                 'allowedClinicIds' => config('zrenie-clinic.booking_allowed_clinic_ids', []),
                 'formVariant' => $generalSettings->booking_form_variant ?? 'old',
+                'doctorSortOrders' => $bookingWidgetOrderingService->getDoctorOrderMapForCity($currentCity?->id),
+                'branchSortOrders' => $bookingWidgetOrderingService->getBranchOrderMapForCity($currentCity?->id),
             ],
         ];
     }
