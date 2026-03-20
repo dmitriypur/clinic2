@@ -152,6 +152,8 @@ class Clinic
                 'allowedClinicIds' => config('zrenie-clinic.booking_allowed_clinic_ids', []),
                 'formVariant' => $generalSettings->booking_form_variant ?? 'old',
                 'doctorSortOrders' => $bookingWidgetOrderingService->getDoctorOrderMapForCity($currentCity?->id),
+                'doctorSelectSortOrders' => $bookingWidgetOrderingService->getDoctorOrderMapForCity($currentCity?->id),
+                'clinicDoctorSortOrders' => $bookingWidgetOrderingService->getClinicDoctorOrderMapForCity($currentCity?->id),
                 'branchSortOrders' => $bookingWidgetOrderingService->getBranchOrderMapForCity($currentCity?->id),
             ],
         ];

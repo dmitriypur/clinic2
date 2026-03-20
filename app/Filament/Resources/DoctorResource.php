@@ -69,6 +69,11 @@ class DoctorResource extends Resource
                             ->label('Должность')
                             ->required(),
 
+                        Forms\Components\TextInput::make('page_sort_order')
+                            ->label('Порядок на странице специалистов')
+                            ->numeric()
+                            ->helperText('Меньше число — выше на публичной странице специалистов. Если пусто, используется порядок по умолчанию.'),
+
                         Forms\Components\Textarea::make('excerpt')
                             ->label('Краткая информация')
                             ->columnSpan('full')
@@ -226,6 +231,18 @@ class DoctorResource extends Resource
                     ->label('Города')
                     ->getStateUsing(fn(Doctor $record): string => $record->cities->pluck('name')->implode(', '))
                     ->placeholder('Все'),
+                Tables\Columns\TextInputColumn::make('page_sort_order')
+                    ->label('Порядок страницы')
+                    ->type('number')
+                    ->step(1)
+                    ->rules(['nullable', 'integer'])
+                    ->extraInputAttributes(['class' => 'w-24'])
+                    ->updateStateUsing(function (Doctor $record, $state): ?int {
+                        $value = is_numeric($state) ? (int) $state : null;
+                        $record->update(['page_sort_order' => $value]);
+
+                        return $value;
+                    }),
                 Tables\Columns\IconColumn::make('is_active')
                     ->label('Активен')
                     ->boolean()

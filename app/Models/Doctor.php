@@ -51,6 +51,7 @@ class Doctor extends Model implements HasMedia
         'surname',
         'speciality',
         'job_title',
+        'page_sort_order',
         'excerpt',
         'bio',
         'video_url',
@@ -69,6 +70,13 @@ class Doctor extends Model implements HasMedia
         return $query->whereRaw(
             "LOWER(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(`seo`, '$.\"noindex\"')), 'false')) NOT IN ('true', '1')"
         );
+    }
+
+    public function scopeOrderedForPublicIndex(Builder $query): Builder
+    {
+        return $query
+            ->orderByRaw('doctors.page_sort_order IS NULL, doctors.page_sort_order ASC')
+            ->orderBy('doctors.id');
     }
 
     protected static function booted()

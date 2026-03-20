@@ -29,6 +29,7 @@ class BookingWidgetSortingTest extends TestCase
                 'city_id' => $city->id,
                 'doctor_id' => $doctorA->id,
                 'sort_order' => 1,
+                'clinic_sort_order' => 3,
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
@@ -36,6 +37,7 @@ class BookingWidgetSortingTest extends TestCase
                 'city_id' => $city->id,
                 'doctor_id' => $doctorB->id,
                 'sort_order' => 2,
+                'clinic_sort_order' => 1,
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
@@ -43,6 +45,7 @@ class BookingWidgetSortingTest extends TestCase
                 'city_id' => $city->id,
                 'doctor_id' => $doctorC->id,
                 'sort_order' => null,
+                'clinic_sort_order' => null,
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
@@ -52,6 +55,47 @@ class BookingWidgetSortingTest extends TestCase
             strtolower($doctorA->uuid) => 1,
             strtolower($doctorB->uuid) => 2,
         ], app(BookingWidgetOrderingService::class)->getDoctorOrderMapForCity($city->id));
+    }
+
+    public function test_clinic_doctor_order_map_returns_clinic_flow_orders_for_selected_city(): void
+    {
+        $city = $this->createCity();
+
+        $doctorA = $this->createDoctor('00000000-0000-0000-0000-000000000011', 'Иванов', 'Иван');
+        $doctorB = $this->createDoctor('00000000-0000-0000-0000-000000000012', 'Петров', 'Пётр');
+        $doctorC = $this->createDoctor('00000000-0000-0000-0000-000000000013', 'Сидоров', 'Сидор');
+
+        DB::table('city_doctor')->insert([
+            [
+                'city_id' => $city->id,
+                'doctor_id' => $doctorA->id,
+                'sort_order' => 2,
+                'clinic_sort_order' => 3,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'city_id' => $city->id,
+                'doctor_id' => $doctorB->id,
+                'sort_order' => 1,
+                'clinic_sort_order' => 2,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'city_id' => $city->id,
+                'doctor_id' => $doctorC->id,
+                'sort_order' => 3,
+                'clinic_sort_order' => null,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+        ]);
+
+        $this->assertSame([
+            strtolower($doctorB->uuid) => 2,
+            strtolower($doctorA->uuid) => 3,
+        ], app(BookingWidgetOrderingService::class)->getClinicDoctorOrderMapForCity($city->id));
     }
 
     public function test_branch_order_map_returns_nested_orders_for_selected_city(): void

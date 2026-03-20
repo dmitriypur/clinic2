@@ -46,21 +46,23 @@ class BookingWidgetDoctorsTable extends Component implements HasForms, HasTable
                 Tables\Columns\TextColumn::make('speciality')
                     ->label('Специальность')
                     ->wrap(),
-                TextInputColumn::make('widget_sort_order')
-                    ->label('Порядок')
+                TextInputColumn::make('doctor_widget_sort_order')
+                    ->label('Выбрать врача')
                     ->type('number')
                     ->step(1)
                     ->rules(['nullable', 'integer'])
                     ->extraInputAttributes(['class' => 'w-24'])
                     ->updateStateUsing(function (Doctor $record, $state): mixed {
-                        DB::table('city_doctor')
-                            ->where('city_id', $this->cityId)
-                            ->where('doctor_id', $record->id)
-                            ->update([
-                                'sort_order' => $state,
-                            ]);
-
-                        return $state;
+                        return $this->updateSortOrder($record->id, 'sort_order', $state);
+                    }),
+                TextInputColumn::make('clinic_widget_sort_order')
+                    ->label('Выбрать клинику')
+                    ->type('number')
+                    ->step(1)
+                    ->rules(['nullable', 'integer'])
+                    ->extraInputAttributes(['class' => 'w-24'])
+                    ->updateStateUsing(function (Doctor $record, $state): mixed {
+                        return $this->updateSortOrder($record->id, 'clinic_sort_order', $state);
                     }),
             ])
             ->modifyQueryUsing(function (Builder $query): Builder {
@@ -80,10 +82,25 @@ class BookingWidgetDoctorsTable extends Component implements HasForms, HasTable
                 'doctors.name',
                 'doctors.surname',
                 'doctors.speciality',
-                DB::raw('city_doctor.sort_order as widget_sort_order'),
+                DB::raw('city_doctor.sort_order as doctor_widget_sort_order'),
+                DB::raw('city_doctor.clinic_sort_order as clinic_widget_sort_order'),
             ])
             ->join('city_doctor', 'city_doctor.doctor_id', '=', 'doctors.id')
             ->where('city_doctor.city_id', $this->cityId);
+    }
+
+    private function updateSortOrder(int $doctorId, string $column, mixed $state): ?int
+    {
+        $value = is_numeric($state) ? (int) $state : null;
+
+        DB::table('city_doctor')
+            ->where('city_id', $this->cityId)
+            ->where('doctor_id', $doctorId)
+            ->update([
+                $column => $value,
+            ]);
+
+        return $value;
     }
 
     public function render()
