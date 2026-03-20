@@ -141,6 +141,7 @@ class PageController extends Controller
         return Cache::remember($cacheKey, self::CACHE_TTL, function () {
             return Doctor::query()
                 ->publiclyVisible()
+                ->orderedForPublicIndex()
                 ->with('media')
                 ->paginate(self::DOCTORS_PER_PAGE);
         });

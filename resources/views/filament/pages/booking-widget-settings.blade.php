@@ -3,7 +3,7 @@
         {{ $this->form }}
 
         @if ($this->getSelectedCityId())
-            <x-filament::section heading="Врачи" description="Порядок задаётся отдельно для каждого города. Меньше число — выше в списке.">
+            <x-filament::section heading="Врачи" description="Порядок задаётся отдельно для каждого города и сценария. На втором шаге ветки «Выбрать врача» и на третьем шаге ветки «Выбрать клинику» можно использовать разный порядок. Меньше число — выше в списке.">
                 @livewire(
                     \App\Livewire\Admin\BookingWidgetDoctorsTable::class,
                     ['cityId' => $this->getSelectedCityId()],

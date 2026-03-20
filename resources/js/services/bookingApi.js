@@ -27,8 +27,16 @@ class BookingApiService {
     );
   }
 
-  getDoctorSortOrders() {
-    return window.config?.booking?.doctorSortOrders || {};
+  getDoctorSelectSortOrders() {
+    return (
+      window.config?.booking?.doctorSelectSortOrders ||
+      window.config?.booking?.doctorSortOrders ||
+      {}
+    );
+  }
+
+  getClinicDoctorSortOrders() {
+    return window.config?.booking?.clinicDoctorSortOrders || {};
   }
 
   getBranchSortOrders() {
@@ -70,15 +78,57 @@ class BookingApiService {
       .map(({ item }) => item);
   }
 
-  sortDoctors(list) {
-    const orders = this.getDoctorSortOrders();
+  sortDoctors(list, primaryOrders = {}, fallbackOrders = {}) {
+    return [...(list || [])]
+      .map((item, index) => {
+        const uuid = this.normalizeDoctorUuid(item);
+        const primaryOrder = uuid ? primaryOrders[uuid] : null;
+        const fallbackOrder = uuid ? fallbackOrders[uuid] : null;
+        const hasPrimaryOrder = Number.isFinite(Number(primaryOrder));
+        const hasFallbackOrder = Number.isFinite(Number(fallbackOrder));
 
-    return this.sortListByOrder(list, (doctor) => {
-      const uuid = this.normalizeDoctorUuid(doctor);
-      const order = uuid ? orders[uuid] : null;
+        let priority = 2;
+        let sortOrder = null;
 
-      return Number.isFinite(Number(order)) ? Number(order) : null;
-    });
+        if (hasPrimaryOrder) {
+          priority = 0;
+          sortOrder = Number(primaryOrder);
+        } else if (hasFallbackOrder) {
+          priority = 1;
+          sortOrder = Number(fallbackOrder);
+        }
+
+        return {
+          item,
+          index,
+          priority,
+          sortOrder,
+        };
+      })
+      .sort((left, right) => {
+        if (left.priority !== right.priority) {
+          return left.priority - right.priority;
+        }
+
+        if (left.sortOrder === null && right.sortOrder === null) {
+          return left.index - right.index;
+        }
+
+        if (left.sortOrder === null) {
+          return 1;
+        }
+
+        if (right.sortOrder === null) {
+          return -1;
+        }
+
+        if (left.sortOrder === right.sortOrder) {
+          return left.index - right.index;
+        }
+
+        return left.sortOrder - right.sortOrder;
+      })
+      .map(({ item }) => item);
   }
 
   sortBranches(list, clinicId) {
@@ -130,8 +180,12 @@ class BookingApiService {
       });
       const payload = response.data;
       const list = Array.isArray(payload?.data) ? payload.data : payload || [];
+      const doctorSelectOrders = this.getDoctorSelectSortOrders();
 
-      return this.replaceResponseData(payload, this.sortDoctors(list));
+      return this.replaceResponseData(
+        payload,
+        this.sortDoctors(list, doctorSelectOrders)
+      );
     } catch (error) {
       throw this.handleError(error);
     }
@@ -261,8 +315,13 @@ class BookingApiService {
       });
       const payload = response.data;
       const list = Array.isArray(payload?.data) ? payload.data : payload || [];
+      const clinicDoctorOrders = this.getClinicDoctorSortOrders();
+      const doctorSelectOrders = this.getDoctorSelectSortOrders();
 
-      return this.replaceResponseData(payload, this.sortDoctors(list));
+      return this.replaceResponseData(
+        payload,
+        this.sortDoctors(list, clinicDoctorOrders, doctorSelectOrders)
+      );
     } catch (error) {
       throw this.handleError(error);
     }

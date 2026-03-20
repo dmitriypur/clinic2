@@ -182,6 +182,7 @@ export default {
       doctorFlowLastAvailableDate: null,
       clinicFlowLastAvailableDate: null,
       allCities: [],
+      initCitiesPromise: null,
       clinicsCacheByCity: {},
       cityBranchesCacheByCity: {},
       doctorsCacheByCity: {},
@@ -428,6 +429,7 @@ export default {
       await this.goToClinicSchedule();
     },
     async openDoctorFlow() {
+      await this.initCities();
       this.currentStep = "doctor-select";
 
       if (!this.doctors.length) {
@@ -563,15 +565,31 @@ export default {
       }
     },
     async initCities() {
-      if (this.allCities.length > 0) return;
-      try {
-        const response = await bookingApi.getCities();
-        this.allCities = response.data || response || [];
-      } catch (e) {
-        // silent for now
+      if (this.allCities.length > 0) {
+        return this.allCities;
       }
+
+      if (this.initCitiesPromise) {
+        return this.initCitiesPromise;
+      }
+
+      this.initCitiesPromise = (async () => {
+        try {
+          const response = await bookingApi.getCities();
+          this.allCities = response.data || response || [];
+        } catch (e) {
+          this.allCities = [];
+        } finally {
+          this.initCitiesPromise = null;
+        }
+
+        return this.allCities;
+      })();
+
+      return this.initCitiesPromise;
     },
     async loadClinics() {
+      await this.initCities();
       if (!this.currentCityId) return;
 
       const cacheKey = String(this.currentCityId);
@@ -599,6 +617,7 @@ export default {
       }
     },
     async loadDoctorsByCity() {
+      await this.initCities();
       if (!this.currentCityId) return;
 
       const cached = this.doctorsCacheByCity[this.currentCityId];
@@ -648,6 +667,7 @@ export default {
       this.branches = response.data || response || [];
     },
     async loadCityBranches() {
+      await this.initCities();
       this.loadingCityBranches = true;
       try {
         if (!this.clinics.length) {
