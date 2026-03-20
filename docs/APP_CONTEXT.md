@@ -15,6 +15,7 @@
 - Отдельно есть админ-панель на Filament для управления контентом, услугами, врачами, городами, отзывами, меню и настройками.
 
 ## Что изменилось (последнее)
+- 2026-03-20: исправлен production-регресс админки Filament: nginx в проде отдаёт любые пути `*.js` как статические и не пропускает route-based Livewire asset `/livewire/livewire.min.js` в Laravel, из-за чего login-страница деградировала до обычного `POST /admin/login` и падала `405 Method Not Allowed`; временно на сервере опубликованы `public/vendor/livewire` assets, а в `Envoy.blade.php` деплой теперь всегда выполняет `php artisan livewire:publish --assets --no-interaction`, чтобы Filament использовал статический `vendor/livewire/*.js`.
 - 2026-03-20: ускорена админская страница `Настройки виджета`: таблица филиалов больше не блокирует первый рендер синхронным вызовом booking API в `mount()`, а запускает sync через `wire:init` уже после показа локальных данных; сама синхронизация филиалов теперь забирает ветки клиник параллельно и пишет их в БД через batch `upsert`, а таблица врачей выбирает только нужные поля вместо `doctors.*`.
 - 2026-03-20: добит цикл popup выбора города после подтверждения/переключения: `App\Clinic::scriptVariables()` теперь не прокидывает stale `detectedCity` при наличии `city_confirmed`/`selected_city`, очищает session `detected_city` и убирает `test_city` из сгенерированных городских URL; `CityDetectionController` тоже забывает `detected_city`, если город уже подтверждён.
 - 2026-03-20: исправлен цикл popup выбора города при переключении с дефолтной Москвы на другой город: `App\Clinic::scriptVariables()` теперь передаёт в `window.config.cities` признак `is_default`, а `CityConfirmationModal` закрывает popup только для явно non-default текущего города; `CitySwitcher` и `CityConfirmationModal` до навигации ставят `city_confirmed` и `selected_city`, поэтому после выбора города popup не должен открываться повторно; при отсутствии geo-detection сайт остаётся в дефолтной Москве без fallback-popup.
@@ -517,6 +518,7 @@ Middleware:
   - `npm ci`;
   - `npm run build`;
   - symlink storage и `.env`;
+  - `php artisan livewire:publish --assets --no-interaction`;
   - `php artisan migrate --force`;
   - cache clear/cache build;
   - restart `php8.1-fpm` и `supervisor`.
@@ -552,8 +554,10 @@ Middleware:
 - Подстановка city-переменных в блоках выполняется только при публичном рендере через `withResolvedCitySeoVariables()`; исходные значения `blocks.title`, `blocks.body_html` и `blocks.payload` в БД и админке не переписываются.
 - Для нового порядка виджета не менялась логика `BookingWidgetV3.vue`; источник истины для порядка находится в backend/admin, а публичный frontend применяет только готовые order-map без дополнительной бизнес-логики шагов.
 - В админке `Настройки виджета` филиалы могут обновляться фоновым Livewire-запросом сразу после открытия/смены города; первый рендер приходит из локальной БД без блокировки внешним booking API.
+- На production nginx перехватывает любые URL с расширением `.js` как статические файлы (`try_files $uri =404`), поэтому route-based Livewire assets под `/livewire/*.js` там неработоспособны; для Filament/Livewire нужно использовать опубликованные assets в `public/vendor/livewire`, и деплой обязан их публиковать каждый релиз.
 
 ## Журнал изменений
+- 2026-03-20: в `Envoy.blade.php` добавлен обязательный шаг `php artisan livewire:publish --assets --no-interaction` для полного деплоя и `deploy-code`; причина в production nginx-конфиге, который не пропускает `/livewire/*.js` в Laravel и без опубликованных assets ломает Filament login (`POST /admin/login -> 405`).
 - 2026-03-20: в `App\Models\Block` добавлен централизованный резолв city SEO-переменных для `title`, `body_html` и строковых значений `payload`; `App\Models\Page::withResolvedCitySeoVariables()` теперь применяет его ко всем загруженным блокам, а unit-тест `tests/Unit/PageCitySeoVariablesTest.php` покрывает рекурсивную подстановку.
 - 2026-03-20: шаблоны `resources/views/parts/footer.blade.php` и `resources/views/parts/footer-new.blade.php` обновлены: `target` и `download` теперь пробрасываются и в верхние, и в дочерние ссылки footer-меню.
 - 2026-03-20: в Blade-компонентах меню добавлен вывод `target` для дочерних и mega-menu ссылок, чтобы тип пункта `Ссылка` корректно открывался в новой вкладке при `target = _blank`.

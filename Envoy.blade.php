@@ -27,6 +27,7 @@ runNpm
 generateAssets
 updateSymlinks
 optimizeInstallation
+publishLivewireAssets
 backupDatabase
 migrateDatabase
 blessNewRelease
@@ -110,6 +111,12 @@ cd {{ $newReleaseDir }}
 php8.1 artisan clear-compiled
 @endtask
 
+@task('publishLivewireAssets', ['on' => 'remote'])
+{{ logMessage("📡  Publishing Livewire assets...") }}
+cd {{ $newReleaseDir }}
+php8.1 artisan livewire:publish --assets --no-interaction
+@endtask
+
 @task('backupDatabase', ['on' => 'remote'])
 {{ logMessage("📀  Backing up database...") }}
 cd {{ $newReleaseDir }}
@@ -154,6 +161,7 @@ ls -dt {{ $releasesDir }}/* | tail -n +4 | xargs -d "\n" rm -rf
 {{ logMessage("💻  Deploying code changes...") }}
 cd {{ $currentDir }}
 git pull origin {{ $branch }}
+php8.1 artisan livewire:publish --assets --no-interaction
 php8.1 artisan view:clear
 php8.1 artisan config:clear
 php8.1 artisan cache:clear
