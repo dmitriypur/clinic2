@@ -109,6 +109,7 @@ new Vue({
     bookingWidgetV2Active: false,
     bookingWidgetV3Active: false,
     bookingWidgetV3Target: null,
+    bookingWidgetV3Mode: null,
     currentCityId: null,
     showToTopButton: false,
   },
@@ -116,9 +117,12 @@ new Vue({
   created() {
     const self = this;
 
-    eventBus.$on("showCallbackModal", function (phone = null, target = null) {
-      self.showCallbackModal(phone, target);
-    });
+    eventBus.$on(
+      "showCallbackModal",
+      function (phone = null, target = null, options = null) {
+        self.showCallbackModal(phone, target, options);
+      }
+    );
 
     eventBus.$on(
       "showCallbackFormNew",
@@ -215,8 +219,7 @@ new Vue({
         return;
       }
 
-      this.callbackModalActive = false;
-      this.bookingWidgetV3Active = true;
+      this.openBookingWidgetV3();
     },
 
     toTop() {
@@ -270,21 +273,39 @@ new Vue({
       }
     },
 
-    showCallbackModal(phone = null, target = null) {
+    normalizeBookingWidgetStartMode(options = null) {
+      const mode = String(options?.bookingStartMode || "")
+        .trim()
+        .toLowerCase();
+
+      if (mode === "doctor" || mode === "clinic") {
+        return mode;
+      }
+
+      return null;
+    },
+
+    openBookingWidgetV3(target = null, options = null) {
+      this.callbackModalActive = false;
+      this.bookingWidgetV3Target = target;
+      this.bookingWidgetV3Mode = this.normalizeBookingWidgetStartMode(options);
+      this.bookingWidgetV3Active = true;
+    },
+
+    showCallbackModal(phone = null, target = null, options = null) {
       this.callbackModalPhone = phone || window.config.state.user?.phone || "";
       this.callbackModalTarget = target;
       this.callbackModalNewActive = false;
 
       const bookingFormVariant = window.config?.booking?.formVariant || "old";
       if (bookingFormVariant === "new") {
-        this.callbackModalActive = false;
-        this.bookingWidgetV3Target = target;
-        this.bookingWidgetV3Active = true;
+        this.openBookingWidgetV3(target, options);
         return;
       }
 
       this.bookingWidgetV3Active = false;
       this.bookingWidgetV3Target = null;
+      this.bookingWidgetV3Mode = null;
       this.callbackModalActive = true;
     },
 
@@ -296,6 +317,7 @@ new Vue({
       this.callbackModalNewActive = true;
       this.bookingWidgetV3Active = false;
       this.bookingWidgetV3Target = null;
+      this.bookingWidgetV3Mode = null;
     },
 
     closeCallbackModal() {
@@ -315,6 +337,7 @@ new Vue({
     closeBookingWidgetV3() {
       this.bookingWidgetV3Active = false;
       this.bookingWidgetV3Target = null;
+      this.bookingWidgetV3Mode = null;
     },
 
     showLoginModal() {

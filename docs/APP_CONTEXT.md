@@ -15,6 +15,8 @@
 - Отдельно есть админ-панель на Filament для управления контентом, услугами, врачами, городами, отзывами, меню и настройками.
 
 ## Что изменилось (последнее)
+- 2026-03-23: убрано мигание стартового шага `BookingWidgetV3` при первом открытии с принудительным режимом (`mode = doctor|clinic`): компонент теперь показывает внутренний loading-state до завершения `initCities()` и `applyInitialMode()`, поэтому в doctor-flow больше не появляется промежуточный первый экран.
+- 2026-03-23: для `BookingWidgetV3` добавлен управляемый старт сценария через `bookingStartMode` в триггерах открытия: по умолчанию виджет остаётся на первом экране, но для блока `doctors-alt`, карточек врачей в mega-menu, публичной страницы списка врачей и страницы отдельного врача теперь сразу открывается ветка `Выбрать врача` (пропуск стартового шага).
 - 2026-03-20: устранён регресс первого открытия doctor-flow в `BookingWidgetV3`: второй шаг больше не может открыться пустым из-за гонки между модалкой и загрузкой списка городов booking API; `initCities()` теперь дедуплицирует in-flight запрос, а `openDoctorFlow()`, `loadDoctorsByCity()`, `loadClinics()` и `loadCityBranches()` всегда дожидаются готовности городов перед вычислением `currentCityId`.
 - 2026-03-20: у специалистов добавлено отдельное поле `doctors.page_sort_order` для публичной страницы списка врачей; в админке `Специалисты` оно доступно и в форме, и inline в таблице, а `PageController::getDoctorsForPage()` теперь сортирует врачей как `page_sort_order ASC NULLS LAST`, затем по `id`, сохраняя порядок по умолчанию для записей без ручной сортировки.
 - 2026-03-20: для врачей в `Настройках виджета` добавлен раздельный порядок по двум сценариям: `Выбрать врача` и `Выбрать клинику`; в `city_doctor` теперь используются `sort_order` для второго шага doctor-flow и `clinic_sort_order` для третьего шага clinic-flow, а `BookingWidgetOrderingService`, `Clinic::scriptVariables()` и `resources/js/services/bookingApi.js` отдают/применяют две отдельные order-map; в clinic-flow врачи с явным `clinic_sort_order` всегда идут выше fallback-порядка из doctor-flow.
@@ -374,7 +376,9 @@ Middleware:
 
 ### BookingWidgetV3
 - Логика `resources/js/components/BookingWidgetV3/BookingWidgetV3.vue` сохранена как на `main`.
-- Из frontend-слоя изменён только `resources/js/services/bookingApi.js`:
+- Управление стартовым шагом вынесено в родительский слой (`resources/js/app.js`): `showCallbackModal(...)` поддерживает необязательный `options.bookingStartMode`, который прокидывается в `<booking-widget-v3 :mode="...">`.
+- Если `bookingStartMode` не передан, `mode = null` и виджет открывается с первого экрана.
+- Для сортировки данных booking API используется `resources/js/services/bookingApi.js`:
   - `getDoctorsByCity()`
   - `getClinicBranches()`
   - `getClinicDoctors()`
@@ -388,7 +392,7 @@ Middleware:
   - вставляет глобальные и city-specific scripts;
   - подключает header/footer;
   - монтирует Vue-компоненты модалок и форм;
-  - одновременно поддерживает legacy-форму записи, новый `BookingWidgetV3` и отдельную callback-модалку на `CallbackFormNew`.
+  - одновременно поддерживает legacy-форму записи, новый `BookingWidgetV3` (в т.ч. `mode` для управляемого старта ветки) и отдельную callback-модалку на `CallbackFormNew`.
 - Для публичного рендера блоков city-переменные (`{city}`, `{city_phone}` и др.) теперь подставляются централизованно в модели `Page`/`Block`, поэтому Blade-шаблоны блоков получают уже обработанные `title`, `body_html` и строковый `payload`.
 
 ## Админка
@@ -560,12 +564,15 @@ Middleware:
 - В layout и city-настройках есть поддержка `header_scripts` и `body_scripts`, поэтому любые изменения в SEO/scripts нужно проверять и в глобальных настройках, и в `City`.
 - Подстановка city-переменных в блоках выполняется только при публичном рендере через `withResolvedCitySeoVariables()`; исходные значения `blocks.title`, `blocks.body_html` и `blocks.payload` в БД и админке не переписываются.
 - Для нового порядка виджета не менялась логика `BookingWidgetV3.vue`; источник истины для порядка находится в backend/admin, а публичный frontend применяет только готовые order-map без дополнительной бизнес-логики шагов.
+- Принудительный старт ветки `Выбрать врача` включается только явным `bookingStartMode: doctor` в конкретном UI-триггере; без этого виджет всегда стартует с первого шага.
 - Для списка врачей в виджете теперь поддерживаются два независимых порядка по городу: отдельный для doctor-flow и отдельный для clinic-flow; если `clinic_sort_order` не задан, clinic-flow использует fallback на doctor-flow order-map, но любой явный `clinic_sort_order` имеет приоритет над fallback-значениями.
 - Ручная сортировка публичной страницы специалистов хранится отдельно в `doctors.page_sort_order` и не влияет на порядок врачей в виджете записи.
 - В админке `Настройки виджета` филиалы могут обновляться фоновым Livewire-запросом сразу после открытия/смены города; первый рендер приходит из локальной БД без блокировки внешним booking API.
 - На production nginx перехватывает любые URL с расширением `.js` как статические файлы (`try_files $uri =404`), поэтому route-based Livewire assets под `/livewire/*.js` там неработоспособны; для Filament/Livewire нужно использовать опубликованные assets в `public/vendor/livewire`, и деплой обязан их публиковать каждый релиз.
 
 ## Журнал изменений
+- 2026-03-23: в `resources/js/components/BookingWidgetV3/BookingWidgetV3.vue` добавлен флаг `isPreparingInitialStep`: при открытии с `mode = doctor|clinic` виджет сначала рендерит loading-state и только потом нужный шаг, чтобы исключить визуальное мигание стартового экрана на «холодном» первом открытии.
+- 2026-03-23: в `resources/js/app.js` добавлен необязательный `bookingStartMode` для `showCallbackModal(...)` и проброс `bookingWidgetV3Mode` в layout; в `resources/views/components/doctor-card-alt.blade.php`, `resources/views/components/page/partials/doctor-card.blade.php`, `resources/views/doctors/show.blade.php`, `resources/js/components/InfiniteDoctorsList/index.js`, `resources/js/components/DoctorCard/DoctorCard.vue` и `resources/views/components/mega-menu/doctor-card.blade.php` триггеры кнопок врачей передают режим `doctor`, поэтому только в этих местах `BookingWidgetV3` открывается сразу на шаге выбора врача.
 - 2026-03-20: в `resources/js/components/BookingWidgetV3/BookingWidgetV3.vue` устранена гонка первого открытия ветки `Выбрать врача`: `initCities()` кеширует in-flight запрос по городам, а загрузка врачей/клиник/филиалов не стартует, пока не готов `currentCityId`.
 - 2026-03-20: добавлена ручная сортировка публичной страницы специалистов: миграция `2026_03_20_170000_add_page_sort_order_to_doctors_table.php` добавляет `doctors.page_sort_order`, `DoctorResource` показывает его в форме и inline в таблице `Специалисты`, а `Doctor::scopeOrderedForPublicIndex()` используется в `PageController` для выдачи списка врачей на странице типа `Doctors`.
 - 2026-03-20: добавлена двойная сортировка врачей виджета по городу: новая миграция `2026_03_20_160000_add_clinic_sort_order_to_city_doctor_for_booking_widget.php` добавляет `city_doctor.clinic_sort_order`, таблица `BookingWidgetDoctorsTable` показывает две inline-колонки (`Выбрать врача`, `Выбрать клинику`), `BookingWidgetOrderingService` отдаёт две doctor order-map, а `resources/js/services/bookingApi.js` применяет разные карты к `getDoctorsByCity()` и `getClinicDoctors()`; в clinic-flow первыми идут врачи с явным `clinic_sort_order`, затем fallback из основного порядка.

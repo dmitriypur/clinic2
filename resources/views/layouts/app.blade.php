@@ -108,6 +108,7 @@
     @unless(request()->routeIs('booking.widget.v3.demo'))
         <booking-widget-v3
             :open="bookingWidgetV3Active"
+            :mode="bookingWidgetV3Mode"
             :callback-target="bookingWidgetV3Target"
             @close="closeBookingWidgetV3"
         ></booking-widget-v3>

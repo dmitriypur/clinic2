@@ -43,7 +43,7 @@
     </div>
     <div class="mt-auto relative z-10 flex justify-between gap-2">
         <x-button-primary
-            @click="showCallbackModal(null, 'otpravka-formy')"
+            @click="showCallbackModal(null, 'otpravka-formy', { bookingStartMode: 'doctor' })"
             class="w-1/2 font-bold py-2 md:px-0">
             Записаться
         </x-button-primary>

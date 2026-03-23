@@ -152,10 +152,20 @@ export default {
       }
 
       event.preventDefault();
+      const bookingStartMode = String(
+        callbackTrigger.dataset.bookingStartMode || ""
+      )
+        .trim()
+        .toLowerCase();
+      const options = bookingStartMode
+        ? { bookingStartMode }
+        : null;
+
       eventBus.$emit(
         "showCallbackModal",
         null,
-        callbackTrigger.dataset.doctorCallbackTarget || null
+        callbackTrigger.dataset.doctorCallbackTarget || null,
+        options
       );
     },
   },

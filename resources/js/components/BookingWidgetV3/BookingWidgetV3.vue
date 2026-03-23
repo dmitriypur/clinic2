@@ -6,107 +6,119 @@
     @close="handleClose"
   >
     <div class="relative h-auto">
-      <StartStep
-        v-if="currentStep === 'start'"
-        :mode="mode"
-        @close="handleClose"
-        @select-mode="handleModeSelect"
-        @leave-request="handleLeaveRequest"
-      />
+      <div
+        v-if="isPreparingInitialStep"
+        class="flex min-h-[260px] items-center justify-center bg-white"
+      >
+        <div class="flex flex-col items-center gap-3 text-interactive">
+          <span class="h-8 w-8 animate-spin rounded-full border-2 border-surface-subdued border-t-action-primary"></span>
+          <p class="text-sm font-semibold">Подбираем доступные варианты...</p>
+        </div>
+      </div>
 
-      <DoctorSelectStep
-        v-else-if="currentStep === 'doctor-select'"
-        :doctors="doctors"
-        :selectedDoctorId="selectedDoctor?.id"
-        :loading="loadingDoctors"
-        @close="handleClose"
-        @select="handleDoctorSelect"
-        @next="goToDoctorSchedule"
-        @back="goToStart"
-      />
+      <template v-else>
+        <StartStep
+          v-if="currentStep === 'start'"
+          :mode="mode"
+          @close="handleClose"
+          @select-mode="handleModeSelect"
+          @leave-request="handleLeaveRequest"
+        />
 
-      <ClinicSelectStep
-        v-else-if="currentStep === 'clinic-select'"
-        :branches="cityBranches"
-        :selectedBranchId="selectedBranch?.id"
-        :loading="loadingCityBranches"
-        @close="handleClose"
-        @select-branch="handleBranchSelect"
-        @next="goToClinicSchedule"
-        @back="goToStart"
-      />
+        <DoctorSelectStep
+          v-else-if="currentStep === 'doctor-select'"
+          :doctors="doctors"
+          :selectedDoctorId="selectedDoctor?.id"
+          :loading="loadingDoctors"
+          @close="handleClose"
+          @select="handleDoctorSelect"
+          @next="goToDoctorSchedule"
+          @back="goToStart"
+        />
 
-      <DoctorScheduleStep
-        v-else-if="currentStep === 'doctor-schedule'"
-        :doctor="selectedDoctor"
-        :clinic="selectedClinic"
-        :branches="doctorFlowBranches"
-        :selectedBranchId="selectedBranch?.id"
-        :selectedDate="selectedDate"
-        :highlightedDates="doctorFlowHighlightedDates"
-        :slots="slots"
-        :emptySlotsMessage="doctorFlowEmptySlotsMessage"
-        :selectedSlot="selectedSlot"
-        :loading="loadingSlots"
-        :loadingBranches="loadingDoctorFlowBranches"
-        @select-branch="handleBranchSelect"
-        @select-date="handleDateSelect"
-        @select-slot="handleSlotSelect"
-        @next="goToForm"
-        @back="goToDoctorSelect"
-      />
+        <ClinicSelectStep
+          v-else-if="currentStep === 'clinic-select'"
+          :branches="cityBranches"
+          :selectedBranchId="selectedBranch?.id"
+          :loading="loadingCityBranches"
+          @close="handleClose"
+          @select-branch="handleBranchSelect"
+          @next="goToClinicSchedule"
+          @back="goToStart"
+        />
 
-      <ClinicScheduleStep
-        v-else-if="currentStep === 'clinic-schedule'"
-        :selectedDoctor="selectedDoctor"
-        :doctors="clinicDoctors"
-        :doctorShiftMap="clinicDoctorShiftMap"
-        :selectedDoctorId="selectedDoctor?.id"
-        :selectedDate="selectedDate"
-        :highlightedDates="clinicFlowHighlightedDates"
-        :slots="slots"
-        :emptySlotsMessage="clinicFlowEmptySlotsMessage"
-        :selectedSlot="selectedSlot"
-        :loadingDoctors="loadingDoctors"
-        :loading="loadingSlots"
-        @select-doctor="handleDoctorSelect"
-        @select-date="handleDateSelect"
-        @select-slot="handleSlotSelect"
-        @next="goToForm"
-        @back="goToClinicSelect"
-      />
+        <DoctorScheduleStep
+          v-else-if="currentStep === 'doctor-schedule'"
+          :doctor="selectedDoctor"
+          :clinic="selectedClinic"
+          :branches="doctorFlowBranches"
+          :selectedBranchId="selectedBranch?.id"
+          :selectedDate="selectedDate"
+          :highlightedDates="doctorFlowHighlightedDates"
+          :slots="slots"
+          :emptySlotsMessage="doctorFlowEmptySlotsMessage"
+          :selectedSlot="selectedSlot"
+          :loading="loadingSlots"
+          :loadingBranches="loadingDoctorFlowBranches"
+          @select-branch="handleBranchSelect"
+          @select-date="handleDateSelect"
+          @select-slot="handleSlotSelect"
+          @next="goToForm"
+          @back="goToDoctorSelect"
+        />
 
-      <PatientFormStep
-        v-else-if="currentStep === 'form'"
-        :selectedDoctor="selectedDoctor"
-        :selectedClinic="selectedClinic"
-        :selectedBranch="selectedBranch"
-        :selectedDate="selectedDate"
-        :selectedSlot="selectedSlot"
-        :isSubmitting="isSubmitting"
-        ref="patientForm"
-        @close="handleClose"
-        @back="goBackFromForm"
-        @submit="handleFormSubmit"
-      />
+        <ClinicScheduleStep
+          v-else-if="currentStep === 'clinic-schedule'"
+          :selectedDoctor="selectedDoctor"
+          :doctors="clinicDoctors"
+          :doctorShiftMap="clinicDoctorShiftMap"
+          :selectedDoctorId="selectedDoctor?.id"
+          :selectedDate="selectedDate"
+          :highlightedDates="clinicFlowHighlightedDates"
+          :slots="slots"
+          :emptySlotsMessage="clinicFlowEmptySlotsMessage"
+          :selectedSlot="selectedSlot"
+          :loadingDoctors="loadingDoctors"
+          :loading="loadingSlots"
+          @select-doctor="handleDoctorSelect"
+          @select-date="handleDateSelect"
+          @select-slot="handleSlotSelect"
+          @next="goToForm"
+          @back="goToClinicSelect"
+        />
 
-      <CallbackFormNew
-        v-else-if="currentStep === 'leave-request'"
-        button-content="Отправить"
-        :target="callbackFormTarget"
-        :showOnlineLink="true"
-        @open-online="goToStart"
-      />
+        <PatientFormStep
+          v-else-if="currentStep === 'form'"
+          :selectedDoctor="selectedDoctor"
+          :selectedClinic="selectedClinic"
+          :selectedBranch="selectedBranch"
+          :selectedDate="selectedDate"
+          :selectedSlot="selectedSlot"
+          :isSubmitting="isSubmitting"
+          ref="patientForm"
+          @close="handleClose"
+          @back="goBackFromForm"
+          @submit="handleFormSubmit"
+        />
 
-      <SuccessStep
-        v-else-if="currentStep === 'success'"
-        :doctorName="selectedDoctor?.name"
-        :clinicName="selectedClinic?.name"
-        :branchName="selectedBranch?.name"
-        :appointmentDate="selectedDate"
-        :appointmentTime="selectedSlot?.time"
-        @close="handleClose"
-      />
+        <CallbackFormNew
+          v-else-if="currentStep === 'leave-request'"
+          button-content="Отправить"
+          :target="callbackFormTarget"
+          :showOnlineLink="true"
+          @open-online="goToStart"
+        />
+
+        <SuccessStep
+          v-else-if="currentStep === 'success'"
+          :doctorName="selectedDoctor?.name"
+          :clinicName="selectedClinic?.name"
+          :branchName="selectedBranch?.name"
+          :appointmentDate="selectedDate"
+          :appointmentTime="selectedSlot?.time"
+          @close="handleClose"
+        />
+      </template>
 
       <div
         v-if="transitionLoading"
@@ -199,6 +211,7 @@ export default {
       loadingDoctorFlowBranches: false,
       isSubmitting: false,
       formSourceStep: null,
+      isPreparingInitialStep: false,
       transitionLoading: false,
     };
   },
@@ -279,19 +292,44 @@ export default {
     open: {
       async handler(val) {
         if (val) {
-          await this.initCities();
-          await this.applyInitialMode();
+          const shouldPrepare = this.shouldPrepareInitialStep();
+          this.isPreparingInitialStep = shouldPrepare;
+
+          try {
+            await this.initCities();
+            await this.applyInitialMode();
+          } finally {
+            this.isPreparingInitialStep = false;
+          }
         } else {
           this.resetState();
         }
       },
       immediate: true,
     },
-    mode() {
-      this.applyInitialMode();
+    async mode() {
+      const shouldPrepare = this.open && this.shouldPrepareInitialStep();
+      if (shouldPrepare) {
+        this.isPreparingInitialStep = true;
+      }
+
+      try {
+        await this.applyInitialMode();
+      } finally {
+        if (shouldPrepare) {
+          this.isPreparingInitialStep = false;
+        }
+      }
     },
   },
   methods: {
+    shouldPrepareInitialStep() {
+      if (!this.open || this.currentStep !== "start") {
+        return false;
+      }
+
+      return this.mode === "doctor" || this.mode === "clinic";
+    },
     getCacheEntry(cache, key, ttlMs) {
       const cached = cache[key];
       if (!cached) {
@@ -1337,6 +1375,7 @@ export default {
       this.clinicFlowLastAvailableDate = null;
       this.isSubmitting = false;
       this.formSourceStep = null;
+      this.isPreparingInitialStep = false;
       this.transitionLoading = false;
     },
     async updateDoctorFlowHighlightedDates() {

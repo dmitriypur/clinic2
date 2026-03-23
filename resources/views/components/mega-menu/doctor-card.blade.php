@@ -80,7 +80,7 @@
     </div>
     <div class="mt-auto relative z-10">
         <x-button-primary
-            @click="showCallbackModal(null, 'otpravka-formy')"
+            @click="showCallbackModal(null, 'otpravka-formy', { bookingStartMode: 'doctor' })"
             class="w-full font-bold mt-7 py-3.5 text-lg md:px-0">
             Записаться на приём
         </x-button-primary>

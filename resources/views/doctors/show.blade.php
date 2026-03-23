@@ -179,7 +179,7 @@
                         </div>
 
                         <div>
-                            <x-button-primary @click="showCallbackModal(null, 'otpravka-formy')"
+                            <x-button-primary @click="showCallbackModal(null, 'otpravka-formy', { bookingStartMode: 'doctor' })"
                                 onclick="ym(94302729,'reachGoal','shapka-forma-open')"
                                 class="w-full md:w-auto">Записаться
                                 на прием

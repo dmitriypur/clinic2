@@ -122,7 +122,7 @@
       </div>
       <div class="mt-auto relative z-10">
         <button
-          @click="showCallbackModal(null, 'otpravka-formy')"
+          @click="showCallbackModal(null, 'otpravka-formy', { bookingStartMode: 'doctor' })"
           class="w-full py-3 px-6 btn-gradient font-semibold text-white rounded-xl font-bold mt-7 py-3.5 text-lg md:px-0 blue-gradient text-white rounded-lg">
           Записаться на приём
         </button>
@@ -143,8 +143,8 @@ export default {
     }
   },
   methods: {
-    showCallbackModal(event, goal) {
-      eventBus.$emit('showCallbackModal', event, goal);
+    showCallbackModal(event, goal, options = null) {
+      eventBus.$emit('showCallbackModal', event, goal, options);
     },
     showVideoModal(url) {
       eventBus.$emit('showVideoModal', url);
