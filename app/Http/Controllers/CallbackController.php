@@ -23,8 +23,6 @@ class CallbackController extends Controller
     {
         $cityName = $this->resolveCurrentCityName($request);
 
-        dd($request->all());
-
         $user = User::query()->updateOrCreate(
             ['phone' => $this->phoneService->make($request->phone)],
             ['name' => $request->name],

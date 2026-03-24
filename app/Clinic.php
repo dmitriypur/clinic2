@@ -34,7 +34,6 @@ class Clinic
 
     public static function callback(array $data): void
     {
-        dd($data);
         self::$http->post(config('zrenie-clinic.urls.callback'), $data);
     }
 
