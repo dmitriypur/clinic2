@@ -7,6 +7,7 @@ use Illuminate\Foundation\Http\FormRequest;
 /**
  * @property string $name
  * @property string $phone
+ * @property ?string $city
  * @property ?string $utm_source
  * @property ?string $utm_medium
  * @property ?string $utm_campaign
@@ -31,6 +32,7 @@ class CallbackRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'phone' => ['required', 'string', 'phone:RU'],
+            'city' => ['nullable', 'string', 'max:255'],
             'privacy' => ['nullable', 'accepted'],
         ];
     }

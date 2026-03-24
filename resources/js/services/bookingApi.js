@@ -1,4 +1,5 @@
 import axios from "axios";
+import { getBranchSortOrders } from "./bookingOrdering";
 
 /**
  * API сервис для работы с виджетом онлайн-записи
@@ -25,28 +26,6 @@ class BookingApiService {
         return Promise.reject(error);
       }
     );
-  }
-
-  getDoctorSelectSortOrders() {
-    return (
-      window.config?.booking?.doctorSelectSortOrders ||
-      window.config?.booking?.doctorSortOrders ||
-      {}
-    );
-  }
-
-  getClinicDoctorSortOrders() {
-    return window.config?.booking?.clinicDoctorSortOrders || {};
-  }
-
-  getBranchSortOrders() {
-    return window.config?.booking?.branchSortOrders || {};
-  }
-
-  normalizeDoctorUuid(doctor) {
-    const raw = doctor?.external_id || doctor?.uuid || null;
-
-    return raw ? String(raw).trim().toLowerCase() : null;
   }
 
   sortListByOrder(list, resolveOrder) {
@@ -78,61 +57,8 @@ class BookingApiService {
       .map(({ item }) => item);
   }
 
-  sortDoctors(list, primaryOrders = {}, fallbackOrders = {}) {
-    return [...(list || [])]
-      .map((item, index) => {
-        const uuid = this.normalizeDoctorUuid(item);
-        const primaryOrder = uuid ? primaryOrders[uuid] : null;
-        const fallbackOrder = uuid ? fallbackOrders[uuid] : null;
-        const hasPrimaryOrder = Number.isFinite(Number(primaryOrder));
-        const hasFallbackOrder = Number.isFinite(Number(fallbackOrder));
-
-        let priority = 2;
-        let sortOrder = null;
-
-        if (hasPrimaryOrder) {
-          priority = 0;
-          sortOrder = Number(primaryOrder);
-        } else if (hasFallbackOrder) {
-          priority = 1;
-          sortOrder = Number(fallbackOrder);
-        }
-
-        return {
-          item,
-          index,
-          priority,
-          sortOrder,
-        };
-      })
-      .sort((left, right) => {
-        if (left.priority !== right.priority) {
-          return left.priority - right.priority;
-        }
-
-        if (left.sortOrder === null && right.sortOrder === null) {
-          return left.index - right.index;
-        }
-
-        if (left.sortOrder === null) {
-          return 1;
-        }
-
-        if (right.sortOrder === null) {
-          return -1;
-        }
-
-        if (left.sortOrder === right.sortOrder) {
-          return left.index - right.index;
-        }
-
-        return left.sortOrder - right.sortOrder;
-      })
-      .map(({ item }) => item);
-  }
-
   sortBranches(list, clinicId) {
-    const clinicOrders = this.getBranchSortOrders()?.[String(clinicId)] || {};
+    const clinicOrders = getBranchSortOrders()?.[String(clinicId)] || {};
 
     return this.sortListByOrder(list, (branch) => {
       const order = clinicOrders[String(branch?.id)];
@@ -178,14 +104,7 @@ class BookingApiService {
       const response = await this.client.get(`/cities/${cityId}/doctors`, {
         params: birthDate ? { birth_date: birthDate } : undefined,
       });
-      const payload = response.data;
-      const list = Array.isArray(payload?.data) ? payload.data : payload || [];
-      const doctorSelectOrders = this.getDoctorSelectSortOrders();
-
-      return this.replaceResponseData(
-        payload,
-        this.sortDoctors(list, doctorSelectOrders)
-      );
+      return response.data;
     } catch (error) {
       throw this.handleError(error);
     }
@@ -313,15 +232,7 @@ class BookingApiService {
           branch_id: branchId || undefined,
         },
       });
-      const payload = response.data;
-      const list = Array.isArray(payload?.data) ? payload.data : payload || [];
-      const clinicDoctorOrders = this.getClinicDoctorSortOrders();
-      const doctorSelectOrders = this.getDoctorSelectSortOrders();
-
-      return this.replaceResponseData(
-        payload,
-        this.sortDoctors(list, clinicDoctorOrders, doctorSelectOrders)
-      );
+      return response.data;
     } catch (error) {
       throw this.handleError(error);
     }

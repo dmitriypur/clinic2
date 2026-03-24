@@ -108,6 +108,7 @@
 </template>
 <script>
 import { Form } from '../../utilities/form'
+import { getCurrentCityName } from '../../utilities/currentCity'
 
 export default {
   props: {
@@ -148,6 +149,7 @@ export default {
       form: new Form({
         name: this.name,
         phone: this.phone,
+        city: getCurrentCityName(),
         privacy: false,
       }),
     }

@@ -55,6 +55,7 @@
 <script>
 import { Form } from '../../utilities/form'
 import { classNames } from '../../utilities/css.js'
+import { getCurrentCityName } from '../../utilities/currentCity'
 
 const TextField = () => import('../TextField')
 
@@ -94,6 +95,7 @@ export default {
       form: new Form({
         name: this.name,
         phone: this.phone,
+        city: getCurrentCityName(),
         privacy: false,
       }),
     }

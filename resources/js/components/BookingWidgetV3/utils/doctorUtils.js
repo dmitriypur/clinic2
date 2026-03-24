@@ -1,3 +1,5 @@
+import { extractDoctorMinimumAge } from "./doctorAgeUtils";
+
 export function doctorExternalUuid(doctor) {
   const raw = doctor?.external_id || doctor?.uuid || null;
   if (!raw) {
@@ -6,6 +8,12 @@ export function doctorExternalUuid(doctor) {
 
   const normalized = String(raw).trim().toLowerCase();
   return normalized || null;
+}
+
+export function getDoctorExternalUuids(doctors) {
+  return normalizeUuidList(
+    uniqueDoctors(doctors).map((doctor) => doctorExternalUuid(doctor))
+  );
 }
 
 export function normalizeUuidList(uuids) {
@@ -78,4 +86,106 @@ export function mergeDoctorWithSiteData(doctor, siteDoctor) {
       doctor.receives ||
       doctor.extra?.receives,
   };
+}
+
+export function mergeDoctorsWithSitePayload(doctors, payload) {
+  const list = uniqueDoctors(doctors);
+  if (!list.length) {
+    return [];
+  }
+
+  const siteByUuid = buildSiteDoctorsByUuid(normalizeSiteDoctorsPayload(payload));
+
+  return list
+    .filter((doctor) => {
+      const uuid = doctorExternalUuid(doctor);
+      return Boolean(uuid && siteByUuid[uuid]);
+    })
+    .map((doctor) => {
+      const uuid = doctorExternalUuid(doctor);
+      return mergeDoctorWithSiteData(doctor, siteByUuid[uuid]);
+    })
+    .filter(Boolean);
+}
+
+export function sortDoctorsByOrders(
+  doctors,
+  { primaryOrders = {}, fallbackOrders = {}, resolveTieBreaker = null } = {}
+) {
+  return [...(doctors || [])]
+    .map((doctor, index) => {
+      const uuid = doctorExternalUuid(doctor);
+      const primaryOrder = uuid ? primaryOrders[uuid] : null;
+      const fallbackOrder = uuid ? fallbackOrders[uuid] : null;
+      const hasPrimaryOrder = Number.isFinite(Number(primaryOrder));
+      const hasFallbackOrder = Number.isFinite(Number(fallbackOrder));
+
+      let priority = 2;
+      let sortOrder = null;
+
+      if (hasPrimaryOrder) {
+        priority = 0;
+        sortOrder = Number(primaryOrder);
+      } else if (hasFallbackOrder) {
+        priority = 1;
+        sortOrder = Number(fallbackOrder);
+      }
+
+      const tieBreaker = typeof resolveTieBreaker === "function"
+        ? resolveTieBreaker(doctor)
+        : Number.MAX_SAFE_INTEGER;
+
+      return {
+        doctor,
+        index,
+        priority,
+        sortOrder,
+        tieBreaker: Number.isFinite(tieBreaker)
+          ? tieBreaker
+          : Number.MAX_SAFE_INTEGER,
+      };
+    })
+    .sort((left, right) => {
+      if (left.priority !== right.priority) {
+        return left.priority - right.priority;
+      }
+
+      if (left.sortOrder === null && right.sortOrder === null) {
+        if (left.tieBreaker !== right.tieBreaker) {
+          return left.tieBreaker - right.tieBreaker;
+        }
+
+        return left.index - right.index;
+      }
+
+      if (left.sortOrder === null) {
+        return 1;
+      }
+
+      if (right.sortOrder === null) {
+        return -1;
+      }
+
+      if (left.sortOrder !== right.sortOrder) {
+        return left.sortOrder - right.sortOrder;
+      }
+
+      if (left.tieBreaker !== right.tieBreaker) {
+        return left.tieBreaker - right.tieBreaker;
+      }
+
+      return left.index - right.index;
+    })
+    .map(({ doctor }) => doctor);
+}
+
+export function sortDoctorsByMinimumAge(
+  doctors,
+  { primaryOrders = {}, fallbackOrders = {} } = {}
+) {
+  return sortDoctorsByOrders(doctors, {
+    primaryOrders,
+    fallbackOrders,
+    resolveTieBreaker: (doctor) => extractDoctorMinimumAge(doctor),
+  });
 }

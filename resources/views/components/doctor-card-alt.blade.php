@@ -20,8 +20,8 @@
             <span class="font-bold">{{ $doctor->surname }}</span>
             <br>{{ $doctor->name }}</p>
     </div>
-    <div class="flex flex-col mt-4 relative z-0">
-        <ul class="flex gap-2.5 flex-col relative">
+    <div class="flex flex-col mt-4 relative z-0 h-full">
+        <ul class="flex gap-2.5 flex-col relative flex-auto">
             <li class="bg-transparent backdrop-blur-sm border border-l-[10px] border-l-blue-label py-3 px-2 rounded-md w-9/12 relative overflow-hidden before:absolute  before:white-to-gray-gradient before:inset-0 before:accessibility:content-[none] before:opacity-30 before:-z-10">
                 <p class="text-xs font-bold">Специальность:</p>
                 <p class="text-sm leading-4">{{ explode(',', $doctor->speciality)[0] }}</p>

@@ -135,6 +135,15 @@
 
 <script>
 import bookingApi from "../../services/bookingApi";
+import {
+  getDoctorExternalUuids,
+  mergeDoctorsWithSitePayload,
+  sortDoctorsByMinimumAge,
+} from "./utils/doctorUtils";
+import {
+  getClinicDoctorSortOrders,
+  getDoctorSelectSortOrders,
+} from "../../services/bookingOrdering";
 
 const Modal = () => import("../Modal");
 const StartStep = () => import("./components/StartStep.vue");
@@ -481,24 +490,6 @@ export default {
 
       return this.allowedClinicIds.includes(Number(clinicId));
     },
-    doctorExternalUuid(doctor) {
-      const raw = doctor?.external_id || doctor?.uuid || null;
-      if (!raw) {
-        return null;
-      }
-
-      const normalized = String(raw).trim().toLowerCase();
-      return normalized || null;
-    },
-    normalizeUuidList(uuids) {
-      return Array.from(
-        new Set(
-          (uuids || [])
-            .map((uuid) => String(uuid || "").trim().toLowerCase())
-            .filter(Boolean)
-        )
-      ).sort();
-    },
     getSiteDoctorsFromCache(key) {
       const cached = this.siteDoctorsCacheByUuids[key];
       if (!cached) {
@@ -518,29 +509,8 @@ export default {
         payload,
       };
     },
-    uniqueDoctors(doctors) {
-      const map = new Map();
-
-      (doctors || []).forEach((doctor) => {
-        const key = this.doctorExternalUuid(doctor) || String(doctor?.id || "");
-        if (!key || map.has(key)) {
-          return;
-        }
-        map.set(key, doctor);
-      });
-
-      return Array.from(map.values());
-    },
     async enrichDoctorsWithSiteData(doctors) {
-      const list = this.uniqueDoctors(doctors);
-      if (!list.length) {
-        return [];
-      }
-
-      const uuids = this.normalizeUuidList(
-        list.map((doctor) => this.doctorExternalUuid(doctor))
-      );
-
+      const uuids = getDoctorExternalUuids(doctors);
       if (!uuids.length) {
         return [];
       }
@@ -552,52 +522,7 @@ export default {
         if (!cachedPayload) {
           this.setSiteDoctorsToCache(cacheKey, response);
         }
-        const siteDoctors = Array.isArray(response?.data)
-          ? response.data
-          : Array.isArray(response)
-          ? response
-          : [];
-        const siteByUuid = siteDoctors.reduce((acc, doctor) => {
-          const uuid = String(doctor?.uuid || "").toLowerCase().trim();
-          if (uuid) {
-            acc[uuid] = doctor;
-          }
-          return acc;
-        }, {});
-
-        return list
-          .filter((doctor) => {
-            const uuid = this.doctorExternalUuid(doctor);
-            return Boolean(uuid && siteByUuid[uuid]);
-          })
-          .map((doctor) => {
-            const uuid = this.doctorExternalUuid(doctor);
-            const siteDoctor = siteByUuid[uuid];
-
-            return {
-              ...doctor,
-              local_uuid: siteDoctor.uuid,
-              ulid: siteDoctor.ulid || doctor.ulid,
-              name: siteDoctor.full_name || doctor.name,
-              full_name: siteDoctor.full_name || doctor.full_name || doctor.name,
-              speciality: siteDoctor.speciality || doctor.speciality,
-              specialization: siteDoctor.speciality || doctor.specialization,
-              job_title: siteDoctor.job_title || doctor.job_title,
-              excerpt: siteDoctor.excerpt || doctor.excerpt,
-              video_url: siteDoctor.video_url || doctor.video_url,
-              avatar_url: siteDoctor.avatar_url || doctor.avatar_url,
-              avatar_image: siteDoctor.avatar_image || doctor.avatar_image,
-              extra: siteDoctor.extra || doctor.extra || {},
-              seniority:
-                siteDoctor.extra?.seniority ||
-                doctor.seniority ||
-                doctor.extra?.seniority,
-              receives:
-                siteDoctor.extra?.receives ||
-                doctor.receives ||
-                doctor.extra?.receives,
-            };
-          });
+        return mergeDoctorsWithSitePayload(doctors, response);
       } catch (e) {
         return [];
       }
@@ -672,7 +597,10 @@ export default {
       try {
         const response = await bookingApi.getDoctorsByCity(this.currentCityId);
         const doctors = response.data || response || [];
-        this.doctors = await this.enrichDoctorsWithSiteData(doctors);
+        const enrichedDoctors = await this.enrichDoctorsWithSiteData(doctors);
+        this.doctors = sortDoctorsByMinimumAge(enrichedDoctors, {
+          primaryOrders: getDoctorSelectSortOrders(),
+        });
         this.doctorsCacheByCity[this.currentCityId] = {
           ts: Date.now(),
           data: this.doctors,
@@ -694,7 +622,11 @@ export default {
           branchId
         );
         const doctors = response.data || response || [];
-        this.clinicDoctors = await this.enrichDoctorsWithSiteData(doctors);
+        const enrichedDoctors = await this.enrichDoctorsWithSiteData(doctors);
+        this.clinicDoctors = sortDoctorsByMinimumAge(enrichedDoctors, {
+          primaryOrders: getClinicDoctorSortOrders(),
+          fallbackOrders: getDoctorSelectSortOrders(),
+        });
       } finally {
         this.loadingDoctors = false;
       }

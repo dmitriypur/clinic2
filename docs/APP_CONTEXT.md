@@ -15,6 +15,8 @@
 - Отдельно есть админ-панель на Filament для управления контентом, услугами, врачами, городами, отзывами, меню и настройками.
 
 ## Что изменилось (последнее)
+- 2026-03-24: callback-формы (`CallbackForm.vue`, `CallbackFormNew.vue`) теперь сами отправляют текущий город сайта в поле `city`, используя общий frontend util `resources/js/utilities/currentCity.js`; в `CallbackController` это поле имеет приоритет, а cookie `selected_city` и default city остались только fallback-веткой для API.
+- 2026-03-24: для `BookingWidgetV3` приведена в порядок архитектура doctor-flow: `resources/js/services/bookingApi.js` теперь отвечает только за transport/fetch, order-map вынесены в `resources/js/services/bookingOrdering.js`, а doctor merge/sort и возрастной парсинг собраны в widget utils (`doctorUtils.js`, `doctorAgeUtils.js`); итоговое поведение прежнее — список врачей получает вторичную сортировку по числу из `extra.receives`, а на последнем шаге поле `Дата рождения` блокирует запись, если возраст пациента меньше минимального возраста выбранного врача.
 - 2026-03-23: убрано мигание стартового шага `BookingWidgetV3` при первом открытии с принудительным режимом (`mode = doctor|clinic`): компонент теперь показывает внутренний loading-state до завершения `initCities()` и `applyInitialMode()`, поэтому в doctor-flow больше не появляется промежуточный первый экран.
 - 2026-03-23: для `BookingWidgetV3` добавлен управляемый старт сценария через `bookingStartMode` в триггерах открытия: по умолчанию виджет остаётся на первом экране, но для блока `doctors-alt`, карточек врачей в mega-menu, публичной страницы списка врачей и страницы отдельного врача теперь сразу открывается ветка `Выбрать врача` (пропуск стартового шага).
 - 2026-03-20: устранён регресс первого открытия doctor-flow в `BookingWidgetV3`: второй шаг больше не может открыться пустым из-за гонки между модалкой и загрузкой списка городов booking API; `initCities()` теперь дедуплицирует in-flight запрос, а `openDoctorFlow()`, `loadDoctorsByCity()`, `loadClinics()` и `loadCityBranches()` всегда дожидаются готовности городов перед вычислением `currentCityId`.
@@ -297,6 +299,7 @@ Middleware:
   - `getUser()`
 - Базовый URL: `UNF_BASE_URL`
 - Заголовок авторизации: `X-LO-Token`
+- `CallbackController` при `Clinic::callback(...)` теперь дополнительно передаёт текущий сайтовый город в поле `city`; основное значение приходит с фронтенда из callback-форм, а для API callback на бэке оставлен fallback через cookie `selected_city` или default city.
 
 ### Логика услуг и цен
 - `ServicePriceService`
@@ -378,11 +381,11 @@ Middleware:
 - Логика `resources/js/components/BookingWidgetV3/BookingWidgetV3.vue` сохранена как на `main`.
 - Управление стартовым шагом вынесено в родительский слой (`resources/js/app.js`): `showCallbackModal(...)` поддерживает необязательный `options.bookingStartMode`, который прокидывается в `<booking-widget-v3 :mode="...">`.
 - Если `bookingStartMode` не передан, `mode = null` и виджет открывается с первого экрана.
-- Для сортировки данных booking API используется `resources/js/services/bookingApi.js`:
-  - `getDoctorsByCity()`
-  - `getClinicBranches()`
-  - `getClinicDoctors()`
-- Эти методы по-прежнему ходят напрямую во внешний booking API, но перед возвратом применяют сортировку по backend order-map текущего города.
+- `resources/js/services/bookingApi.js` для doctor-flow теперь работает как transport-layer без doctor-бизнес-логики: `getDoctorsByCity()` и `getClinicDoctors()` только получают данные внешнего booking API, а сортировка и merge выполняются выше по слою.
+- Backend order-map текущего города читаются через `resources/js/services/bookingOrdering.js`.
+- `resources/js/components/BookingWidgetV3/utils/doctorUtils.js` — единая точка для doctor merge, дедупликации и итоговой сортировки врачей.
+- После обогащения врачей локальными данными сайта `BookingWidgetV3.vue` применяет единый util sort: backend order-map остаётся первичным, а число из `doctor.extra.receives` используется только как вторичный tie-breaker.
+- На шаге `resources/js/components/BookingWidgetV3/components/PatientFormStep.vue` дата рождения теперь валидируется и против минимального возраста, распарсенного из `selectedDoctor.extra.receives`; если пациент младше, виджет не отправляет заявку и показывает inline-предупреждение у поля даты.
 
 ### Blade-макет
 - Основной layout: `resources/views/layouts/app.blade.php`
@@ -563,7 +566,7 @@ Middleware:
 - Часть URL и поведения зависит от города, а часть маршрутов специально глобальная.
 - В layout и city-настройках есть поддержка `header_scripts` и `body_scripts`, поэтому любые изменения в SEO/scripts нужно проверять и в глобальных настройках, и в `City`.
 - Подстановка city-переменных в блоках выполняется только при публичном рендере через `withResolvedCitySeoVariables()`; исходные значения `blocks.title`, `blocks.body_html` и `blocks.payload` в БД и админке не переписываются.
-- Для нового порядка виджета не менялась логика `BookingWidgetV3.vue`; источник истины для порядка находится в backend/admin, а публичный frontend применяет только готовые order-map без дополнительной бизнес-логики шагов.
+- Для порядка врачей в `BookingWidgetV3` backend/admin order-map остаётся первичным источником, transport-слой не содержит doctor-бизнес-логики, а публичный frontend добавляет вторичную сортировку по числу, распарсенному из `doctor.extra.receives`, и использует тот же парсинг для клиентской возрастной валидации на последнем шаге.
 - Принудительный старт ветки `Выбрать врача` включается только явным `bookingStartMode: doctor` в конкретном UI-триггере; без этого виджет всегда стартует с первого шага.
 - Для списка врачей в виджете теперь поддерживаются два независимых порядка по городу: отдельный для doctor-flow и отдельный для clinic-flow; если `clinic_sort_order` не задан, clinic-flow использует fallback на doctor-flow order-map, но любой явный `clinic_sort_order` имеет приоритет над fallback-значениями.
 - Ручная сортировка публичной страницы специалистов хранится отдельно в `doctors.page_sort_order` и не влияет на порядок врачей в виджете записи.
@@ -571,6 +574,8 @@ Middleware:
 - На production nginx перехватывает любые URL с расширением `.js` как статические файлы (`try_files $uri =404`), поэтому route-based Livewire assets под `/livewire/*.js` там неработоспособны; для Filament/Livewire нужно использовать опубликованные assets в `public/vendor/livewire`, и деплой обязан их публиковать каждый релиз.
 
 ## Журнал изменений
+- 2026-03-24: в `resources/js/components/CallbackForm/CallbackForm.vue`, `resources/js/components/CallbackForm/CallbackFormNew.vue` и `resources/js/utilities/currentCity.js` добавлена явная отправка текущего города сайта в поле `city`; `app/Http/Requests/CallbackRequest.php` валидирует новое поле, а `app/Http/Controllers/CallbackController.php` использует его с приоритетом над backend fallback по cookie `selected_city` и default city. Нормализация телефона переведена на injected `PhoneService` без `resolve(...)` внутри метода.
+- 2026-03-24: doctor-flow `BookingWidgetV3` отрефакторен по слоям: в `resources/js/services/bookingApi.js` удалена doctor-сортировка, order-map вынесены в `resources/js/services/bookingOrdering.js`, в `resources/js/components/BookingWidgetV3/utils/doctorUtils.js` собраны дедупликация, merge локальных doctor-данных и итоговая сортировка, а `resources/js/components/BookingWidgetV3/utils/doctorAgeUtils.js` даёт единый парсер минимального возраста из `doctor.extra.receives`; `resources/js/components/BookingWidgetV3/components/PatientFormStep.vue` использует тот же парсер для блокировки отправки формы при слишком маленьком возрасте пациента.
 - 2026-03-23: в `resources/js/components/BookingWidgetV3/BookingWidgetV3.vue` добавлен флаг `isPreparingInitialStep`: при открытии с `mode = doctor|clinic` виджет сначала рендерит loading-state и только потом нужный шаг, чтобы исключить визуальное мигание стартового экрана на «холодном» первом открытии.
 - 2026-03-23: в `resources/js/app.js` добавлен необязательный `bookingStartMode` для `showCallbackModal(...)` и проброс `bookingWidgetV3Mode` в layout; в `resources/views/components/doctor-card-alt.blade.php`, `resources/views/components/page/partials/doctor-card.blade.php`, `resources/views/doctors/show.blade.php`, `resources/js/components/InfiniteDoctorsList/index.js`, `resources/js/components/DoctorCard/DoctorCard.vue` и `resources/views/components/mega-menu/doctor-card.blade.php` триггеры кнопок врачей передают режим `doctor`, поэтому только в этих местах `BookingWidgetV3` открывается сразу на шаге выбора врача.
 - 2026-03-20: в `resources/js/components/BookingWidgetV3/BookingWidgetV3.vue` устранена гонка первого открытия ветки `Выбрать врача`: `initCities()` кеширует in-flight запрос по городам, а загрузка врачей/клиник/филиалов не стартует, пока не готов `currentCityId`.

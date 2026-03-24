@@ -91,6 +91,13 @@
 </template>
 
 <script>
+import {
+  calculateAgeFromBirthDate,
+  extractDoctorMinimumAge,
+  formatDateForInput,
+  formatDoctorMinimumAgeText,
+} from "../utils/doctorAgeUtils";
+
 const StepHeader = () => import("./shared/StepHeader.vue");
 const PrimaryButton = () => import("./shared/PrimaryButton.vue");
 const SecondaryButton = () => import("./shared/SecondaryButton.vue");
@@ -143,7 +150,10 @@ export default {
   },
   computed: {
     maxBirthDate() {
-      return new Date().toISOString().split("T")[0];
+      return formatDateForInput(new Date());
+    },
+    selectedDoctorMinimumAge() {
+      return extractDoctorMinimumAge(this.selectedDoctor);
     },
     formattedAppointment() {
       if (!this.selectedDate || !this.selectedSlot?.time) {
@@ -191,6 +201,21 @@ export default {
       if (!this.form.birth_date) {
         this.errors.birth_date = "Укажите дату рождения";
         isValid = false;
+      } else {
+        const patientAge = calculateAgeFromBirthDate(this.form.birth_date);
+        if (patientAge === null) {
+          this.errors.birth_date = "Укажите корректную дату рождения";
+          isValid = false;
+        } else if (
+          Number.isFinite(this.selectedDoctorMinimumAge) &&
+          patientAge < this.selectedDoctorMinimumAge
+        ) {
+          this.errors.birth_date =
+            `Выбранный врач принимает пациентов ${formatDoctorMinimumAgeText(
+              this.selectedDoctorMinimumAge
+            )}`;
+          isValid = false;
+        }
       }
 
       if (!this.form.phone || this.form.phone.replace(/\D/g, "").length < 11) {
@@ -222,18 +247,8 @@ export default {
       this.generalError = message;
     },
     calculateAge(dateStr) {
-      const [year, month, day] = String(dateStr || "")
-        .split("-")
-        .map((v) => parseInt(v, 10));
-      if (!year || !month || !day) return 0;
-      const today = new Date();
-      let age = today.getFullYear() - year;
-      const m = today.getMonth() + 1 - month;
-      const d = today.getDate() - day;
-      if (m < 0 || (m === 0 && d < 0)) {
-        age -= 1;
-      }
-      return age;
+      const age = calculateAgeFromBirthDate(dateStr);
+      return Number.isFinite(age) ? age : 0;
     },
   },
   watch: {
