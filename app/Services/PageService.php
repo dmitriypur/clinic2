@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Enums\PageType;
+use App\Models\Category;
 use App\Models\Page;
 use App\Models\Doctor;
 use Illuminate\Database\Eloquent\Builder;
@@ -64,34 +66,19 @@ class PageService
     public function clearPageCache(Page $page): void
     {
         $page->loadMissing('category');
+        $categoryHandles = $this->resolveRelevantCategoryHandles($page);
+        $pageHandles = $this->resolveRelevantPageHandles($page, $categoryHandles);
+        $citySlugs = $this->resolveRelevantCitySlugs();
 
-        $handlesForIndexKey = array_unique(array_filter([
-            $page->handle,
-            $page->category?->handle,
-        ]));
-
-        $cacheKeys = [
-            "page-{$page->handle}",
-        ];
-
-        if ($page->category?->handle) {
-            $cacheKeys[] = "page-{$page->category->handle}";
-            $cacheKeys[] = "page_{$page->category->handle}_{$page->handle}";
-        }
-
-        foreach ($handlesForIndexKey as $handleForIndex) {
-            $cacheKeys[] = "page_{$handleForIndex}_index";
-        }
-
-        foreach (array_unique($cacheKeys) as $cacheKey) {
+        foreach ($this->buildPageCacheKeys($citySlugs, $pageHandles, $categoryHandles) as $cacheKey) {
             Cache::forget($cacheKey);
         }
-        
-        // Очищаем связанные кеши
-        Cache::forget('active_doctors');
-        Cache::forget('active_services');
 
-        Cache::flush();
+        foreach ($this->buildLegacyPageCacheKeys($pageHandles, $categoryHandles) as $cacheKey) {
+            Cache::forget($cacheKey);
+        }
+
+        $this->clearRelatedListingCaches($page);
     }
 
     public function getPageSeoData(Page $page): array
@@ -109,5 +96,101 @@ class PageService
     public function shouldShowPostsView(Page $page): bool
     {
         return in_array($page->type, [\App\Enums\PageType::Posts, \App\Enums\PageType::Blog], true);
+    }
+
+    private function resolveRelevantCategoryHandles(Page $page): array
+    {
+        $handles = array_filter([
+            $page->category?->handle,
+        ]);
+
+        $originalCategoryId = $page->getOriginal('category_id');
+        if ($originalCategoryId && (int) $originalCategoryId !== (int) $page->category_id) {
+            $originalCategory = Category::query()->find($originalCategoryId);
+            if ($originalCategory?->handle) {
+                $handles[] = $originalCategory->handle;
+            }
+        }
+
+        return array_values(array_unique($handles));
+    }
+
+    private function resolveRelevantPageHandles(Page $page, array $categoryHandles): array
+    {
+        return array_values(array_unique(array_filter([
+            $page->handle,
+            $page->getOriginal('handle'),
+            ...$categoryHandles,
+        ])));
+    }
+
+    private function resolveRelevantCitySlugs(): array
+    {
+        return app(CityService::class)
+            ->getActiveCities()
+            ->pluck('slug')
+            ->push('global')
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    private function buildPageCacheKeys(array $citySlugs, array $pageHandles, array $categoryHandles): array
+    {
+        $cacheKeys = [];
+
+        foreach ($citySlugs as $slug) {
+            foreach ($pageHandles as $handle) {
+                $cacheKeys[] = "page-{$slug}-{$handle}";
+            }
+
+            foreach ($pageHandles as $handle) {
+                foreach ($categoryHandles as $categoryHandle) {
+                    $cacheKeys[] = "page-{$slug}-{$categoryHandle}/{$handle}";
+                }
+            }
+        }
+
+        return array_values(array_unique($cacheKeys));
+    }
+
+    private function buildLegacyPageCacheKeys(array $pageHandles, array $categoryHandles): array
+    {
+        $cacheKeys = [];
+
+        foreach ($pageHandles as $handle) {
+            $cacheKeys[] = "page-{$handle}";
+        }
+
+        foreach ($pageHandles as $handleForIndex) {
+            $cacheKeys[] = "page_{$handleForIndex}_index";
+        }
+
+        foreach ($categoryHandles as $categoryHandle) {
+            foreach ($pageHandles as $pageHandle) {
+                $cacheKeys[] = "page_{$categoryHandle}_{$pageHandle}";
+            }
+        }
+
+        return array_values(array_unique($cacheKeys));
+    }
+
+    private function clearRelatedListingCaches(Page $page): void
+    {
+        Cache::forget('active_doctors');
+        Cache::forget('active_services');
+
+        if ($page->type === PageType::Doctors) {
+            foreach ($this->resolveRelevantCitySlugs() as $slug) {
+                for ($pageNumber = 1; $pageNumber <= 20; $pageNumber++) {
+                    Cache::forget("doctors-page-{$slug}-{$pageNumber}");
+                }
+            }
+        }
+
+        if (in_array($page->type, [PageType::Posts, PageType::Blog], true)) {
+            Cache::forget('posts_filter');
+            Cache::forget('blog_posts_for_slider');
+        }
     }
 }
