@@ -2,16 +2,23 @@
 
 namespace App\Services;
 
+use App\Exceptions\BookingWidgetApiException;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Pool;
+use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class BookingWidgetApiService
 {
     private const CACHE_TTL_SECONDS = 60;
     private const CONNECT_TIMEOUT_SECONDS = 5;
     private const REQUEST_TIMEOUT_SECONDS = 15;
+    private const RETRY_ATTEMPTS = 2;
+    private const RETRY_DELAY_MILLISECONDS = 200;
+    private const RETRYABLE_STATUS_CODES = [408, 429, 500, 502, 503, 504];
 
     public function getCities(): array
     {
@@ -92,9 +99,28 @@ class BookingWidgetApiService
         });
 
         foreach ($missingRequests as $clinicId => $request) {
-            $payload = $responses[(string) $clinicId]->throw()->json();
+            $response = $responses[(string) $clinicId] ?? null;
 
-            Cache::put($request['cache_key'], $payload, now()->addSeconds(self::CACHE_TTL_SECONDS));
+            if ($response instanceof Response && $response->successful()) {
+                $payload = $this->decodeResponse(
+                    $response,
+                    $request['path'],
+                    $request['query'],
+                    ['clinic_id' => $clinicId, 'mode' => 'batch']
+                );
+            } else {
+                $payload = $this->performGet(
+                    $request['path'],
+                    $request['query'],
+                    ['clinic_id' => $clinicId, 'mode' => 'batch-fallback']
+                );
+            }
+
+            Cache::put(
+                $request['cache_key'],
+                $payload,
+                now()->addSeconds(self::CACHE_TTL_SECONDS)
+            );
             $results[$clinicId] = $payload;
         }
 
@@ -129,10 +155,7 @@ class BookingWidgetApiService
         $cacheKey = $this->makeCacheKey($path, $query);
 
         return Cache::remember($cacheKey, now()->addSeconds(self::CACHE_TTL_SECONDS), function () use ($path, $query): array {
-            return $this->request()
-                ->get($path, $query)
-                ->throw()
-                ->json();
+            return $this->performGet($path, $query);
         });
     }
 
@@ -144,6 +167,86 @@ class BookingWidgetApiService
             ->timeout(self::REQUEST_TIMEOUT_SECONDS);
     }
 
+    private function performGet(string $path, array $query = [], array $context = []): array
+    {
+        $attempt = 0;
+
+        do {
+            $attempt++;
+            $startedAt = microtime(true);
+
+            try {
+                $response = $this->request()->get($path, $query);
+
+                if ($response->successful()) {
+                    return $this->decodeResponse($response, $path, $query, $context + [
+                        'attempt' => $attempt,
+                        'duration_ms' => $this->durationInMilliseconds($startedAt),
+                    ]);
+                }
+
+                if ($this->shouldRetryResponse($response, $attempt)) {
+                    usleep(self::RETRY_DELAY_MILLISECONDS * 1000);
+                    continue;
+                }
+
+                $this->throwApiException(
+                    'Booking widget API returned an unsuccessful response.',
+                    $path,
+                    $query,
+                    $context + [
+                        'attempt' => $attempt,
+                        'status' => $response->status(),
+                        'body' => $response->body(),
+                        'duration_ms' => $this->durationInMilliseconds($startedAt),
+                    ]
+                );
+            } catch (ConnectionException $exception) {
+                if ($attempt <= self::RETRY_ATTEMPTS) {
+                    usleep(self::RETRY_DELAY_MILLISECONDS * 1000);
+                    continue;
+                }
+
+                $this->throwApiException(
+                    'Booking widget API request failed due to a connection error.',
+                    $path,
+                    $query,
+                    $context + [
+                        'attempt' => $attempt,
+                        'duration_ms' => $this->durationInMilliseconds($startedAt),
+                    ],
+                    $exception
+                );
+            }
+        } while ($attempt <= self::RETRY_ATTEMPTS);
+
+        $this->throwApiException(
+            'Booking widget API request failed after retries.',
+            $path,
+            $query,
+            $context + ['attempts' => $attempt]
+        );
+    }
+
+    private function decodeResponse(Response $response, string $path, array $query = [], array $context = []): array
+    {
+        $payload = $response->json();
+
+        if (! is_array($payload)) {
+            $this->throwApiException(
+                'Booking widget API returned a non-array JSON payload.',
+                $path,
+                $query,
+                $context + [
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                ]
+            );
+        }
+
+        return $payload;
+    }
+
     private function makeCacheKey(string $path, array $query = []): string
     {
         return 'booking-widget-api:' . md5($path . '|' . http_build_query($query));
@@ -151,6 +254,50 @@ class BookingWidgetApiService
 
     private function resolveBaseUrl(): string
     {
-        return rtrim((string) config('zrenie-clinic.booking_api_base_url', 'https://adminzrenie.ru/api/v1'), '/');
+        $baseUrl = rtrim((string) config('zrenie-clinic.booking_api_base_url', ''), '/');
+
+        if ($baseUrl === '' || ! filter_var($baseUrl, FILTER_VALIDATE_URL)) {
+            $this->throwApiException(
+                'Booking widget API base URL is not configured correctly.',
+                '/config',
+                [],
+                ['configured_base_url' => $baseUrl]
+            );
+        }
+
+        return $baseUrl;
+    }
+
+    private function shouldRetryResponse(Response $response, int $attempt): bool
+    {
+        return $attempt <= self::RETRY_ATTEMPTS
+            && in_array($response->status(), self::RETRYABLE_STATUS_CODES, true);
+    }
+
+    private function durationInMilliseconds(float $startedAt): int
+    {
+        return (int) round((microtime(true) - $startedAt) * 1000);
+    }
+
+    private function throwApiException(
+        string $message,
+        string $path,
+        array $query = [],
+        array $context = [],
+        ?\Throwable $previous = null
+    ): never {
+        $baseUrl = rtrim((string) config('zrenie-clinic.booking_api_base_url', ''), '/');
+
+        $payload = [
+            'base_url' => $baseUrl,
+            'path' => $path,
+            'query' => $query,
+        ] + $context;
+
+        Log::error($message, $payload + [
+            'exception' => $previous?->getMessage(),
+        ]);
+
+        throw new BookingWidgetApiException($message, $payload, previous: $previous);
     }
 }

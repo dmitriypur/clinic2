@@ -15,6 +15,8 @@
 - Отдельно есть админ-панель на Filament для управления контентом, услугами, врачами, городами, отзывами, меню и настройками.
 
 ## Что изменилось (последнее)
+- 2026-03-25: усилена интеграция админской синхронизации филиалов с booking API: `app/Services/BookingWidgetApiService.php` теперь валидирует `BOOKING_API_BASE_URL`, логирует ошибки с контекстом, делает ограниченный retry для временных HTTP/connection-сбоев и выбрасывает доменное исключение `App\Exceptions\BookingWidgetApiException` вместо сырых ошибок HTTP-клиента; внешний контракт методов и формат payload не менялись.
+- 2026-03-25: `app/Services/PageService.php` переведён с глобального `Cache::flush()` на точечную инвалидацию page-кешей; при изменении `Page`/`Block` теперь очищаются только связанные ключи страниц, legacy page keys и нужные listing-кеши (`active_doctors`, `active_services`, `doctors-page-*`, `posts_filter`, `blog_posts_for_slider`) без полного сброса кеша приложения.
 - 2026-03-24: callback-формы (`CallbackForm.vue`, `CallbackFormNew.vue`) теперь сами отправляют текущий город сайта в поле `city`, используя общий frontend util `resources/js/utilities/currentCity.js`; в `CallbackController` это поле имеет приоритет, а cookie `selected_city` и default city остались только fallback-веткой для API.
 - 2026-03-24: для `BookingWidgetV3` приведена в порядок архитектура doctor-flow: `resources/js/services/bookingApi.js` теперь отвечает только за transport/fetch, order-map вынесены в `resources/js/services/bookingOrdering.js`, а doctor merge/sort и возрастной парсинг собраны в widget utils (`doctorUtils.js`, `doctorAgeUtils.js`); итоговое поведение прежнее — список врачей получает вторичную сортировку по числу из `extra.receives`, а на последнем шаге поле `Дата рождения` блокирует запись, если возраст пациента меньше минимального возраста выбранного врача.
 - 2026-03-23: убрано мигание стартового шага `BookingWidgetV3` при первом открытии с принудительным режимом (`mode = doctor|clinic`): компонент теперь показывает внутренний loading-state до завершения `initCities()` и `applyInitialMode()`, поэтому в doctor-flow больше не появляется промежуточный первый экран.
@@ -324,7 +326,11 @@ Middleware:
 
 ### Прочие сервисы
 - `BookingWidgetApiService`
-  - тонкий cached-client к внешнему booking API (`adminzrenie.ru/api/v1`) для синхронизации филиалов в админке.
+  - cached-client к внешнему booking API (`adminzrenie.ru/api/v1`) для синхронизации филиалов в админке;
+  - коротко кеширует ответы (`booking-widget-api:*`, TTL 60 сек);
+  - валидирует `BOOKING_API_BASE_URL`;
+  - на временных сбоях делает ограниченный retry;
+  - логирует ошибки с контекстом и выбрасывает `BookingWidgetApiException`, не прокидывая наружу сырые исключения HTTP-клиента.
 - `BookingWidgetOrderingService`
   - собирает `doctorSortOrders` и `branchSortOrders` для текущего города;
   - order-map прокидывается в `window.config.booking` через `Clinic::scriptVariables()`.
@@ -486,8 +492,10 @@ Middleware:
 
 ### Инвалидация
 - `City`, `Page`, `Block`, `Doctor`, `Service`, `ServicePrice`, `Review` очищают связанные кеши в model events/observers.
-- В проекте есть и точечная инвалидация, и места с широким сбросом:
-  - например `PageService::clearPageCache()` содержит `Cache::flush()`.
+- `PageService::clearPageCache()` больше не делает глобальный `Cache::flush()`:
+  - очищает city-aware page keys `page-{citySlug}-{handle}` и `page-{citySlug}-{category}/{handle}`;
+  - очищает legacy page keys `page-{handle}`, `page_{category}_{handle}`, `page_{handle}_index`;
+  - дополнительно сбрасывает связанные listing-кеши для страниц врачей и постов.
 
 ## Middleware
 ### Группа `web`
@@ -549,6 +557,8 @@ Middleware:
   - `RunServicesAiAgentCommandTest`
   - `YmlFeedTest`
   - `ArticleContentParserTest`
+  - `BookingWidgetApiServiceTest`
+  - `PageServiceTest`
 
 ## Связанные документы
 - `docs/app-overview.md` — обзор архитектуры проекта
@@ -571,9 +581,13 @@ Middleware:
 - Для списка врачей в виджете теперь поддерживаются два независимых порядка по городу: отдельный для doctor-flow и отдельный для clinic-flow; если `clinic_sort_order` не задан, clinic-flow использует fallback на doctor-flow order-map, но любой явный `clinic_sort_order` имеет приоритет над fallback-значениями.
 - Ручная сортировка публичной страницы специалистов хранится отдельно в `doctors.page_sort_order` и не влияет на порядок врачей в виджете записи.
 - В админке `Настройки виджета` филиалы могут обновляться фоновым Livewire-запросом сразу после открытия/смены города; первый рендер приходит из локальной БД без блокировки внешним booking API.
+- `BookingWidgetApiService` теперь предполагает корректно заданный `BOOKING_API_BASE_URL`; пустой или невалидный URL считается конфигурационной ошибкой и приводит к `BookingWidgetApiException` с логированием контекста.
+- Инвалидация page-кеша стала точечной; при доработках `PageService`, `PageObserver` и `BlockObserver` нельзя возвращаться к полному `Cache::flush()`, иначе это снова будет сбрасывать несвязанные кеши по всему приложению.
 - На production nginx перехватывает любые URL с расширением `.js` как статические файлы (`try_files $uri =404`), поэтому route-based Livewire assets под `/livewire/*.js` там неработоспособны; для Filament/Livewire нужно использовать опубликованные assets в `public/vendor/livewire`, и деплой обязан их публиковать каждый релиз.
 
 ## Журнал изменений
+- 2026-03-25: в `app/Services/BookingWidgetApiService.php` добавлены валидация `BOOKING_API_BASE_URL`, ограниченный retry для временных HTTP/connection-сбоев, структурированное логирование ошибок и доменное исключение `app/Exceptions/BookingWidgetApiException.php`; при batch-запросах филиалов сервис теперь использует pool для успешных ответов и безопасно дозапрашивает упавшие клиники через fallback `performGet()`, сохраняя прежний формат ответа методов. Добавлен unit-тест `tests/Unit/Services/BookingWidgetApiServiceTest.php` на retry и конфигурационную ошибку base URL.
+- 2026-03-25: в `app/Services/PageService.php` удалён глобальный `Cache::flush()` из `clearPageCache()`; сервис теперь адресно очищает city-aware page keys, legacy page keys и связанные listing-кеши для страниц врачей и постов, включая сценарии со сменой `handle` и `category_id`. Добавлен unit-тест `tests/Unit/Services/PageServiceTest.php` на точечную инвалидацию без затрагивания несвязанных кешей.
 - 2026-03-24: в `resources/js/components/CallbackForm/CallbackForm.vue`, `resources/js/components/CallbackForm/CallbackFormNew.vue` и `resources/js/utilities/currentCity.js` добавлена явная отправка текущего города сайта в поле `city`; `app/Http/Requests/CallbackRequest.php` валидирует новое поле, а `app/Http/Controllers/CallbackController.php` использует его с приоритетом над backend fallback по cookie `selected_city` и default city. Нормализация телефона переведена на injected `PhoneService` без `resolve(...)` внутри метода.
 - 2026-03-24: doctor-flow `BookingWidgetV3` отрефакторен по слоям: в `resources/js/services/bookingApi.js` удалена doctor-сортировка, order-map вынесены в `resources/js/services/bookingOrdering.js`, в `resources/js/components/BookingWidgetV3/utils/doctorUtils.js` собраны дедупликация, merge локальных doctor-данных и итоговая сортировка, а `resources/js/components/BookingWidgetV3/utils/doctorAgeUtils.js` даёт единый парсер минимального возраста из `doctor.extra.receives`; `resources/js/components/BookingWidgetV3/components/PatientFormStep.vue` использует тот же парсер для блокировки отправки формы при слишком маленьком возрасте пациента.
 - 2026-03-23: в `resources/js/components/BookingWidgetV3/BookingWidgetV3.vue` добавлен флаг `isPreparingInitialStep`: при открытии с `mode = doctor|clinic` виджет сначала рендерит loading-state и только потом нужный шаг, чтобы исключить визуальное мигание стартового экрана на «холодном» первом открытии.
