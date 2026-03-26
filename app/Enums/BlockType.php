@@ -120,6 +120,7 @@ enum BlockType: int
     case TEXT_WITH_IMAGE_NEW = 63;
 
     case BRANCH = 64;
+    case BANNERS_GRID_K = 65;
 
 
 
@@ -178,7 +179,8 @@ enum BlockType: int
             self::BANNER_MYOPIA => 'Блок "Баннер для страницы Лечение близорукости"',
             self::CARDS_BORDER => 'Карточки с бордером',
             self::LIST_WITH_IMAGE => 'Список с изображением',
-            self::BANNERS_GRID => 'Сетка баннеров',
+            self::BANNERS_GRID => 'Сетка баннеров Москва',
+            self::BANNERS_GRID_K => 'Сетка баннеров Киров',
             self::ADVANTAGES_SLIDER => 'Слайдер Преимущества',
             self::DETAILS => 'Реквизиты',
             self::UNIVERSAL_TEXT_BLOCK => 'Универсальный текстовый блок',

@@ -1,0 +1,1303 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - button "Москва" [ref=e8] [cursor=pointer]:
+            - generic [ref=e9]: Москва
+            - img [ref=e11]
+          - generic [ref=e15]: "Пн-Сб: 9:00 - 20:00 Вс: 10:00 - 18:00"
+        - generic [ref=e16]:
+          - generic [ref=e17]:
+            - link [ref=e19] [cursor=pointer]:
+              - /url: tel:7 (495) 145 74 13
+              - img [ref=e20]
+            - link "7 (495) 145 74 13" [ref=e23] [cursor=pointer]:
+              - /url: tel:7 (495) 145 74 13
+            - button "Перезвоните мне" [ref=e24] [cursor=pointer]
+          - button "Записаться на приём" [ref=e25] [cursor=pointer]
+      - generic [ref=e27]:
+        - generic [ref=e28]:
+          - generic [ref=e29]: Детская офтальмология Мама, я вижу!
+          - img "Услуги врача офтальмолога в Москве - клиника \"Мама, я вижу!\"" [ref=e30]
+        - navigation [ref=e31]:
+          - list [ref=e32]:
+            - listitem [ref=e33]:
+              - link "Цены" [ref=e35] [cursor=pointer]:
+                - /url: http://localhost:8888/zrenie.clinic-7/public/uslugi-i-ceny
+            - listitem [ref=e36]:
+              - generic [ref=e37]:
+                - link "Услуги" [ref=e38] [cursor=pointer]:
+                  - /url: http://localhost:8888/zrenie.clinic-7/public/services
+                - img [ref=e40]
+            - listitem [ref=e42]:
+              - generic [ref=e43]:
+                - link "Специалисты" [ref=e44] [cursor=pointer]:
+                  - /url: http://localhost:8888/zrenie.clinic-7/public/doctors
+                - img [ref=e46]
+            - listitem [ref=e48]:
+              - link "Отзывы" [ref=e50] [cursor=pointer]:
+                - /url: http://localhost:8888/zrenie.clinic-7/public/reviews
+            - listitem [ref=e51]:
+              - link "Статьи" [ref=e53] [cursor=pointer]:
+                - /url: http://localhost:8888/zrenie.clinic-7/public/stati
+            - listitem [ref=e54]:
+              - generic [ref=e55]:
+                - link "О нас" [ref=e56] [cursor=pointer]:
+                  - /url: http://localhost:8888/zrenie.clinic-7/public/o-klinike
+                - img [ref=e58]
+            - listitem [ref=e60]:
+              - link "Контакты" [ref=e62] [cursor=pointer]:
+                - /url: http://localhost:8888/zrenie.clinic-7/public/kontakty
+        - generic [ref=e63]:
+          - img [ref=e65] [cursor=pointer]
+          - generic "Включить версию для слабовидящих" [ref=e69] [cursor=pointer]:
+            - img [ref=e70]
+    - generic [ref=e77]:
+      - generic [ref=e78]:
+        - generic:
+          - generic:
+            - img "Приём детского офтальмолога фото"
+        - link "Записаться на прием" [ref=e80] [cursor=pointer]:
+          - /url: http://localhost:8888/zrenie.clinic-7/public/priem-vraca-oftalmologa
+      - generic [ref=e81]:
+        - generic:
+          - generic:
+            - img "Подбор ночных линз фото"
+        - link "Записаться на прием" [ref=e83] [cursor=pointer]:
+          - /url: http://localhost:8888/zrenie.clinic-7/public/podbor-nochnyh-linz-rebenku
+      - generic [ref=e84]:
+        - generic:
+          - generic:
+            - img "Очки с линзами Stellest для детей фото"
+        - link "Записаться на прием" [ref=e86] [cursor=pointer]:
+          - /url: http://localhost:8888/zrenie.clinic-7/public/podbor-nochnyh-linz-rebenku
+    - generic [ref=e87]:
+      - heading "Почему выбирают нас?" [level=2] [ref=e89]
+      - generic [ref=e93]:
+        - generic [ref=e96]:
+          - generic [ref=e97]:
+            - generic:
+              - generic:
+                - img "Точный диагноз благодаря полной диагностике фото"
+          - heading "Точный диагноз благодаря полной диагностике" [level=3] [ref=e98]
+          - generic [ref=e99]: Проводим более 20 тестов по исследованию глаз за один приём на современном оборудовании
+        - generic [ref=e102]:
+          - generic [ref=e103]:
+            - generic:
+              - generic:
+                - img "Партнёр Национального фонда защиты детского зрения фото"
+          - heading "Партнёр Национального фонда защиты детского зрения" [level=3] [ref=e104]
+          - generic [ref=e105]: Мы прошли строгий отбор на соответствие высоким стандартам лечения. Наша миссия - сохранять и улучшать зрение детей России. Спасибо за доверие!
+        - generic [ref=e108]:
+          - generic [ref=e109]:
+            - generic:
+              - generic:
+                - img "Подбор очков, линз и&nbsp;оправ любой сложности фото"
+          - heading "Подбор очков, линз и оправ любой сложности" [level=3] [ref=e110]
+          - generic [ref=e111]: Подбираем очки и линзы для малышей и подростков. Большой выбор модных и анатомически правильных оправ всегда в наличии
+        - generic [ref=e114]:
+          - generic [ref=e115]:
+            - generic:
+              - generic:
+                - img "Современные методы лечения близорукости фото"
+          - heading "Современные методы лечения близорукости" [level=3] [ref=e116]
+          - generic [ref=e117]: Ночные линзы, мягкие контактные линзы для контроля прогрессирования миопии и очки с терапевтическими линзами
+    - generic [ref=e119]:
+      - heading "Услуги клиники" [level=2] [ref=e121]
+      - generic [ref=e122]:
+        - generic [ref=e123]:
+          - link "Приём врача-офтальмолога фото" [ref=e124] [cursor=pointer]:
+            - /url: http://localhost:8888/zrenie.clinic-7/public/priem-vraca-oftalmologa
+            - generic [ref=e125]:
+              - img [ref=e127]
+              - img "Приём врача-офтальмолога фото" [ref=e129]
+          - link "Приём врача-офтальмолога" [ref=e131] [cursor=pointer]:
+            - /url: http://localhost:8888/zrenie.clinic-7/public/priem-vraca-oftalmologa
+            - paragraph [ref=e132]: Приём врача-офтальмолога
+            - paragraph
+        - generic [ref=e134]:
+          - link "Ночные линзы фото" [ref=e135] [cursor=pointer]:
+            - /url: http://localhost:8888/zrenie.clinic-7/public/podbor-nochnyh-linz-rebenku
+            - generic [ref=e136]:
+              - img [ref=e138]
+              - img "Ночные линзы фото" [ref=e140]
+          - link "Ночные линзы" [ref=e142] [cursor=pointer]:
+            - /url: http://localhost:8888/zrenie.clinic-7/public/podbor-nochnyh-linz-rebenku
+            - paragraph [ref=e143]: Ночные линзы
+            - paragraph
+        - generic [ref=e145]:
+          - link "Аппаратное лечение глаз фото" [ref=e146] [cursor=pointer]:
+            - /url: http://localhost:8888/zrenie.clinic-7/public/apparatnoe-lechenie-zrenija-u-detej
+            - generic [ref=e147]:
+              - img [ref=e149]
+              - img "Аппаратное лечение глаз фото" [ref=e151]
+          - generic [ref=e152]:
+            - link "Аппаратное лечение глаз" [ref=e153] [cursor=pointer]:
+              - /url: http://localhost:8888/zrenie.clinic-7/public/apparatnoe-lechenie-zrenija-u-detej
+              - paragraph [ref=e154]: Аппаратное лечение глаз
+              - paragraph
+            - list [ref=e156]:
+              - listitem [ref=e157]: Макулотестер
+              - listitem [ref=e158]: Синоптофор
+              - listitem [ref=e159]: Каскад
+              - listitem [ref=e160]: Спекл-М
+              - listitem [ref=e161]: Форбис
+              - listitem [ref=e162]: Магнитотерапия
+              - listitem [ref=e163]: Засветы
+        - generic [ref=e164]:
+          - link "Очки с линзами Stellest фото" [ref=e165] [cursor=pointer]:
+            - /url: http://localhost:8888/zrenie.clinic-7/public/ochki-s-linzami-stellest
+            - generic [ref=e166]:
+              - img [ref=e168]
+              - img "Очки с линзами Stellest фото" [ref=e170]
+          - link "Очки с линзами Stellest" [ref=e172] [cursor=pointer]:
+            - /url: http://localhost:8888/zrenie.clinic-7/public/ochki-s-linzami-stellest
+            - paragraph [ref=e173]: Очки с линзами Stellest
+            - paragraph
+        - generic [ref=e175]:
+          - link "Лечение близорукости фото" [ref=e176] [cursor=pointer]:
+            - /url: http://localhost:8888/zrenie.clinic-7/public/myopia
+            - generic [ref=e177]:
+              - img [ref=e179]
+              - img "Лечение близорукости фото" [ref=e181]
+          - generic [ref=e182]:
+            - link "Лечение близорукости" [ref=e183] [cursor=pointer]:
+              - /url: http://localhost:8888/zrenie.clinic-7/public/myopia
+              - paragraph [ref=e184]: Лечение близорукости
+              - paragraph
+            - list [ref=e186]:
+              - listitem [ref=e187]:
+                - link "Ночные линзы" [ref=e188] [cursor=pointer]:
+                  - /url: https://zrenie.clinic/podbor-nochnyh-linz-rebenku
+              - listitem [ref=e189]:
+                - link "Очки для лечения близорукости" [ref=e190] [cursor=pointer]:
+                  - /url: https://zrenie.clinic/ochki-s-linzami-stellest
+              - listitem [ref=e191]:
+                - link "Мягкие контактные линзы с лечебным эффектом" [ref=e192] [cursor=pointer]:
+                  - /url: https://zrenie.clinic/podbor-linz-dlja-detej
+        - generic [ref=e193]:
+          - link "Vision therapy фото" [ref=e194] [cursor=pointer]:
+            - /url: http://localhost:8888/zrenie.clinic-7/public/vizualnaja-terapija-dlja-glaz
+            - generic [ref=e195]:
+              - img [ref=e197]
+              - img "Vision therapy фото" [ref=e199]
+          - link "Vision therapy (Визуальная терапия)" [ref=e201] [cursor=pointer]:
+            - /url: http://localhost:8888/zrenie.clinic-7/public/vizualnaja-terapija-dlja-glaz
+            - paragraph [ref=e202]: Vision therapy
+            - paragraph [ref=e203]: (Визуальная терапия)
+        - generic [ref=e205]:
+          - link "Лечение косоглазия фото" [ref=e206] [cursor=pointer]:
+            - /url: http://localhost:8888/zrenie.clinic-7/public/lecenie-kosoglaziia
+            - generic [ref=e207]:
+              - img [ref=e209]
+              - img "Лечение косоглазия фото" [ref=e211]
+          - link "Лечение косоглазия у детей" [ref=e213] [cursor=pointer]:
+            - /url: http://localhost:8888/zrenie.clinic-7/public/lecenie-kosoglaziia
+            - paragraph [ref=e214]: Лечение косоглазия
+            - paragraph [ref=e215]: у детей
+        - generic [ref=e217]:
+          - link "Коррекция астигматизма фото" [ref=e218] [cursor=pointer]:
+            - /url: http://localhost:8888/zrenie.clinic-7/public/korrekciia-astigmatizma-u-detei
+            - generic [ref=e219]:
+              - img [ref=e221]
+              - img "Коррекция астигматизма фото" [ref=e223]
+          - link "Коррекция астигматизма у детей" [ref=e225] [cursor=pointer]:
+            - /url: http://localhost:8888/zrenie.clinic-7/public/korrekciia-astigmatizma-u-detei
+            - paragraph [ref=e226]: Коррекция астигматизма
+            - paragraph [ref=e227]: у детей
+      - link "Смотреть все" [ref=e230] [cursor=pointer]:
+        - /url: http://localhost:8888/zrenie.clinic-7/public/services
+    - generic [ref=e231]:
+      - heading "Детская офтальмология" [level=1] [ref=e233]
+      - generic [ref=e235]:
+        - img "Добро пожаловать в клинику детской офтальмологии" [ref=e239]
+        - generic [ref=e241]:
+          - generic [ref=e243]:
+            - paragraph [ref=e244]:
+              - strong [ref=e245]: Дорогие родители и пациенты!
+            - paragraph [ref=e246]: Мы коллектив врачей офтальмологической клиники "Мама, я вижу" в городе Москва. Приветствуем Вас в стенах нашего детского центра офтальмологии. Сегодня я хочу обратить ваше внимание на важность заботы о здоровье глаз с раннего детства.
+            - paragraph [ref=e247]
+          - button "Читать далее" [ref=e248] [cursor=pointer]
+    - generic [ref=e250]:
+      - heading "Отзывы" [level=2] [ref=e252]
+      - generic [ref=e254]:
+        - generic [ref=e256]:
+          - generic [ref=e259]:
+            - generic [ref=e260]:
+              - generic [ref=e261]:
+                - img "Логотип Яндекс отзывы" [ref=e263]
+                - text: Яндекс отзывы
+              - paragraph [ref=e265]: "врач: Вершинина Н."
+            - generic [ref=e266]:
+              - paragraph [ref=e267]: 26.10.2025
+              - generic [ref=e268]:
+                - img [ref=e270]
+                - img [ref=e273]
+                - img [ref=e276]
+                - img [ref=e279]
+                - img [ref=e282]
+            - generic [ref=e284]:
+              - link "Алексей Айдаров" [ref=e285] [cursor=pointer]:
+                - /url: https://yandex.ru/maps/org/134457918290/reviews?reviews%5BpublicId%5D=dnfuzurp1mwexych8gunk77pcw&utm_source=review
+              - paragraph [ref=e287]: Обращаемся не в первый раз. На приеме были всей семьей почти. Врач Вершинина Н.С. грамотно все рассказывает и смотрит, подсказывает как лучше дальше наблюдаться. В клинике чистота и уютная атмосфера, угощают чашечкой кофе. Персонал приветлив.
+            - link "Прием детского офтальмолога в Москве" [ref=e290] [cursor=pointer]:
+              - /url: http://localhost:8888/zrenie.clinic-7/public/priem-vraca-oftalmologa
+          - generic [ref=e293]:
+            - generic [ref=e294]:
+              - generic [ref=e295]:
+                - img "Логотип Яндекс отзывы" [ref=e297]
+                - text: Яндекс отзывы
+              - paragraph [ref=e299]: "врач: Видлацкая А."
+            - generic [ref=e300]:
+              - paragraph [ref=e301]: 14.10.2025
+              - generic [ref=e302]:
+                - img [ref=e304]
+                - img [ref=e307]
+                - img [ref=e310]
+                - img [ref=e313]
+                - img [ref=e316]
+            - generic [ref=e318]:
+              - link "Леся" [ref=e319] [cursor=pointer]:
+                - /url: https://yandex.ru/maps/org/134457918290/reviews?reviews%5BpublicId%5D=x3txzn8yudutr5r52e5pvda9b0&utm_source=review
+              - paragraph [ref=e321]: Хотим поблагодарить клинику с чудесным запоминающимся названием и, в частности, врача-офтальмолога Видлацкую Анастасию Дмитриевну, за комплексный тщательный осмотр зрения моим детям. Полученные рекомендации будем выполнять и обязательно вернемся снова! Процветания вам!
+            - link "Прием детского офтальмолога в Москве" [ref=e324] [cursor=pointer]:
+              - /url: http://localhost:8888/zrenie.clinic-7/public/priem-vraca-oftalmologa
+          - generic [ref=e327]:
+            - generic [ref=e328]:
+              - generic [ref=e329]:
+                - img "Логотип Продокторов" [ref=e331]
+                - text: Продокторов
+              - paragraph [ref=e333]: "врач: Видлацкая А."
+            - generic [ref=e334]:
+              - paragraph [ref=e335]: 10.10.2025
+              - generic [ref=e336]:
+                - img [ref=e338]
+                - img [ref=e341]
+                - img [ref=e344]
+                - img [ref=e347]
+                - img [ref=e350]
+            - generic [ref=e352]:
+              - link "Пациент +7 903 77XXXXX" [ref=e353] [cursor=pointer]:
+                - /url: https://prodoctorov.ru/moskva/lpu/94509-mama-ya-vizhu/otzivi/#tab-content
+              - paragraph [ref=e355]: Обратилась к врачу, чтобы провести обследование себе и детям. Очень понравилось тщательное обследование, терпеливое отношение и доброжелательный настрой. Осмотреть троих детей подряд и взрослого - это утомительно, но врач с медсестрой работали слаженно, чётко, спокойно. После обследования я получила ответы на все свои вопросы. Врач объяснила на макете глаза очень доходчиво и дала рекомендации.
+            - link "Прием детского офтальмолога в Москве" [ref=e358] [cursor=pointer]:
+              - /url: http://localhost:8888/zrenie.clinic-7/public/priem-vraca-oftalmologa
+          - generic [ref=e361]:
+            - generic [ref=e363]:
+              - img "Логотип Яндекс отзывы" [ref=e365]
+              - text: Яндекс отзывы
+            - generic [ref=e366]:
+              - paragraph [ref=e367]: 08.10.2025
+              - generic [ref=e368]:
+                - img [ref=e370]
+                - img [ref=e373]
+                - img [ref=e376]
+                - img [ref=e379]
+                - img [ref=e382]
+            - generic [ref=e384]:
+              - link "Аркадий" [ref=e385] [cursor=pointer]:
+                - /url: https://yandex.ru/maps/org/134457918290/reviews?reviews%5BpublicId%5D=kazakov.arkadiy.v&utm_source=review
+              - paragraph [ref=e387]: Клиника топ, такой диагностики зрения сыну до них никто не делал. Нашли все проблемы, назначили план лечения. Цены адекватные времени, сотрудники приветливые и заинтересованные, однозначно рекомендую!
+            - link "Прием детского офтальмолога в Москве" [ref=e390] [cursor=pointer]:
+              - /url: http://localhost:8888/zrenie.clinic-7/public/priem-vraca-oftalmologa
+          - generic [ref=e393]:
+            - generic [ref=e394]:
+              - generic [ref=e395]:
+                - img "Логотип Продокторов" [ref=e397]
+                - text: Продокторов
+              - paragraph [ref=e399]: "врач: Вершинина Н."
+            - generic [ref=e400]:
+              - paragraph [ref=e401]: 16.08.2025
+              - generic [ref=e402]:
+                - img [ref=e404]
+                - img [ref=e407]
+                - img [ref=e410]
+                - img [ref=e413]
+                - img [ref=e416]
+            - generic [ref=e418]:
+              - link "Пациент +7 903 25XXXXX" [ref=e419] [cursor=pointer]:
+                - /url: https://prodoctorov.ru/moskva/vrach/171575-snadina/otzivi/#otzivi
+              - paragraph [ref=e421]:
+                - text: У ребёнка возникли проблемы со зрением. Решили тщательно обследовать ребёнка.
+                - text: Понравилось
+                - text: Очень понравилась тщательность, с которой ребёнка обследовали, после всё подробно рассказали. Объяснили, как быть дальше, что необходимо делать. Посоветовали, какие методы коррекции зрения выбрать. Наталия Сергеевна - очень грамотный врач и всё доходчиво объясняет.
+                - text: Не понравилось
+                - text: Недостатков нет.
+            - link "Прием детского офтальмолога в Москве" [ref=e424] [cursor=pointer]:
+              - /url: http://localhost:8888/zrenie.clinic-7/public/priem-vraca-oftalmologa
+          - generic [ref=e427]:
+            - generic [ref=e428]:
+              - generic [ref=e429]:
+                - img "Логотип Продокторов" [ref=e431]
+                - text: Продокторов
+              - paragraph [ref=e433]: "врач: Видлацкая А."
+            - generic [ref=e434]:
+              - paragraph [ref=e435]: 05.08.2025
+              - generic [ref=e436]:
+                - img [ref=e438]
+                - img [ref=e441]
+                - img [ref=e444]
+                - img [ref=e447]
+                - img [ref=e450]
+            - generic [ref=e452]:
+              - link "Пациент +7 916 42XXXXX" [ref=e453] [cursor=pointer]:
+                - /url: https://prodoctorov.ru/moskva/vrach/1050034-vidlackaya/otzivi/#otzivi
+              - paragraph [ref=e455]:
+                - text: Была на профилактическом приёме с сыном. Доктор рассказала, что проблем нет, и пригласила на прием через год. Была вежлива и внимательна, всё подробно объяснила и расписала рекомендации. В клинике чисто, администраторы приветливы.
+                - text: Понравилось
+                - text: Понравилась доброжелательность доктора.
+            - link "Прием детского офтальмолога в Москве" [ref=e458] [cursor=pointer]:
+              - /url: http://localhost:8888/zrenie.clinic-7/public/priem-vraca-oftalmologa
+          - generic [ref=e461]:
+            - generic [ref=e462]:
+              - generic [ref=e463]:
+                - img "Логотип СберЗдоровье" [ref=e465]
+                - text: СберЗдоровье
+              - paragraph [ref=e467]: "врач: Видлацкая А."
+            - generic [ref=e468]:
+              - paragraph [ref=e469]: 04.08.2025
+              - generic [ref=e470]:
+                - img [ref=e472]
+                - img [ref=e475]
+                - img [ref=e478]
+                - img [ref=e481]
+                - img [ref=e484]
+            - generic [ref=e486]:
+              - link "Валентин" [ref=e487] [cursor=pointer]:
+                - /url: https://docdoc.ru/doctor/Vidlatskaya_Anastasiya
+              - paragraph [ref=e489]: Врач провела осмотр, который мне в жизни никто не проводил. Советы она дала. Видлацкая Анастасия Дмитриевна — добродушная и отзывчивая. На любые вопросы отвечает. Человек с большой буквы.
+            - link "Прием детского офтальмолога в Москве" [ref=e492] [cursor=pointer]:
+              - /url: http://localhost:8888/zrenie.clinic-7/public/priem-vraca-oftalmologa
+          - generic [ref=e495]:
+            - generic [ref=e497]:
+              - img "Логотип Яндекс отзывы" [ref=e499]
+              - text: Яндекс отзывы
+            - generic [ref=e500]:
+              - paragraph [ref=e501]: 26.07.2025
+              - generic [ref=e502]:
+                - img [ref=e504]
+                - img [ref=e507]
+                - img [ref=e510]
+                - img [ref=e513]
+                - img [ref=e516]
+            - generic [ref=e518]:
+              - link "Юлия Никитина" [ref=e519] [cursor=pointer]:
+                - /url: https://yandex.ru/maps/org/134457918290/reviews?reviews%5BpublicId%5D=fraav9djxq7epqrvkf85a1jrr0&utm_source=review
+              - paragraph [ref=e521]: Очень приветливый персонал. Хорошие оборудование, тщательно проверяют зрение. Врач после осмотра все рассказывает и объясняет. Визуализация терапия дала результат, очень благодарна всем кото занимался с моей дочерью.
+            - 'link "Визуальная терапия: современные методы восстановления зрения" [ref=e524] [cursor=pointer]':
+              - /url: http://localhost:8888/zrenie.clinic-7/public/vizualnaja-terapija-dlja-glaz
+          - generic [ref=e527]:
+            - generic [ref=e529]:
+              - img "Логотип Яндекс отзывы" [ref=e531]
+              - text: Яндекс отзывы
+            - generic [ref=e532]:
+              - paragraph [ref=e533]: 18.07.2025
+              - generic [ref=e534]:
+                - img [ref=e536]
+                - img [ref=e539]
+                - img [ref=e542]
+                - img [ref=e545]
+                - img [ref=e548]
+            - generic [ref=e550]:
+              - link "Ольга" [ref=e551] [cursor=pointer]:
+                - /url: https://yandex.ru/maps/org/134457918290/reviews?reviews%5BpublicId%5D=ma9ed1w8g0bhgwe10n938vet6c&si=g4acem6w7w91vbt97u64qeb370&utm_source=review
+              - paragraph [ref=e553]: Хорошее, место. Замечательное и очень внимательное отношение к деткам. Весь персонал клиники мега позитивный. Мы пришли сюда 2 года назад решить проблему косоглазия. По прошествии этого времени точно могу сказать, что терапия и очки были подобраны верно, глазки стали смотреть прямо. Большое вам СПАСИБО!
+            - generic [ref=e554]:
+              - link "Подбор очков для зрения ребенку" [ref=e556] [cursor=pointer]:
+                - /url: http://localhost:8888/zrenie.clinic-7/public/podbor-ochkov-rebenku
+              - link "Лечение косоглазия" [ref=e558] [cursor=pointer]:
+                - /url: http://localhost:8888/zrenie.clinic-7/public/lecenie-kosoglaziia
+          - generic [ref=e561]:
+            - generic [ref=e562]:
+              - generic [ref=e563]:
+                - img "Логотип Продокторов" [ref=e565]
+                - text: Продокторов
+              - paragraph [ref=e567]: "врач: Вершинина Н."
+            - generic [ref=e568]:
+              - paragraph [ref=e569]: 14.07.2025
+              - generic [ref=e570]:
+                - img [ref=e572]
+                - img [ref=e575]
+                - img [ref=e578]
+                - img [ref=e581]
+                - img [ref=e584]
+            - generic [ref=e586]:
+              - link "Пациент +7 916 63XXXXX" [ref=e587] [cursor=pointer]:
+                - /url: https://prodoctorov.ru/moskva/vrach/171575-snadina/otzivi/#otzivi
+              - paragraph [ref=e589]: Были на приеме с дочкой, 4 года. В городской поликлинике поставили возможную дальнозоркость, ношение очков. Пришли подтвердить или опровергнуть диагноз. Врач внимательно провела диагностику зрения, потом закапала капли и сказала, что все в пределах нормы. На наши опасения по поводу предыдущего осмотра предложила закапать еще раз для еще большей точности. Повторный осмотр показал снова норму. Доктор все объяснила, дала рекомендации по поводу капель в случае воспаления глаза, которое у нас было на фоне заложенности носа, и мы счастливые ушли домой.
+            - link "Прием детского офтальмолога в Москве" [ref=e592] [cursor=pointer]:
+              - /url: http://localhost:8888/zrenie.clinic-7/public/priem-vraca-oftalmologa
+          - generic [ref=e595]:
+            - generic [ref=e596]:
+              - generic [ref=e597]:
+                - img "Логотип Продокторов" [ref=e599]
+                - text: Продокторов
+              - paragraph [ref=e601]: "врач: Видлацкая А."
+            - generic [ref=e602]:
+              - paragraph [ref=e603]: 09.07.2025
+              - generic [ref=e604]:
+                - img [ref=e606]
+                - img [ref=e609]
+                - img [ref=e612]
+                - img [ref=e615]
+                - img [ref=e618]
+            - generic [ref=e620]:
+              - link "Пациент +7 903 70XXXXX" [ref=e621] [cursor=pointer]:
+                - /url: https://prodoctorov.ru/moskva/vrach/599226-bryazgina/#otzivi
+              - paragraph [ref=e623]: Наблюдаемся более 2 лет. Дочке 10 лет, ухудшилось зрение. Обратились в клинику "Мама, я вижу". Анастасия Дмитриевна подобрала линзы, сначала дневные, после и ночные. Зрение улучшилось. Дочка занимается чир спортом. Днем ходит без очков. Ночью лечебные линзы. Постоянное наблюдение. За год зрение значительно улучшилось. Отличная современная аппаратура в клинике. Рекомендую врача знакомым. Сама, по рекомендации Анастасии Дмитриевны, ношу очки прогрессивные, тонированные. Очень удобны на работе, за рулем, в солнечную погоду. Я привела маму, 75 лет, на прием. Осложнения после операции на глаз. Внимательное обследование. Получила квалифицированную помощь, лечение, купила очки по доступной цене. Прием всегда радушный. Классный специалист. Знающий свое дело врач. Лечение помогает. Анастасия Дмитриевна - чудесный, опытный, прекрасный, ответственный врач. Я, мама, дети очень любим приходить на прием к врачу.
+            - generic [ref=e624]:
+              - link "Подбор ночных контактных линз ребенку" [ref=e626] [cursor=pointer]:
+                - /url: http://localhost:8888/zrenie.clinic-7/public/podbor-nochnyh-linz-rebenku
+              - link "Прием детского офтальмолога в Москве" [ref=e628] [cursor=pointer]:
+                - /url: http://localhost:8888/zrenie.clinic-7/public/priem-vraca-oftalmologa
+          - generic [ref=e631]:
+            - generic [ref=e633]:
+              - img "Логотип Яндекс отзывы" [ref=e635]
+              - text: Яндекс отзывы
+            - generic [ref=e636]:
+              - paragraph [ref=e637]: 20.06.2025
+              - generic [ref=e638]:
+                - img [ref=e640]
+                - img [ref=e643]
+                - img [ref=e646]
+                - img [ref=e649]
+                - img [ref=e652]
+            - generic [ref=e654]:
+              - link "Лилия Г." [ref=e655] [cursor=pointer]:
+                - /url: https://yandex.ru/maps/org/134457918290/reviews?reviews%5BpublicId%5D=kkf044va5zgqua29exr630w880&utm_source=review
+              - paragraph [ref=e657]: Очень довольны подходом врача, всё доступно объяснили нам. Спасибо большое, рекомендую!!! Главное ребёнк прислушался к рекомендации и сделал вывод,что нужно беречь своё здоровье!!!
+            - link "Прием детского офтальмолога в Москве" [ref=e660] [cursor=pointer]:
+              - /url: http://localhost:8888/zrenie.clinic-7/public/priem-vraca-oftalmologa
+        - generic [ref=e662]:
+          - img [ref=e664] [cursor=pointer]
+          - img [ref=e667] [cursor=pointer]
+      - link "Смотреть все отзывы" [ref=e683] [cursor=pointer]:
+        - /url: http://localhost:8888/zrenie.clinic-7/public/reviews
+    - generic [ref=e685]:
+      - heading "Наши специалисты" [level=2] [ref=e687]
+      - generic [ref=e689]:
+        - generic [ref=e691]:
+          - generic [ref=e693]:
+            - generic [ref=e694]:
+              - generic [ref=e695]:
+                - generic [ref=e696]:
+                  - generic [ref=e697]:
+                    - img [ref=e698]
+                    - img [ref=e700]
+                    - img [ref=e702]
+                    - img [ref=e704]
+                    - img [ref=e706]
+                  - paragraph [ref=e708]: 100% пациентов рекомендуют врача
+                - link "Карточка врача" [ref=e709] [cursor=pointer]:
+                  - /url: http://localhost:8888/zrenie.clinic-7/public/doctors/3
+                  - img [ref=e710]
+                  - paragraph [ref=e713]: Карточка врача
+              - paragraph [ref=e714]:
+                - text: Видлацкая
+                - text: Анастасия Дмитриевна
+            - generic [ref=e715]:
+              - list [ref=e716]:
+                - listitem [ref=e717]:
+                  - paragraph [ref=e718]: "Специальность:"
+                  - paragraph [ref=e719]: Врач-офтальмолог
+                - listitem [ref=e720]:
+                  - paragraph [ref=e721]: "Ведёт приём:"
+                  - paragraph [ref=e722]: Взрослые, дети с 3 лет
+                - listitem [ref=e723]:
+                  - paragraph [ref=e724]: "Врачебный стаж:"
+                  - paragraph [ref=e725]: 5 лет
+              - img "Видлацкая Анастасия Дмитриевна фото" [ref=e727]
+            - generic [ref=e728]:
+              - button "Записаться" [ref=e729] [cursor=pointer]
+              - button "видео-визитка" [ref=e730] [cursor=pointer]:
+                - img [ref=e732]
+                - generic [ref=e734]: видео-визитка
+          - generic [ref=e736]:
+            - generic [ref=e737]:
+              - generic [ref=e738]:
+                - generic [ref=e739]:
+                  - generic [ref=e740]:
+                    - img [ref=e741]
+                    - img [ref=e743]
+                    - img [ref=e745]
+                    - img [ref=e747]
+                    - img [ref=e749]
+                  - paragraph [ref=e751]: 100% пациентов рекомендуют врача
+                - link "Карточка врача" [ref=e752] [cursor=pointer]:
+                  - /url: http://localhost:8888/zrenie.clinic-7/public/doctors/6
+                  - img [ref=e753]
+                  - paragraph [ref=e756]: Карточка врача
+              - paragraph [ref=e757]:
+                - text: Вершинина
+                - text: Наталия Сергеевна
+            - generic [ref=e758]:
+              - list [ref=e759]:
+                - listitem [ref=e760]:
+                  - paragraph [ref=e761]: "Специальность:"
+                  - paragraph [ref=e762]: Врач-офтальмолог
+                - listitem [ref=e763]:
+                  - paragraph [ref=e764]: "Ведёт приём:"
+                  - paragraph [ref=e765]: Взрослые, дети 0+
+                - listitem [ref=e766]:
+                  - paragraph [ref=e767]: "Врачебный стаж:"
+                  - paragraph [ref=e768]: 23 года
+              - img "Вершинина Наталия Сергеевна фото" [ref=e770]
+            - generic [ref=e771]:
+              - button "Записаться" [ref=e772] [cursor=pointer]
+              - generic [ref=e773]:
+                - img [ref=e775]
+                - generic [ref=e778]: видео-визитка
+          - generic [ref=e780]:
+            - generic [ref=e781]:
+              - generic [ref=e782]:
+                - generic [ref=e783]:
+                  - generic [ref=e784]:
+                    - img [ref=e785]
+                    - img [ref=e787]
+                    - img [ref=e789]
+                    - img [ref=e791]
+                    - img [ref=e793]
+                  - paragraph [ref=e795]: 100% пациентов рекомендуют врача
+                - link "Карточка врача" [ref=e796] [cursor=pointer]:
+                  - /url: http://localhost:8888/zrenie.clinic-7/public/doctors/10
+                  - img [ref=e797]
+                  - paragraph [ref=e800]: Карточка врача
+              - paragraph [ref=e801]:
+                - text: Левочкина
+                - text: Екатерина Владимировна
+            - generic [ref=e802]:
+              - list [ref=e803]:
+                - listitem [ref=e804]:
+                  - paragraph [ref=e805]: "Специальность:"
+                  - paragraph [ref=e806]: Врач-офтальмолог
+                - listitem [ref=e807]:
+                  - paragraph [ref=e808]: "Ведёт приём:"
+                  - paragraph [ref=e809]: Взрослые, дети 0+
+                - listitem [ref=e810]:
+                  - paragraph [ref=e811]: "Врачебный стаж:"
+                  - paragraph [ref=e812]: 20 лет
+              - img "Левочкина Екатерина Владимировна фото" [ref=e814]
+            - generic [ref=e815]:
+              - button "Записаться" [ref=e816] [cursor=pointer]
+              - generic [ref=e817]:
+                - img [ref=e819]
+                - generic [ref=e822]: видео-визитка
+          - generic [ref=e824]:
+            - generic [ref=e825]:
+              - generic [ref=e826]:
+                - generic [ref=e827]:
+                  - generic [ref=e828]:
+                    - img [ref=e829]
+                    - img [ref=e831]
+                    - img [ref=e833]
+                    - img [ref=e835]
+                    - img [ref=e837]
+                  - paragraph [ref=e839]: 100% пациентов рекомендуют врача
+                - link "Карточка врача" [ref=e840] [cursor=pointer]:
+                  - /url: http://localhost:8888/zrenie.clinic-7/public/doctors/11
+                  - img [ref=e841]
+                  - paragraph [ref=e844]: Карточка врача
+              - paragraph [ref=e845]:
+                - text: Казакова
+                - text: Алеся Сергеевна
+            - generic [ref=e846]:
+              - list [ref=e847]:
+                - listitem [ref=e848]:
+                  - paragraph [ref=e849]: "Специальность:"
+                  - paragraph [ref=e850]: Врач-офтальмолог
+                - listitem [ref=e851]:
+                  - paragraph [ref=e852]: "Ведёт приём:"
+                  - paragraph [ref=e853]: Взрослые, дети с 3 лет
+                - listitem [ref=e854]:
+                  - paragraph [ref=e855]: "Врачебный стаж:"
+                  - paragraph [ref=e856]: 7 лет
+              - img "Казакова Алеся Сергеевна фото" [ref=e858]
+            - generic [ref=e859]:
+              - button "Записаться" [ref=e860] [cursor=pointer]
+              - generic [ref=e861]:
+                - img [ref=e863]
+                - generic [ref=e866]: видео-визитка
+          - generic [ref=e868]:
+            - generic [ref=e869]:
+              - generic [ref=e870]:
+                - generic [ref=e871]:
+                  - generic [ref=e872]:
+                    - img [ref=e873]
+                    - img [ref=e875]
+                    - img [ref=e877]
+                    - img [ref=e879]
+                    - img [ref=e881]
+                  - paragraph [ref=e883]: 100% пациентов рекомендуют врача
+                - link "Карточка врача" [ref=e884] [cursor=pointer]:
+                  - /url: http://localhost:8888/zrenie.clinic-7/public/doctors/38
+                  - img [ref=e885]
+                  - paragraph [ref=e888]: Карточка врача
+              - paragraph [ref=e889]:
+                - text: Жердева
+                - text: Елизавета Александровна
+            - list [ref=e891]:
+              - listitem [ref=e892]:
+                - paragraph [ref=e893]: "Специальность:"
+                - paragraph [ref=e894]: Специалист
+              - listitem [ref=e895]:
+                - paragraph [ref=e896]: "Ведёт приём:"
+                - paragraph [ref=e897]: Взрослые, дети с 5 лет
+              - listitem [ref=e898]:
+                - paragraph [ref=e899]: "Врачебный стаж:"
+                - paragraph
+            - generic [ref=e900]:
+              - button "Записаться" [ref=e901] [cursor=pointer]
+              - generic [ref=e902]:
+                - img [ref=e904]
+                - generic [ref=e907]: видео-визитка
+          - generic [ref=e909]:
+            - generic [ref=e910]:
+              - generic [ref=e911]:
+                - generic [ref=e912]:
+                  - generic [ref=e913]:
+                    - img [ref=e914]
+                    - img [ref=e916]
+                    - img [ref=e918]
+                    - img [ref=e920]
+                    - img [ref=e922]
+                  - paragraph [ref=e924]: 100% пациентов рекомендуют врача
+                - link "Карточка врача" [ref=e925] [cursor=pointer]:
+                  - /url: http://localhost:8888/zrenie.clinic-7/public/doctors/49
+                  - img [ref=e926]
+                  - paragraph [ref=e929]: Карточка врача
+              - paragraph [ref=e930]:
+                - text: Растопчина
+                - text: Антонина Александровна
+            - list [ref=e932]:
+              - listitem [ref=e933]:
+                - paragraph [ref=e934]: "Специальность:"
+                - paragraph [ref=e935]: Специалист
+              - listitem [ref=e936]:
+                - paragraph [ref=e937]: "Ведёт приём:"
+                - paragraph [ref=e938]: Взрослые, дети c 6 лет
+              - listitem [ref=e939]:
+                - paragraph [ref=e940]: "Врачебный стаж:"
+                - paragraph
+            - generic [ref=e941]:
+              - button "Записаться" [ref=e942] [cursor=pointer]
+              - generic [ref=e943]:
+                - img [ref=e945]
+                - generic [ref=e948]: видео-визитка
+          - generic [ref=e950]:
+            - generic [ref=e951]:
+              - generic [ref=e952]:
+                - generic [ref=e953]:
+                  - generic [ref=e954]:
+                    - img [ref=e955]
+                    - img [ref=e957]
+                    - img [ref=e959]
+                    - img [ref=e961]
+                    - img [ref=e963]
+                  - paragraph [ref=e965]: 100% пациентов рекомендуют врача
+                - link "Карточка врача" [ref=e966] [cursor=pointer]:
+                  - /url: http://localhost:8888/zrenie.clinic-7/public/doctors/52
+                  - img [ref=e967]
+                  - paragraph [ref=e970]: Карточка врача
+              - paragraph [ref=e971]:
+                - text: Тропина
+                - text: Тамара Андреевна
+            - list [ref=e973]:
+              - listitem [ref=e974]:
+                - paragraph [ref=e975]: "Специальность:"
+                - paragraph [ref=e976]: Специалист
+              - listitem [ref=e977]:
+                - paragraph [ref=e978]: "Ведёт приём:"
+                - paragraph [ref=e979]: Взрослые, дети с 1 года
+              - listitem [ref=e980]:
+                - paragraph [ref=e981]: "Врачебный стаж:"
+                - paragraph
+            - generic [ref=e982]:
+              - button "Записаться" [ref=e983] [cursor=pointer]
+              - generic [ref=e984]:
+                - img [ref=e986]
+                - generic [ref=e989]: видео-визитка
+        - link "Все врачи" [ref=e990] [cursor=pointer]:
+          - /url: http://localhost:8888/zrenie.clinic-7/public/doctors
+        - generic [ref=e992]:
+          - img [ref=e994] [cursor=pointer]
+          - img [ref=e997] [cursor=pointer]
+    - generic [ref=e1002]:
+      - img "Иллюстрация папки с медицинскими документами" [ref=e1004]
+      - generic [ref=e1005]:
+        - generic [ref=e1006]:
+          - heading "Лицензии и официальные документы" [level=2] [ref=e1007]
+          - paragraph [ref=e1008]: Мы работаем строго в рамках действующего законодательства и на основании официальных медицинских лицензий, выданных Минздравом РФ.
+        - link "Посмотреть лицензии" [ref=e1010] [cursor=pointer]:
+          - /url: /licenzii-i-iuridiceskaia-informaciia
+    - generic [ref=e1011]:
+      - heading "Блог" [level=2] [ref=e1013]
+      - generic [ref=e1014]:
+        - generic [ref=e1015]:
+          - generic [ref=e1017]:
+            - generic [ref=e1019]:
+              - generic [ref=e1020]:
+                - 'link "«Гаджеты vs Зрение»: как снизить вред для глаз школьника фото" [ref=e1021] [cursor=pointer]':
+                  - /url: http://localhost:8888/zrenie.clinic-7/public/stati/gadzety-vs-zrenie-kak-snizit-vred-dlia-glaz-skolnika
+                  - 'img "«Гаджеты vs Зрение»: как снизить вред для глаз школьника фото" [ref=e1022]'
+                - generic [ref=e1023]:
+                  - link "Близорукость" [ref=e1024] [cursor=pointer]:
+                    - /url: http://localhost:8888/zrenie.clinic-7/public/tags/blizorukost
+                  - link "Ночные линзы" [ref=e1025] [cursor=pointer]:
+                    - /url: http://localhost:8888/zrenie.clinic-7/public/tags/nocnye-linzy
+                  - link "Очки" [ref=e1026] [cursor=pointer]:
+                    - /url: http://localhost:8888/zrenie.clinic-7/public/tags/ocki
+                  - link "Линзы" [ref=e1027] [cursor=pointer]:
+                    - /url: http://localhost:8888/zrenie.clinic-7/public/tags/linzy
+              - paragraph [ref=e1028]: 09.06.2025
+              - separator [ref=e1029]
+              - 'link "«Гаджеты vs Зрение»: как снизить вред для глаз школьника" [ref=e1030] [cursor=pointer]':
+                - /url: http://localhost:8888/zrenie.clinic-7/public/stati/gadzety-vs-zrenie-kak-snizit-vred-dlia-glaz-skolnika
+              - paragraph [ref=e1032]:
+                - text: Современные дети сталкиваются с
+                - strong [ref=e1033]: экранными устройствами
+                - text: уже ...
+            - generic [ref=e1035]:
+              - generic [ref=e1036]:
+                - 'link "Наследственная близорукость: можно ли избежать? фото" [ref=e1037] [cursor=pointer]':
+                  - /url: http://localhost:8888/zrenie.clinic-7/public/stati/nasledstvennaia-blizorukost-mozno-li-izbezat
+                  - 'img "Наследственная близорукость: можно ли избежать? фото" [ref=e1038]'
+                - link "Близорукость" [ref=e1040] [cursor=pointer]:
+                  - /url: http://localhost:8888/zrenie.clinic-7/public/tags/blizorukost
+              - paragraph [ref=e1041]: 14.07.2025
+              - separator [ref=e1042]
+              - 'link "Наследственная близорукость: можно ли избежать?" [ref=e1043] [cursor=pointer]':
+                - /url: http://localhost:8888/zrenie.clinic-7/public/stati/nasledstvennaia-blizorukost-mozno-li-izbezat
+              - paragraph [ref=e1045]: Близорукость — это офтальмологическое заболевание, при котором человек видит ...
+            - generic [ref=e1047]:
+              - generic [ref=e1048]:
+                - 'link "Очки vs Линзы для детей: как выбрать и не навредить? фото" [ref=e1049] [cursor=pointer]':
+                  - /url: http://localhost:8888/zrenie.clinic-7/public/stati/ocki-vs-linzy-dlia-detei-kak-vybrat-i-ne-navredit
+                  - 'img "Очки vs Линзы для детей: как выбрать и не навредить? фото" [ref=e1050]'
+                - generic [ref=e1051]:
+                  - link "Очки" [ref=e1052] [cursor=pointer]:
+                    - /url: http://localhost:8888/zrenie.clinic-7/public/tags/ocki
+                  - link "Линзы" [ref=e1053] [cursor=pointer]:
+                    - /url: http://localhost:8888/zrenie.clinic-7/public/tags/linzy
+              - paragraph [ref=e1054]: 14.07.2025
+              - separator [ref=e1055]
+              - 'link "Очки vs Линзы для детей: как выбрать и не навредить?" [ref=e1056] [cursor=pointer]':
+                - /url: http://localhost:8888/zrenie.clinic-7/public/stati/ocki-vs-linzy-dlia-detei-kak-vybrat-i-ne-navredit
+              - paragraph [ref=e1058]: Сегодня многие родители сталкиваются с необходимостью коррекции зрения у ...
+            - generic [ref=e1060]:
+              - generic [ref=e1061]:
+                - 'link "Снимите, пока не поздно: когда нельзя носить линзы фото" [ref=e1062] [cursor=pointer]':
+                  - /url: http://localhost:8888/zrenie.clinic-7/public/stati/snimite-poka-ne-pozdno-kogda-nelzia-nosit-linzy
+                  - 'img "Снимите, пока не поздно: когда нельзя носить линзы фото" [ref=e1063]'
+                - link "Линзы" [ref=e1065] [cursor=pointer]:
+                  - /url: http://localhost:8888/zrenie.clinic-7/public/tags/linzy
+              - paragraph [ref=e1066]: 14.07.2025
+              - separator [ref=e1067]
+              - 'link "Снимите, пока не поздно: когда нельзя носить линзы" [ref=e1068] [cursor=pointer]':
+                - /url: http://localhost:8888/zrenie.clinic-7/public/stati/snimite-poka-ne-pozdno-kogda-nelzia-nosit-linzy
+              - paragraph [ref=e1070]: Контактные линзы давно стали удобной альтернативой очкам. Они дарят свободу ...
+            - generic [ref=e1072]:
+              - generic [ref=e1073]:
+                - link "Жесткие ночные линзы для детей фото" [ref=e1074] [cursor=pointer]:
+                  - /url: http://localhost:8888/zrenie.clinic-7/public/stati/zestkie-nocnye-linzy-dlia-detei
+                  - img "Жесткие ночные линзы для детей фото" [ref=e1075]
+                - generic [ref=e1076]:
+                  - link "Близорукость" [ref=e1077] [cursor=pointer]:
+                    - /url: http://localhost:8888/zrenie.clinic-7/public/tags/blizorukost
+                  - link "Ночные линзы" [ref=e1078] [cursor=pointer]:
+                    - /url: http://localhost:8888/zrenie.clinic-7/public/tags/nocnye-linzy
+              - paragraph [ref=e1079]: 06.08.2025
+              - separator [ref=e1080]
+              - link "Жесткие ночные линзы для детей" [ref=e1081] [cursor=pointer]:
+                - /url: http://localhost:8888/zrenie.clinic-7/public/stati/zestkie-nocnye-linzy-dlia-detei
+              - paragraph [ref=e1083]: Проблемы, связанные с ухудшениемя зрения у детей встречаются все чаще. ...
+            - generic [ref=e1085]:
+              - generic [ref=e1086]:
+                - 'link "Зрение 1: что это значит по таблице у детей и взрослых фото" [ref=e1087] [cursor=pointer]':
+                  - /url: http://localhost:8888/zrenie.clinic-7/public/stati/zrenie-1-chto-ehto-znachit-po-tablice-u-detej-i-vzroslykh
+                  - 'img "Зрение 1: что это значит по таблице у детей и взрослых фото" [ref=e1088]'
+                - generic [ref=e1089]:
+                  - link "Близорукость" [ref=e1090] [cursor=pointer]:
+                    - /url: http://localhost:8888/zrenie.clinic-7/public/tags/blizorukost
+                  - link "Дальнозоркость" [ref=e1091] [cursor=pointer]:
+                    - /url: http://localhost:8888/zrenie.clinic-7/public/tags/dalnozorkost
+              - paragraph [ref=e1092]: 11.11.2025
+              - separator [ref=e1093]
+              - 'link "Зрение 1: что это значит по таблице у детей и взрослых" [ref=e1094] [cursor=pointer]':
+                - /url: http://localhost:8888/zrenie.clinic-7/public/stati/zrenie-1-chto-ehto-znachit-po-tablice-u-detej-i-vzroslykh
+              - paragraph [ref=e1096]: "Когда человек выходит от офтальмолога и слышит: «У вас зрение 1.0», внутри ..."
+            - generic [ref=e1098]:
+              - generic [ref=e1099]:
+                - 'link "Монокулярное зрение: диагностика, лечение и профилактика фото" [ref=e1100] [cursor=pointer]':
+                  - /url: http://localhost:8888/zrenie.clinic-7/public/stati/monokulyarnoe-zrenie-diagnostika-lechenie-i-profilaktika
+                  - 'img "Монокулярное зрение: диагностика, лечение и профилактика фото" [ref=e1101]'
+                - link "Косоглазие" [ref=e1103] [cursor=pointer]:
+                  - /url: http://localhost:8888/zrenie.clinic-7/public/tags/kosoglazie
+              - paragraph [ref=e1104]: 11.11.2025
+              - separator [ref=e1105]
+              - 'link "Монокулярное зрение: диагностика, лечение и профилактика" [ref=e1106] [cursor=pointer]':
+                - /url: http://localhost:8888/zrenie.clinic-7/public/stati/monokulyarnoe-zrenie-diagnostika-lechenie-i-profilaktika
+              - paragraph [ref=e1108]: Монокулярное зрение — это способность воспринимать окружающий мир лишь одним ...
+            - generic [ref=e1110]:
+              - generic [ref=e1111]:
+                - 'link "Аддидация: определение, принцип действия, типы фото" [ref=e1112] [cursor=pointer]':
+                  - /url: http://localhost:8888/zrenie.clinic-7/public/stati/addidaciia-opredelenie-princip-deistviia-tipy
+                  - 'img "Аддидация: определение, принцип действия, типы фото" [ref=e1113]'
+                - generic [ref=e1114]:
+                  - link "Очки" [ref=e1115] [cursor=pointer]:
+                    - /url: http://localhost:8888/zrenie.clinic-7/public/tags/ocki
+                  - link "Линзы" [ref=e1116] [cursor=pointer]:
+                    - /url: http://localhost:8888/zrenie.clinic-7/public/tags/linzy
+              - paragraph [ref=e1117]: 24.11.2025
+              - separator [ref=e1118]
+              - 'link "Аддидация: определение, принцип действия, типы" [ref=e1119] [cursor=pointer]':
+                - /url: http://localhost:8888/zrenie.clinic-7/public/stati/addidaciia-opredelenie-princip-deistviia-tipy
+              - paragraph [ref=e1121]: С возрастом наши глаза теряют способность фокусироваться на близком ...
+            - generic [ref=e1123]:
+              - generic [ref=e1124]:
+                - link "Что значат плюс и минус в очках фото" [ref=e1125] [cursor=pointer]:
+                  - /url: http://localhost:8888/zrenie.clinic-7/public/stati/cto-znacat-plius-i-minus-v-ockax
+                  - img "Что значат плюс и минус в очках фото" [ref=e1126]
+                - link "Очки" [ref=e1128] [cursor=pointer]:
+                  - /url: http://localhost:8888/zrenie.clinic-7/public/tags/ocki
+              - paragraph [ref=e1129]: 24.11.2025
+              - separator [ref=e1130]
+              - link "Что значат плюс и минус в очках" [ref=e1131] [cursor=pointer]:
+                - /url: http://localhost:8888/zrenie.clinic-7/public/stati/cto-znacat-plius-i-minus-v-ockax
+              - paragraph [ref=e1133]: Когда офтальмолог выписывает рецепт на очки или контактные линзы, в нем ...
+            - generic [ref=e1135]:
+              - generic [ref=e1136]:
+                - 'link "Зрение минус 5: в чем проблема и как исправить фото" [ref=e1137] [cursor=pointer]':
+                  - /url: http://localhost:8888/zrenie.clinic-7/public/stati/zreniye-minus-5-chto-eto-i-kak-ispravit
+                  - 'img "Зрение минус 5: в чем проблема и как исправить фото" [ref=e1138]'
+                - link "Близорукость" [ref=e1140] [cursor=pointer]:
+                  - /url: http://localhost:8888/zrenie.clinic-7/public/tags/blizorukost
+              - paragraph [ref=e1141]: 05.12.2025
+              - separator [ref=e1142]
+              - 'link "Зрение минус 5: в чем проблема и как исправить" [ref=e1143] [cursor=pointer]':
+                - /url: http://localhost:8888/zrenie.clinic-7/public/stati/zreniye-minus-5-chto-eto-i-kak-ispravit
+              - paragraph [ref=e1145]: Близорукость у детей — частая причина обращения к офтальмологу. Когда ...
+            - generic [ref=e1147]:
+              - generic [ref=e1148]:
+                - 'link "Как выбрать очки для зрения: правила подбора и ношения для детей и взрослых фото" [ref=e1149] [cursor=pointer]':
+                  - /url: http://localhost:8888/zrenie.clinic-7/public/stati/kak-vybrat-ochki-dlya-zreniya
+                  - 'img "Как выбрать очки для зрения: правила подбора и ношения для детей и взрослых фото" [ref=e1150]'
+                - link "Очки" [ref=e1152] [cursor=pointer]:
+                  - /url: http://localhost:8888/zrenie.clinic-7/public/tags/ocki
+              - paragraph [ref=e1153]: 08.12.2025
+              - separator [ref=e1154]
+              - 'link "Как выбрать очки для зрения: правила подбора и ношения для детей и взрослых" [ref=e1155] [cursor=pointer]':
+                - /url: http://localhost:8888/zrenie.clinic-7/public/stati/kak-vybrat-ochki-dlya-zreniya
+              - paragraph [ref=e1157]: Когда родители замечают, что их ребенок щурится или не различает предметы, ...
+            - generic [ref=e1159]:
+              - generic [ref=e1160]:
+                - 'link "Что такое оптическая система глаза: функции и возможности фото" [ref=e1161] [cursor=pointer]':
+                  - /url: http://localhost:8888/zrenie.clinic-7/public/stati/chto-takoye-opticheskaya-sistema-glaza
+                  - 'img "Что такое оптическая система глаза: функции и возможности фото" [ref=e1162]'
+                - generic [ref=e1163]:
+                  - link "Близорукость" [ref=e1164] [cursor=pointer]:
+                    - /url: http://localhost:8888/zrenie.clinic-7/public/tags/blizorukost
+                  - link "Дальнозоркость" [ref=e1165] [cursor=pointer]:
+                    - /url: http://localhost:8888/zrenie.clinic-7/public/tags/dalnozorkost
+                  - link "Астигматизм" [ref=e1166] [cursor=pointer]:
+                    - /url: http://localhost:8888/zrenie.clinic-7/public/tags/astigmatizm
+              - paragraph [ref=e1167]: 08.12.2025
+              - separator [ref=e1168]
+              - 'link "Что такое оптическая система глаза: функции и возможности" [ref=e1169] [cursor=pointer]':
+                - /url: http://localhost:8888/zrenie.clinic-7/public/stati/chto-takoye-opticheskaya-sistema-glaza
+              - paragraph [ref=e1171]: Оптическая система глаза — это сложнейший биологический механизм, который ...
+            - generic [ref=e1173]:
+              - generic [ref=e1174]:
+                - 'link "Мультифокальные линзы: особенности, преимущества, правила использования фото" [ref=e1175] [cursor=pointer]':
+                  - /url: http://localhost:8888/zrenie.clinic-7/public/stati/chto-takoye-multifokalnyye-linzy
+                  - 'img "Мультифокальные линзы: особенности, преимущества, правила использования фото" [ref=e1176]'
+                - generic [ref=e1177]:
+                  - link "Очки" [ref=e1178] [cursor=pointer]:
+                    - /url: http://localhost:8888/zrenie.clinic-7/public/tags/ocki
+                  - link "Линзы" [ref=e1179] [cursor=pointer]:
+                    - /url: http://localhost:8888/zrenie.clinic-7/public/tags/linzy
+              - paragraph [ref=e1180]: 11.12.2025
+              - separator [ref=e1181]
+              - 'link "Мультифокальные линзы: особенности, преимущества, правила использования" [ref=e1182] [cursor=pointer]':
+                - /url: http://localhost:8888/zrenie.clinic-7/public/stati/chto-takoye-multifokalnyye-linzy
+              - paragraph [ref=e1184]: "С возрастом многие люди замечают, что зрение начинает подводить: становится ..."
+            - generic [ref=e1186]:
+              - generic [ref=e1187]:
+                - 'link "Как вылечить миопию у детей: 3 шага к здоровому зрению фото" [ref=e1188] [cursor=pointer]':
+                  - /url: http://localhost:8888/zrenie.clinic-7/public/stati/miopiia
+                  - 'img "Как вылечить миопию у детей: 3 шага к здоровому зрению фото" [ref=e1189]'
+                - generic [ref=e1190]:
+                  - link "Близорукость" [ref=e1191] [cursor=pointer]:
+                    - /url: http://localhost:8888/zrenie.clinic-7/public/tags/blizorukost
+                  - link "Ночные линзы" [ref=e1192] [cursor=pointer]:
+                    - /url: http://localhost:8888/zrenie.clinic-7/public/tags/nocnye-linzy
+                  - link "Очки" [ref=e1193] [cursor=pointer]:
+                    - /url: http://localhost:8888/zrenie.clinic-7/public/tags/ocki
+                  - link "Линзы" [ref=e1194] [cursor=pointer]:
+                    - /url: http://localhost:8888/zrenie.clinic-7/public/tags/linzy
+              - paragraph [ref=e1195]: 30.11.2023
+              - separator [ref=e1196]
+              - 'link "Как вылечить миопию у детей: 3 шага к здоровому зрению" [ref=e1197] [cursor=pointer]':
+                - /url: http://localhost:8888/zrenie.clinic-7/public/stati/miopiia
+              - paragraph [ref=e1199]: Близорукость (миопия) у детей — это распространенное заболевание, которое ...
+            - generic [ref=e1201]:
+              - generic [ref=e1202]:
+                - 'link "Астигматизм у детей: причины, симптомы, лечение фото" [ref=e1203] [cursor=pointer]':
+                  - /url: http://localhost:8888/zrenie.clinic-7/public/stati/astigmatizm-u-detei
+                  - 'img "Астигматизм у детей: причины, симптомы, лечение фото" [ref=e1204]'
+                - link "Астигматизм" [ref=e1206] [cursor=pointer]:
+                  - /url: http://localhost:8888/zrenie.clinic-7/public/tags/astigmatizm
+              - paragraph [ref=e1207]: 15.12.2023
+              - separator [ref=e1208]
+              - 'link "Астигматизм у детей: причины, симптомы, лечение" [ref=e1209] [cursor=pointer]':
+                - /url: http://localhost:8888/zrenie.clinic-7/public/stati/astigmatizm-u-detei
+              - paragraph [ref=e1211]: Все чаще на приемах офтальмолога можно услышать слово- «астигматизм», ...
+            - generic [ref=e1213]:
+              - generic [ref=e1214]:
+                - 'link "Гиперметропия у детей: что это такое, причины, степени и эффективное лечение дальнозоркости фото" [ref=e1215] [cursor=pointer]':
+                  - /url: http://localhost:8888/zrenie.clinic-7/public/stati/lechenie-dalnozorkosti-u-detej
+                  - 'img "Гиперметропия у детей: что это такое, причины, степени и эффективное лечение дальнозоркости фото" [ref=e1216]'
+                - generic [ref=e1217]:
+                  - link "Дальнозоркость" [ref=e1218] [cursor=pointer]:
+                    - /url: http://localhost:8888/zrenie.clinic-7/public/tags/dalnozorkost
+                  - link "Ночные линзы" [ref=e1219] [cursor=pointer]:
+                    - /url: http://localhost:8888/zrenie.clinic-7/public/tags/nocnye-linzy
+                  - link "Очки" [ref=e1220] [cursor=pointer]:
+                    - /url: http://localhost:8888/zrenie.clinic-7/public/tags/ocki
+                  - link "Линзы" [ref=e1221] [cursor=pointer]:
+                    - /url: http://localhost:8888/zrenie.clinic-7/public/tags/linzy
+              - paragraph [ref=e1222]: 15.12.2023
+              - separator [ref=e1223]
+              - 'link "Гиперметропия у детей: что это такое, причины, степени и эффективное лечение дальнозоркости" [ref=e1224] [cursor=pointer]':
+                - /url: http://localhost:8888/zrenie.clinic-7/public/stati/lechenie-dalnozorkosti-u-detej
+              - paragraph [ref=e1226]: Гиперметропия у детей — это аномалия рефракции, при которой световые лучи ...
+            - generic [ref=e1228]:
+              - generic [ref=e1229]:
+                - 'link "Ленивый глаз у детей: симптомы проявления и методы лечения амблиопии фото" [ref=e1230] [cursor=pointer]':
+                  - /url: http://localhost:8888/zrenie.clinic-7/public/stati/ambliopiya-u-detei
+                  - 'img "Ленивый глаз у детей: симптомы проявления и методы лечения амблиопии фото" [ref=e1231]'
+                - link "Амблиопия" [ref=e1233] [cursor=pointer]:
+                  - /url: http://localhost:8888/zrenie.clinic-7/public/tags/ambliopiia
+              - paragraph [ref=e1234]: 15.12.2023
+              - separator [ref=e1235]
+              - 'link "Ленивый глаз у детей: симптомы проявления и методы лечения амблиопии" [ref=e1236] [cursor=pointer]':
+                - /url: http://localhost:8888/zrenie.clinic-7/public/stati/ambliopiya-u-detei
+              - paragraph [ref=e1238]: В мире педиатрической офтальмологии существует феномен, известный как ...
+            - generic [ref=e1240]:
+              - generic [ref=e1241]:
+                - link "Гиперметропический астигматизм у детей фото" [ref=e1242] [cursor=pointer]:
+                  - /url: http://localhost:8888/zrenie.clinic-7/public/stati/gipermetropicheskij-astigmatizm
+                  - img "Гиперметропический астигматизм у детей фото" [ref=e1243]
+                - link "Астигматизм" [ref=e1245] [cursor=pointer]:
+                  - /url: http://localhost:8888/zrenie.clinic-7/public/tags/astigmatizm
+              - paragraph [ref=e1246]: 22.12.2023
+              - separator [ref=e1247]
+              - link "Гиперметропический астигматизм у детей" [ref=e1248] [cursor=pointer]:
+                - /url: http://localhost:8888/zrenie.clinic-7/public/stati/gipermetropicheskij-astigmatizm
+              - paragraph [ref=e1250]: Гиперметропический астигматизм у детей – распространенное заболевание, ...
+            - generic [ref=e1252]:
+              - generic [ref=e1253]:
+                - link "Смешанный астигматизм у детей фото" [ref=e1254] [cursor=pointer]:
+                  - /url: http://localhost:8888/zrenie.clinic-7/public/stati/smeshannyj-astigmatizm
+                  - img "Смешанный астигматизм у детей фото" [ref=e1255]
+                - link "Астигматизм" [ref=e1257] [cursor=pointer]:
+                  - /url: http://localhost:8888/zrenie.clinic-7/public/tags/astigmatizm
+              - paragraph [ref=e1258]: 25.12.2023
+              - separator [ref=e1259]
+              - link "Смешанный астигматизм у детей" [ref=e1260] [cursor=pointer]:
+                - /url: http://localhost:8888/zrenie.clinic-7/public/stati/smeshannyj-astigmatizm
+              - paragraph [ref=e1262]: Смешанный астигматизм у детей – одна из самых сложных патологий зрительной ...
+            - generic [ref=e1264]:
+              - generic [ref=e1265]:
+                - link "Астигматизм у детей в 1 год фото" [ref=e1266] [cursor=pointer]:
+                  - /url: http://localhost:8888/zrenie.clinic-7/public/stati/astigmatizm-v-god
+                  - img "Астигматизм у детей в 1 год фото" [ref=e1267]
+                - link "Астигматизм" [ref=e1269] [cursor=pointer]:
+                  - /url: http://localhost:8888/zrenie.clinic-7/public/tags/astigmatizm
+              - paragraph [ref=e1270]: 25.12.2023
+              - separator [ref=e1271]
+              - link "Астигматизм у детей в 1 год" [ref=e1272] [cursor=pointer]:
+                - /url: http://localhost:8888/zrenie.clinic-7/public/stati/astigmatizm-v-god
+              - paragraph [ref=e1274]: Одно из распространенных заболеваний зрительной системы – астигматизм. ...
+            - generic [ref=e1276]:
+              - generic [ref=e1277]:
+                - 'link "Что делать, если у ребёнка растёт «минус»: современные методы контроля миопии фото" [ref=e1278] [cursor=pointer]':
+                  - /url: http://localhost:8888/zrenie.clinic-7/public/stati/cto-delat-esli-u-rebenka-rastet-minus-sovremennye-metody-kontrolia-miopii
+                  - 'img "Что делать, если у ребёнка растёт «минус»: современные методы контроля миопии фото" [ref=e1279]'
+                - generic [ref=e1280]:
+                  - link "Близорукость" [ref=e1281] [cursor=pointer]:
+                    - /url: http://localhost:8888/zrenie.clinic-7/public/tags/blizorukost
+                  - link "Ночные линзы" [ref=e1282] [cursor=pointer]:
+                    - /url: http://localhost:8888/zrenie.clinic-7/public/tags/nocnye-linzy
+                  - link "Очки" [ref=e1283] [cursor=pointer]:
+                    - /url: http://localhost:8888/zrenie.clinic-7/public/tags/ocki
+                  - link "Линзы" [ref=e1284] [cursor=pointer]:
+                    - /url: http://localhost:8888/zrenie.clinic-7/public/tags/linzy
+              - paragraph [ref=e1285]: 05.06.2025
+              - separator [ref=e1286]
+              - 'link "Что делать, если у ребёнка растёт «минус»: современные методы контроля миопии" [ref=e1287] [cursor=pointer]':
+                - /url: http://localhost:8888/zrenie.clinic-7/public/stati/cto-delat-esli-u-rebenka-rastet-minus-sovremennye-metody-kontrolia-miopii
+              - paragraph [ref=e1289]:
+                - strong [ref=e1290]: Близорукость у детей
+                - text: становится всё более распространённой ...
+            - generic [ref=e1292]:
+              - generic [ref=e1293]:
+                - link "Синдром сухого глаза фото" [ref=e1294] [cursor=pointer]:
+                  - /url: http://localhost:8888/zrenie.clinic-7/public/stati/sindrom-suxogo-glaza
+                  - img "Синдром сухого глаза фото" [ref=e1295]
+                - generic [ref=e1296]:
+                  - link "Близорукость" [ref=e1297] [cursor=pointer]:
+                    - /url: http://localhost:8888/zrenie.clinic-7/public/tags/blizorukost
+                  - link "Дальнозоркость" [ref=e1298] [cursor=pointer]:
+                    - /url: http://localhost:8888/zrenie.clinic-7/public/tags/dalnozorkost
+                  - link "Астигматизм" [ref=e1299] [cursor=pointer]:
+                    - /url: http://localhost:8888/zrenie.clinic-7/public/tags/astigmatizm
+              - paragraph [ref=e1300]: 06.08.2025
+              - separator [ref=e1301]
+              - link "Синдром сухого глаза" [ref=e1302] [cursor=pointer]:
+                - /url: http://localhost:8888/zrenie.clinic-7/public/stati/sindrom-suxogo-glaza
+              - paragraph [ref=e1304]: Синдром сухого глаза — это хроническое офтальмологическое заболевание, при ...
+            - generic [ref=e1306]:
+              - generic [ref=e1307]:
+                - link "Содружественное косоглазие у взрослых и детей фото" [ref=e1308] [cursor=pointer]:
+                  - /url: http://localhost:8888/zrenie.clinic-7/public/stati/sodruzestvennoe-kosoglazie-u-vzroslyx-i-detei
+                  - img "Содружественное косоглазие у взрослых и детей фото" [ref=e1309]
+                - link "Косоглазие" [ref=e1311] [cursor=pointer]:
+                  - /url: http://localhost:8888/zrenie.clinic-7/public/tags/kosoglazie
+              - paragraph [ref=e1312]: 06.08.2025
+              - separator [ref=e1313]
+              - link "Содружественное косоглазие у взрослых и детей" [ref=e1314] [cursor=pointer]:
+                - /url: http://localhost:8888/zrenie.clinic-7/public/stati/sodruzestvennoe-kosoglazie-u-vzroslyx-i-detei
+              - paragraph [ref=e1316]: Содружественное косоглазие — это разновидность патологии, при которой один и ...
+          - generic [ref=e1318]:
+            - img [ref=e1320] [cursor=pointer]
+            - img [ref=e1323] [cursor=pointer]
+        - link "Все статьи" [ref=e1326] [cursor=pointer]:
+          - /url: http://localhost:8888/zrenie.clinic-7/public/stati
+    - generic [ref=e1353]:
+      - heading "Запишитесь на прием онлайн" [level=2] [ref=e1354]
+      - paragraph [ref=e1355]: Оставьте ваши контакты, мы перезвоним вам и подтвердим запись
+      - img "Корги с рупором" [ref=e1357]
+      - img "Милая корги в очках" [ref=e1359]
+      - generic [ref=e1362]:
+        - generic [ref=e1363]:
+          - textbox "Имя" [ref=e1366]:
+            - /placeholder: Введите имя
+          - generic [ref=e1368]:
+            - generic [ref=e1369]: "+7"
+            - textbox "Номер телефона" [ref=e1370]:
+              - /placeholder: Контактный телефон
+          - button "Записаться на прием" [ref=e1372] [cursor=pointer]:
+            - generic [ref=e1373]: Записаться на прием
+        - generic [ref=e1375]:
+          - checkbox "Оставляя заявку, я соглашаюсь на использование персональных данных." [ref=e1377]
+          - generic [ref=e1379]:
+            - text: Оставляя заявку, я соглашаюсь на использование
+            - link "персональных данных." [ref=e1380] [cursor=pointer]:
+              - /url: /documents
+    - generic [ref=e1383]:
+      - generic:
+        - generic [ref=e1386]:
+          - paragraph [ref=e1387]: "Чтобы сделать запись на приём или проконсультироваться свяжитесь с нами:"
+          - generic [ref=e1388]:
+            - link "7 (495) 145 74 13" [ref=e1389] [cursor=pointer]:
+              - /url: tel:7 (495) 145 74 13
+              - img [ref=e1390]
+              - text: 7 (495) 145 74 13
+            - link "client@zrenie.clinic" [ref=e1392] [cursor=pointer]:
+              - /url: mailto:client@zrenie.clinic
+              - img [ref=e1393]
+              - text: client@zrenie.clinic
+            - generic [ref=e1395]:
+              - paragraph [ref=e1396]: "также мы будем рады вас видеть по адресу:"
+              - paragraph [ref=e1397]:
+                - img [ref=e1398]
+                - text: ул. Сергея Эйзенштейна, д. 6
+            - generic [ref=e1400]:
+              - paragraph [ref=e1401]: "Режим работы:"
+              - paragraph [ref=e1402]:
+                - generic [ref=e1403]: "Пн-Сб:"
+                - text: 9:00 - 20:00;
+                - generic [ref=e1404]: "Вс:"
+                - text: 10:00 - 18:00
+          - button "Оставить заявку на приём" [ref=e1406] [cursor=pointer]
+          - generic [ref=e1407]:
+            - link [ref=e1408] [cursor=pointer]:
+              - /url: https://youtube.com/@detskoe-zrenie?si=1boddAmOG1VUTNmp
+              - img [ref=e1410]
+            - link [ref=e1412] [cursor=pointer]:
+              - /url: https://t.me/kidsvision1
+              - img [ref=e1414]
+            - link [ref=e1416] [cursor=pointer]:
+              - /url: https://vk.com/public221473670
+              - img [ref=e1418]
+            - link [ref=e1420] [cursor=pointer]:
+              - /url: https://rutube.ru/channel/34337477/
+              - img [ref=e1422]
+            - link [ref=e1427] [cursor=pointer]:
+              - /url: https://vkvideo.ru/@zrenie_clinic
+              - img [ref=e1429]
+        - generic [ref=e1436]:
+          - button "Записаться на приём" [ref=e1437] [cursor=pointer]
+          - generic [ref=e1438]:
+            - link "Построить маршрут" [ref=e1439] [cursor=pointer]:
+              - /url: https://yandex.ru/maps/?rtext=~55.832298, 37.640956
+              - generic [ref=e1440]: Построить маршрут
+              - img [ref=e1441]
+            - link "Вызвать такси" [ref=e1443] [cursor=pointer]:
+              - /url: https://taxi.yandex.ru/ru_ru?gfrom=~&gto=55.832298, 37.640956&level&ref=2334695&tariff&referrer=appmetrica_tracking_id%3D241755468559577482%26ym_tracking_id%3D10142476165914361925
+              - generic [ref=e1444]: Вызвать такси
+              - img [ref=e1445]
+    - contentinfo [ref=e1456]:
+      - generic [ref=e1457]:
+        - generic [ref=e1458]:
+          - navigation [ref=e1459]:
+            - list [ref=e1460]:
+              - listitem [ref=e1461]:
+                - link "Услуги" [ref=e1462] [cursor=pointer]:
+                  - /url: http://localhost:8888/zrenie.clinic-7/public/services
+                  - generic [ref=e1463]: Услуги
+                - list [ref=e1464]:
+                  - listitem [ref=e1465]:
+                    - link "Прием детского врача-офтальмолога" [ref=e1466] [cursor=pointer]:
+                      - /url: http://localhost:8888/zrenie.clinic-7/public/priem-vraca-oftalmologa
+                  - listitem [ref=e1467]:
+                    - link "Лечение близорукости" [ref=e1468] [cursor=pointer]:
+                      - /url: http://localhost:8888/zrenie.clinic-7/public/myopia
+                  - listitem [ref=e1469]:
+                    - link "Ночные линзы" [ref=e1470] [cursor=pointer]:
+                      - /url: http://localhost:8888/zrenie.clinic-7/public/podbor-nochnyh-linz-rebenku
+                  - listitem [ref=e1471]:
+                    - link "Очки с линзами Stellest" [ref=e1472] [cursor=pointer]:
+                      - /url: http://localhost:8888/zrenie.clinic-7/public/ochki-s-linzami-stellest
+                  - listitem [ref=e1473]:
+                    - link "Подбор мягких контактных линз детям" [ref=e1474] [cursor=pointer]:
+                      - /url: http://localhost:8888/zrenie.clinic-7/public/podbor-linz-dlja-detej
+                  - listitem [ref=e1475]:
+                    - link "Аппаратное лечение зрения" [ref=e1476] [cursor=pointer]:
+                      - /url: http://localhost:8888/zrenie.clinic-7/public/apparatnoe-lechenie-zrenija-u-detej
+                  - listitem [ref=e1477]:
+                    - link "Vision therapy (Визуальная терапия)" [ref=e1478] [cursor=pointer]:
+                      - /url: http://localhost:8888/zrenie.clinic-7/public/vizualnaja-terapija-dlja-glaz
+                  - listitem [ref=e1479]:
+                    - link "Подбор очков" [ref=e1480] [cursor=pointer]:
+                      - /url: http://localhost:8888/zrenie.clinic-7/public/podbor-ochkov-rebenku
+                  - listitem [ref=e1481]:
+                    - link "Коррекция астигматизма у детей" [ref=e1482] [cursor=pointer]:
+                      - /url: http://localhost:8888/zrenie.clinic-7/public/korrekciia-astigmatizma-u-detei
+                  - listitem [ref=e1483]:
+                    - link "Лечение косоглазия" [ref=e1484] [cursor=pointer]:
+                      - /url: http://localhost:8888/zrenie.clinic-7/public/lecenie-kosoglaziia
+              - listitem [ref=e1485]:
+                - link "Пациентам" [ref=e1486] [cursor=pointer]:
+                  - /url: "#patients"
+                  - generic [ref=e1487]: Пациентам
+                - list [ref=e1488]:
+                  - listitem [ref=e1489]:
+                    - link "Памятка пациентам" [ref=e1490] [cursor=pointer]:
+                      - /url: http://localhost:8888/zrenie.clinic-7/public/o-klinike
+                  - listitem [ref=e1491]:
+                    - link "Полезные статьи" [ref=e1492] [cursor=pointer]:
+                      - /url: http://localhost:8888/zrenie.clinic-7/public/stati
+                  - listitem [ref=e1493]:
+                    - link "Цены" [ref=e1494] [cursor=pointer]:
+                      - /url: http://localhost:8888/zrenie.clinic-7/public/uslugi-i-ceny
+                  - listitem [ref=e1495]:
+                    - link "Акции" [ref=e1496] [cursor=pointer]:
+                      - /url: "#stock"
+                  - listitem [ref=e1497]:
+                    - paragraph [ref=e1498] [cursor=pointer]: Записаться на прием
+                  - listitem [ref=e1499]:
+                    - link "Файл" [ref=e1500] [cursor=pointer]:
+                      - /url: http://localhost:8888/zrenie.clinic-7/public/menu-files/download/bWVudS1maWxlcy8wMUtNNFdLSEJFNDZZWFFXS1ZKREpUOE1GVi5wZGY=
+              - listitem [ref=e1501]:
+                - link "О клинике" [ref=e1502] [cursor=pointer]:
+                  - /url: http://localhost:8888/zrenie.clinic-7/public/o-klinike
+                  - generic [ref=e1503]: О клинике
+                - list [ref=e1504]:
+                  - listitem [ref=e1505]:
+                    - link "Врачи" [ref=e1506] [cursor=pointer]:
+                      - /url: http://localhost:8888/zrenie.clinic-7/public/doctors
+                  - listitem [ref=e1507]:
+                    - link "Правовая информация" [ref=e1508] [cursor=pointer]:
+                      - /url: http://localhost:8888/zrenie.clinic-7/public/licenzii-i-iuridiceskaia-informaciia
+                  - listitem [ref=e1509]:
+                    - link "Контакты" [ref=e1510] [cursor=pointer]:
+                      - /url: http://localhost:8888/zrenie.clinic-7/public/kontakty
+                  - listitem [ref=e1511]:
+                    - link "Карта сайта" [ref=e1512] [cursor=pointer]:
+                      - /url: https://zrenie.clinic/sitemap.html
+          - generic [ref=e1514]:
+            - generic [ref=e1516]:
+              - generic [ref=e1517]: Детская офтальмология Мама, я вижу!
+              - img "Услуги врача офтальмолога в Москве - клиника \"Мама, я вижу!\"" [ref=e1518]
+            - paragraph [ref=e1520]:
+              - text: Клиника сертифицирована
+              - generic [ref=e1521]: Национальным фондом защиты детского зрения
+        - generic [ref=e1522]:
+          - generic [ref=e1523]: © 2026 ООО «Аском».
+          - navigation [ref=e1524]:
+            - list [ref=e1525]:
+              - listitem [ref=e1526]:
+                - link "Политика конфиденциальности" [ref=e1527] [cursor=pointer]:
+                  - /url: /documents
+              - listitem [ref=e1528]:
+                - link "Карта сайта" [ref=e1529] [cursor=pointer]:
+                  - /url: /sitemap.html
+              - listitem [ref=e1530]:
+                - link "Продвижение сайта - Реванта" [ref=e1531] [cursor=pointer]:
+                  - /url: https://revanta.ru/
+          - paragraph [ref=e1532]:
+            - text: Имеются противопоказания. Необходима консультация специалиста.
+            - text: Информация, представленная на сайте, не является офертой.
+    - generic [ref=e1535]:
+      - paragraph [ref=e1537]:
+        - text: "Мы используем файлы cookie, чтобы улучшить сайт для Вас. Подробнее:"
+        - link "политика конфиденциальности" [ref=e1538] [cursor=pointer]:
+          - /url: /documents
+      - button "Закрыть" [ref=e1540] [cursor=pointer]:
+        - generic [ref=e1541]: Закрыть
+        - img [ref=e1543]
+  - generic [ref=e1546]:
+    - generic [ref=e1548]:
+      - generic [ref=e1550]:
+        - generic [ref=e1551] [cursor=pointer]:
+          - text: 
+          - generic: Request
+        - text: 
+        - generic [ref=e1552] [cursor=pointer]:
+          - text: 
+          - generic: Timeline
+        - text: 
+        - generic [ref=e1553] [cursor=pointer]:
+          - text: 
+          - generic: Views
+          - generic [ref=e1554]: "320"
+        - generic [ref=e1555] [cursor=pointer]:
+          - text: 
+          - generic: Queries
+          - generic [ref=e1556]: "7"
+        - generic [ref=e1557] [cursor=pointer]:
+          - text: 
+          - generic: Models
+          - generic [ref=e1558]: "15"
+        - text:   
+      - generic [ref=e1559]:
+        - generic [ref=e1561] [cursor=pointer]:
+          - generic: 
+        - generic [ref=e1564] [cursor=pointer]:
+          - generic: 
+        - generic [ref=e1565] [cursor=pointer]:
+          - generic: 
+          - generic: 989ms
+        - generic [ref=e1566]:
+          - generic: 
+          - generic: 52MB
+        - generic [ref=e1567]:
+          - generic: 
+          - generic: 10.x
+        - generic [ref=e1568] [cursor=pointer]:
+          - generic: 
+          - generic: "GET {handle?}"
+    - text:                                                                                                                                                                                                                                             
+  - text: 

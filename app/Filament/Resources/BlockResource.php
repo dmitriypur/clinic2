@@ -773,7 +773,7 @@ class BlockResource extends Resource
                                 ->reactive()
                                 ->hidden(
                                     fn(Forms\Get $get) => !in_array(BlockType::from($get('../../type')), [
-                                            BlockType::CAROUSEL, BlockType::CARDS_SLIDER, BlockType::BANNERS_GRID
+                                            BlockType::CAROUSEL, BlockType::CARDS_SLIDER, BlockType::BANNERS_GRID, BlockType::BANNERS_GRID_K
                                         ]) ||
                                         $get('show_callback_button') === true
                                 ),
@@ -805,6 +805,7 @@ class BlockResource extends Resource
                         BlockType::PHOTO,
                         BlockType::CARDS_SLIDER,
                         BlockType::BANNERS_GRID,
+                        BlockType::BANNERS_GRID_K,
                         BlockType::ADVANTAGES_SLIDER,
                     ])
                 ),

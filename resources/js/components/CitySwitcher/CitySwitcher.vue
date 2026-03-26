@@ -25,7 +25,7 @@
           <a v-for="city in cities" 
              :key="city.id" 
              :href="city.url"
-             @click="rememberCity(city)"
+             @click.prevent="navigateToCity(city)"
              class="block px-4 py-2 text-sm text-gray-700 hover:bg-surface-subdued hover:text-action-primary"
              :class="{ 'bg-surface-subdued text-action-primary font-medium': city.is_current }">
             {{ city.name }}
@@ -86,6 +86,11 @@ export default {
       if (city?.slug) {
         Cookies.set('selected_city', city.slug, options)
       }
+    },
+    navigateToCity(city) {
+      this.rememberCity(city)
+      this.close()
+      window.location.href = city.url
     },
     close() {
       this.open = false

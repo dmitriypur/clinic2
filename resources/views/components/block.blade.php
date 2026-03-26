@@ -269,6 +269,10 @@
             <x-banner.banners-grid :block="$block"/>
             @break
 
+        @case(\App\Enums\BlockType::BANNERS_GRID_K)
+            <x-banner.banners-grid-k :block="$block"/>
+            @break
+
         @case(\App\Enums\BlockType::ADVANTAGES_SLIDER)
             <x-block.advantages-slider :block="$block"/>
             @break

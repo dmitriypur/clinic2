@@ -15,6 +15,12 @@
 - Отдельно есть админ-панель на Filament для управления контентом, услугами, врачами, городами, отзывами, меню и настройками.
 
 ## Что изменилось (последнее)
+- 2026-03-26: переключение с сохранённого Кирова обратно на дефолтную Москву теперь работает с любой публичной страницы: `app/Clinic.php` и `resources/views/components/city-switcher.blade.php` собирают URL дефолтного города через `force_city` не только на `/`, но и на внутренних не-глобальных страницах, а `resources/js/components/CitySwitcher/CitySwitcher.vue` больше не полагается на обычный `<a>`-переход и сначала синхронно пишет cookies, потом делает `window.location.href`. Это закрывает сценарий, когда на странице врача/услуги выбор Москвы тут же отбрасывался обратно в Киров.
+- 2026-03-26: сохранённый non-default город теперь восстанавливается не только на корневой `/`, но и на обычных публичных страницах без префикса (`pages.show`, `posts.show`, `doctor.show`, `review.index`, `call-request`, `sitemap.html`): `app/Http/Middleware/SetCityMiddleware.php` при наличии cookie `selected_city` редиректит на `/{slug}/...`, поэтому повторный заход без префикса на страницу врача, услуги или обычную страницу больше не открывает дефолтную Москву.
+- 2026-03-26: GeoIP-автоопределение города ужато до non-default сценария: `app/Http/Controllers/CityDetectionController.php` теперь возвращает `detectedCity` только для non-default города, а default city и любой нерелевантный IP оставляет на дефолтной Москве без popup; `app/Clinic.php` дополнительно чистит старый `detected_city` из сессии, если там оказался дефолтный город. При текущей конфигурации из двух городов это означает: только Киров может автоопределиться, всё остальное остаётся на Москве.
+- 2026-03-26: добита логика корневой главной `/` в мультигороде: `app/Http/Middleware/SetCityMiddleware.php` теперь возвращает пользователя на ранее подтверждённый non-default город по cookie `selected_city`, а ссылки выбора дефолтной Москвы на главной собираются с `force_city`, чтобы явное переключение на дефолтный город гарантированно перебивало сохранённый Киров и не зацикливалось на редиректе обратно.
+- 2026-03-26: для админских загрузок через Livewire поднят лимит временных файлов с `100 MB` до `200 MB` и `max_upload_time` с `5` до `10` минут в `config/livewire.php`, чтобы загрузка крупных видео в `BlockResource` не упиралась в приложение раньше лимита `spatie/laravel-media-library`; комментарий в `config/media-library.php` синхронизирован с фактическим лимитом `200 MB`.
+- 2026-03-26: исправлен production-сбой загрузки видео в админке Filament у блоков `BlockType::VIDEO_NEW` и других video-коллекций `Block`: `app/Models/Block.php` больше не запускает Spatie media conversions для не-изображений, поэтому загрузка `.mov/.mp4` не зависит от наличия `ffmpeg/ffprobe` на сервере; image-conversions для картинок блоков сохранены.
 - 2026-03-25: усилена интеграция админской синхронизации филиалов с booking API: `app/Services/BookingWidgetApiService.php` теперь валидирует `BOOKING_API_BASE_URL`, логирует ошибки с контекстом, делает ограниченный retry для временных HTTP/connection-сбоев и выбрасывает доменное исключение `App\Exceptions\BookingWidgetApiException` вместо сырых ошибок HTTP-клиента; внешний контракт методов и формат payload не менялись.
 - 2026-03-25: `app/Services/PageService.php` переведён с глобального `Cache::flush()` на точечную инвалидацию page-кешей; при изменении `Page`/`Block` теперь очищаются только связанные ключи страниц, legacy page keys и нужные listing-кеши (`active_doctors`, `active_services`, `doctors-page-*`, `posts_filter`, `blog_posts_for_slider`) без полного сброса кеша приложения.
 - 2026-03-24: callback-формы (`CallbackForm.vue`, `CallbackFormNew.vue`) теперь сами отправляют текущий город сайта в поле `city`, используя общий frontend util `resources/js/utilities/currentCity.js`; в `CallbackController` это поле имеет приоритет, а cookie `selected_city` и default city остались только fallback-веткой для API.
@@ -138,6 +144,8 @@
 - `App\Http\Middleware\SetCityMiddleware`:
   - определяет город из `{city}` в роуте;
   - делает 301-редирект с дефолтного города на URL без префикса;
+  - на публичных не-глобальных маршрутах без префикса (`/`, страницы, услуги, врачи, отзывы и часть служебных страниц контента) делает 302-редирект на `/{selected_city}/...`, если в cookie сохранён подтверждённый non-default город;
+  - явное переключение на дефолтный город с публичных не-глобальных страниц идёт через `force_city`, чтобы override сработал раньше редиректа по сохранённой cookie;
   - запоминает выбранный город в cookies;
   - для глобальных путей хранит город в cookie и переключает его через `force_city`;
   - при первом заходе без подтверждения города может определить город по IP;
@@ -162,6 +170,7 @@
 - `App\Services\GeoIpService`
 - Внешний сервис: `http://api.sypexgeo.net/json/{ip}`
 - Локальные IP (`127.0.0.1`, `::1`) игнорируются.
+- Popup/`detectedCity` формируется только для non-default города; default city не предлагается к подтверждению и остаётся fallback-сценарием для Москвы.
 
 ### Автоматическая фильтрация данных
 - Трейт `App\Models\Traits\HasCityScope`:
@@ -418,6 +427,7 @@ Middleware:
   - `PageServiceResource`
   - `BlockResource`
   - `DoctorResource`
+- В `BlockResource` загрузки через Spatie Media Library используют модель `App\Models\Block`; её media conversions теперь применяются только к изображениям, поэтому видео-коллекции (`video`, `videos`) не должны падать из-за отсутствия серверного video-thumbnail pipeline.
   - `ServiceResource`
   - `CityResource`
   - `ReviewResource`
@@ -586,6 +596,10 @@ Middleware:
 - На production nginx перехватывает любые URL с расширением `.js` как статические файлы (`try_files $uri =404`), поэтому route-based Livewire assets под `/livewire/*.js` там неработоспособны; для Filament/Livewire нужно использовать опубликованные assets в `public/vendor/livewire`, и деплой обязан их публиковать каждый релиз.
 
 ## Журнал изменений
+- 2026-03-26: для дефолтной Москвы URL переключения теперь везде на не-глобальных публичных страницах собирается с `force_city`: обновлены `app/Clinic.php` и `resources/views/components/city-switcher.blade.php`. Сам `resources/js/components/CitySwitcher/CitySwitcher.vue` переведён на `@click.prevent` + явный `window.location.href` после записи cookies, чтобы браузер не успевал отправить старый `selected_city` и не возвращал пользователя обратно в Киров. В `tests/Unit/SetCityMiddlewareTest.php` добавлен сценарий для страницы врача `?force_city=moscow`.
+- 2026-03-26: в `app/Http/Middleware/SetCityMiddleware.php` расширен remembered-city redirect: при наличии cookie `selected_city` non-default город теперь восстанавливается не только на `/`, но и на обычных публичных маршрутах без префикса (`pages.show`, `posts.show`, `doctor.show`, `review.index`, `call-request`, `sitemap.html`) через `302` на `/{slug}/...`. Добавлен unit-тест `tests/Unit/SetCityMiddlewareTest.php` на страницу врача без префикса.
+- 2026-03-26: `app/Http/Controllers/CityDetectionController.php` теперь отдает `detectedCity` только для non-default города, поэтому при текущих двух городах popup автоопределения появляется только для Кирова, а Москва и все нерелевантные/неопознанные IP остаются на дефолтном сайте без popup. В `app/Clinic.php` добавлена зачистка старого session `detected_city`, если там оказался default city. Добавлен unit-тест `tests/Unit/CityDetectionControllerTest.php`.
+- 2026-03-26: в `app/Http/Middleware/SetCityMiddleware.php` добавлен отдельный redirect-сценарий для корневой страницы `pages.show` без `{city}`: при наличии cookie `selected_city` с non-default городом `/` теперь отвечает `302` на `/{slug}` вместо молчаливого возврата к дефолтной Москве. Чтобы явный переход обратно на дефолтный город не залипал на этом редиректе, `app/Clinic.php` и `resources/views/components/city-switcher.blade.php` для дефолтного города на главной теперь генерируют URL с `force_city`. Добавлены проверки в `tests/Feature/MultiCityTest.php` и `tests/Unit/SetCityMiddlewareTest.php`.
 - 2026-03-25: в `app/Services/BookingWidgetApiService.php` добавлены валидация `BOOKING_API_BASE_URL`, ограниченный retry для временных HTTP/connection-сбоев, структурированное логирование ошибок и доменное исключение `app/Exceptions/BookingWidgetApiException.php`; при batch-запросах филиалов сервис теперь использует pool для успешных ответов и безопасно дозапрашивает упавшие клиники через fallback `performGet()`, сохраняя прежний формат ответа методов. Добавлен unit-тест `tests/Unit/Services/BookingWidgetApiServiceTest.php` на retry и конфигурационную ошибку base URL.
 - 2026-03-25: в `app/Services/PageService.php` удалён глобальный `Cache::flush()` из `clearPageCache()`; сервис теперь адресно очищает city-aware page keys, legacy page keys и связанные listing-кеши для страниц врачей и постов, включая сценарии со сменой `handle` и `category_id`. Добавлен unit-тест `tests/Unit/Services/PageServiceTest.php` на точечную инвалидацию без затрагивания несвязанных кешей.
 - 2026-03-24: в `resources/js/components/CallbackForm/CallbackForm.vue`, `resources/js/components/CallbackForm/CallbackFormNew.vue` и `resources/js/utilities/currentCity.js` добавлена явная отправка текущего города сайта в поле `city`; `app/Http/Requests/CallbackRequest.php` валидирует новое поле, а `app/Http/Controllers/CallbackController.php` использует его с приоритетом над backend fallback по cookie `selected_city` и default city. Нормализация телефона переведена на injected `PhoneService` без `resolve(...)` внутри метода.

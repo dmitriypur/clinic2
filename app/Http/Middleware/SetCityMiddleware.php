@@ -15,6 +15,16 @@ class SetCityMiddleware
 {
     private const CITY_COOKIE_LIFETIME_MINUTES = 60 * 24 * 365;
     private const SELECTED_CITY_COOKIE = 'selected_city';
+    private const REMEMBERED_CITY_REDIRECT_ROUTE_NAMES = [
+        'review.index',
+        'doctor.show',
+        'posts.show',
+        'pages.show',
+    ];
+    private const REMEMBERED_CITY_REDIRECT_URIS = [
+        'call-request',
+        'sitemap.html',
+    ];
 
     public function __construct(
         protected CityService $cityService,
@@ -51,6 +61,10 @@ class SetCityMiddleware
             // Удаляем параметр city, чтобы он не попадал в контроллеры как аргумент
             $request->route()->forgetParameter('city');
         } else {
+            if ($redirect = $this->redirectToRememberedCityPath($request)) {
+                return $redirect;
+            }
+
             $this->cityService->setCurrentCity($this->resolveCurrentCityWithoutPrefix($request));
         }
 
@@ -98,6 +112,25 @@ class SetCityMiddleware
         return redirect($targetUrl);
     }
 
+    private function redirectToRememberedCityPath(Request $request): ?RedirectResponse
+    {
+        if (!$this->isRememberedCityRedirectCandidate($request)) {
+            return null;
+        }
+
+        $rememberedCity = $this->resolveRememberedCity($request);
+
+        if (!$rememberedCity || $rememberedCity->is_default) {
+            return null;
+        }
+
+        $query = $request->getQueryString();
+        $path = trim($request->path(), '/');
+        $target = '/' . $rememberedCity->slug . ($path === '' ? '' : '/' . $path);
+
+        return redirect($target . ($query ? '?' . $query : ''));
+    }
+
     private function resolveCurrentCityWithoutPrefix(Request $request): ?City
     {
         $defaultCity = $this->cityService->getDefaultCity();
@@ -124,6 +157,25 @@ class SetCityMiddleware
     {
         Cookie::queue('city_confirmed', 'true', self::CITY_COOKIE_LIFETIME_MINUTES);
         Cookie::queue(self::SELECTED_CITY_COOKIE, $city->slug, self::CITY_COOKIE_LIFETIME_MINUTES);
+    }
+
+    private function isRememberedCityRedirectCandidate(Request $request): bool
+    {
+        if ($this->cityService->isGlobalPath($request->path())) {
+            return false;
+        }
+
+        $route = $request->route();
+
+        if (!$route) {
+            return false;
+        }
+
+        if ($route->named(...self::REMEMBERED_CITY_REDIRECT_ROUTE_NAMES)) {
+            return true;
+        }
+
+        return in_array($route->uri(), self::REMEMBERED_CITY_REDIRECT_URIS, true);
     }
 
     private function redirectToUnprefixedPath(Request $request, string $citySlug, int $status): RedirectResponse

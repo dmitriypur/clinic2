@@ -274,6 +274,26 @@ class MultiCityTest extends TestCase
     }
 
     /** @test */
+    public function root_page_redirects_to_remembered_non_default_city()
+    {
+        $nonDefaultCity = City::where('active', true)
+            ->where('is_default', false)
+            ->first();
+
+        if (!$nonDefaultCity) {
+            $this->markTestSkipped('В БД нет не-дефолтных городов');
+        }
+
+        $response = $this
+            ->withCookie('city_confirmed', 'true')
+            ->withCookie('selected_city', $nonDefaultCity->slug)
+            ->get('/');
+
+        $response->assertRedirect("/{$nonDefaultCity->slug}");
+        $response->assertStatus(302);
+    }
+
+    /** @test */
     public function non_default_city_page_loads_successfully()
     {
         $nonDefaultCity = City::where('active', true)

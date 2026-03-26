@@ -32,6 +32,9 @@
         if ($isGlobalPath) {
             $globalQuery = array_merge($queryParams, ['force_city' => $city->slug]);
             $url = url($path ?: '/') . (count($globalQuery) ? '?' . http_build_query($globalQuery) : '');
+        } elseif ($city->is_default) {
+            $defaultCityQuery = array_merge($queryParams, ['force_city' => $city->slug]);
+            $url = url($path ?: '/') . '?' . http_build_query($defaultCityQuery);
         } elseif (count($queryParams)) {
             $url .= '?' . http_build_query($queryParams);
         }

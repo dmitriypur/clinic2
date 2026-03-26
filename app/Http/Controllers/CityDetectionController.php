@@ -55,13 +55,23 @@ class CityDetectionController extends Controller
 
     private function detectCity(Request $request): ?City
     {
+        $detectedCity = null;
+
         if (config('app.env') === 'local' && $request->filled('test_city')) {
-            return City::query()
+            $detectedCity = City::query()
                 ->where('name', $request->query('test_city'))
                 ->where('active', true)
                 ->first();
+        } else {
+            $detectedCity = $this->geoIpService->getCityByIp($request->ip());
         }
 
-        return $this->geoIpService->getCityByIp($request->ip());
+        // Автодетект нужен только для non-default города.
+        // Дефолтный город и любые нерелевантные IP остаются на сайте без popup.
+        if (!$detectedCity || $detectedCity->is_default) {
+            return null;
+        }
+
+        return $detectedCity;
     }
 }
