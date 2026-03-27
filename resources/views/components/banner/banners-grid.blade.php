@@ -27,8 +27,8 @@
                              class="block justify-center w-full h-full pointer-events-none [&_img]:w-full">
                         <span itemprop="name" class="hidden">{{ $block->images[1]['title'] }}</span>
                         <span class="{{ $block->hasMedia('mobile_' . $block->images[1]['uuid']) ? 'hidden ' : '' }}md:block w-full h-full [&_img]:w-full [&_img]:h-full">
-                        {{ $block->getResponsiveImage($block->images[1]['uuid'], $block->images[1]['title']) }}
-                    </span>
+                            {{ $block->getResponsiveImage($block->images[1]['uuid'], $block->images[1]['title']) }}
+                        </span>
                         @if ($block->hasMedia('mobile_' . $block->images[1]['uuid']))
                             <span class="md:hidden">
                             {{ $block->getResponsiveImage('mobile_' . $block->images[1]['uuid'], $block->images[1]['title']) }}
@@ -45,7 +45,7 @@
                     <picture itemscope itemtype="http://schema.org/ImageObject"
                              class="block justify-center w-full h-full pointer-events-none [&_img]:w-full">
                         <span itemprop="name" class="hidden">{{ $block->images[2]['title'] }}</span>
-                        <span class="{{ $block->hasMedia('mobile_' . $block->images[2]['uuid']) ? 'hidden ' : '' }}md:block w-full">
+                        <span class="{{ $block->hasMedia('mobile_' . $block->images[2]['uuid']) ? 'hidden ' : '' }}md:block w-full h-full [&_img]:w-full [&_img]:h-full">
                         {{ $block->getResponsiveImage($block->images[2]['uuid'], $block->images[2]['title']) }}
                     </span>
                         @if ($block->hasMedia('mobile_' . $block->images[2]['uuid']))

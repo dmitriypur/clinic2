@@ -36,16 +36,16 @@
                         @endif
                     </picture>
                     @if($block->images[1]['url'])
-                        <div class="px-4 md:p-0 absolute w-full md:w-auto left-0 bottom-6 md:left-[6%] md:bottom-[16%]">
-                            <a href="{{ city_url($block->images[1]['url']) }}" class="block text-center py-4 md:py-3.5 px-6 btn-blue-gradient font-semibold text-white rounded-lg w-full text-sm">Записаться на прием</a>
+                        <div class="px-4 md:p-0 absolute w-full md:w-auto left-0 bottom-6 md:left-[6%] md:bottom-[20%]">
+                            <a href="{{ city_url($block->images[1]['url']) }}" class="block text-center py-4 md:py-3.5 px-12 btn-blue-gradient font-semibold text-white rounded-lg w-full text-sm">Записаться на прием</a>
                         </div>
                     @endif
                 </div>
                 <div class="swiper-slide md:col-span-5 row-span-1 relative rounded-xl lg:rounded-20 overflow-hidden">
                     <picture itemscope itemtype="http://schema.org/ImageObject"
-                             class="block justify-center w-full pointer-events-none [&_img]:w-full">
+                             class="block justify-center w-full h-full pointer-events-none [&_img]:w-full">
                         <span itemprop="name" class="hidden">{{ $block->images[2]['title'] }}</span>
-                        <span class="{{ $block->hasMedia('mobile_' . $block->images[2]['uuid']) ? 'hidden ' : '' }}md:block w-full">
+                        <span class="{{ $block->hasMedia('mobile_' . $block->images[2]['uuid']) ? 'hidden ' : '' }}md:block w-full h-full [&_img]:w-full [&_img]:h-full">
                         {{ $block->getResponsiveImage($block->images[2]['uuid'], $block->images[2]['title']) }}
                     </span>
                         @if ($block->hasMedia('mobile_' . $block->images[2]['uuid']))
@@ -55,8 +55,8 @@
                         @endif
                     </picture>
                     @if($block->images[2]['url'])
-                        <div class="px-4 md:p-0 absolute left-0 w-full md:w-auto bottom-6 md:left-[4%] md:bottom-[10%] lg:bottom-[12%]">
-                            <a href="{{ city_url($block->images[2]['url']) }}" class="block text-center py-4 px-6 btn-gradient font-semibold text-white rounded-xl w-full !rounded-lg text-xs md:py-3">Купить по специальной цене</a>
+                        <div class="px-4 md:p-0 absolute w-full md:w-auto left-0 bottom-6 md:left-[6%] md:bottom-[20%]">
+                            <a href="{{ city_url($block->images[1]['url']) }}" class="block text-center py-4 md:py-3.5 px-12 btn-blue-gradient font-semibold text-white rounded-lg w-full text-sm">Записаться на прием</a>
                         </div>
                     @endif
                 </div>

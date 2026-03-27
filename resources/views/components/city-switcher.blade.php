@@ -25,19 +25,8 @@
     // Prepare data for Vue component
     $preparedCities = $cities->map(function($city) use ($currentPath, $queryParams, $currentCity, $isGlobalPath) {
         $path = $currentPath ? '/' . $currentPath : '';
-        $url = $city->is_default
-            ? url($path)
-            : url($city->slug . $path);
-
-        if ($isGlobalPath) {
-            $globalQuery = array_merge($queryParams, ['force_city' => $city->slug]);
-            $url = url($path ?: '/') . (count($globalQuery) ? '?' . http_build_query($globalQuery) : '');
-        } elseif ($city->is_default) {
-            $defaultCityQuery = array_merge($queryParams, ['force_city' => $city->slug]);
-            $url = url($path ?: '/') . '?' . http_build_query($defaultCityQuery);
-        } elseif (count($queryParams)) {
-            $url .= '?' . http_build_query($queryParams);
-        }
+        $forcedCityQuery = array_merge($queryParams, ['force_city' => $city->slug]);
+        $url = url($path ?: '/') . '?' . http_build_query($forcedCityQuery);
 
         return [
             'id' => $city->id,

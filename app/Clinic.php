@@ -99,19 +99,8 @@ class Clinic
 
         $preparedCities = $cities->map(function($city) use ($preparedPath, $queryParams, $currentCity, $isGlobalPath) {
             $path = $preparedPath ? '/' . $preparedPath : '';
-            $url = $city->is_default
-                ? url($path)
-                : url($city->slug . $path);
-
-            if ($isGlobalPath) {
-                $globalQuery = array_merge($queryParams, ['force_city' => $city->slug]);
-                $url = url($path ?: '/') . (count($globalQuery) ? '?' . http_build_query($globalQuery) : '');
-            } elseif ($city->is_default) {
-                $defaultCityQuery = array_merge($queryParams, ['force_city' => $city->slug]);
-                $url = url($path ?: '/') . '?' . http_build_query($defaultCityQuery);
-            } elseif (count($queryParams)) {
-                $url .= '?' . http_build_query($queryParams);
-            }
+            $forcedCityQuery = array_merge($queryParams, ['force_city' => $city->slug]);
+            $url = url($path ?: '/') . '?' . http_build_query($forcedCityQuery);
 
             return [
                 'id' => $city->id,
@@ -123,16 +112,20 @@ class Clinic
             ];
         })->values();
 
-        $hasConfirmedCity = request()->hasCookie('city_confirmed') || request()->hasCookie('selected_city');
+        $detectedCity = request()->hasSession() ? session()->get('detected_city') : null;
 
-        if ($hasConfirmedCity && request()->hasSession()) {
-            request()->session()->forget('detected_city');
-        }
-
-        $detectedCity = $hasConfirmedCity ? null : session()->get('detected_city');
-        if ($detectedCity && $detectedCity->is_default && request()->hasSession()) {
+        if ($detectedCity && $currentCity && $detectedCity->id === $currentCity->id && request()->hasSession()) {
             request()->session()->forget('detected_city');
             $detectedCity = null;
+        }
+
+        if ($detectedCity && $detectedCity->is_default && request()->hasSession()) {
+            $shouldKeepDefaultMismatch = $currentCity && !$currentCity->is_default;
+
+            if (!$shouldKeepDefaultMismatch) {
+                request()->session()->forget('detected_city');
+                $detectedCity = null;
+            }
         }
 
         if ($detectedCity) {

@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Models\City;
 use App\Services\CityService;
+use App\Services\GeoIpService;
 use Closure;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -25,9 +26,11 @@ class SetCityMiddleware
         'call-request',
         'sitemap.html',
     ];
+    private const SKIP_MISMATCH_SESSION_KEY = 'skip_city_mismatch_once';
 
     public function __construct(
         protected CityService $cityService,
+        protected GeoIpService $geoIpService,
     ) {}
 
     public function handle(Request $request, Closure $next): Response
@@ -56,11 +59,14 @@ class SetCityMiddleware
                 return $this->redirectToUnprefixedPath($request, $citySlug, 301);
             }
 
+            $this->rememberDetectedCityMismatch($request, $city);
             $this->cityService->setCurrentCity($city);
 
             // Удаляем параметр city, чтобы он не попадал в контроллеры как аргумент
             $request->route()->forgetParameter('city');
         } else {
+            $this->rememberDetectedCityMismatch($request);
+
             if ($redirect = $this->redirectToRememberedCityPath($request)) {
                 return $redirect;
             }
@@ -89,6 +95,8 @@ class SetCityMiddleware
         }
 
         $this->rememberCity($forcedCity);
+        $this->forgetDetectedCity($request);
+        $this->markMismatchCheckAsSkipped($request);
 
         $segments = $request->segments();
         $activeCitySlugs = $this->cityService->getActiveCities()->pluck('slug')->all();
@@ -142,6 +150,35 @@ class SetCityMiddleware
         return $this->resolveRememberedCity($request) ?? $defaultCity;
     }
 
+    private function rememberDetectedCityMismatch(Request $request, ?City $effectiveCity = null): void
+    {
+        if (
+            !$request->hasSession()
+            || !$this->shouldCompareDetectedCity($request)
+            || $this->shouldSkipMismatchCheck($request)
+        ) {
+            return;
+        }
+
+        $rememberedCity = $effectiveCity ?? $this->resolveRememberedCity($request);
+
+        if (!$rememberedCity) {
+            $this->forgetDetectedCity($request);
+
+            return;
+        }
+
+        $detectedCity = $this->detectGeoCity($request);
+
+        if (!$detectedCity || $detectedCity->id === $rememberedCity->id) {
+            $this->forgetDetectedCity($request);
+
+            return;
+        }
+
+        $request->session()->put('detected_city', $detectedCity);
+    }
+
     private function resolveRememberedCity(Request $request): ?City
     {
         $selectedCitySlug = $request->cookie(self::SELECTED_CITY_COOKIE);
@@ -157,6 +194,20 @@ class SetCityMiddleware
     {
         Cookie::queue('city_confirmed', 'true', self::CITY_COOKIE_LIFETIME_MINUTES);
         Cookie::queue(self::SELECTED_CITY_COOKIE, $city->slug, self::CITY_COOKIE_LIFETIME_MINUTES);
+    }
+
+    private function forgetDetectedCity(Request $request): void
+    {
+        if ($request->hasSession()) {
+            $request->session()->forget('detected_city');
+        }
+    }
+
+    private function markMismatchCheckAsSkipped(Request $request): void
+    {
+        if ($request->hasSession()) {
+            $request->session()->put(self::SKIP_MISMATCH_SESSION_KEY, true);
+        }
     }
 
     private function isRememberedCityRedirectCandidate(Request $request): bool
@@ -176,6 +227,29 @@ class SetCityMiddleware
         }
 
         return in_array($route->uri(), self::REMEMBERED_CITY_REDIRECT_URIS, true);
+    }
+
+    private function shouldCompareDetectedCity(Request $request): bool
+    {
+        return $this->cityService->isGlobalPath($request->path())
+            || $this->isRememberedCityRedirectCandidate($request);
+    }
+
+    private function shouldSkipMismatchCheck(Request $request): bool
+    {
+        return (bool) $request->session()->pull(self::SKIP_MISMATCH_SESSION_KEY, false);
+    }
+
+    private function detectGeoCity(Request $request): ?City
+    {
+        if (config('app.env') === 'local' && $request->filled('test_city')) {
+            return City::query()
+                ->where('name', $request->query('test_city'))
+                ->where('active', true)
+                ->first();
+        }
+
+        return $this->geoIpService->getCityByIp($request->ip());
     }
 
     private function redirectToUnprefixedPath(Request $request, string $citySlug, int $status): RedirectResponse

@@ -48,6 +48,14 @@ export default {
         this.detectedCity = this.resolveDetectedCity(window.config.detectedCity);
         const currentCity = this.getCurrentCity();
         const cityConfirmed = Cookies.get('city_confirmed') || Cookies.get('selected_city');
+        const hasDetectedCityMismatch = this.detectedCity
+            && (!currentCity || this.detectedCity.slug !== currentCity.slug);
+
+        if (hasDetectedCityMismatch) {
+            this.showModal = true;
+            this.step = 'confirm';
+            return;
+        }
 
         if (currentCity && currentCity.is_default === false) {
             return;
