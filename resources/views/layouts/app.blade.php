@@ -19,7 +19,7 @@
 
     @if ($settings->favicon)
         <link rel="icon" type="{{ $settings->faviconMimeType() }}"
-              href="{{ $settings->favicon }}">
+              href="/storage/{{ $settings->favicon }}">
     @else
         <link rel="icon" type="image/png" sizes="32x32"
               href="{{ asset('icon/favicon-32x32.png') }}">
