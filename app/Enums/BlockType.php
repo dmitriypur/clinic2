@@ -121,6 +121,12 @@ enum BlockType: int
 
     case BRANCH = 64;
     case BANNERS_GRID_K = 65;
+    case APPARATUS_TREATMENT = 66;
+    case BANNER_APPARATUS_HERO = 67;
+    case APPARATUS_TASKS = 68;
+    case APPARATUS_DISEASES = 69;
+    case APPARATUS_METHODS = 70;
+    case APPARATUS_CONTRAINDICATIONS = 71;
 
 
 
@@ -189,6 +195,12 @@ enum BlockType: int
             self::BANNER_SELECTION_GLASSES => 'Блок "Баннер для страницы Подбор очков"',
             self::TEXT_WITH_IMAGE_NEW => 'Текстc изображением (новый дизайн)',
             self::BRANCH => 'Филиалы',
+            self::APPARATUS_TREATMENT => 'Блок "Аппаратное лечение зрения"',
+            self::BANNER_APPARATUS_HERO => 'Hero-баннер "Аппаратное лечение зрения"',
+            self::APPARATUS_TASKS => 'Блок "Ключевые задачи терапии"',
+            self::APPARATUS_DISEASES => 'Блок "Заболевания для аппаратных процедур"',
+            self::APPARATUS_METHODS => 'Блок "Методики аппаратного лечения"',
+            self::APPARATUS_CONTRAINDICATIONS => 'Блок "Противопоказания аппаратного лечения"',
         };
     }
 

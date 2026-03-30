@@ -231,7 +231,7 @@ class BlockResource extends Resource
                                 ->pluck('title', 'uuid')
                         )
                         ->required(
-                            fn(Forms\Get $get) => !in_array($get('type'), [
+                            fn(Forms\Get $get) => in_array($get('type'), [
                                 BlockType::PRICE_LIST->value,
                             ])
                         )
@@ -247,7 +247,7 @@ class BlockResource extends Resource
                             fn(Forms\Get $get) => !in_array(
                                 BlockType::from($get('type')),
                                 [BlockType::HTML, BlockType::TEXT_WITH_IMAGE, BlockType::TEXT_WITH_IMAGE_NEW,
-                                BlockType::TEXT_SUBDUED, BlockType::WELCOME, BlockType::POST_TEXT,]
+                                BlockType::TEXT_SUBDUED, BlockType::WELCOME, BlockType::POST_TEXT, BlockType::APPARATUS_DISEASES, BlockType::APPARATUS_METHODS, BlockType::APPARATUS_CONTRAINDICATIONS,]
                             )
                         )
                         ->columnSpan('full'),
@@ -420,6 +420,7 @@ class BlockResource extends Resource
                                     BlockType::PICTURE,
                                     BlockType::POST_TEXT,
                                     BlockType::LIST_WITH_IMAGE,
+                                    BlockType::APPARATUS_DISEASES,
                                 ])
                         ),
 
@@ -490,6 +491,17 @@ class BlockResource extends Resource
                         ->hidden(
                             fn(Forms\Get $get) => !in_array(BlockType::from($get('type')), [
                                 BlockType::CALL_TO_ACTION,
+                            ])
+                        ),
+
+                    Forms\Components\TextInput::make('payload.btn_text')
+                        ->columnSpanFull()
+                        ->label('Текст кнопки')
+                        ->hidden(
+                            fn(Forms\Get $get) => !in_array(BlockType::from($get('type')), [
+                                BlockType::BANNER_SELECTION_GLASSES,
+                                BlockType::BANNER_APPARATUS_HERO,
+                                BlockType::APPARATUS_METHODS,
                             ])
                         ),
 
@@ -617,6 +629,48 @@ class BlockResource extends Resource
                     ),
 
                 Forms\Components\Section::make([
+                    Forms\Components\Repeater::make('payload.sections')
+                        ->label('Секции')
+                        ->reorderable(false)
+                        ->addable(false)
+                        ->deletable(false)
+                        ->defaultItems(2)
+                        ->minItems(2)
+                        ->maxItems(2)
+                        ->helperText('Первая секция показывается сверху, вторая — ниже.')
+                        ->schema([
+                            Forms\Components\TextInput::make('title')
+                                ->label('Заголовок')
+                                ->columnSpanFull()
+                                ->required(),
+
+                            Forms\Components\RichEditor::make('body_html')
+                                ->label('Текст')
+                                ->columnSpanFull()
+                                ->required(),
+
+                            Forms\Components\TextInput::make('media_collection')
+                                ->columnSpan('full')
+                                ->hiddenLabel()
+                                ->default(
+                                    fn(Forms\Get $get) => $get('media_collection') ?? Str::uuid()->toString()
+                                )
+                                ->reactive()
+                                ->required()
+                                ->extraAttributes(['class' => 'hidden']),
+
+                            SpatieMediaLibraryFileUpload::make('image')
+                                ->collection(fn(Forms\Get $get) => $get('media_collection'))
+                                ->label('Изображение')
+                                ->imageEditor()
+                                ->responsiveImages()
+                                ->required(),
+                        ]),
+                ])->hidden(
+                    fn(Forms\Get $get) => BlockType::from($get('type')) !== BlockType::APPARATUS_TREATMENT
+                ),
+
+                Forms\Components\Section::make([
                     Forms\Components\TextInput::make('payload.service_hero_title')
                         ->columnSpanFull()
                         ->label('Заголовок')
@@ -628,6 +682,7 @@ class BlockResource extends Resource
                                 BlockType::BANNER_CORRECTION,
                                 BlockType::BANNER_MYOPIA,
                                 BlockType::BANNER_SELECTION_GLASSES,
+                                BlockType::BANNER_APPARATUS_HERO,
                             ])),
                     Forms\Components\TextInput::make('payload.service_hero_subtitle')
                         ->columnSpanFull()
@@ -667,9 +722,10 @@ class BlockResource extends Resource
                                 BlockType::BANNER_CORRECTION,
                                 BlockType::BANNER_MYOPIA,
                                 BlockType::BANNER_SELECTION_GLASSES,
+                                BlockType::BANNER_APPARATUS_HERO,
                             ])),
                     SpatieMediaLibraryFileUpload::make('bg')
-                        ->label('Изображение')
+                        ->label('Фон (desktop)')
                         ->collection('bg')
                         ->imageEditor()
                         ->responsiveImages()
@@ -683,9 +739,10 @@ class BlockResource extends Resource
                                 BlockType::BANNER_MYOPIA,
                                 BlockType::DETAILS,
                                 BlockType::BANNER_SELECTION_GLASSES,
+                                BlockType::BANNER_APPARATUS_HERO,
                             ])),
                     SpatieMediaLibraryFileUpload::make('pic')
-                        ->label('Изображение (для мобильных)')
+                        ->label('Изображение (mobile)')
                         ->collection('pic')
                         ->responsiveImages()
                         ->imageEditor()
@@ -699,7 +756,8 @@ class BlockResource extends Resource
                                 BlockType::BANNER_MYOPIA,
                                 BlockType::DETAILS,
                                 BlockType::BANNER_SELECTION_GLASSES,
-                            ]))
+                                BlockType::BANNER_APPARATUS_HERO,
+                            ])),
                 ]),
 
                 Forms\Components\Section::make([
@@ -1135,6 +1193,81 @@ class BlockResource extends Resource
                     fn(Forms\Get $get) => !in_array(BlockType::from($get('type')), [
                         BlockType::GRID_CONTACTS,
                     ])
+                ),
+
+                Forms\Components\Section::make([
+                    Forms\Components\Repeater::make('payload.tasks')
+                        ->label('Пункты')
+                        ->schema([
+                            Forms\Components\TextInput::make('text')
+                                ->label('Текст')
+                                ->columnSpanFull()
+                                ->required(),
+                        ])
+                        ->minItems(1)
+                        ->required(),
+
+                    Forms\Components\Textarea::make('payload.note_text')
+                        ->label('Текст нижнего блока')
+                        ->columnSpanFull()
+                        ->required(),
+                ])->hidden(
+                    fn(Forms\Get $get) => BlockType::from($get('type')) !== BlockType::APPARATUS_TASKS
+                ),
+
+                Forms\Components\Section::make([
+                    Forms\Components\Repeater::make('payload.items')
+                        ->label('Карточки')
+                        ->schema([
+                            Forms\Components\Textarea::make('text')
+                                ->label('Текст')
+                                ->columnSpanFull()
+                                ->required(),
+                        ])
+                        ->minItems(1)
+                        ->required(),
+                ])->hidden(
+                    fn(Forms\Get $get) => !in_array(BlockType::from($get('type')), [
+                        BlockType::APPARATUS_DISEASES,
+                        BlockType::APPARATUS_CONTRAINDICATIONS,
+                    ])
+                ),
+
+                Forms\Components\Section::make([
+                    Forms\Components\Repeater::make('payload.items')
+                        ->label('Методики')
+                        ->schema([
+                            Forms\Components\TextInput::make('title')
+                                ->label('Заголовок')
+                                ->columnSpanFull()
+                                ->required(),
+
+                            Forms\Components\RichEditor::make('body_html')
+                                ->label('Контент')
+                                ->columnSpanFull()
+                                ->required(),
+
+                            Forms\Components\TextInput::make('media_collection')
+                                ->columnSpan('full')
+                                ->hiddenLabel()
+                                ->default(
+                                    fn(Forms\Get $get) => $get('media_collection') ?? Str::uuid()->toString()
+                                )
+                                ->reactive()
+                                ->required()
+                                ->extraAttributes(['class' => 'hidden']),
+
+                            SpatieMediaLibraryFileUpload::make('image')
+                                ->collection(fn(Forms\Get $get) => $get('media_collection'))
+                                ->label('Изображение')
+                                ->imageEditor()
+                                ->responsiveImages()
+                                ->required(),
+                        ])
+                        ->minItems(1)
+                        ->required(),
+                ])->hidden(
+                    fn(Forms\Get $get) => BlockType::from($get('type')) !== BlockType::APPARATUS_METHODS
                 ),
 
 

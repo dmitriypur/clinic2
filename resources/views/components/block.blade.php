@@ -71,6 +71,10 @@
             </div>
             @break
 
+        @case(\App\Enums\BlockType::APPARATUS_TREATMENT)
+            <x-block.apparatus-treatment :block="$block"/>
+            @break
+
         @case(\App\Enums\BlockType::CONTACTS)
             <x-block.contacts :block="$block"/>
             @break
@@ -225,6 +229,10 @@
             <x-banner.appointment :block="$block"/>
             @break
 
+        @case(\App\Enums\BlockType::BANNER_APPARATUS_HERO)
+            <x-banner.apparatus-hero :block="$block"/>
+            @break
+
         @case(\App\Enums\BlockType::CARDS_SLIDER)
             @if(isset($block->payload['is_blog']) && $block->payload['is_blog'] === true)
                 <x-block.blog-slider :block="$block"/>
@@ -303,6 +311,22 @@
 
         @case(\App\Enums\BlockType::TEXT_WITH_IMAGE_NEW)
             <x-new-block.text-with-image-new :block="$block"/>
+            @break
+
+        @case(\App\Enums\BlockType::APPARATUS_TASKS)
+            <x-block.apparatus-tasks :block="$block"/>
+            @break
+
+        @case(\App\Enums\BlockType::APPARATUS_DISEASES)
+            <x-block.apparatus-diseases :block="$block"/>
+            @break
+
+        @case(\App\Enums\BlockType::APPARATUS_METHODS)
+            <x-block.apparatus-methods :block="$block"/>
+            @break
+
+        @case(\App\Enums\BlockType::APPARATUS_CONTRAINDICATIONS)
+            <x-block.apparatus-contraindications :block="$block"/>
             @break
 
     @endswitch

@@ -4,12 +4,16 @@ import {classNames} from "../../../utilities/css";
 export default {
   data() {
     return {
-      open: false,
+      open: this.initialOpen,
     }
   },
 
   props: {
-    count: Number
+    count: Number,
+    initialOpen: {
+      type: Boolean,
+      default: false,
+    },
   },
 
   computed: {

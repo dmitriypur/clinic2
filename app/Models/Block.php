@@ -95,6 +95,16 @@ class Block extends Model implements HasMedia, Sortable
             ->format(Manipulations::FORMAT_WEBP)
             ->withResponsiveImages();
 
+        $this->addMediaConversion('apparatus')
+            ->width(1200)
+            ->format(Manipulations::FORMAT_WEBP)
+            ->withResponsiveImages();
+
+        $this->addMediaConversion('hero')
+            ->width(1920)
+            ->format(Manipulations::FORMAT_WEBP)
+            ->withResponsiveImages();
+
         $this->addMediaConversion('main-post')
             ->width(500)
             ->height(500)
@@ -389,7 +399,14 @@ class Block extends Model implements HasMedia, Sortable
 
     public function getElementsAttribute()
     {
-        return ($this->type === BlockType::LIST_WITH_IMAGE || BlockType::ELEMENTS_ITEM_ROW || $this->type === BlockType::ELEMENTS_ITEM_COLUMN || $this->type === BlockType::CARDS_ITEM_ROW || $this->type === BlockType::CARDS_BORDER || $this->type === BlockType::NIGHT_LENSES_PICTURES) && isset($this->payload['elements'])
+        return in_array($this->type, [
+            BlockType::LIST_WITH_IMAGE,
+            BlockType::ELEMENTS_ITEM_ROW,
+            BlockType::ELEMENTS_ITEM_COLUMN,
+            BlockType::CARDS_ITEM_ROW,
+            BlockType::CARDS_BORDER,
+            BlockType::NIGHT_LENSES_PICTURES,
+        ], true) && isset($this->payload['elements'])
             ? collect($this->payload['elements'])
                 ->map(function ($item) {
                     $item['responsive_image'] = null;
@@ -420,6 +437,52 @@ class Block extends Model implements HasMedia, Sortable
                 $item['responsive_image'] = null;
                 if (isset($item['media_collection'])) {
                     $responsiveImage = $this->getResponsiveImage($item['media_collection'], $item['title'], 'main');
+                    $item['responsive_image'] = $responsiveImage;
+                    $item['image_html'] = $responsiveImage?->toHtml();
+                }
+
+                return $item;
+            })
+            ->values()
+            ->toArray();
+    }
+
+    public function getApparatusTreatmentSectionsAttribute(): array
+    {
+        if ($this->type !== BlockType::APPARATUS_TREATMENT || !isset($this->payload['sections'])) {
+            return [];
+        }
+
+        return collect($this->payload['sections'])
+            ->map(function ($item) {
+                $item['responsive_image'] = null;
+                $item['image_html'] = null;
+
+                if (isset($item['media_collection'])) {
+                    $responsiveImage = $this->getResponsiveImage($item['media_collection'], $item['title'] ?? $this->title, 'apparatus');
+                    $item['responsive_image'] = $responsiveImage;
+                    $item['image_html'] = $responsiveImage?->toHtml();
+                }
+
+                return $item;
+            })
+            ->values()
+            ->toArray();
+    }
+
+    public function getApparatusMethodsItemsAttribute(): array
+    {
+        if ($this->type !== BlockType::APPARATUS_METHODS || !isset($this->payload['items'])) {
+            return [];
+        }
+
+        return collect($this->payload['items'])
+            ->map(function ($item) {
+                $item['responsive_image'] = null;
+                $item['image_html'] = null;
+
+                if (isset($item['media_collection'])) {
+                    $responsiveImage = $this->getResponsiveImage($item['media_collection'], $item['title'] ?? $this->title, 'apparatus');
                     $item['responsive_image'] = $responsiveImage;
                     $item['image_html'] = $responsiveImage?->toHtml();
                 }
