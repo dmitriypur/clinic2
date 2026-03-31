@@ -1436,6 +1436,24 @@ class BlockResource extends Resource
                     }),
             ])
             ->bulkActions([
+                Tables\Actions\BulkAction::make('replaceCallToActionWithSpecialistBanner')
+                    ->label('Заменить CTA на новый баннер')
+                    ->icon('heroicon-o-arrows-right-left')
+                    ->color('primary')
+                    ->visible(fn(): bool => auth()->user()->hasRole('super_admin'))
+                    ->requiresConfirmation()
+                    ->modalHeading('Заменить старые формы на новый баннер')
+                    ->modalDescription('У выбранных блоков типа "Форма заявки" будет изменён тип на "Запись или обратный звонок". Payload старой формы будет очищен, чтобы не тащить неиспользуемые данные в новый статичный баннер.')
+                    ->action(function (Collection $records): void {
+                        $records
+                            ->where('type', BlockType::CALL_TO_ACTION)
+                            ->each(function (Block $block): void {
+                                $block->forceFill([
+                                    'type' => BlockType::BANNER_SPECIALIST_CALLBACK,
+                                    'payload' => [],
+                                ])->save();
+                            });
+                    }),
                 Tables\Actions\BulkAction::make('excludeDoctorsAltDoctors')
                     ->label('Исключить врачей')
                     ->icon('heroicon-o-user-minus')

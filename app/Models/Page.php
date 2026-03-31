@@ -68,11 +68,14 @@ class Page extends Model implements HasMedia
     {
         $cityService = app(\App\Services\CityService::class);
         $slugs = $cityService->getActiveCities()->pluck('slug')->push('global');
+        $categoryHandle = $this->relationLoaded('category')
+            ? $this->category?->handle
+            : $this->category()->value('handle');
 
         foreach ($slugs as $slug) {
             \Illuminate\Support\Facades\Cache::forget("page-{$slug}-{$this->handle}");
-            if ($this->category) {
-                \Illuminate\Support\Facades\Cache::forget("page-{$slug}-{$this->category->handle}/{$this->handle}");
+            if ($categoryHandle) {
+                \Illuminate\Support\Facades\Cache::forget("page-{$slug}-{$categoryHandle}/{$this->handle}");
             }
         }
     }
