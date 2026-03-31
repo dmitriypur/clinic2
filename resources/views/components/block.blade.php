@@ -329,5 +329,9 @@
             <x-block.apparatus-contraindications :block="$block"/>
             @break
 
+        @case(\App\Enums\BlockType::BANNER_SPECIALIST_CALLBACK)
+            <x-banner.specialist-callback :block="$block"/>
+            @break
+
     @endswitch
 </section>

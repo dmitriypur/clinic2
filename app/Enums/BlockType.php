@@ -127,6 +127,7 @@ enum BlockType: int
     case APPARATUS_DISEASES = 69;
     case APPARATUS_METHODS = 70;
     case APPARATUS_CONTRAINDICATIONS = 71;
+    case BANNER_SPECIALIST_CALLBACK = 72;
 
 
 
@@ -201,6 +202,7 @@ enum BlockType: int
             self::APPARATUS_DISEASES => 'Блок "Заболевания для аппаратных процедур"',
             self::APPARATUS_METHODS => 'Блок "Методики аппаратного лечения"',
             self::APPARATUS_CONTRAINDICATIONS => 'Блок "Противопоказания аппаратного лечения"',
+            self::BANNER_SPECIALIST_CALLBACK => 'Блок "Запись или обратный звонок"',
         };
     }
 
