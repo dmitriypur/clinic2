@@ -1,9 +1,9 @@
 <footer class="bg-surface">
     <div class="container relative py-10 z-10">
-        <div class="hidden xl:block absolute -right-20 bottom-0 max-w-[500px] -z-10">
+        <div class="hidden xl:block h-full w-auto absolute right-0 top-0 -z-10">
             <picture>
-                <source srcset="{{ asset('images/footer-korgi.webp') }}" type="image/webp">
-                <img src="{{ asset('images/footer-korgi.png') }}" alt="Веселые девочка и корги в очках и кепке" width="500" height="550" loading="lazy" class="w-full h-auto">
+                <source srcset="{{ asset('images/footer-boy.webp') }}" type="image/webp">
+                <img src="{{ asset('images/footer-boy.png') }}" alt="Мальчик в очках показывает класс" loading="lazy" class="w-auto h-full">
             </picture>
         </div>
         <div class="flex flex-col lg:flex-row lg:justify-between gap-6 md:gap-10">
