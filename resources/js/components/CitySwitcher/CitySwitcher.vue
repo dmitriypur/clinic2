@@ -37,8 +37,6 @@
 </template>
 
 <script>
-import Cookies from "js-cookie";
-
 export default {
   name: 'CitySwitcher',
   directives: {
@@ -75,20 +73,7 @@ export default {
     toggle() {
       this.open = !this.open
     },
-    rememberCity(city) {
-      const options = {
-        expires: 365,
-        path: '/',
-      };
-
-      Cookies.set('city_confirmed', 'true', options)
-
-      if (city?.slug) {
-        Cookies.set('selected_city', city.slug, options)
-      }
-    },
     navigateToCity(city) {
-      this.rememberCity(city)
       this.close()
       window.location.href = city.url
     },

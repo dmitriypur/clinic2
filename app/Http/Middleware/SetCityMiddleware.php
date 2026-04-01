@@ -39,6 +39,10 @@ class SetCityMiddleware
             return $redirect;
         }
 
+        if ($redirect = $this->handleUtmCityRedirect($request)) {
+            return $redirect;
+        }
+
         $citySlug = $request->route('city');
 
         if ($citySlug) {
@@ -48,18 +52,22 @@ class SetCityMiddleware
                 abort(404);
             }
 
-            $this->rememberCity($city);
-
             if ($this->cityService->isGlobalPath($this->pathWithoutCityPrefix($request->path(), $citySlug))) {
                 return $this->redirectToUnprefixedPath($request, $citySlug, 301);
             }
+
+            if ($redirect = $this->redirectPrefixedRouteToRememberedCity($request, $city)) {
+                return $redirect;
+            }
+
+            $this->rememberCity($city);
 
             // Если город дефолтный, делаем редирект на URL без префикса
             if ($city->is_default) {
                 return $this->redirectToUnprefixedPath($request, $citySlug, 301);
             }
 
-            $this->rememberDetectedCityMismatch($request, $city);
+            $this->forgetDetectedCity($request);
             $this->cityService->setCurrentCity($city);
 
             // Удаляем параметр city, чтобы он не попадал в контроллеры как аргумент
@@ -120,6 +128,44 @@ class SetCityMiddleware
         return redirect($targetUrl);
     }
 
+    protected function handleUtmCityRedirect(Request $request): ?RedirectResponse
+    {
+        if ($this->cityService->isGlobalPath($request->path())) {
+            return null;
+        }
+
+        if (! $request->query->has('utm_source')) {
+            return null;
+        }
+
+        $activeCities = $this->cityService->getActiveCities();
+
+        $matchedCity = $this->resolveCityByUtm(
+            $activeCities,
+            (string) $request->query('utm_source'),
+            $request->query('utm_medium'),
+        );
+
+        if (! $matchedCity) {
+            return null;
+        }
+
+        $currentRouteCitySlug = $request->route('city');
+        $currentRouteCity = $currentRouteCitySlug
+            ? $this->cityService->getCityBySlug($currentRouteCitySlug)
+            : $this->cityService->getDefaultCity();
+
+        if ($currentRouteCity && $currentRouteCity->id === $matchedCity->id) {
+            return null;
+        }
+
+        $this->rememberCity($matchedCity);
+        $this->forgetDetectedCity($request);
+        $this->markMismatchCheckAsSkipped($request);
+
+        return redirect($this->buildCityTargetUrl($request, $matchedCity, $activeCities));
+    }
+
     private function redirectToRememberedCityPath(Request $request): ?RedirectResponse
     {
         if (!$this->isRememberedCityRedirectCandidate($request)) {
@@ -137,6 +183,103 @@ class SetCityMiddleware
         $target = '/' . $rememberedCity->slug . ($path === '' ? '' : '/' . $path);
 
         return redirect($target . ($query ? '?' . $query : ''));
+    }
+
+    private function redirectPrefixedRouteToRememberedCity(Request $request, City $requestedCity): ?RedirectResponse
+    {
+        $rememberedCity = $this->resolveRememberedCity($request);
+
+        if (!$rememberedCity || $rememberedCity->id === $requestedCity->id) {
+            return null;
+        }
+
+        $this->forgetDetectedCity($request);
+
+        return redirect($this->buildCityTargetUrl(
+            $request,
+            $rememberedCity,
+            $this->cityService->getActiveCities(),
+        ));
+    }
+
+    private function resolveCityByUtm(\Illuminate\Database\Eloquent\Collection $activeCities, string $utmSource, ?string $utmMedium): ?City
+    {
+        $utmSource = strtolower(trim($utmSource));
+        $utmMedium = strtolower(trim((string) $utmMedium));
+
+        if ($utmSource === '') {
+            return null;
+        }
+
+        $bestScore = 0;
+        $matchedCity = null;
+        $hasScoreTie = false;
+
+        foreach ($activeCities as $city) {
+            $score = $this->matchCityUtmScore($city, $utmSource, $utmMedium);
+
+            if ($score === 0) {
+                continue;
+            }
+
+            if ($score > $bestScore) {
+                $bestScore = $score;
+                $matchedCity = $city;
+                $hasScoreTie = false;
+
+                continue;
+            }
+
+            if ($score === $bestScore) {
+                $hasScoreTie = true;
+            }
+        }
+
+        if ($hasScoreTie) {
+            return null;
+        }
+
+        return $matchedCity;
+    }
+
+    private function matchCityUtmScore(City $city, string $utmSource, string $utmMedium): int
+    {
+        foreach (($city->utm_phones ?? []) as $rule) {
+            if (strtolower((string) ($rule['source'] ?? '')) !== $utmSource) {
+                continue;
+            }
+
+            if ($utmMedium !== '') {
+                foreach (($rule['medium'] ?? []) as $mediumRule) {
+                    if (strtolower((string) ($mediumRule['name'] ?? '')) === $utmMedium) {
+                        return 2;
+                    }
+                }
+            }
+
+            return 1;
+        }
+
+        return 0;
+    }
+
+    private function buildCityTargetUrl(Request $request, City $city, \Illuminate\Database\Eloquent\Collection $activeCities): string
+    {
+        $segments = $request->segments();
+        $activeCitySlugs = $activeCities->pluck('slug')->all();
+
+        if (!empty($segments) && in_array($segments[0], $activeCitySlugs, true)) {
+            array_shift($segments);
+        }
+
+        $cleanPath = implode('/', $segments);
+        $targetPath = $city->is_default
+            ? ($cleanPath ? '/' . $cleanPath : '/')
+            : '/' . $city->slug . ($cleanPath ? '/' . $cleanPath : '');
+
+        $queryString = http_build_query($request->query());
+
+        return $targetPath . ($queryString ? '?' . $queryString : '');
     }
 
     private function resolveCurrentCityWithoutPrefix(Request $request): ?City
@@ -249,7 +392,12 @@ class SetCityMiddleware
                 ->first();
         }
 
-        return $this->geoIpService->getCityByIp($request->ip());
+        return $this->geoIpService->getCityByIp($this->resolveClientIp($request));
+    }
+
+    private function resolveClientIp(Request $request): ?string
+    {
+        return $request->headers->get('CF-Connecting-IP') ?: $request->ip();
     }
 
     private function redirectToUnprefixedPath(Request $request, string $citySlug, int $status): RedirectResponse

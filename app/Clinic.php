@@ -113,19 +113,17 @@ class Clinic
         })->values();
 
         $detectedCity = request()->hasSession() ? session()->get('detected_city') : null;
+        $hasConfirmedCity = request()->cookie('city_confirmed') || request()->cookie('selected_city');
 
-        if ($detectedCity && $currentCity && $detectedCity->id === $currentCity->id && request()->hasSession()) {
+        if (
+            $detectedCity
+            && $currentCity
+            && $detectedCity->id === $currentCity->id
+            && request()->hasSession()
+            && ($hasConfirmedCity || !$currentCity->is_default)
+        ) {
             request()->session()->forget('detected_city');
             $detectedCity = null;
-        }
-
-        if ($detectedCity && $detectedCity->is_default && request()->hasSession()) {
-            $shouldKeepDefaultMismatch = $currentCity && !$currentCity->is_default;
-
-            if (!$shouldKeepDefaultMismatch) {
-                request()->session()->forget('detected_city');
-                $detectedCity = null;
-            }
         }
 
         if ($detectedCity) {
@@ -146,6 +144,7 @@ class Clinic
             'csrfToken' => csrf_token(),
             'env' => config('app.env'),
             'baseUrl' => url('/'),
+            'cityConfirmed' => (bool) (request()->cookie('city_confirmed') || request()->cookie('selected_city')),
             'state' => resolve(InitialFrontendState::class)->forUser(Auth::user()),
             'detectedCity' => $detectedCity,
             'cities' => $preparedCities,

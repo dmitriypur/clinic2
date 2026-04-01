@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Log;
 
 class GeoIpService
 {
-    protected const API_URL = 'http://api.sypexgeo.net/json/';
+    protected const API_URL = 'https://api.sypexgeo.net/json/';
 
     /**
      * Определяет город по IP-адресу.

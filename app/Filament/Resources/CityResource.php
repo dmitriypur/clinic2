@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Forms\Components\UtmTrackerManager;
 use App\Filament\Resources\CityResource\Pages;
 use App\Models\City;
 use Filament\Forms;
@@ -152,31 +153,11 @@ class CityResource extends Resource
                             ->helperText('Используется в описаниях: "Ехать в Москву"'),
                     ])->columns(2),
 
-                Section::make('UTM Телефоны')
+                Section::make('UTM Трекер')
                     ->schema([
-                        Forms\Components\Repeater::make('utm_phones')
-                            ->label('Правила подмены')
-                            ->schema([
-                                Forms\Components\TextInput::make('source')
-                                    ->label('utm_source')
-                                    ->columnSpan('full')
-                                    ->required(),
-                                Forms\Components\TextInput::make('phone')
-                                    ->label('Телефон по умолчанию для этого source')
-                                    ->columnSpan('full'),
-                                Forms\Components\Repeater::make('medium')
-                                    ->label('Уточнения для utm_medium')
-                                    ->schema([
-                                        Forms\Components\TextInput::make('name')
-                                            ->label('utm_medium')
-                                            ->columnSpan('full')
-                                            ->required(),
-                                        Forms\Components\TextInput::make('phone')
-                                            ->label('Телефон')
-                                            ->columnSpan('full')
-                                            ->required(),
-                                    ])
-                            ])
+                        UtmTrackerManager::make('utm_tracker')
+                            ->hiddenLabel()
+                            ->columnSpanFull(),
                     ]),
 
                 Section::make('Аналитика и Скрипты')

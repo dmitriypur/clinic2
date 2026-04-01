@@ -50,11 +50,11 @@ class SetCityMiddlewareTest extends TestCase
         $rememberedCity->is_default = false;
 
         $cityService = $this->createMock(CityService::class);
-        $cityService->expects($this->once())
+        $cityService->expects($this->any())
             ->method('isGlobalPath')
             ->with('doctors/ivanov')
             ->willReturn(false);
-        $cityService->expects($this->once())
+        $cityService->expects($this->atLeastOnce())
             ->method('getCityBySlug')
             ->with('kirov')
             ->willReturn($rememberedCity);
@@ -199,11 +199,11 @@ class SetCityMiddlewareTest extends TestCase
         $detectedCity->is_default = true;
 
         $cityService = $this->createMock(CityService::class);
-        $cityService->expects($this->exactly(3))
+        $cityService->expects($this->any())
             ->method('isGlobalPath')
             ->with('doctors/ivanov')
             ->willReturn(false);
-        $cityService->expects($this->exactly(2))
+        $cityService->expects($this->atLeastOnce())
             ->method('getCityBySlug')
             ->with('kirov')
             ->willReturn($rememberedCity);
@@ -237,7 +237,53 @@ class SetCityMiddlewareTest extends TestCase
     }
 
     /** @test */
-    public function prefixed_city_page_keeps_detected_city_mismatch_in_session(): void
+    public function prefixed_city_page_redirects_to_remembered_city_when_cookie_differs(): void
+    {
+        $requestedCity = new City();
+        $requestedCity->id = 1;
+        $requestedCity->slug = 'moscow';
+        $requestedCity->is_default = true;
+
+        $rememberedCity = new City();
+        $rememberedCity->id = 2;
+        $rememberedCity->slug = 'kirov';
+        $rememberedCity->is_default = false;
+
+        $cityService = $this->createMock(CityService::class);
+        $cityService->expects($this->exactly(2))
+            ->method('isGlobalPath')
+            ->willReturnCallback(static fn(string $path): bool => false);
+        $cityService->expects($this->exactly(2))
+            ->method('getCityBySlug')
+            ->willReturnMap([
+                ['moscow', $requestedCity],
+                ['kirov', $rememberedCity],
+            ]);
+        $cityService->expects($this->once())
+            ->method('getActiveCities')
+            ->willReturn(new EloquentCollection([$requestedCity, $rememberedCity]));
+
+        $middleware = new SetCityMiddleware($cityService, $this->createMock(GeoIpService::class));
+        $request = Request::create('/moscow/doctors/ivanov', 'GET');
+        $request->cookies->set('selected_city', 'kirov');
+
+        $session = app('session.store');
+        $session->flush();
+        $session->start();
+        $request->setLaravelSession($session);
+
+        $route = new Route('GET', '/{city}/doctors/{handle}', ['uses' => fn() => response('ok')]);
+        $route->name('doctor.show');
+        $request->setRouteResolver(static fn() => $route->bind($request));
+
+        $response = $middleware->handle($request, static fn() => response('ok'));
+
+        $this->assertInstanceOf(RedirectResponse::class, $response);
+        $this->assertSame(url('/kirov/doctors/ivanov'), $response->getTargetUrl());
+    }
+
+    /** @test */
+    public function prefixed_city_page_clears_detected_city_mismatch_in_session(): void
     {
         $currentCity = new City();
         $currentCity->id = 2;
@@ -250,11 +296,11 @@ class SetCityMiddlewareTest extends TestCase
         $detectedCity->is_default = true;
 
         $cityService = $this->createMock(CityService::class);
-        $cityService->expects($this->once())
+        $cityService->expects($this->exactly(2))
             ->method('getCityBySlug')
             ->with('kirov')
             ->willReturn($currentCity);
-        $cityService->expects($this->exactly(3))
+        $cityService->expects($this->any())
             ->method('isGlobalPath')
             ->willReturnCallback(static fn(string $path): bool => false);
         $cityService->expects($this->once())
@@ -268,10 +314,8 @@ class SetCityMiddlewareTest extends TestCase
             ->willReturn(new EloquentCollection([$currentCity, $detectedCity]));
 
         $geoIpService = $this->createMock(GeoIpService::class);
-        $geoIpService->expects($this->once())
-            ->method('getCityByIp')
-            ->with('203.0.113.21')
-            ->willReturn($detectedCity);
+        $geoIpService->expects($this->never())
+            ->method('getCityByIp');
 
         $middleware = new SetCityMiddleware($cityService, $geoIpService);
         $request = Request::create('/kirov/licenzii-i-iuridiceskaia-informaciia?test_city=Москва', 'GET', [], [], [], [
@@ -282,6 +326,7 @@ class SetCityMiddlewareTest extends TestCase
         $session = app('session.store');
         $session->flush();
         $session->start();
+        $session->put('detected_city', $detectedCity);
         $request->setLaravelSession($session);
 
         $route = new Route('GET', '/{city}/{handle?}', ['uses' => fn() => response('ok')]);
@@ -291,6 +336,6 @@ class SetCityMiddlewareTest extends TestCase
         $response = $middleware->handle($request, static fn() => response('ok'));
 
         $this->assertSame('ok', $response->getContent());
-        $this->assertSame('moscow', $session->get('detected_city')->slug);
+        $this->assertNull($session->get('detected_city'));
     }
 }

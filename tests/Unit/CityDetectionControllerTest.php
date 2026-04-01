@@ -13,7 +13,7 @@ use Tests\TestCase;
 class CityDetectionControllerTest extends TestCase
 {
     /** @test */
-    public function it_returns_null_when_geoip_resolves_default_city(): void
+    public function it_returns_detected_default_city_when_geoip_resolves_moscow(): void
     {
         $defaultCity = new City();
         $defaultCity->id = 1;
@@ -43,8 +43,16 @@ class CityDetectionControllerTest extends TestCase
 
         $response = $controller($request);
 
-        $this->assertSame(['detectedCity' => null], $response->getData(true));
-        $this->assertNull(session('detected_city'));
+        $this->assertSame([
+            'detectedCity' => [
+                'id' => 1,
+                'name' => 'Москва',
+                'slug' => 'moscow',
+                'is_default' => true,
+            ],
+        ], $response->getData(true));
+
+        $this->assertSame('moscow', session('detected_city')->slug);
     }
 
     /** @test */
@@ -90,12 +98,53 @@ class CityDetectionControllerTest extends TestCase
         $this->assertSame('kirov', session('detected_city')->slug);
     }
 
-    private function makeRequest(string $ip): Request
+    /** @test */
+    public function it_prefers_cloudflare_connecting_ip_for_geo_detection(): void
     {
-        $request = Request::create('/city-detection', 'GET', [], [], [], [
+        $nonDefaultCity = new City();
+        $nonDefaultCity->id = 2;
+        $nonDefaultCity->name = 'Киров';
+        $nonDefaultCity->slug = 'kirov';
+        $nonDefaultCity->is_default = false;
+
+        $geoIpService = $this->createMock(GeoIpService::class);
+        $geoIpService->expects($this->once())
+            ->method('getCityByIp')
+            ->with('203.0.113.99')
+            ->willReturn($nonDefaultCity);
+
+        $cityService = $this->createMock(CityService::class);
+        $cityService->expects($this->once())
+            ->method('getActiveCities')
+            ->willReturn(new EloquentCollection([
+                (function () {
+                    $defaultCity = new City();
+                    $defaultCity->id = 1;
+                    $defaultCity->name = 'Москва';
+                    $defaultCity->slug = 'moscow';
+                    $defaultCity->is_default = true;
+
+                    return $defaultCity;
+                })(),
+                $nonDefaultCity,
+            ]));
+
+        $controller = new CityDetectionController($geoIpService, $cityService);
+        $request = $this->makeRequest('198.51.100.20', [
+            'HTTP_CF_CONNECTING_IP' => '203.0.113.99',
+        ]);
+
+        $response = $controller($request);
+
+        $this->assertSame('kirov', $response->getData(true)['detectedCity']['slug']);
+    }
+
+    private function makeRequest(string $ip, array $server = []): Request
+    {
+        $request = Request::create('/city-detection', 'GET', [], [], [], array_merge([
             'REMOTE_ADDR' => $ip,
             'HTTP_X_REQUESTED_WITH' => 'XMLHttpRequest',
-        ]);
+        ], $server));
 
         $session = app('session.store');
         $session->flush();

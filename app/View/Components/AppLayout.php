@@ -78,18 +78,28 @@ class AppLayout extends Component
         $specialScheduleTitle = $city->special_schedule_title ?? '';
 
         // Логика UTM
-        $utmSource = Session::remember('utm_source', static fn() => request()->query('utm_source'));
-        $utmMedium = Session::remember('utm_medium', static fn() => request()->query('utm_medium'));
+        $utmSource = Session::get('utm_source');
+        $utmMedium = Session::get('utm_medium');
+        $hasQueryUtmSource = request()->query->has('utm_source');
+        $hasQueryUtmMedium = request()->query->has('utm_medium');
 
-        if (request()->has('utm_source') && $utmSource !== request()->query('utm_source')) {
+        if ($hasQueryUtmSource) {
             $utmSource = request()->query('utm_source');
-            Session::put('utm_source', request()->query('utm_source'));
+            Session::put('utm_source', $utmSource);
+
+            // Если source пришёл явно без medium, предыдущий medium из сессии
+            // не должен продолжать влиять на подмену телефона.
+            if (! $hasQueryUtmMedium) {
+                $utmMedium = null;
+                Session::forget('utm_medium');
+            }
         }
 
-        if (request()->has('utm_medium') && $utmSource !== request()->query('utm_medium')) {
+        if ($hasQueryUtmMedium) {
             $utmMedium = request()->query('utm_medium');
-            Session::put('utm_medium', request()->query('utm_medium'));
+            Session::put('utm_medium', $utmMedium);
         }
+
         $utmSource = strtolower($utmSource ?? '');
         $utmMedium = strtolower($utmMedium ?? '');
 

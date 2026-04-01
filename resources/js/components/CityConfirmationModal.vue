@@ -29,8 +29,6 @@
 </template>
 
 <script>
-import Cookies from 'js-cookie';
-
 export default {
     name: "CityConfirmationModal",
 
@@ -47,7 +45,7 @@ export default {
         this.cities = window.config.cities;
         this.detectedCity = this.resolveDetectedCity(window.config.detectedCity);
         const currentCity = this.getCurrentCity();
-        const cityConfirmed = Cookies.get('city_confirmed') || Cookies.get('selected_city');
+        const cityConfirmed = this.isCityConfirmed();
         const hasDetectedCityMismatch = this.detectedCity
             && (!currentCity || this.detectedCity.slug !== currentCity.slug);
 
@@ -72,6 +70,9 @@ export default {
     },
 
     methods: {
+        isCityConfirmed() {
+            return Boolean(window.config.cityConfirmed);
+        },
         getCurrentCity() {
             return this.cities.find((city) => city?.is_current) || null;
         },
@@ -113,30 +114,22 @@ export default {
                 this.detectedCity = this.resolveDetectedCity(payload?.detectedCity || null);
                 window.config.detectedCity = this.detectedCity;
 
-                if (this.detectedCity && !Cookies.get('city_confirmed') && !Cookies.get('selected_city')) {
+                if (this.detectedCity && !this.isCityConfirmed()) {
                     this.showModal = true;
                     this.step = 'confirm';
+                    return;
+                }
+
+                if (!this.detectedCity && !this.isCityConfirmed() && this.cities.length > 1) {
+                    this.showModal = true;
+                    this.step = 'select';
                 }
             } catch (e) {
                 // Detection failure should not block the page.
             }
         },
-        setCityCookies(citySlug = null) {
-            const options = {
-                expires: 365,
-                path: '/',
-            };
-
-            Cookies.set('city_confirmed', 'true', options);
-
-            if (citySlug) {
-                Cookies.set('selected_city', citySlug, options);
-            }
-        },
-
         confirmCity() {
             this.showModal = false;
-            this.setCityCookies(this.detectedCity?.slug || null);
             window.location.href = this.detectedCity.url;
         },
 
@@ -146,7 +139,6 @@ export default {
 
         selectCity(city) {
             this.showModal = false;
-            this.setCityCookies(city?.slug || null);
             window.location.href = city.url;
         }
     }

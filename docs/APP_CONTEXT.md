@@ -15,6 +15,12 @@
 - Отдельно есть админ-панель на Filament для управления контентом, услугами, врачами, городами, отзывами, меню и настройками.
 
 ## Что изменилось (последнее)
+- 2026-04-01: мультигородный сценарий выбора города приведён к новому контракту. `force_city` и прямые URL с префиксом `/{city}` теперь открывают выбранный город без popup-подтверждения, но сохранённый `selected_city` всё равно имеет приоритет: если пользователь уже запомнил свой город, даже прямой заход на URL другого города редиректит его обратно на сохранённый вариант, пока он сам не переключит город через выбор/`force_city`. На первом заходе на корень без параметров `CityDetectionController` и [App\Services\GeoIpService](/Applications/MAMP/htdocs/zrenie.clinic-7/app/Services/GeoIpService.php) могут вернуть и default-город тоже, поэтому Москва теперь тоже показывается в popup как подтверждённый GEO-вариант. Если GEO не сматчился ни с одним активным городом, фронтовая модалка [resources/js/components/CityConfirmationModal.vue](/Applications/MAMP/htdocs/zrenie.clinic-7/resources/js/components/CityConfirmationModal.vue) сразу открывает шаг выбора города. Для production GeoIP теперь ходит в SypexGeo по `https` и предпочитает `CF-Connecting-IP` перед обычным `REMOTE_ADDR`; прямой заход на `/{city}` дополнительно очищает висящий `detected_city`, чтобы явный URL не спорил с popup. Подтверждение/переключение города больше не зависит от `js-cookie`: frontend читает серверный флаг `window.config.cityConfirmed`, а сами cookies города остаются под управлением backend через `force_city` и middleware, что убирает цикл popup на default-городе из-за `HttpOnly` cookies. Обновлены тесты [tests/Unit/CityDetectionControllerTest.php](/Applications/MAMP/htdocs/zrenie.clinic-7/tests/Unit/CityDetectionControllerTest.php) и [tests/Unit/SetCityMiddlewareTest.php](/Applications/MAMP/htdocs/zrenie.clinic-7/tests/Unit/SetCityMiddlewareTest.php).
+- 2026-04-01: в `UTM Трекере` таблицы переведены на icon-first UI: на табе `Основной` колонка `Статус` использует зелёную галочку, красный крестик и янтарные часы, действия `Стоп / Возобновить / Удалить` заменены на компактные иконки, а также добавлена колонка `Ссылка` с полным URL вида `APP_URL + путь города + utm_source + utm_medium` и кнопкой открытия. В табах `Источники` и `Телефоны` текстовое `Удалить` тоже заменено на красную корзину, а у занятого телефона корзина показывается серой disabled-версией. Цвета иконок зафиксированы прямо в SVG, чтобы не зависеть от темы Filament, в [resources/views/filament/forms/components/utm-tracker-manager.blade.php](/Applications/MAMP/htdocs/zrenie.clinic-7/resources/views/filament/forms/components/utm-tracker-manager.blade.php).
+- 2026-04-01: для UTM-трекера ужесточено правило уникальности телефонов: сервис [app/Services/UtmTrackerService.php](/Applications/MAMP/htdocs/zrenie.clinic-7/app/Services/UtmTrackerService.php) теперь автоматически снимает дефолтный телефон у `source`, если тот же номер уже используется в `medium` этого же города, а остальные повторы телефонов между `source/medium` блокируются валидацией. Для уже мигрированных данных добавлена cleanup-миграция [database/migrations/2026_04_01_180000_remove_source_phone_duplicates_from_utm_tracker.php](/Applications/MAMP/htdocs/zrenie.clinic-7/database/migrations/2026_04_01_180000_remove_source_phone_duplicates_from_utm_tracker.php), а сервисные тесты в [tests/Unit/Services/UtmTrackerServiceTest.php](/Applications/MAMP/htdocs/zrenie.clinic-7/tests/Unit/Services/UtmTrackerServiceTest.php) покрывают и auto-clean source, и запрет повторов между medium-правилами.
+- 2026-04-01: UTM-трекинг в админке города переведён на нормализованную схему с тремя табами: в [app/Filament/Resources/CityResource.php](/Applications/MAMP/htdocs/zrenie.clinic-7/app/Filament/Resources/CityResource.php) секция `UTM Трекер` теперь использует кастомный field [app/Filament/Forms/Components/UtmTrackerManager.php](/Applications/MAMP/htdocs/zrenie.clinic-7/app/Filament/Forms/Components/UtmTrackerManager.php) и view [resources/views/filament/forms/components/utm-tracker-manager.blade.php](/Applications/MAMP/htdocs/zrenie.clinic-7/resources/views/filament/forms/components/utm-tracker-manager.blade.php); данные хранятся в таблицах `city_utm_phones`, `city_utm_sources`, `city_utm_mediums`, где `Основной` таб редактирует medium-правила с колонками `Начало / Конец / Статус` и действиями `Стоп / Возобновить`, `Источники` держит справочник `utm_source`, а `Телефоны` даёт общий пул номеров без повторного использования. Синхронизацию и mirror обратно в legacy `cities.utm_phones` выполняет [app/Services/UtmTrackerService.php](/Applications/MAMP/htdocs/zrenie.clinic-7/app/Services/UtmTrackerService.php); в legacy JSON попадают только активные medium-правила, поэтому публичная подмена телефонов и UTM-aware redirect продолжают работать без переписывания фронта. Добавлены миграции [database/migrations/2026_04_01_160000_create_city_utm_tracker_tables.php](/Applications/MAMP/htdocs/zrenie.clinic-7/database/migrations/2026_04_01_160000_create_city_utm_tracker_tables.php) и [database/migrations/2026_04_01_170000_add_schedule_fields_to_city_utm_mediums_table.php](/Applications/MAMP/htdocs/zrenie.clinic-7/database/migrations/2026_04_01_170000_add_schedule_fields_to_city_utm_mediums_table.php), а также unit-тест [tests/Unit/Services/UtmTrackerServiceTest.php](/Applications/MAMP/htdocs/zrenie.clinic-7/tests/Unit/Services/UtmTrackerServiceTest.php).
+- 2026-04-01: в мультигороде добавлен UTM-aware redirect по городу: в [app/Http/Middleware/SetCityMiddleware.php](/Applications/MAMP/htdocs/zrenie.clinic-7/app/Http/Middleware/SetCityMiddleware.php) при входе на не-глобальный публичный URL с `utm_source` система пытается однозначно определить город по `City.utm_phones`; если найден ровно один лучший матч, пользователь редиректится на URL этого города с сохранением query-параметров, а город запоминается в cookies. При неоднозначном совпадении редирект не делается. Добавлен unit-тест [tests/Unit/SetCityMiddlewareUtmRedirectTest.php](/Applications/MAMP/htdocs/zrenie.clinic-7/tests/Unit/SetCityMiddlewareUtmRedirectTest.php).
+- 2026-04-01: исправлена UTM-подмена телефона на публичном сайте: в [app/View/Components/AppLayout.php](/Applications/MAMP/htdocs/zrenie.clinic-7/app/View/Components/AppLayout.php) `utm_medium` больше не “залипает” в сессии, если пользователь открывает URL с `utm_source`, но уже без `utm_medium`; в таком сценарии medium явно сбрасывается и сайт возвращается к телефону уровня source. Заодно убрана ошибочная проверка, где `utm_medium` сравнивался с переменной `utmSource`.
 - 2026-03-31: исправлена ошибка при массовой замене блоков в админке: в [app/Models/Page.php](/Applications/MAMP/htdocs/zrenie.clinic-7/app/Models/Page.php) `clearCache()` больше не пытается лениво грузить `category` у `Page`, а безопасно берёт `category.handle` через уже загруженную связь или отдельный запрос; это устраняет падение `Attempted to lazy load [category] on model [App\Models\Page] but lazy loading is disabled`.
 - 2026-03-31: в списке блоков Filament добавлен точечный bulk action только для роли `super_admin`: в [app/Filament/Resources/BlockResource.php](/Applications/MAMP/htdocs/zrenie.clinic-7/app/Filament/Resources/BlockResource.php) действие `replaceCallToActionWithSpecialistBanner` массово переводит выбранные блоки типа `BlockType::CALL_TO_ACTION` в `BlockType::BANNER_SPECIALIST_CALLBACK` и очищает их `payload`; bulk action не виден обычным пользователям и не пытается быть универсальной заменой любых блоков на любые.
 - 2026-03-31: новый banner-block `BlockType::BANNER_SPECIALIST_CALLBACK` сделан полностью статичным: в `resources/views/components/banner/specialist-callback.blade.php` заголовок, подзаголовок и графика зафиксированы в шаблоне, причём графика подключается как единый цельный арт через `<picture>` (`public/images/specialist-callback-desktop.webp` и `public/images/specialist-callback-mobile.webp`), а в `app/Filament/Resources/BlockResource.php` для него не показываются редактируемые hero-поля и загрузки `bg/pic`; кнопки жёстко открывают два существующих сценария: `openBookingWidgetV3('otpravka-formy')` для записи и `showCallbackFormNew(null, 'otpravka-formy')` для обычной формы.
@@ -139,6 +145,11 @@
   - список городов;
   - один город может быть `is_default`;
   - содержит контакты, адреса, соцсети, branches, SEO cases, scripts.
+- UTM tracker по городам нормализован в три таблицы:
+  - `city_utm_phones` — справочник телефонов города;
+  - `city_utm_sources` — справочник `utm_source` с дефолтным телефоном;
+  - `city_utm_mediums` — правила `utm_medium` c привязкой к source, телефону, `start_date` и `end_date`;
+  - legacy JSON `cities.utm_phones` остаётся как mirror для публичной части и собирается из активных правил сервисом `UtmTrackerService`.
 - Pivot-таблицы:
   - `city_page`
   - `city_doctor`
@@ -155,12 +166,15 @@
 ### Основная логика
 - `App\Http\Middleware\SetCityMiddleware`:
   - определяет город из `{city}` в роуте;
+  - на не-глобальных публичных страницах умеет до основного city-resolution определить целевой город по `utm_source/utm_medium` через `City.utm_phones`; если найден единственный лучший матч, делает redirect на URL этого города и запоминает его в cookies;
   - делает 301-редирект с дефолтного города на URL без префикса;
   - на публичных не-глобальных маршрутах без префикса (`/`, страницы, услуги, врачи, отзывы и часть служебных страниц контента) делает 302-редирект на `/{selected_city}/...`, если в cookie сохранён подтверждённый non-default город;
+  - если пользователь уже сохранил город, прямой заход на URL другого города тоже редиректит на сохранённый вариант той же страницы; исключение — явный ручной override через `force_city`;
   - явное переключение на дефолтный город с публичных не-глобальных страниц идёт через `force_city`, чтобы override сработал раньше редиректа по сохранённой cookie;
   - запоминает выбранный город в cookies;
   - для глобальных путей хранит город в cookie и переключает его через `force_city`;
-  - при первом заходе без подтверждения города может определить город по IP;
+  - при первом заходе на корень без подтверждения города может определить город по IP и передать его в popup, включая default-город;
+  - прямой URL с `/{city}` считается явным выбором и очищает pending `detected_city`, поэтому confirmation popup на префиксных URL не всплывает;
   - шарит в Blade `currentCity` и список `cities`.
 
 ### Сервис
@@ -180,9 +194,10 @@
 
 ### Автоопределение города
 - `App\Services\GeoIpService`
-- Внешний сервис: `http://api.sypexgeo.net/json/{ip}`
+- Внешний сервис: `https://api.sypexgeo.net/json/{ip}`
 - Локальные IP (`127.0.0.1`, `::1`) игнорируются.
-- Popup/`detectedCity` формируется только для non-default города; default city не предлагается к подтверждению и остаётся fallback-сценарием для Москвы.
+- В production для запроса к GeoIP приоритетно используется `CF-Connecting-IP`, затем обычный IP запроса.
+- Popup/`detectedCity` теперь может формироваться и для default-города; если GeoIP ничего не сматчил с активным городом, фронт открывает шаг выбора города вручную.
 
 ### Автоматическая фильтрация данных
 - Трейт `App\Models\Traits\HasCityScope`:
@@ -360,6 +375,11 @@ Middleware:
   - фильтрует клиники по `BOOKING_ALLOWED_CLINIC_IDS`;
   - вызывается из админской страницы `Настройки виджета` автоматически после первого рендера;
   - забирает ветки клиник параллельно и обновляет локальную таблицу через `upsert`, без серии `updateOrCreate`.
+- `UtmTrackerService`
+  - адаптер между новыми таблицами `city_utm_*` и legacy JSON `cities.utm_phones`;
+  - собирает state для Filament-редактора города;
+  - синхронизирует справочник телефонов, sources и medium-правила;
+  - при сборке legacy JSON публикует только активные medium-правила, чтобы `Стоп / Возобновить` и даты действия влияли на публичную подмену телефона и UTM-city redirect.
 - `MenuService`
   - фильтрует и готовит меню под текущий город;
   - добавляет городские URL;
@@ -443,6 +463,7 @@ Middleware:
 - Для контентных страниц доступен кастомный тип `BlockType::APPARATUS_TREATMENT`: в `BlockResource` он хранит две фиксированные секции `payload.sections`, где у каждой есть свой заголовок, rich-text и изображение через отдельную media collection.
   - `ServiceResource`
   - `CityResource`
+    - секция `UTM Трекер` редактируется кастомным field `UtmTrackerManager`: три таба (`Основной`, `Источники`, `Телефоны`) работают поверх нормализованных таблиц, а сервис `UtmTrackerService` синхронизирует изменения обратно в legacy `utm_phones` для публичной логики.
   - `ReviewResource`
   - `CategoryResource`
   - `TagResource`
@@ -599,6 +620,9 @@ Middleware:
 - Часть URL и поведения зависит от города, а часть маршрутов специально глобальная.
 - В layout и city-настройках есть поддержка `header_scripts` и `body_scripts`, поэтому любые изменения в SEO/scripts нужно проверять и в глобальных настройках, и в `City`.
 - Подстановка city-переменных в блоках выполняется только при публичном рендере через `withResolvedCitySeoVariables()`; исходные значения `blocks.title`, `blocks.body_html` и `blocks.payload` в БД и админке не переписываются.
+- Публичная UTM-логика всё ещё читает legacy `cities.utm_phones`, но это теперь зеркало, которое собирает `UtmTrackerService`; если менять UTM-правила, нельзя обновлять только новые таблицы и забывать о mirror-синхронизации.
+- В реальных UTM-данных города уже могут существовать повторные использования одного и того же номера в нескольких `source/medium`; редактор должен их корректно показывать и сохранять, даже если для новых назначений UI помечает занятые номера.
+- Для UTM-трекера действует правило приоритета: если один и тот же телефон одновременно выбран у `source` и у `medium`, телефон остаётся только у `medium`, а `source.default_phone` автоматически очищается; после этого любые оставшиеся дубли телефонов между `source/medium` считаются ошибкой валидации.
 - Для порядка врачей в `BookingWidgetV3` backend/admin order-map остаётся первичным источником, transport-слой не содержит doctor-бизнес-логики, а публичный frontend добавляет вторичную сортировку по числу, распарсенному из `doctor.extra.receives`, и использует тот же парсинг для клиентской возрастной валидации на последнем шаге.
 - Принудительный старт ветки `Выбрать врача` включается только явным `bookingStartMode: doctor` в конкретном UI-триггере; без этого виджет всегда стартует с первого шага.
 - Для списка врачей в виджете теперь поддерживаются два независимых порядка по городу: отдельный для doctor-flow и отдельный для clinic-flow; если `clinic_sort_order` не задан, clinic-flow использует fallback на doctor-flow order-map, но любой явный `clinic_sort_order` имеет приоритет над fallback-значениями.
@@ -609,6 +633,10 @@ Middleware:
 - На production nginx перехватывает любые URL с расширением `.js` как статические файлы (`try_files $uri =404`), поэтому route-based Livewire assets под `/livewire/*.js` там неработоспособны; для Filament/Livewire нужно использовать опубликованные assets в `public/vendor/livewire`, и деплой обязан их публиковать каждый релиз.
 
 ## Журнал изменений
+- 2026-04-01: для UTM-трекера введено правило приоритета `medium > source`: если номер совпадает, `source.default_phone` автоматически очищается, а оставшиеся дубли телефонов между `source/medium` блокируются валидацией. Для уже мигрированных данных добавлена cleanup-миграция `2026_04_01_180000_remove_source_phone_duplicates_from_utm_tracker.php`; в `UtmTrackerServiceTest` добавлены проверки на auto-clean source и на ошибку при дублировании номера между medium-правилами.
+- 2026-04-01: UTM-трекер города переведён с JSON-редактора на нормализованные таблицы `city_utm_phones`, `city_utm_sources`, `city_utm_mediums`; в `CityResource` добавлен кастомный `UtmTrackerManager` с тремя табами, а `UtmTrackerService` синхронизирует всё обратно в `cities.utm_phones`. Для medium-правил добавлены `start_date`, `end_date`, вычисляемый статус и действия `Стоп / Возобновить`; в legacy JSON попадают только активные правила. Добавлен unit-тест `tests/Unit/Services/UtmTrackerServiceTest.php`.
+- 2026-04-01: в `SetCityMiddleware` добавлен redirect по UTM-городам: система ищет лучший city match по `City.utm_phones`, уводит пользователя на соответствующий городской URL только при однозначном совпадении и сохраняет выбор города в cookies; добавлен unit-тест на medium-specific redirect и на отсутствие redirect при неоднозначном `utm_source`.
+- 2026-04-01: в `AppLayout` исправлена логика чтения UTM из query/session: при явном `utm_source` без `utm_medium` старый medium теперь удаляется из сессии, поэтому телефон корректно откатывается к правилу source; также исправлена опечатка в условии обновления medium.
 - 2026-03-30: добавлен тип блока `APPARATUS_TREATMENT` с отдельным Blade-шаблоном и двумя управляемыми через Filament секциями `title + body_html + image`; `App\Models\Block` теперь готовит для него responsive images по тем же правилам, что и для других media-driven блоков.
 - 2026-03-26: для дефолтной Москвы URL переключения теперь везде на не-глобальных публичных страницах собирается с `force_city`: обновлены `app/Clinic.php` и `resources/views/components/city-switcher.blade.php`. Сам `resources/js/components/CitySwitcher/CitySwitcher.vue` переведён на `@click.prevent` + явный `window.location.href` после записи cookies, чтобы браузер не успевал отправить старый `selected_city` и не возвращал пользователя обратно в Киров. В `tests/Unit/SetCityMiddlewareTest.php` добавлен сценарий для страницы врача `?force_city=moscow`.
 - 2026-03-26: в `app/Http/Middleware/SetCityMiddleware.php` расширен remembered-city redirect: при наличии cookie `selected_city` non-default город теперь восстанавливается не только на `/`, но и на обычных публичных маршрутах без префикса (`pages.show`, `posts.show`, `doctor.show`, `review.index`, `call-request`, `sitemap.html`) через `302` на `/{slug}/...`. Добавлен unit-тест `tests/Unit/SetCityMiddlewareTest.php` на страницу врача без префикса.

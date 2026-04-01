@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * @property string $name
@@ -111,5 +112,20 @@ class City extends Model
     public function reviews(): BelongsToMany
     {
         return $this->belongsToMany(Review::class);
+    }
+
+    public function utmPhones(): HasMany
+    {
+        return $this->hasMany(CityUtmPhone::class);
+    }
+
+    public function utmSources(): HasMany
+    {
+        return $this->hasMany(CityUtmSource::class);
+    }
+
+    public function utmMediums(): HasMany
+    {
+        return $this->hasMany(CityUtmMedium::class);
     }
 }
