@@ -81,10 +81,10 @@ class UtmTrackerService
                 ])
                 ->all(),
             'campaigns' => $this->mapCampaignStateRows(
-                $this->activeCampaigns($city)->sortBy(fn (CityUtmCampaign $campaign): string => $this->campaignSortValue($campaign))
+                $this->activeCampaigns($city)->sortByDesc(fn (CityUtmCampaign $campaign): int => $campaign->created_at?->timestamp ?? 0)
             ),
             'archived_campaigns' => $this->mapCampaignStateRows(
-                $this->archivedCampaigns($city)->sortByDesc(fn (CityUtmCampaign $campaign): int => $campaign->archived_at?->timestamp ?? 0)
+                $this->archivedCampaigns($city)->sortByDesc(fn (CityUtmCampaign $campaign): int => $campaign->created_at?->timestamp ?? 0)
             ),
         ]));
     }
@@ -290,6 +290,7 @@ class UtmTrackerService
                 'medium_name' => $campaign->medium_name,
                 'phone_key' => $campaign->phone_id ? $this->phoneKey($campaign->phone_id) : null,
                 'open_booking_widget' => (bool) $campaign->open_booking_widget,
+                'created_at' => $campaign->created_at?->format('Y-m-d H:i:s'),
                 'started_at' => $campaign->started_at?->format('Y-m-d H:i:s'),
                 'stopped_at' => $campaign->stopped_at?->format('Y-m-d H:i:s'),
                 'archived_at' => $campaign->archived_at?->format('Y-m-d H:i:s'),
@@ -347,6 +348,7 @@ class UtmTrackerService
                 'medium_name' => null,
                 'phone_key' => $source->default_phone_id ? $this->phoneKey($source->default_phone_id) : null,
                 'open_booking_widget' => (bool) $source->open_booking_widget,
+                'created_at' => $source->created_at?->format('Y-m-d H:i:s') ?? now()->format('Y-m-d H:i:s'),
                 'started_at' => $source->created_at?->format('Y-m-d H:i:s') ?? now()->format('Y-m-d H:i:s'),
                 'stopped_at' => null,
                 'archived_at' => null,
@@ -367,6 +369,7 @@ class UtmTrackerService
                 'medium_name' => $medium->medium_name,
                 'phone_key' => $medium->phone_id ? $this->phoneKey($medium->phone_id) : null,
                 'open_booking_widget' => (bool) $medium->open_booking_widget,
+                'created_at' => $medium->created_at?->format('Y-m-d H:i:s') ?? now()->format('Y-m-d H:i:s'),
                 'started_at' => ($medium->start_date?->startOfDay() ?? $medium->created_at ?? now())->format('Y-m-d H:i:s'),
                 'stopped_at' => $isArchived ? $stoppedAt?->format('Y-m-d H:i:s') : null,
                 'archived_at' => $isArchived ? $stoppedAt?->format('Y-m-d H:i:s') : null,
@@ -428,6 +431,7 @@ class UtmTrackerService
                     'medium_name' => null,
                     'phone_key' => $defaultPhoneKey,
                     'open_booking_widget' => false,
+                    'created_at' => now()->format('Y-m-d H:i:s'),
                     'started_at' => now()->format('Y-m-d H:i:s'),
                     'stopped_at' => null,
                     'archived_at' => null,
@@ -457,6 +461,7 @@ class UtmTrackerService
                     'medium_name' => '',
                     'phone_key' => $phoneKey,
                     'open_booking_widget' => false,
+                    'created_at' => now()->format('Y-m-d H:i:s'),
                     'started_at' => now()->format('Y-m-d H:i:s'),
                     'stopped_at' => null,
                     'archived_at' => null,
@@ -834,6 +839,7 @@ class UtmTrackerService
                     'medium_name' => $type === 'medium' ? trim((string) data_get($row, 'medium_name', '')) : null,
                     'phone_key' => data_get($row, 'phone_key') ? (string) data_get($row, 'phone_key') : null,
                     'open_booking_widget' => (bool) data_get($row, 'open_booking_widget', false),
+                    'created_at' => $this->normalizeDateTime(data_get($row, 'created_at')),
                     'started_at' => $this->normalizeDateTime(data_get($row, 'started_at')),
                     'stopped_at' => $this->normalizeDateTime(data_get($row, 'stopped_at')),
                     'archived_at' => $this->normalizeDateTime(data_get($row, 'archived_at')),
@@ -1043,6 +1049,7 @@ class UtmTrackerService
                     'medium_name' => null,
                     'phone_key' => $defaultPhoneKey,
                     'open_booking_widget' => (bool) ($sourceRow['open_booking_widget'] ?? false),
+                    'created_at' => now()->format('Y-m-d H:i:s'),
                     'started_at' => now()->format('Y-m-d H:i:s'),
                     'stopped_at' => null,
                     'archived_at' => null,

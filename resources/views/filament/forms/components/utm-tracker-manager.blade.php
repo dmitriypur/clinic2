@@ -12,6 +12,28 @@
         copiedTrackingKey: null,
         copyResetTimer: null,
         selectedTrackingKeys: [],
+        trackingSearch: '',
+        archiveSearch: '',
+        trackingFiltersOpen: false,
+        archiveFiltersOpen: false,
+        trackingFilters: {
+            source_key: '',
+            phone_key: '',
+            started_date: '',
+        },
+        archiveFilters: {
+            source_key: '',
+            phone_key: '',
+            started_date: '',
+        },
+        trackingSort: {
+            column: 'created_at',
+            direction: 'desc',
+        },
+        archiveSort: {
+            column: 'created_at',
+            direction: 'desc',
+        },
         init() {
             this.ensureState()
 
@@ -79,6 +101,7 @@
                     medium_name: type === 'medium' ? (row?.medium_name ?? '') : '',
                     phone_key: row?.phone_key ?? '',
                     open_booking_widget: !! row?.open_booking_widget,
+                    created_at: row?.created_at ?? '',
                     started_at: row?.started_at ?? '',
                     stopped_at: row?.stopped_at ?? '',
                     archived_at: row?.archived_at ?? '',
@@ -257,6 +280,120 @@
         isTrackingLinkCopied(campaignRow) {
             return this.copiedTrackingKey === campaignRow.key
         },
+        campaignCreatedAt(row) {
+            return String(row?.created_at || row?.started_at || '').trim()
+        },
+        campaignStatus(row, mode = 'tracking') {
+            return mode === 'archive' || row?.archived_at ? 'stopped' : 'active'
+        },
+        campaignSearchText(row) {
+            return [
+                this.sourceLabel(row?.source_key),
+                row?.medium || '',
+                this.campaignName(row),
+                this.phoneLabel(row?.phone_key),
+                this.trackingLinkValue(row),
+            ].join(' ').toLowerCase()
+        },
+        dateMatchesFilter(value, filterValue) {
+            const normalizedFilter = String(filterValue || '').trim()
+
+            if (! normalizedFilter) {
+                return true
+            }
+
+            return String(value || '').startsWith(normalizedFilter)
+        },
+        rowMatchesCampaignFilters(row, mode = 'tracking') {
+            const filters = mode === 'archive' ? this.archiveFilters : this.trackingFilters
+            const search = String(mode === 'archive' ? this.archiveSearch : this.trackingSearch).trim().toLowerCase()
+
+            if (search && ! this.campaignSearchText(row).includes(search)) {
+                return false
+            }
+
+            if (filters.source_key && row.source_key !== filters.source_key) {
+                return false
+            }
+
+            if (filters.phone_key && row.phone_key !== filters.phone_key) {
+                return false
+            }
+
+            if (filters.status && this.campaignStatus(row, mode) !== filters.status) {
+                return false
+            }
+
+            if (! this.dateMatchesFilter(row.started_at, filters.started_date)) {
+                return false
+            }
+
+            return true
+        },
+        campaignSortComparable(row, column, mode = 'tracking') {
+            switch (column) {
+                case 'source':
+                    return this.sourceLabel(row.source_key).toLowerCase()
+                case 'phone':
+                    return this.phoneLabel(row.phone_key).toLowerCase()
+                case 'started_at':
+                    return row.started_at || ''
+                case 'status':
+                    return this.campaignStatus(row, mode)
+                case 'created_at':
+                default:
+                    return this.campaignCreatedAt(row)
+            }
+        },
+        sortCampaignRows(rows, mode = 'tracking') {
+            const sort = mode === 'archive' ? this.archiveSort : this.trackingSort
+            const multiplier = sort.direction === 'asc' ? 1 : -1
+
+            return [...rows].sort((left, right) => {
+                const leftValue = this.campaignSortComparable(left, sort.column, mode)
+                const rightValue = this.campaignSortComparable(right, sort.column, mode)
+
+                if (leftValue === rightValue) {
+                    return 0
+                }
+
+                return (leftValue > rightValue ? 1 : -1) * multiplier
+            })
+        },
+        campaignRowsForView(mode = 'tracking') {
+            const rows = mode === 'archive' ? this.state.archived_campaigns : this.state.campaigns
+
+            return this.sortCampaignRows(
+                rows.filter((row) => this.rowMatchesCampaignFilters(row, mode)),
+                mode,
+            )
+        },
+        toggleCampaignSort(mode, column) {
+            const target = mode === 'archive' ? this.archiveSort : this.trackingSort
+
+            if (target.column === column) {
+                target.direction = target.direction === 'asc' ? 'desc' : 'asc'
+
+                return
+            }
+
+            target.column = column
+            target.direction = column === 'created_at' ? 'desc' : 'asc'
+        },
+        campaignSortIsActive(mode, column) {
+            const target = mode === 'archive' ? this.archiveSort : this.trackingSort
+
+            return target.column === column
+        },
+        campaignSortIndicator(mode, column) {
+            const target = mode === 'archive' ? this.archiveSort : this.trackingSort
+
+            if (target.column !== column) {
+                return ''
+            }
+
+            return target.direction === 'asc' ? '↑' : '↓'
+        },
         isTrackingSelected(campaignKey) {
             return this.selectedTrackingKeys.includes(campaignKey)
         },
@@ -266,7 +403,7 @@
                 : [...this.selectedTrackingKeys, campaignKey]
         },
         visibleTrackingKeys() {
-            return this.state.campaigns.map((row) => row.key)
+            return this.campaignRowsForView('tracking').map((row) => row.key)
         },
         areAllTrackingSelected() {
             const keys = this.visibleTrackingKeys()
@@ -358,6 +495,7 @@
                         medium_name: '',
                         phone_key: defaultPhoneKey,
                         open_booking_widget: !! sourceRow.open_booking_widget,
+                        created_at: this.currentDateTimeValue(),
                         started_at: this.currentDateTimeValue(),
                         stopped_at: '',
                         archived_at: '',
@@ -418,6 +556,7 @@
                 medium_name: '',
                 phone_key: '',
                 open_booking_widget: false,
+                created_at: this.currentDateTimeValue(),
                 started_at: this.currentDateTimeValue(),
                 stopped_at: '',
                 archived_at: '',
@@ -700,6 +839,71 @@
                 </button>
             </div>
 
+            <div class="space-y-3">
+                <div class="flex items-end gap-2">
+                    <label class="block flex-1">
+                        <span class="mb-1 block text-[11px] font-medium text-gray-500 dark:text-gray-400">Поиск</span>
+                        <input
+                            type="text"
+                            class="block w-full rounded-md border-gray-300 px-2 py-1.5 text-xs shadow-none focus:border-primary-500 focus:ring-primary-500 dark:border-white/10 dark:bg-transparent dark:text-white"
+                            x-model="trackingSearch"
+                            placeholder="Source, medium, телефон, название"
+                        />
+                    </label>
+
+                    <button
+                        type="button"
+                        class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-gray-300 text-gray-600 transition hover:bg-gray-50 dark:border-white/10 dark:text-gray-300 dark:hover:bg-white/5"
+                        x-bind:class="trackingFiltersOpen ? 'bg-gray-100 dark:bg-white/10' : ''"
+                        x-on:click="trackingFiltersOpen = !trackingFiltersOpen"
+                        title="Фильтры"
+                        aria-label="Фильтры"
+                    >
+                        <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path d="M3.25 4A.75.75 0 0 1 4 3.25h12a.75.75 0 0 1 .53 1.28L12 9.06v5.19a.75.75 0 0 1-1.14.64l-2-1.25a.75.75 0 0 1-.36-.64V9.06L3.47 4.53A.75.75 0 0 1 3.25 4Z" />
+                        </svg>
+                    </button>
+                </div>
+
+                <div x-show="trackingFiltersOpen" x-cloak class="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                    <label class="block">
+                        <span class="mb-1 block text-[11px] font-medium text-gray-500 dark:text-gray-400">Source</span>
+                        <select
+                            class="block w-full rounded-md border-gray-300 px-2 py-1.5 text-xs shadow-none focus:border-primary-500 focus:ring-primary-500 dark:border-white/10 dark:bg-transparent dark:text-white"
+                            x-model="trackingFilters.source_key"
+                        >
+                            <option value="">Все source</option>
+                            <template x-for="sourceRow in sourceOptions()" :key="`tracking-filter-source-${sourceRow.key}`">
+                                <option x-bind:value="sourceRow.key" x-text="sourceRow.name ? `${sourceRow.source} (${sourceRow.name})` : sourceRow.source"></option>
+                            </template>
+                        </select>
+                    </label>
+
+                    <label class="block">
+                        <span class="mb-1 block text-[11px] font-medium text-gray-500 dark:text-gray-400">Телефон</span>
+                        <select
+                            class="block w-full rounded-md border-gray-300 px-2 py-1.5 text-xs shadow-none focus:border-primary-500 focus:ring-primary-500 dark:border-white/10 dark:bg-transparent dark:text-white"
+                            x-model="trackingFilters.phone_key"
+                        >
+                            <option value="">Все телефоны</option>
+                            <template x-for="phoneRow in state.phones" :key="`tracking-filter-phone-${phoneRow.key}`">
+                                <option x-bind:value="phoneRow.key" x-text="phoneRow.phone"></option>
+                            </template>
+                        </select>
+                    </label>
+
+                    <label class="block">
+                        <span class="mb-1 block text-[11px] font-medium text-gray-500 dark:text-gray-400">Запуск</span>
+                        <input
+                            type="date"
+                            class="block w-full rounded-md border-gray-300 px-2 py-1.5 text-xs shadow-none focus:border-primary-500 focus:ring-primary-500 dark:border-white/10 dark:bg-transparent dark:text-white"
+                            x-model="trackingFilters.started_date"
+                        />
+                    </label>
+
+                </div>
+            </div>
+
             <div class="overflow-x-auto">
                 <table class="w-full min-w-[1160px] table-fixed border-collapse text-sm">
                     <thead>
@@ -709,35 +913,74 @@
                                     type="checkbox"
                                     class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-white/10 dark:bg-transparent"
                                     x-bind:checked="areAllTrackingSelected()"
-                                    x-bind:disabled="isPersisting || state.campaigns.length === 0"
+                                    x-bind:disabled="isPersisting || campaignRowsForView('tracking').length === 0"
                                     x-init="$el.indeterminate = selectedTrackingKeys.length > 0 && ! areAllTrackingSelected()"
                                     x-effect="$el.indeterminate = selectedTrackingKeys.length > 0 && ! areAllTrackingSelected()"
                                     x-on:change="toggleAllTrackingSelection()"
                                 />
                             </th>
-                            <th class="w-[12%] py-2 pr-2 text-left font-medium text-gray-500 dark:text-gray-400">Source</th>
+                            <th class="w-[12%] py-2 pr-2 text-left font-medium text-gray-500 dark:text-gray-400">
+                                <button type="button" class="inline-flex items-center gap-1" x-on:click="toggleCampaignSort('tracking', 'source')">
+                                    <span>Source</span>
+                                    <span class="inline-flex h-3 w-3 items-center justify-center">
+                                        <svg class="h-3 w-3" viewBox="0 0 12 12" aria-hidden="true">
+                                            <path d="M3.5 4.5 6 2l2.5 2.5" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" x-bind:class="campaignSortIsActive('tracking', 'source') && campaignSortIndicator('tracking', 'source') === '↑' ? 'text-gray-700 dark:text-gray-100' : 'text-gray-300 dark:text-gray-600'" />
+                                            <path d="M3.5 7.5 6 10l2.5-2.5" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" x-bind:class="campaignSortIsActive('tracking', 'source') && campaignSortIndicator('tracking', 'source') === '↓' ? 'text-gray-700 dark:text-gray-100' : 'text-gray-300 dark:text-gray-600'" />
+                                        </svg>
+                                    </span>
+                                </button>
+                            </th>
                             <th class="w-[7%] py-2 pr-2 text-left font-medium text-gray-500 dark:text-gray-400">Medium</th>
                             <th class="w-[6%] py-2 pr-2 text-center font-medium text-gray-500 dark:text-gray-400">Виджет</th>
                             <th class="w-[14%] py-2 pr-2 text-left font-medium text-gray-500 dark:text-gray-400">Ссылка</th>
                             <th class="w-[9%] py-2 pr-2 text-left font-medium text-gray-500 dark:text-gray-400">Название</th>
-                            <th class="w-[13%] py-2 pr-2 text-left font-medium text-gray-500 dark:text-gray-400">Телефон</th>
-                            <th class="w-[8%] py-2 pr-2 text-left font-medium text-gray-500 dark:text-gray-400">Запуск</th>
-                            <th class="w-[8%] py-2 pr-2 text-left font-medium text-gray-500 dark:text-gray-400">Остановка</th>
-                            <th class="w-[4%] py-2 pr-2 text-left font-medium text-gray-500 dark:text-gray-400">Статус</th>
+                            <th class="w-[13%] py-2 pr-2 text-left font-medium text-gray-500 dark:text-gray-400">
+                                <button type="button" class="inline-flex items-center gap-1" x-on:click="toggleCampaignSort('tracking', 'phone')">
+                                    <span>Телефон</span>
+                                    <span class="inline-flex h-3 w-3 items-center justify-center">
+                                        <svg class="h-3 w-3" viewBox="0 0 12 12" aria-hidden="true">
+                                            <path d="M3.5 4.5 6 2l2.5 2.5" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" x-bind:class="campaignSortIsActive('tracking', 'phone') && campaignSortIndicator('tracking', 'phone') === '↑' ? 'text-gray-700 dark:text-gray-100' : 'text-gray-300 dark:text-gray-600'" />
+                                            <path d="M3.5 7.5 6 10l2.5-2.5" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" x-bind:class="campaignSortIsActive('tracking', 'phone') && campaignSortIndicator('tracking', 'phone') === '↓' ? 'text-gray-700 dark:text-gray-100' : 'text-gray-300 dark:text-gray-600'" />
+                                        </svg>
+                                    </span>
+                                </button>
+                            </th>
+                            <th class="w-[8%] py-2 pr-2 text-left font-medium text-gray-500 dark:text-gray-400">
+                                <button type="button" class="inline-flex items-center gap-1" x-on:click="toggleCampaignSort('tracking', 'started_at')">
+                                    <span>Запуск</span>
+                                    <span class="inline-flex h-3 w-3 items-center justify-center">
+                                        <svg class="h-3 w-3" viewBox="0 0 12 12" aria-hidden="true">
+                                            <path d="M3.5 4.5 6 2l2.5 2.5" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" x-bind:class="campaignSortIsActive('tracking', 'started_at') && campaignSortIndicator('tracking', 'started_at') === '↑' ? 'text-gray-700 dark:text-gray-100' : 'text-gray-300 dark:text-gray-600'" />
+                                            <path d="M3.5 7.5 6 10l2.5-2.5" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" x-bind:class="campaignSortIsActive('tracking', 'started_at') && campaignSortIndicator('tracking', 'started_at') === '↓' ? 'text-gray-700 dark:text-gray-100' : 'text-gray-300 dark:text-gray-600'" />
+                                        </svg>
+                                    </span>
+                                </button>
+                            </th>
+                            <th class="w-[4%] py-2 pr-2 text-left font-medium text-gray-500 dark:text-gray-400">
+                                <button type="button" class="inline-flex items-center gap-1" x-on:click="toggleCampaignSort('tracking', 'status')">
+                                    <span>Статус</span>
+                                    <span class="inline-flex h-3 w-3 items-center justify-center">
+                                        <svg class="h-3 w-3" viewBox="0 0 12 12" aria-hidden="true">
+                                            <path d="M3.5 4.5 6 2l2.5 2.5" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" x-bind:class="campaignSortIsActive('tracking', 'status') && campaignSortIndicator('tracking', 'status') === '↑' ? 'text-gray-700 dark:text-gray-100' : 'text-gray-300 dark:text-gray-600'" />
+                                            <path d="M3.5 7.5 6 10l2.5-2.5" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" x-bind:class="campaignSortIsActive('tracking', 'status') && campaignSortIndicator('tracking', 'status') === '↓' ? 'text-gray-700 dark:text-gray-100' : 'text-gray-300 dark:text-gray-600'" />
+                                        </svg>
+                                    </span>
+                                </button>
+                            </th>
                             <th class="py-2 text-right font-medium text-gray-500 dark:text-gray-400">Действия</th>
                         </tr>
                     </thead>
 
                     <tbody>
-                        <template x-if="state.campaigns.length === 0">
+                        <template x-if="campaignRowsForView('tracking').length === 0">
                             <tr>
-                                <td colspan="11" class="py-6 text-center text-sm text-gray-500 dark:text-gray-400">
-                                    Пока нет ни одной активной UTM-кампании.
+                                <td colspan="10" class="py-6 text-center text-sm text-gray-500 dark:text-gray-400">
+                                    Ничего не найдено по текущим фильтрам.
                                 </td>
                             </tr>
                         </template>
 
-                        <template x-for="campaignRow in state.campaigns" :key="campaignRow.key">
+                        <template x-for="campaignRow in campaignRowsForView('tracking')" :key="campaignRow.key">
                             <tr
                                 class="border-b border-gray-200 dark:border-white/10"
                                 x-bind:class="isDuplicateCampaignPhone(campaignRow) ? 'bg-rose-50 dark:bg-rose-500/10' : ''"
@@ -892,10 +1135,6 @@
                                     style="color:var(--utm-text-strong) !important;"
                                     x-text="formatDateTime(campaignRow.started_at)"
                                 ></td>
-                                <td
-                                    class="py-2 pr-2 align-top text-xs text-gray-400 dark:text-gray-300"
-                                    style="color:var(--utm-text-muted) !important;"
-                                >—</td>
 
                                 <td class="py-2 pr-2 align-top">
                                     <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-200" title="активна">
@@ -950,33 +1189,138 @@
         </div>
 
         <div x-show="activeTab === 'archive'" x-cloak class="space-y-3">
+            <div class="space-y-3">
+                <div class="flex items-end gap-2">
+                    <label class="block flex-1">
+                        <span class="mb-1 block text-[11px] font-medium text-gray-500 dark:text-gray-400">Поиск</span>
+                        <input
+                            type="text"
+                            class="block w-full rounded-md border-gray-300 px-2 py-1.5 text-xs shadow-none focus:border-primary-500 focus:ring-primary-500 dark:border-white/10 dark:bg-transparent dark:text-white"
+                            x-model="archiveSearch"
+                            placeholder="Source, medium, телефон, название"
+                        />
+                    </label>
+
+                    <button
+                        type="button"
+                        class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-gray-300 text-gray-600 transition hover:bg-gray-50 dark:border-white/10 dark:text-gray-300 dark:hover:bg-white/5"
+                        x-bind:class="archiveFiltersOpen ? 'bg-gray-100 dark:bg-white/10' : ''"
+                        x-on:click="archiveFiltersOpen = !archiveFiltersOpen"
+                        title="Фильтры"
+                        aria-label="Фильтры"
+                    >
+                        <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path d="M3.25 4A.75.75 0 0 1 4 3.25h12a.75.75 0 0 1 .53 1.28L12 9.06v5.19a.75.75 0 0 1-1.14.64l-2-1.25a.75.75 0 0 1-.36-.64V9.06L3.47 4.53A.75.75 0 0 1 3.25 4Z" />
+                        </svg>
+                    </button>
+                </div>
+
+                <div x-show="archiveFiltersOpen" x-cloak class="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                    <label class="block">
+                        <span class="mb-1 block text-[11px] font-medium text-gray-500 dark:text-gray-400">Source</span>
+                        <select
+                            class="block w-full rounded-md border-gray-300 px-2 py-1.5 text-xs shadow-none focus:border-primary-500 focus:ring-primary-500 dark:border-white/10 dark:bg-transparent dark:text-white"
+                            x-model="archiveFilters.source_key"
+                        >
+                            <option value="">Все source</option>
+                            <template x-for="sourceRow in sourceOptions()" :key="`archive-filter-source-${sourceRow.key}`">
+                                <option x-bind:value="sourceRow.key" x-text="sourceRow.name ? `${sourceRow.source} (${sourceRow.name})` : sourceRow.source"></option>
+                            </template>
+                        </select>
+                    </label>
+
+                    <label class="block">
+                        <span class="mb-1 block text-[11px] font-medium text-gray-500 dark:text-gray-400">Телефон</span>
+                        <select
+                            class="block w-full rounded-md border-gray-300 px-2 py-1.5 text-xs shadow-none focus:border-primary-500 focus:ring-primary-500 dark:border-white/10 dark:bg-transparent dark:text-white"
+                            x-model="archiveFilters.phone_key"
+                        >
+                            <option value="">Все телефоны</option>
+                            <template x-for="phoneRow in state.phones" :key="`archive-filter-phone-${phoneRow.key}`">
+                                <option x-bind:value="phoneRow.key" x-text="phoneRow.phone"></option>
+                            </template>
+                        </select>
+                    </label>
+
+                    <label class="block">
+                        <span class="mb-1 block text-[11px] font-medium text-gray-500 dark:text-gray-400">Запуск</span>
+                        <input
+                            type="date"
+                            class="block w-full rounded-md border-gray-300 px-2 py-1.5 text-xs shadow-none focus:border-primary-500 focus:ring-primary-500 dark:border-white/10 dark:bg-transparent dark:text-white"
+                            x-model="archiveFilters.started_date"
+                        />
+                    </label>
+
+                </div>
+            </div>
+
             <div class="overflow-x-auto">
                 <table class="w-full table-fixed border-collapse text-sm">
                     <thead>
                         <tr class="border-b border-gray-200 dark:border-white/10">
-                            <th class="w-[15%] py-2 pr-3 text-left font-medium text-gray-500 dark:text-gray-400">Source</th>
+                            <th class="w-[15%] py-2 pr-3 text-left font-medium text-gray-500 dark:text-gray-400">
+                                <button type="button" class="inline-flex items-center gap-1" x-on:click="toggleCampaignSort('archive', 'source')">
+                                    <span>Source</span>
+                                    <span class="inline-flex h-3 w-3 items-center justify-center">
+                                        <svg class="h-3 w-3" viewBox="0 0 12 12" aria-hidden="true">
+                                            <path d="M3.5 4.5 6 2l2.5 2.5" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" x-bind:class="campaignSortIsActive('archive', 'source') && campaignSortIndicator('archive', 'source') === '↑' ? 'text-gray-700 dark:text-gray-100' : 'text-gray-300 dark:text-gray-600'" />
+                                            <path d="M3.5 7.5 6 10l2.5-2.5" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" x-bind:class="campaignSortIsActive('archive', 'source') && campaignSortIndicator('archive', 'source') === '↓' ? 'text-gray-700 dark:text-gray-100' : 'text-gray-300 dark:text-gray-600'" />
+                                        </svg>
+                                    </span>
+                                </button>
+                            </th>
                             <th class="w-[10%] py-2 pr-3 text-left font-medium text-gray-500 dark:text-gray-400">Medium</th>
                             <th class="w-[6%] py-2 pr-3 text-center font-medium text-gray-500 dark:text-gray-400">Виджет</th>
                             <th class="w-[18%] py-2 pr-3 text-left font-medium text-gray-500 dark:text-gray-400">Ссылка</th>
                             <th class="w-[12%] py-2 pr-3 text-left font-medium text-gray-500 dark:text-gray-400">Название</th>
-                            <th class="w-[12%] py-2 pr-3 text-left font-medium text-gray-500 dark:text-gray-400">Телефон</th>
-                            <th class="w-[10%] py-2 pr-3 text-left font-medium text-gray-500 dark:text-gray-400">Запуск</th>
+                            <th class="w-[12%] py-2 pr-3 text-left font-medium text-gray-500 dark:text-gray-400">
+                                <button type="button" class="inline-flex items-center gap-1" x-on:click="toggleCampaignSort('archive', 'phone')">
+                                    <span>Телефон</span>
+                                    <span class="inline-flex h-3 w-3 items-center justify-center">
+                                        <svg class="h-3 w-3" viewBox="0 0 12 12" aria-hidden="true">
+                                            <path d="M3.5 4.5 6 2l2.5 2.5" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" x-bind:class="campaignSortIsActive('archive', 'phone') && campaignSortIndicator('archive', 'phone') === '↑' ? 'text-gray-700 dark:text-gray-100' : 'text-gray-300 dark:text-gray-600'" />
+                                            <path d="M3.5 7.5 6 10l2.5-2.5" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" x-bind:class="campaignSortIsActive('archive', 'phone') && campaignSortIndicator('archive', 'phone') === '↓' ? 'text-gray-700 dark:text-gray-100' : 'text-gray-300 dark:text-gray-600'" />
+                                        </svg>
+                                    </span>
+                                </button>
+                            </th>
+                            <th class="w-[10%] py-2 pr-3 text-left font-medium text-gray-500 dark:text-gray-400">
+                                <button type="button" class="inline-flex items-center gap-1" x-on:click="toggleCampaignSort('archive', 'started_at')">
+                                    <span>Запуск</span>
+                                    <span class="inline-flex h-3 w-3 items-center justify-center">
+                                        <svg class="h-3 w-3" viewBox="0 0 12 12" aria-hidden="true">
+                                            <path d="M3.5 4.5 6 2l2.5 2.5" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" x-bind:class="campaignSortIsActive('archive', 'started_at') && campaignSortIndicator('archive', 'started_at') === '↑' ? 'text-gray-700 dark:text-gray-100' : 'text-gray-300 dark:text-gray-600'" />
+                                            <path d="M3.5 7.5 6 10l2.5-2.5" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" x-bind:class="campaignSortIsActive('archive', 'started_at') && campaignSortIndicator('archive', 'started_at') === '↓' ? 'text-gray-700 dark:text-gray-100' : 'text-gray-300 dark:text-gray-600'" />
+                                        </svg>
+                                    </span>
+                                </button>
+                            </th>
                             <th class="w-[10%] py-2 pr-3 text-left font-medium text-gray-500 dark:text-gray-400">Остановка</th>
-                            <th class="w-[4%] py-2 pr-3 text-left font-medium text-gray-500 dark:text-gray-400">Статус</th>
+                            <th class="w-[4%] py-2 pr-3 text-left font-medium text-gray-500 dark:text-gray-400">
+                                <button type="button" class="inline-flex items-center gap-1" x-on:click="toggleCampaignSort('archive', 'status')">
+                                    <span>Статус</span>
+                                    <span class="inline-flex h-3 w-3 items-center justify-center">
+                                        <svg class="h-3 w-3" viewBox="0 0 12 12" aria-hidden="true">
+                                            <path d="M3.5 4.5 6 2l2.5 2.5" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" x-bind:class="campaignSortIsActive('archive', 'status') && campaignSortIndicator('archive', 'status') === '↑' ? 'text-gray-700 dark:text-gray-100' : 'text-gray-300 dark:text-gray-600'" />
+                                            <path d="M3.5 7.5 6 10l2.5-2.5" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" x-bind:class="campaignSortIsActive('archive', 'status') && campaignSortIndicator('archive', 'status') === '↓' ? 'text-gray-700 dark:text-gray-100' : 'text-gray-300 dark:text-gray-600'" />
+                                        </svg>
+                                    </span>
+                                </button>
+                            </th>
                             <th class="py-2 text-right font-medium text-gray-500 dark:text-gray-400">Действия</th>
                         </tr>
                     </thead>
 
                     <tbody>
-                        <template x-if="state.archived_campaigns.length === 0">
+                        <template x-if="campaignRowsForView('archive').length === 0">
                             <tr>
                                 <td colspan="10" class="py-6 text-center text-sm text-gray-500 dark:text-gray-400">
-                                    Архив пока пуст.
+                                    Ничего не найдено по текущим фильтрам.
                                 </td>
                             </tr>
                         </template>
 
-                        <template x-for="campaignRow in state.archived_campaigns" :key="campaignRow.key">
+                        <template x-for="campaignRow in campaignRowsForView('archive')" :key="campaignRow.key">
                             <tr class="border-b border-gray-200 dark:border-white/10">
                                 <td
                                     class="py-2 pr-3 align-top text-xs text-gray-700 dark:text-gray-100"

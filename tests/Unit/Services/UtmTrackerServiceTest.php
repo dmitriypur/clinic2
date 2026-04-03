@@ -145,6 +145,53 @@ class UtmTrackerServiceTest extends TestCase
     }
 
     /** @test */
+    public function it_returns_active_campaigns_sorted_by_created_at_desc(): void
+    {
+        $city = City::query()->create([
+            'name' => 'Омск',
+            'slug' => 'omsk',
+            'active' => true,
+        ]);
+
+        $phone = CityUtmPhone::query()->create([
+            'city_id' => $city->id,
+            'phone' => '+7 000 000-00-01',
+        ]);
+
+        $source = CityUtmSource::query()->create([
+            'city_id' => $city->id,
+            'source' => 'google',
+            'name' => 'Google',
+        ]);
+
+        $olderCampaign = CityUtmCampaign::query()->create([
+            'city_id' => $city->id,
+            'source_id' => $source->id,
+            'medium' => 'older',
+            'medium_name' => 'Older',
+            'phone_id' => $phone->id,
+            'started_at' => now()->subDays(3),
+        ]);
+
+        $newerCampaign = CityUtmCampaign::query()->create([
+            'city_id' => $city->id,
+            'source_id' => $source->id,
+            'medium' => 'newer',
+            'medium_name' => 'Newer',
+            'phone_id' => null,
+            'started_at' => now()->subDay(),
+        ]);
+
+        $olderCampaign->forceFill(['created_at' => now()->subDays(2)])->saveQuietly();
+        $newerCampaign->forceFill(['created_at' => now()->subHour()])->saveQuietly();
+
+        $state = app(UtmTrackerService::class)->getEditorState($city->fresh());
+
+        $this->assertSame('newer', $state['campaigns'][0]['medium']);
+        $this->assertSame('older', $state['campaigns'][1]['medium']);
+    }
+
+    /** @test */
     public function it_archives_campaign_when_it_is_moved_out_of_active_list(): void
     {
         $city = City::query()->create([
