@@ -603,6 +603,18 @@
     }"
     class="w-full rounded-xl border border-gray-200 bg-white dark:border-white/10 dark:bg-gray-900"
 >
+    <style>
+        :root {
+            --utm-text-strong: #111827;
+            --utm-text-muted: #6b7280;
+        }
+
+        .dark {
+            --utm-text-strong: #f3f4f6;
+            --utm-text-muted: #d1d5db;
+        }
+    </style>
+
     <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 px-4 py-3 dark:border-white/10">
         <div class="flex flex-wrap gap-2">
             <button
@@ -760,7 +772,10 @@
 
                                 <td class="py-2 pr-2 align-top">
                                     <template x-if="campaignRow.type === 'source'">
-                                        <div class="rounded-md border border-transparent px-2 py-1 text-xs text-gray-400 dark:text-gray-500">—</div>
+                                        <div
+                                            class="rounded-md border border-transparent px-2 py-1 text-xs text-gray-400 dark:text-gray-500"
+                                            style="color:var(--utm-text-muted) !important;"
+                                        >—</div>
                                     </template>
 
                                     <template x-if="campaignRow.type === 'medium'">
@@ -823,7 +838,11 @@
 
                                 <td class="py-2 pr-2 align-top">
                                     <template x-if="campaignRow.type === 'source'">
-                                        <div class="rounded-md border border-transparent px-2 py-1 text-xs text-gray-900 dark:text-white" x-text="campaignName(campaignRow)"></div>
+                                        <div
+                                            class="rounded-md border border-transparent px-2 py-1 text-xs text-gray-900 dark:text-white"
+                                            style="color:var(--utm-text-strong) !important;"
+                                            x-text="campaignName(campaignRow)"
+                                        ></div>
                                     </template>
 
                                     <template x-if="campaignRow.type === 'medium'">
@@ -868,8 +887,15 @@
                                     </p>
                                 </td>
 
-                                <td class="py-2 pr-2 align-top text-xs text-gray-700 dark:text-gray-300" x-text="formatDateTime(campaignRow.started_at)"></td>
-                                <td class="py-2 pr-2 align-top text-xs text-gray-400 dark:text-gray-500">—</td>
+                                <td
+                                    class="py-2 pr-2 align-top text-xs text-gray-700 dark:text-gray-100"
+                                    style="color:var(--utm-text-strong) !important;"
+                                    x-text="formatDateTime(campaignRow.started_at)"
+                                ></td>
+                                <td
+                                    class="py-2 pr-2 align-top text-xs text-gray-400 dark:text-gray-300"
+                                    style="color:var(--utm-text-muted) !important;"
+                                >—</td>
 
                                 <td class="py-2 pr-2 align-top">
                                     <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-200" title="активна">
@@ -952,11 +978,23 @@
 
                         <template x-for="campaignRow in state.archived_campaigns" :key="campaignRow.key">
                             <tr class="border-b border-gray-200 dark:border-white/10">
-                                <td class="py-2 pr-3 align-top text-xs text-gray-700 dark:text-gray-300" x-text="sourceLabel(campaignRow.source_key)"></td>
-                                <td class="py-2 pr-3 align-top text-xs text-gray-700 dark:text-gray-300" x-text="campaignRow.type === 'medium' ? (campaignRow.medium || '—') : '—'"></td>
+                                <td
+                                    class="py-2 pr-3 align-top text-xs text-gray-700 dark:text-gray-100"
+                                    style="color:var(--utm-text-strong) !important;"
+                                    x-text="sourceLabel(campaignRow.source_key)"
+                                ></td>
+                                <td
+                                    class="py-2 pr-3 align-top text-xs text-gray-700 dark:text-gray-100"
+                                    style="color:var(--utm-text-strong) !important;"
+                                    x-text="campaignRow.type === 'medium' ? (campaignRow.medium || '—') : '—'"
+                                ></td>
 
                                 <td class="py-2 pr-3 align-top text-center">
-                                    <span class="inline-flex h-8 items-center justify-center text-xs text-gray-700 dark:text-gray-300" x-text="campaignRow.open_booking_widget ? 'Да' : 'Нет'"></span>
+                                    <span
+                                        class="inline-flex h-8 items-center justify-center text-xs text-gray-700 dark:text-gray-100"
+                                        style="color:var(--utm-text-strong) !important;"
+                                        x-text="campaignRow.open_booking_widget ? 'Да' : 'Нет'"
+                                    ></span>
                                 </td>
 
                                 <td class="py-2 pr-3 align-top">
@@ -993,10 +1031,26 @@
                                     </div>
                                 </td>
 
-                                <td class="py-2 pr-3 align-top text-xs text-gray-700 dark:text-gray-300" x-text="campaignName(campaignRow)"></td>
-                                <td class="py-2 pr-3 align-top text-xs text-gray-700 dark:text-gray-300" x-text="phoneLabel(campaignRow.phone_key)"></td>
-                                <td class="py-2 pr-3 align-top text-xs text-gray-700 dark:text-gray-300" x-text="formatDateTime(campaignRow.started_at)"></td>
-                                <td class="py-2 pr-3 align-top text-xs text-gray-700 dark:text-gray-300" x-text="formatDateTime(campaignRow.stopped_at || campaignRow.archived_at)"></td>
+                                <td
+                                    class="py-2 pr-3 align-top text-xs text-gray-700 dark:text-gray-100"
+                                    style="color:var(--utm-text-strong) !important;"
+                                    x-text="campaignName(campaignRow)"
+                                ></td>
+                                <td
+                                    class="py-2 pr-3 align-top text-xs text-gray-700 dark:text-gray-100"
+                                    style="color:var(--utm-text-strong) !important;"
+                                    x-text="phoneLabel(campaignRow.phone_key)"
+                                ></td>
+                                <td
+                                    class="py-2 pr-3 align-top text-xs text-gray-700 dark:text-gray-100"
+                                    style="color:var(--utm-text-strong) !important;"
+                                    x-text="formatDateTime(campaignRow.started_at)"
+                                ></td>
+                                <td
+                                    class="py-2 pr-3 align-top text-xs text-gray-700 dark:text-gray-100"
+                                    style="color:var(--utm-text-strong) !important;"
+                                    x-text="formatDateTime(campaignRow.stopped_at || campaignRow.archived_at)"
+                                ></td>
 
                                 <td class="py-2 pr-3 align-top">
                                     <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-200" title="остановлена">
@@ -1210,9 +1264,9 @@
                                 </td>
 
                                 <td
-                                    class="py-2 pr-3 align-top text-gray-600 dark:text-gray-300"
+                                    class="py-2 pr-3 align-top text-gray-600 dark:text-gray-100"
                                     x-bind:class="isDuplicatePhoneInActiveCampaigns(phoneRow.key) ? 'font-medium' : ''"
-                                    x-bind:style="isDuplicatePhoneInActiveCampaigns(phoneRow.key) ? 'font-size:10px; line-height:12px; color:#dc2626;' : ''"
+                                    x-bind:style="isDuplicatePhoneInActiveCampaigns(phoneRow.key) ? 'font-size:10px; line-height:12px; color:#dc2626;' : 'color:var(--utm-text-strong) !important;'"
                                     x-text="phoneUsage(phoneRow.key)"
                                 ></td>
 
