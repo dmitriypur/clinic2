@@ -128,4 +128,9 @@ class City extends Model
     {
         return $this->hasMany(CityUtmMedium::class);
     }
+
+    public function utmCampaigns(): HasMany
+    {
+        return $this->hasMany(CityUtmCampaign::class);
+    }
 }
