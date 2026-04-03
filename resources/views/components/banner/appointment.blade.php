@@ -13,7 +13,9 @@
             <h1 class="text-3xl text-interactive font-extrabold leading-none text-center md:text-left md:text-[86px] md:max-w-2xl">{{ $block->payload['service_hero_title'] }}</h1>
 
             <div class="relative flex items-center justify-center md:justify-start gap-4 md:gap-10 w-full m-auto mt-1 md:mt-7">
+                @if(!empty($block->payload['old_price']))
                 <div class="text-interactive/60"><span class="font-semibold text-lg md:text-5xl line-through">{{ $block->payload['old_price'] }}</span> <span class="text-base md:text-2xl">₽</span></div>
+                @endif
                 <div class="text-interactive text-2xl md:text-7xl font-semibold">{{ $block->payload['price'] }} <span class="text-base md:text-5xl">₽</span></div>
                 <div class="absolute right-0 -bottom-10 md:relative md:bottom-0 text-sm md:text-base md:relative text-interactive text-nowrap self-end mb-2">{!! $block->payload['service_hero_text'] !!}</div>
             </div>
