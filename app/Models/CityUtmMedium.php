@@ -18,11 +18,13 @@ class CityUtmMedium extends Model
         'medium',
         'medium_name',
         'phone_id',
+        'open_booking_widget',
         'start_date',
         'end_date',
     ];
 
     protected $casts = [
+        'open_booking_widget' => 'boolean',
         'start_date' => 'immutable_date',
         'end_date' => 'immutable_date',
     ];
