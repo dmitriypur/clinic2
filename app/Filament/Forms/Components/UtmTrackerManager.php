@@ -30,7 +30,8 @@ class UtmTrackerManager extends Field
         $this->default([
             'phones' => [],
             'sources' => [],
-            'mediums' => [],
+            'campaigns' => [],
+            'archived_campaigns' => [],
         ]);
 
         $this->viewData(fn (): array => [
