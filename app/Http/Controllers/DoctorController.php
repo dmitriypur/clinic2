@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\PageType;
 use App\Models\Doctor;
 use App\Models\Page;
+use App\ViewData\DoctorPageViewData;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 
@@ -35,6 +36,9 @@ class DoctorController extends Controller
             ->firstOrFail()
             ->withResolvedCitySeoVariables();
 
-        return view('doctors.show', compact('doctor', 'doctorsPage'));
+        return view('doctors.show-2', array_merge(
+            compact('doctor', 'doctorsPage'),
+            (new DoctorPageViewData($doctor))->toArray(),
+        ));
     }
 }

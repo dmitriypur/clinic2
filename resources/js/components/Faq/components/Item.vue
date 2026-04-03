@@ -25,6 +25,12 @@ export default {
   methods: {
     toggle() {
       this.open = !this.open
+
+      if (this.open) {
+        this.$nextTick(() => {
+          window.dispatchEvent(new Event('refresh-lightbox'))
+        })
+      }
     },
   }
 }

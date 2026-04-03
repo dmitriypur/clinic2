@@ -161,6 +161,8 @@ new Vue({
 
     this.autoOpenBookingWidgetV3FromUrl();
     this.mountLightbox();
+    this.refreshLightboxListener = () => this.mountLightbox();
+    window.addEventListener("refresh-lightbox", this.refreshLightboxListener);
 
     const links = [...document.links].filter(
       (link) => link.href.includes(this.baseUrl) && link.href.includes("#")
@@ -191,6 +193,10 @@ new Vue({
 
   beforeDestroy() {
     const self = this;
+
+    if (this.refreshLightboxListener) {
+      window.removeEventListener("refresh-lightbox", this.refreshLightboxListener);
+    }
 
     const links = [...document.links].filter(
       (link) => link.href.includes(this.baseUrl) && link.href.includes("#")
@@ -367,6 +373,11 @@ new Vue({
 
     async mountLightbox() {
       if (!document.querySelector(".glightbox")) {
+        if (this.lightboxInstance) {
+          this.lightboxInstance.destroy();
+          this.lightboxInstance = null;
+        }
+
         return;
       }
 
@@ -375,7 +386,11 @@ new Vue({
         import("glightbox/dist/css/glightbox.css"),
       ]);
 
-      GLightbox({
+      if (this.lightboxInstance) {
+        this.lightboxInstance.destroy();
+      }
+
+      this.lightboxInstance = GLightbox({
         touchNavigation: true,
         loop: false,
         autoplayVideos: false,
