@@ -18,6 +18,8 @@
             trackingBaseUrl: @js($trackingBaseUrl),
             copiedTrackingKey: null,
             copyResetTimer: null,
+            selectedTrackingKeys: [],
+            selectedArchiveKeys: [],
             init() {
                 this.ensureState()
 
@@ -98,6 +100,7 @@
                     campaigns: state.campaigns,
                     archived_campaigns: state.archived_campaigns,
                 }
+                this.syncSelectionState(state)
 
                 this.$nextTick(() => {
                     this.isSyncing = false
@@ -114,6 +117,13 @@
                 state.campaigns = this.syncSourceOnlyCampaignRows(state).campaigns
 
                 this.writeState(state)
+            },
+            syncSelectionState(state) {
+                const trackingKeys = new Set((state.campaigns || []).map((row) => row.key))
+                const archiveKeys = new Set((state.archived_campaigns || []).map((row) => row.key))
+
+                this.selectedTrackingKeys = this.selectedTrackingKeys.filter((key) => trackingKeys.has(key))
+                this.selectedArchiveKeys = this.selectedArchiveKeys.filter((key) => archiveKeys.has(key))
             },
             currentDateTimeValue() {
                 const date = new Date()
@@ -278,6 +288,80 @@
             },
             isTrackingLinkCopied(campaignRow) {
                 return this.copiedTrackingKey === campaignRow.key
+            },
+            isTrackingSelected(campaignKey) {
+                return this.selectedTrackingKeys.includes(campaignKey)
+            },
+            isArchiveSelected(campaignKey) {
+                return this.selectedArchiveKeys.includes(campaignKey)
+            },
+            toggleTrackingSelection(campaignKey) {
+                this.selectedTrackingKeys = this.isTrackingSelected(campaignKey)
+                    ? this.selectedTrackingKeys.filter((key) => key !== campaignKey)
+                    : [...this.selectedTrackingKeys, campaignKey]
+            },
+            toggleArchiveSelection(campaignKey) {
+                this.selectedArchiveKeys = this.isArchiveSelected(campaignKey)
+                    ? this.selectedArchiveKeys.filter((key) => key !== campaignKey)
+                    : [...this.selectedArchiveKeys, campaignKey]
+            },
+            visibleTrackingKeys() {
+                return this.state.campaigns.map((row) => row.key)
+            },
+            visibleArchiveKeys() {
+                return this.state.archived_campaigns.map((row) => row.key)
+            },
+            areAllTrackingSelected() {
+                const keys = this.visibleTrackingKeys()
+
+                return keys.length > 0 && keys.every((key) => this.selectedTrackingKeys.includes(key))
+            },
+            areAllArchiveSelected() {
+                const keys = this.visibleArchiveKeys()
+
+                return keys.length > 0 && keys.every((key) => this.selectedArchiveKeys.includes(key))
+            },
+            toggleAllTrackingSelection() {
+                const keys = this.visibleTrackingKeys()
+
+                if (keys.length === 0) {
+                    return
+                }
+
+                if (this.areAllTrackingSelected()) {
+                    this.selectedTrackingKeys = this.selectedTrackingKeys.filter((key) => ! keys.includes(key))
+
+                    return
+                }
+
+                this.selectedTrackingKeys = Array.from(new Set([...this.selectedTrackingKeys, ...keys]))
+            },
+            toggleAllArchiveSelection() {
+                const keys = this.visibleArchiveKeys()
+
+                if (keys.length === 0) {
+                    return
+                }
+
+                if (this.areAllArchiveSelected()) {
+                    this.selectedArchiveKeys = this.selectedArchiveKeys.filter((key) => ! keys.includes(key))
+
+                    return
+                }
+
+                this.selectedArchiveKeys = Array.from(new Set([...this.selectedArchiveKeys, ...keys]))
+            },
+            selectedTrackingRows() {
+                return this.state.campaigns.filter((row) => this.selectedTrackingKeys.includes(row.key))
+            },
+            selectedArchiveRows() {
+                return this.state.archived_campaigns.filter((row) => this.selectedArchiveKeys.includes(row.key))
+            },
+            clearTrackingSelection() {
+                this.selectedTrackingKeys = []
+            },
+            clearArchiveSelection() {
+                this.selectedArchiveKeys = []
             },
             addPhone() {
                 this.state.phones.unshift({
@@ -446,6 +530,32 @@
                 this.syncState()
                 this.submitNearestForm()
             },
+            stopSelectedCampaigns() {
+                const selectedRows = this.selectedTrackingRows()
+
+                if (selectedRows.length === 0) {
+                    return
+                }
+
+                const now = this.currentDateTimeValue()
+                const selectedKeys = new Set(this.selectedTrackingKeys)
+                const archivedRows = selectedRows.map((row) => {
+                    const stoppedAt = this.maxDateTimeValue(now, row.started_at)
+
+                    return {
+                        ...row,
+                        stopped_at: stoppedAt,
+                        archived_at: stoppedAt,
+                    }
+                })
+
+                this.state.campaigns = this.state.campaigns.filter((row) => ! selectedKeys.has(row.key))
+                this.state.archived_campaigns = [...archivedRows, ...this.state.archived_campaigns]
+                this.clearTrackingSelection()
+                this.activeTab = 'tracking'
+                this.syncState()
+                this.submitNearestForm()
+            },
             resumeCampaign(row) {
                 const resumedRow = {
                     ...row,
@@ -460,6 +570,31 @@
 
                 this.state.campaigns.unshift(resumedRow)
                 this.activeTab = 'tracking'
+                this.syncState()
+                this.submitNearestForm()
+            },
+            resumeSelectedCampaigns() {
+                const selectedRows = this.selectedArchiveRows()
+
+                if (selectedRows.length === 0) {
+                    return
+                }
+
+                const startedAt = this.currentDateTimeValue()
+                const resumedRows = selectedRows.map((row) => ({
+                    ...row,
+                    key: this.makeKey('campaign'),
+                    id: null,
+                    phone_key: this.isPhoneBusyInActiveCampaigns(row.phone_key) ? '' : (row.phone_key ?? ''),
+                    started_at: startedAt,
+                    stopped_at: '',
+                    archived_at: '',
+                    restarted_from_id: row.id ?? row.restarted_from_id ?? null,
+                }))
+
+                this.state.campaigns = [...resumedRows, ...this.state.campaigns]
+                this.clearArchiveSelection()
+                this.activeTab = 'archive'
                 this.syncState()
                 this.submitNearestForm()
             },
@@ -642,10 +777,32 @@
 
             <div class="p-4">
                 <div x-show="activeTab === 'tracking'" x-cloak class="space-y-3">
-                    <div class="flex justify-end">
+                    <div class="flex flex-wrap items-center justify-between gap-3">
+                        <div x-show="selectedTrackingKeys.length > 0" x-cloak class="flex flex-wrap items-center gap-2">
+                            <span class="text-xs text-gray-500 dark:text-gray-400" x-text="`Выбрано: ${selectedTrackingKeys.length}`"></span>
+
+                            <button
+                                type="button"
+                                class="inline-flex items-center gap-2 rounded-md border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-50 dark:border-white/10 dark:text-gray-200 dark:hover:bg-white/5"
+                                x-on:click="stopSelectedCampaigns()"
+                                @disabled($isDisabled)
+                            >
+                                Остановить выбранные
+                            </button>
+
+                            <button
+                                type="button"
+                                class="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                                x-on:click="clearTrackingSelection()"
+                                @disabled($isDisabled)
+                            >
+                                Сбросить
+                            </button>
+                        </div>
+
                         <button
                             type="button"
-                            class="text-sm text-primary-600 hover:underline dark:text-primary-400"
+                            class="ml-auto text-sm text-primary-600 hover:underline dark:text-primary-400"
                             x-on:click="addMediumCampaign()"
                             @disabled($isDisabled)
                         >
@@ -657,6 +814,18 @@
                         <table class="w-full table-fixed border-collapse text-sm">
                             <thead>
                                 <tr class="border-b border-gray-200 dark:border-white/10">
+                                    <th class="w-[4%] py-2 pr-3 text-left font-medium text-gray-500 dark:text-gray-400">
+                                        <input
+                                            type="checkbox"
+                                            class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-white/10 dark:bg-transparent"
+                                            x-bind:checked="areAllTrackingSelected()"
+                                            x-bind:disabled="state.campaigns.length === 0"
+                                            x-init="$el.indeterminate = selectedTrackingKeys.length > 0 && ! areAllTrackingSelected()"
+                                            x-effect="$el.indeterminate = selectedTrackingKeys.length > 0 && ! areAllTrackingSelected()"
+                                            x-on:change="toggleAllTrackingSelection()"
+                                            @disabled($isDisabled)
+                                        />
+                                    </th>
                                     <th class="w-[15%] py-2 pr-3 text-left font-medium text-gray-500 dark:text-gray-400">Source</th>
                                     <th class="w-[10%] py-2 pr-3 text-left font-medium text-gray-500 dark:text-gray-400">Medium</th>
                                     <th class="w-[6%] py-2 pr-3 text-center font-medium text-gray-500 dark:text-gray-400">Виджет</th>
@@ -673,7 +842,7 @@
                             <tbody>
                                 <template x-if="state.campaigns.length === 0">
                                     <tr>
-                                        <td colspan="10" class="py-6 text-center text-sm text-gray-500 dark:text-gray-400">
+                                        <td colspan="11" class="py-6 text-center text-sm text-gray-500 dark:text-gray-400">
                                             Пока нет ни одной активной UTM-кампании.
                                         </td>
                                     </tr>
@@ -684,6 +853,16 @@
                                         class="border-b border-gray-200 dark:border-white/10"
                                         x-bind:class="isDuplicateCampaignPhone(campaignRow) ? 'bg-rose-50 dark:bg-rose-500/10' : ''"
                                     >
+                                        <td class="py-2 pr-3 align-top">
+                                            <input
+                                                type="checkbox"
+                                                class="mt-2 h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-white/10 dark:bg-transparent"
+                                                x-bind:checked="isTrackingSelected(campaignRow.key)"
+                                                x-on:change="toggleTrackingSelection(campaignRow.key)"
+                                                @disabled($isDisabled)
+                                            />
+                                        </td>
+
                                         <td class="py-2 pr-3 align-top">
                                             <select
                                                 class="block w-full rounded-md border-gray-300 px-2 py-1 text-sm shadow-none focus:border-primary-500 focus:ring-primary-500 dark:border-white/10 dark:bg-transparent dark:text-white"
@@ -880,10 +1059,44 @@
                 </div>
 
                 <div x-show="activeTab === 'archive'" x-cloak class="space-y-3">
+                    <div x-show="selectedArchiveKeys.length > 0" x-cloak class="flex flex-wrap items-center gap-2">
+                        <span class="text-xs text-gray-500 dark:text-gray-400" x-text="`Выбрано: ${selectedArchiveKeys.length}`"></span>
+
+                        <button
+                            type="button"
+                            class="inline-flex items-center gap-2 rounded-md border border-emerald-200 px-3 py-1.5 text-xs font-medium text-emerald-700 transition hover:bg-emerald-50 dark:border-emerald-500/20 dark:text-emerald-200 dark:hover:bg-emerald-500/10"
+                            x-on:click="resumeSelectedCampaigns()"
+                            @disabled($isDisabled)
+                        >
+                            Запустить выбранные
+                        </button>
+
+                        <button
+                            type="button"
+                            class="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                            x-on:click="clearArchiveSelection()"
+                            @disabled($isDisabled)
+                        >
+                            Сбросить
+                        </button>
+                    </div>
+
                     <div class="overflow-x-auto">
                         <table class="w-full table-fixed border-collapse text-sm">
                             <thead>
                                 <tr class="border-b border-gray-200 dark:border-white/10">
+                                    <th class="w-[4%] py-2 pr-3 text-left font-medium text-gray-500 dark:text-gray-400">
+                                        <input
+                                            type="checkbox"
+                                            class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-white/10 dark:bg-transparent"
+                                            x-bind:checked="areAllArchiveSelected()"
+                                            x-bind:disabled="state.archived_campaigns.length === 0"
+                                            x-init="$el.indeterminate = selectedArchiveKeys.length > 0 && ! areAllArchiveSelected()"
+                                            x-effect="$el.indeterminate = selectedArchiveKeys.length > 0 && ! areAllArchiveSelected()"
+                                            x-on:change="toggleAllArchiveSelection()"
+                                            @disabled($isDisabled)
+                                        />
+                                    </th>
                                     <th class="w-[15%] py-2 pr-3 text-left font-medium text-gray-500 dark:text-gray-400">Source</th>
                                     <th class="w-[10%] py-2 pr-3 text-left font-medium text-gray-500 dark:text-gray-400">Medium</th>
                                     <th class="w-[6%] py-2 pr-3 text-center font-medium text-gray-500 dark:text-gray-400">Виджет</th>
@@ -900,7 +1113,7 @@
                             <tbody>
                                 <template x-if="state.archived_campaigns.length === 0">
                                     <tr>
-                                        <td colspan="10" class="py-6 text-center text-sm text-gray-500 dark:text-gray-400">
+                                        <td colspan="11" class="py-6 text-center text-sm text-gray-500 dark:text-gray-400">
                                             Архив пока пуст.
                                         </td>
                                     </tr>
@@ -908,6 +1121,16 @@
 
                                 <template x-for="campaignRow in state.archived_campaigns" :key="campaignRow.key">
                                     <tr class="border-b border-gray-200 dark:border-white/10">
+                                        <td class="py-2 pr-3 align-top">
+                                            <input
+                                                type="checkbox"
+                                                class="mt-2 h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-white/10 dark:bg-transparent"
+                                                x-bind:checked="isArchiveSelected(campaignRow.key)"
+                                                x-on:change="toggleArchiveSelection(campaignRow.key)"
+                                                @disabled($isDisabled)
+                                            />
+                                        </td>
+
                                         <td class="py-2 pr-3 align-top text-sm text-gray-700 dark:text-gray-300" x-text="sourceLabel(campaignRow.source_key)"></td>
                                         <td class="py-2 pr-3 align-top text-sm text-gray-700 dark:text-gray-300" x-text="campaignRow.type === 'medium' ? (campaignRow.medium || '—') : '—'"></td>
 
