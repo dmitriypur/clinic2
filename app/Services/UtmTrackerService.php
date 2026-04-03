@@ -14,6 +14,8 @@ use Illuminate\Validation\ValidationException;
 
 class UtmTrackerService
 {
+    private const DATE_TIME_FORMAT = 'Y-m-d H:i:s';
+
     public function emptyEditorState(): array
     {
         return [
@@ -89,7 +91,7 @@ class UtmTrackerService
 
     public function sync(City $city, array $state): void
     {
-        $state = $this->synchronizeSourceOnlyCampaignRows($this->normalizeState($state));
+        $state = $this->prepareState($state);
         $this->validateState($city, $state);
 
         $phoneSync = $this->syncPhones($city, $state['phones']);
@@ -110,6 +112,138 @@ class UtmTrackerService
                 $city->fresh(['utmCampaigns.source', 'utmCampaigns.phone'])
             ),
         ]);
+    }
+
+    public function saveEditorState(City $city, array $state): array
+    {
+        $this->sync($city, $state);
+
+        return $this->getEditorState($city->fresh());
+    }
+
+    public function stopCampaign(City $city, array $state, string $campaignKey): array
+    {
+        return $this->stopCampaigns($city, $state, [$campaignKey]);
+    }
+
+    public function stopCampaigns(City $city, array $state, array $campaignKeys): array
+    {
+        $state = $this->prepareState($state);
+        $campaignKeys = array_values(array_unique(array_filter($campaignKeys)));
+
+        if ($campaignKeys === []) {
+            return $this->getEditorState($city);
+        }
+
+        $selectedKeys = array_fill_keys($campaignKeys, true);
+        $now = CarbonImmutable::now()->format(self::DATE_TIME_FORMAT);
+        $archivedRows = [];
+
+        foreach ($state['campaigns'] as $row) {
+            if (! isset($selectedKeys[$row['key']])) {
+                continue;
+            }
+
+            $stoppedAt = $this->maxDateTimeValue($now, $row['started_at']);
+
+            $archivedRows[] = [
+                ...$row,
+                'stopped_at' => $stoppedAt,
+                'archived_at' => $stoppedAt,
+            ];
+        }
+
+        if ($archivedRows === []) {
+            return $this->getEditorState($city);
+        }
+
+        $state['campaigns'] = array_values(array_filter(
+            $state['campaigns'],
+            fn (array $row): bool => ! isset($selectedKeys[$row['key']])
+        ));
+        $state['archived_campaigns'] = array_values([
+            ...$archivedRows,
+            ...$state['archived_campaigns'],
+        ]);
+
+        return $this->saveEditorState($city, $state);
+    }
+
+    public function deleteCampaign(City $city, array $state, string $campaignKey): array
+    {
+        return $this->stopCampaign($city, $state, $campaignKey);
+    }
+
+    public function resumeCampaign(City $city, array $state, string $campaignKey): array
+    {
+        $state = $this->prepareState($state);
+
+        $archivedRow = collect($state['archived_campaigns'])->firstWhere('key', $campaignKey);
+
+        if (! $archivedRow) {
+            return $this->getEditorState($city);
+        }
+
+        $archivedUniqueKey = $this->campaignUniqueKey($archivedRow);
+        $activeDuplicateExists = collect($state['campaigns'])
+            ->contains(fn (array $row): bool => $this->campaignUniqueKey($row) === $archivedUniqueKey);
+
+        if ($activeDuplicateExists) {
+            throw ValidationException::withMessages([
+                'data.utm_tracker' => 'Такая активная UTM-кампания уже существует.',
+            ]);
+        }
+
+        $startedAt = CarbonImmutable::now()->format(self::DATE_TIME_FORMAT);
+        $phoneKey = $archivedRow['phone_key'];
+
+        if ($phoneKey && $this->phoneKeyIsBusyInState($state['campaigns'], $phoneKey)) {
+            $phoneKey = null;
+        }
+
+        $state['campaigns'] = array_values([
+            [
+                ...$archivedRow,
+                'key' => 'campaign-' . Str::uuid(),
+                'id' => null,
+                'phone_key' => $phoneKey,
+                'started_at' => $startedAt,
+                'stopped_at' => null,
+                'archived_at' => null,
+                'restarted_from_id' => $archivedRow['id'] ?: $archivedRow['restarted_from_id'] ?: null,
+            ],
+            ...$state['campaigns'],
+        ]);
+
+        return $this->saveEditorState($city, $state);
+    }
+
+    public function deleteArchivedCampaign(City $city, array $state, string $campaignKey): array
+    {
+        $state = $this->prepareState($state);
+
+        $deletedRow = collect($state['archived_campaigns'])->firstWhere('key', $campaignKey);
+
+        if (! $deletedRow) {
+            return $this->getEditorState($city);
+        }
+
+        $state['archived_campaigns'] = array_values(array_filter(
+            $state['archived_campaigns'],
+            fn (array $row): bool => $row['key'] !== $campaignKey
+        ));
+
+        if (($deletedRow['type'] ?? 'source') === 'source') {
+            $state['sources'] = array_values(array_map(function (array $row) use ($deletedRow): array {
+                if (($row['key'] ?? null) === $deletedRow['source_key']) {
+                    $row['default_phone_key'] = null;
+                }
+
+                return $row;
+            }, $state['sources']));
+        }
+
+        return $this->saveEditorState($city, $state);
     }
 
     public function buildLegacyRules(City $city): array
@@ -711,6 +845,11 @@ class UtmTrackerService
             ->all();
     }
 
+    private function prepareState(array $state): array
+    {
+        return $this->synchronizeSourceOnlyCampaignRows($this->normalizeState($state));
+    }
+
     private function legacyPhoneKey(string $phone, array &$phones, array &$phonesByNumber): ?string
     {
         if ($phone === '') {
@@ -762,6 +901,15 @@ class UtmTrackerService
         }
 
         return $value;
+    }
+
+    private function maxDateTimeValue(?string $left, ?string $right): string
+    {
+        $leftDate = $this->parseEditorDateTime($this->normalizeDateTime($left), '') ?? CarbonImmutable::now();
+        $rightDate = $this->parseEditorDateTime($this->normalizeDateTime($right), '');
+
+        return ($rightDate && $rightDate->gt($leftDate) ? $rightDate : $leftDate)
+            ->format(self::DATE_TIME_FORMAT);
     }
 
     private function normalizeCampaignRowChronology(array $row): array
@@ -875,10 +1023,9 @@ class UtmTrackerService
             $sourceKey = $sourceRow['key'];
             $defaultPhoneKey = $sourceRow['default_phone_key'] ?? null;
 
-            $activeMediumExists = $campaigns->contains(fn (array $row): bool => ($row['type'] ?? 'source') === 'medium' && ($row['source_key'] ?? null) === $sourceKey);
             $sourceRows = $campaigns->filter(fn (array $row): bool => ($row['type'] ?? 'source') === 'source' && ($row['source_key'] ?? null) === $sourceKey)->values();
             $archivedSourceExists = $archivedCampaigns->contains(fn (array $row): bool => ($row['type'] ?? 'source') === 'source' && ($row['source_key'] ?? null) === $sourceKey);
-            $shouldHaveRow = filled($defaultPhoneKey) && ! $activeMediumExists && ($sourceRows->isNotEmpty() || ! $archivedSourceExists);
+            $shouldHaveRow = filled($defaultPhoneKey) && ($sourceRows->isNotEmpty() || ! $archivedSourceExists);
 
             if (! $shouldHaveRow) {
                 $campaigns = $campaigns->reject(fn (array $row): bool => ($row['type'] ?? 'source') === 'source' && ($row['source_key'] ?? null) === $sourceKey)->values();
@@ -925,6 +1072,15 @@ class UtmTrackerService
         ])['campaigns'];
 
         return $state;
+    }
+
+    private function phoneKeyIsBusyInState(array $rows, ?string $phoneKey): bool
+    {
+        if (! filled($phoneKey)) {
+            return false;
+        }
+
+        return collect($rows)->contains(fn (array $row): bool => ($row['phone_key'] ?? null) === $phoneKey);
     }
 
     private function dropConflictingSourceCampaignPhones(array $state): array

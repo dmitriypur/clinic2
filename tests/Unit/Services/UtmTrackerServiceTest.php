@@ -89,7 +89,7 @@ class UtmTrackerServiceTest extends TestCase
         $legacyRules = $city->fresh()->utm_phones;
 
         $this->assertSame('google', data_get($legacyRules, '0.source'));
-        $this->assertNull(data_get($legacyRules, '0.phone'));
+        $this->assertSame('+7 000 000-00-01', data_get($legacyRules, '0.phone'));
         $this->assertSame([
             [
                 'name' => 'cpc',
@@ -212,6 +212,80 @@ class UtmTrackerServiceTest extends TestCase
     }
 
     /** @test */
+    public function it_bulk_archives_multiple_active_campaigns(): void
+    {
+        $city = City::query()->create([
+            'name' => 'Курск',
+            'slug' => 'kursk',
+            'active' => true,
+        ]);
+
+        $service = app(UtmTrackerService::class);
+
+        $service->sync($city, [
+            'phones' => [
+                ['key' => 'phone-google', 'phone' => '+7 000 000-00-01'],
+                ['key' => 'phone-yandex', 'phone' => '+7 000 000-00-02'],
+            ],
+            'sources' => [
+                [
+                    'key' => 'source-google',
+                    'source' => 'google',
+                    'name' => 'Google',
+                    'default_phone_key' => null,
+                ],
+                [
+                    'key' => 'source-yandex',
+                    'source' => 'yandex',
+                    'name' => 'Yandex',
+                    'default_phone_key' => null,
+                ],
+            ],
+            'campaigns' => [
+                [
+                    'key' => 'campaign-google',
+                    'type' => 'medium',
+                    'source_key' => 'source-google',
+                    'medium' => 'cpc',
+                    'medium_name' => 'Google CPC',
+                    'phone_key' => 'phone-google',
+                    'started_at' => now()->subDay()->format('Y-m-d H:i:s'),
+                ],
+                [
+                    'key' => 'campaign-yandex',
+                    'type' => 'medium',
+                    'source_key' => 'source-yandex',
+                    'medium' => 'search',
+                    'medium_name' => 'Yandex Search',
+                    'phone_key' => 'phone-yandex',
+                    'started_at' => now()->subHours(5)->format('Y-m-d H:i:s'),
+                ],
+            ],
+            'archived_campaigns' => [],
+        ]);
+
+        $state = $service->getEditorState($city->fresh());
+        $result = $service->stopCampaigns(
+            $city->fresh(),
+            $state,
+            collect($state['campaigns'])->pluck('key')->all(),
+        );
+
+        $this->assertCount(0, $result['campaigns']);
+        $this->assertCount(2, $result['archived_campaigns']);
+        $this->assertDatabaseCount('city_utm_campaigns', 2);
+        $this->assertDatabaseHas('city_utm_campaigns', [
+            'city_id' => $city->id,
+            'medium' => 'cpc',
+        ]);
+        $this->assertDatabaseHas('city_utm_campaigns', [
+            'city_id' => $city->id,
+            'medium' => 'search',
+        ]);
+        $this->assertEmpty($city->fresh()->utm_phones);
+    }
+
+    /** @test */
     public function it_auto_creates_source_only_campaign_from_source_default_phone_when_no_active_medium_exists(): void
     {
         $city = City::query()->create([
@@ -311,7 +385,61 @@ class UtmTrackerServiceTest extends TestCase
     }
 
     /** @test */
-    public function it_hides_source_only_campaign_when_source_has_active_medium(): void
+    public function it_soft_deletes_active_campaign_by_moving_it_to_archive(): void
+    {
+        $city = City::query()->create([
+            'name' => 'Белгород',
+            'slug' => 'belgorod',
+            'active' => true,
+        ]);
+
+        $service = app(UtmTrackerService::class);
+
+        $service->sync($city, [
+            'phones' => [
+                ['key' => 'phone-google', 'phone' => '+7 000 000-00-01'],
+            ],
+            'sources' => [
+                [
+                    'key' => 'source-google',
+                    'source' => 'google',
+                    'name' => 'Google',
+                    'default_phone_key' => null,
+                ],
+            ],
+            'campaigns' => [
+                [
+                    'key' => 'campaign-google',
+                    'type' => 'medium',
+                    'source_key' => 'source-google',
+                    'medium' => 'cpc',
+                    'medium_name' => 'Google CPC',
+                    'phone_key' => 'phone-google',
+                    'started_at' => now()->subHours(2)->format('Y-m-d H:i:s'),
+                ],
+            ],
+            'archived_campaigns' => [],
+        ]);
+
+        $state = $service->getEditorState($city->fresh());
+        $campaignKey = $state['campaigns'][0]['key'];
+        $result = $service->deleteCampaign($city->fresh(), $state, $campaignKey);
+
+        $this->assertCount(0, $result['campaigns']);
+        $this->assertCount(1, $result['archived_campaigns']);
+
+        $campaign = CityUtmCampaign::query()
+            ->where('city_id', $city->id)
+            ->where('medium', 'cpc')
+            ->firstOrFail();
+
+        $this->assertNotNull($campaign->archived_at);
+        $this->assertNotNull($campaign->stopped_at);
+        $this->assertEmpty($city->fresh()->utm_phones);
+    }
+
+    /** @test */
+    public function it_keeps_source_only_campaign_visible_when_source_has_active_medium(): void
     {
         $city = City::query()->create([
             'name' => 'Тула',
@@ -350,9 +478,10 @@ class UtmTrackerServiceTest extends TestCase
 
         $state = $service->getEditorState($city->fresh());
 
-        $this->assertCount(1, $state['campaigns']);
-        $this->assertSame('medium', $state['campaigns'][0]['type']);
-        $this->assertNull(data_get($city->fresh()->utm_phones, '0.phone'));
+        $this->assertCount(2, $state['campaigns']);
+        $this->assertTrue(collect($state['campaigns'])->contains(fn (array $row): bool => $row['type'] === 'source'));
+        $this->assertTrue(collect($state['campaigns'])->contains(fn (array $row): bool => $row['type'] === 'medium'));
+        $this->assertSame('+7 000 000-00-01', data_get($city->fresh()->utm_phones, '0.phone'));
         $this->assertSame('cpc', data_get($city->fresh()->utm_phones, '0.medium.0.name'));
     }
 
@@ -558,7 +687,7 @@ class UtmTrackerServiceTest extends TestCase
 
         $editorState = $service->getEditorState($city->fresh());
 
-        $this->assertCount(2, $editorState['campaigns']);
+        $this->assertCount(3, $editorState['campaigns']);
         $this->assertTrue((bool) collect($editorState['campaigns'])->firstWhere('type', 'source')['open_booking_widget']);
         $this->assertTrue((bool) collect($editorState['campaigns'])->firstWhere('type', 'medium')['open_booking_widget']);
         $this->assertNull(data_get($city->fresh()->utm_phones, '0.open_booking_widget'));
