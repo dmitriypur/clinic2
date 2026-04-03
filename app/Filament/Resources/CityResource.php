@@ -2,10 +2,12 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Forms\Components\UtmTrackerManager;
+use App\Livewire\Admin\UtmTrackerEditor;
 use App\Filament\Resources\CityResource\Pages;
 use App\Models\City;
 use Filament\Forms;
+use Filament\Forms\Components\Livewire as LivewireComponent;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\TextInput;
@@ -155,8 +157,15 @@ class CityResource extends Resource
 
                 Section::make('UTM Трекер')
                     ->schema([
-                        UtmTrackerManager::make('utm_tracker')
+                        LivewireComponent::make(UtmTrackerEditor::class, fn (?City $record): array => [
+                            'cityId' => $record?->id,
+                        ])
+                            ->visible(fn (?City $record): bool => filled($record?->id))
+                            ->columnSpanFull(),
+                        Placeholder::make('utm_tracker_notice')
                             ->hiddenLabel()
+                            ->content('Сначала сохраните город, потом можно будет редактировать UTM-кампании.')
+                            ->visible(fn (?City $record): bool => blank($record?->id))
                             ->columnSpanFull(),
                     ]),
 
