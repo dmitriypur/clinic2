@@ -16,6 +16,8 @@
             activeTab: 'tracking',
             isSyncing: false,
             trackingBaseUrl: @js($trackingBaseUrl),
+            copiedTrackingKey: null,
+            copyResetTimer: null,
             init() {
                 this.ensureState()
 
@@ -60,6 +62,7 @@
                     source: row?.source ?? '',
                     name: row?.name ?? '',
                     default_phone_key: row?.default_phone_key ?? '',
+                    open_booking_widget: !! row?.open_booking_widget,
                 }))
             },
             normalizeMediums(rows) {
@@ -70,6 +73,7 @@
                     medium: row?.medium ?? '',
                     medium_name: row?.medium_name ?? '',
                     phone_key: row?.phone_key ?? '',
+                    open_booking_widget: !! row?.open_booking_widget,
                     start_date: row?.start_date ?? '',
                     end_date: row?.end_date ?? '',
                 }))
@@ -101,7 +105,7 @@
                 return `${date.getFullYear()}-${month}-${day}`
             },
             addPhone() {
-                this.state.phones.push({
+                this.state.phones.unshift({
                     key: this.makeKey('phone'),
                     id: null,
                     phone: '',
@@ -119,12 +123,13 @@
                 this.syncState()
             },
             addSource() {
-                this.state.sources.push({
+                this.state.sources.unshift({
                     key: this.makeKey('source'),
                     id: null,
                     source: '',
                     name: '',
                     default_phone_key: '',
+                    open_booking_widget: false,
                 })
 
                 this.activeTab = 'sources'
@@ -136,13 +141,14 @@
                 this.syncState()
             },
             addMedium() {
-                this.state.mediums.push({
+                this.state.mediums.unshift({
                     key: this.makeKey('medium'),
                     id: null,
                     source_key: this.state.sources[0]?.key ?? '',
                     medium: '',
                     medium_name: '',
                     phone_key: '',
+                    open_booking_widget: false,
                     start_date: '',
                     end_date: '',
                 })
@@ -249,9 +255,6 @@
 
                 return this.isPhoneOptionDisabled(phoneKey, context) ? `${phone} (занят)` : phone
             },
-            availablePhones(context = {}) {
-                return this.state.phones.filter((row) => ! this.isPhoneBusy(row.key, context))
-            },
             isPhoneBusyForDisplay(phoneKey) {
                 return this.state.sources.some((row) => row.default_phone_key === phoneKey) || this.state.mediums.some((row) => row.phone_key === phoneKey)
             },
@@ -275,22 +278,138 @@
             phoneLabel(phoneKey) {
                 return this.state.phones.find((row) => row.key === phoneKey)?.phone ?? '—'
             },
-            buildMediumUrl(row) {
-                const source = this.state.sources.find((item) => item.key === row.source_key)
+            trackingRows() {
+                const rows = []
+                const sourceKeys = new Set(this.state.sources.map((sourceRow) => sourceRow.key))
 
-                if (! source?.source) {
+                this.state.sources.forEach((sourceRow) => {
+                    rows.push({
+                        key: `tracking-source-${sourceRow.key}`,
+                        type: 'source',
+                        sourceRow,
+                        mediumRow: null,
+                    })
+
+                    this.state.mediums
+                        .filter((mediumRow) => mediumRow.source_key === sourceRow.key)
+                        .forEach((mediumRow) => {
+                            rows.push({
+                                key: `tracking-medium-${mediumRow.key}`,
+                                type: 'medium',
+                                sourceRow,
+                                mediumRow,
+                            })
+                        })
+                })
+
+                this.state.mediums
+                    .filter((mediumRow) => ! sourceKeys.has(mediumRow.source_key))
+                    .forEach((mediumRow) => {
+                        rows.push({
+                            key: `tracking-medium-${mediumRow.key}`,
+                            type: 'medium',
+                            sourceRow: null,
+                            mediumRow,
+                        })
+                    })
+
+                return rows
+            },
+            buildUrl(sourceValue = '', mediumValue = '', shouldOpenWidget = false) {
+                const source = String(sourceValue || '').trim()
+                const medium = String(mediumValue || '').trim()
+
+                if (! source) {
                     return this.trackingBaseUrl
                 }
 
                 const url = new URL(this.trackingBaseUrl)
 
-                url.searchParams.set('utm_source', source.source)
+                url.searchParams.set('utm_source', source)
 
-                if (row.medium) {
-                    url.searchParams.set('utm_medium', row.medium)
+                if (medium) {
+                    url.searchParams.set('utm_medium', medium)
+                }
+
+                if (shouldOpenWidget) {
+                    url.hash = 'appointment-form'
                 }
 
                 return url.toString()
+            },
+            trackingLinkValue(trackingRow) {
+                if (trackingRow.type === 'source') {
+                    return this.buildUrl(
+                        trackingRow.sourceRow?.source,
+                        '',
+                        trackingRow.sourceRow?.open_booking_widget,
+                    )
+                }
+
+                return this.buildUrl(
+                    trackingRow.sourceRow?.source,
+                    trackingRow.mediumRow?.medium,
+                    trackingRow.mediumRow?.open_booking_widget,
+                )
+            },
+            async copyText(value) {
+                const text = String(value ?? '').trim()
+
+                if (! text) {
+                    return false
+                }
+
+                try {
+                    if (navigator?.clipboard?.writeText) {
+                        await navigator.clipboard.writeText(text)
+
+                        return true
+                    }
+                } catch (error) {
+                    // Fallback below.
+                }
+
+                const textarea = document.createElement('textarea')
+                textarea.value = text
+                textarea.setAttribute('readonly', '')
+                textarea.style.position = 'absolute'
+                textarea.style.left = '-9999px'
+                document.body.appendChild(textarea)
+                textarea.select()
+
+                let copied = false
+
+                try {
+                    copied = document.execCommand('copy')
+                } catch (error) {
+                    copied = false
+                }
+
+                document.body.removeChild(textarea)
+
+                return copied
+            },
+            async copyTrackingLink(trackingRow) {
+                const copied = await this.copyText(this.trackingLinkValue(trackingRow))
+
+                if (! copied) {
+                    return
+                }
+
+                this.copiedTrackingKey = trackingRow.key
+
+                if (this.copyResetTimer) {
+                    clearTimeout(this.copyResetTimer)
+                }
+
+                this.copyResetTimer = setTimeout(() => {
+                    if (this.copiedTrackingKey === trackingRow.key) {
+                        this.copiedTrackingKey = null
+                    }
+                }, 1500)
+            },
+            isTrackingLinkCopied(trackingRow) {
+                return this.copiedTrackingKey === trackingRow.key
             },
         }"
         {{
@@ -350,9 +469,10 @@
                         <table class="w-full table-fixed border-collapse text-sm">
                             <thead>
                                 <tr class="border-b border-gray-200 dark:border-white/10">
-                                    <th class="w-[15%] py-2 pr-3 text-left font-medium text-gray-500 dark:text-gray-400">Source</th>
-                                    <th class="w-[8%] py-2 pr-3 text-left font-medium text-gray-500 dark:text-gray-400">Medium</th>
-                                    <th class="w-[14%] py-2 pr-3 text-left font-medium text-gray-500 dark:text-gray-400">Ссылка</th>
+                                    <th class="w-[14%] py-2 pr-3 text-left font-medium text-gray-500 dark:text-gray-400">Source</th>
+                                    <th class="w-[9%] py-2 pr-3 text-left font-medium text-gray-500 dark:text-gray-400">Medium</th>
+                                    <th class="w-[6%] py-2 pr-3 text-center font-medium text-gray-500 dark:text-gray-400">Виджет</th>
+                                    <th class="w-[18%] py-2 pr-3 text-left font-medium text-gray-500 dark:text-gray-400">Ссылка</th>
                                     <th class="w-[10%] py-2 pr-3 text-left font-medium text-gray-500 dark:text-gray-400">Название</th>
                                     <th class="w-[10%] py-2 pr-3 text-left font-medium text-gray-500 dark:text-gray-400">Телефон</th>
                                     <th class="w-[8%] py-2 pr-3 text-left font-medium text-gray-500 dark:text-gray-400">Начало</th>
@@ -363,43 +483,84 @@
                             </thead>
 
                             <tbody>
-                                <template x-if="state.mediums.length === 0">
+                                <template x-if="trackingRows().length === 0">
                                     <tr>
-                                        <td colspan="9" class="py-6 text-center text-sm text-gray-500 dark:text-gray-400">
-                                            Пока нет ни одного medium-правила.
+                                        <td colspan="10" class="py-6 text-center text-sm text-gray-500 dark:text-gray-400">
+                                            Пока нет ни одной UTM-ссылки.
                                         </td>
                                     </tr>
                                 </template>
 
-                                <template x-for="mediumRow in state.mediums" :key="mediumRow.key">
-                                    <tr class="border-b border-gray-200 dark:border-white/10">
+                                <template x-for="trackingRow in trackingRows()" :key="trackingRow.key">
+                                    <tr
+                                        class="border-b border-gray-200 dark:border-white/10"
+                                        x-bind:class="trackingRow.type === 'source' ? 'bg-gray-50/70 dark:bg-white/[0.02]' : ''"
+                                    >
                                         <td class="py-2 pr-3 align-top">
-                                            <select
-                                                class="block w-full rounded-md border-gray-300 px-2 py-1 text-sm shadow-none focus:border-primary-500 focus:ring-primary-500 dark:border-white/10 dark:bg-transparent dark:text-white"
-                                                x-model="mediumRow.source_key"
-                                                x-on:change="syncState()"
-                                                @disabled($isDisabled)
-                                            >
-                                                <option value="">Выберите source</option>
-                                                <template x-for="sourceRow in sourceOptions()" :key="sourceRow.key">
-                                                    <option
-                                                        x-bind:selected="mediumRow.source_key === sourceRow.key"
-                                                        x-bind:value="sourceRow.key"
-                                                        x-text="sourceRow.name ? `${sourceRow.source} (${sourceRow.name})` : sourceRow.source"
-                                                    ></option>
-                                                </template>
-                                            </select>
+                                            <template x-if="trackingRow.type === 'source'">
+                                                <div class="rounded-md border border-transparent px-2 py-1 text-sm text-gray-900 dark:text-white" x-text="trackingRow.sourceRow?.source || '—'"></div>
+                                            </template>
+
+                                            <template x-if="trackingRow.type === 'medium'">
+                                                <select
+                                                    class="block w-full rounded-md border-gray-300 px-2 py-1 text-sm shadow-none focus:border-primary-500 focus:ring-primary-500 dark:border-white/10 dark:bg-transparent dark:text-white"
+                                                    x-model="trackingRow.mediumRow.source_key"
+                                                    x-on:change="syncState()"
+                                                    @disabled($isDisabled)
+                                                >
+                                                    <option value="">Выберите source</option>
+                                                    <template x-for="sourceRow in sourceOptions()" :key="sourceRow.key">
+                                                        <option
+                                                            x-bind:selected="trackingRow.mediumRow.source_key === sourceRow.key"
+                                                            x-bind:value="sourceRow.key"
+                                                            x-text="sourceRow.name ? `${sourceRow.source} (${sourceRow.name})` : sourceRow.source"
+                                                        ></option>
+                                                    </template>
+                                                </select>
+                                            </template>
                                         </td>
 
                                         <td class="py-2 pr-3 align-top">
-                                            <input
-                                                type="text"
-                                                class="block w-full rounded-md border-gray-300 px-2 py-1 text-sm shadow-none focus:border-primary-500 focus:ring-primary-500 dark:border-white/10 dark:bg-transparent dark:text-white"
-                                                x-model="mediumRow.medium"
-                                                x-on:input.debounce.300ms="syncState()"
-                                                placeholder="cpc"
-                                                @disabled($isDisabled)
-                                            />
+                                            <template x-if="trackingRow.type === 'source'">
+                                                <div class="rounded-md border border-transparent px-2 py-1 text-sm text-gray-400 dark:text-gray-500">—</div>
+                                            </template>
+
+                                            <template x-if="trackingRow.type === 'medium'">
+                                                <input
+                                                    type="text"
+                                                    class="block w-full rounded-md border-gray-300 px-2 py-1 text-sm shadow-none focus:border-primary-500 focus:ring-primary-500 dark:border-white/10 dark:bg-transparent dark:text-white"
+                                                    x-model="trackingRow.mediumRow.medium"
+                                                    x-on:input.debounce.300ms="syncState()"
+                                                    placeholder="cpc"
+                                                    @disabled($isDisabled)
+                                                />
+                                            </template>
+                                        </td>
+
+                                        <td class="py-2 pr-3 align-top text-center">
+                                            <template x-if="trackingRow.type === 'source'">
+                                                <label class="inline-flex h-8 items-center justify-center">
+                                                    <input
+                                                        type="checkbox"
+                                                        class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-white/10 dark:bg-transparent"
+                                                        x-model="trackingRow.sourceRow.open_booking_widget"
+                                                        x-on:change="syncState()"
+                                                        @disabled($isDisabled)
+                                                    />
+                                                </label>
+                                            </template>
+
+                                            <template x-if="trackingRow.type === 'medium'">
+                                                <label class="inline-flex h-8 items-center justify-center">
+                                                    <input
+                                                        type="checkbox"
+                                                        class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-white/10 dark:bg-transparent"
+                                                        x-model="trackingRow.mediumRow.open_booking_widget"
+                                                        x-on:change="syncState()"
+                                                        @disabled($isDisabled)
+                                                    />
+                                                </label>
+                                            </template>
                                         </td>
 
                                         <td class="py-2 pr-3 align-top">
@@ -408,181 +569,235 @@
                                                     type="text"
                                                     readonly
                                                     class="block w-full rounded-md border-gray-300 bg-gray-50 px-2 py-1 text-xs shadow-none dark:border-white/10 dark:bg-white/5 dark:text-white"
-                                                    x-bind:value="buildMediumUrl(mediumRow)"
+                                                    x-bind:value="trackingLinkValue(trackingRow)"
                                                 />
 
-                                                <a
-                                                    class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-primary-200 text-primary-600 transition hover:bg-primary-50 dark:border-primary-500/20 dark:text-primary-300 dark:hover:bg-primary-500/10"
-                                                    x-bind:href="buildMediumUrl(mediumRow)"
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    title="Открыть ссылку"
-                                                    aria-label="Открыть ссылку"
+                                                <button
+                                                    type="button"
+                                                    class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border transition"
+                                                    x-bind:class="isTrackingLinkCopied(trackingRow) ? 'border-emerald-200 text-emerald-600 hover:bg-emerald-50 dark:border-emerald-500/20 dark:text-emerald-300 dark:hover:bg-emerald-500/10' : 'border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-white/10 dark:text-gray-300 dark:hover:bg-white/5'"
+                                                    x-bind:title="isTrackingLinkCopied(trackingRow) ? 'Скопировано' : 'Скопировать ссылку'"
+                                                    x-bind:aria-label="isTrackingLinkCopied(trackingRow) ? 'Скопировано' : 'Скопировать ссылку'"
+                                                    x-on:click="copyTrackingLink(trackingRow)"
+                                                    @disabled($isDisabled)
                                                 >
-                                                    <svg class="h-4 w-4" viewBox="0 0 20 20" fill="#2563eb" aria-hidden="true">
+                                                    <svg
+                                                        x-show="! isTrackingLinkCopied(trackingRow)"
+                                                        class="h-4 w-4"
+                                                        viewBox="0 0 20 20"
+                                                        fill="#374151"
+                                                        aria-hidden="true"
+                                                    >
+                                                        <path d="M6.75 2A2.75 2.75 0 0 0 4 4.75v6.5A2.75 2.75 0 0 0 6.75 14h6.5A2.75 2.75 0 0 0 16 11.25v-6.5A2.75 2.75 0 0 0 13.25 2h-6.5Zm-1.25 2.75c0-.69.56-1.25 1.25-1.25h6.5c.69 0 1.25.56 1.25 1.25v6.5c0 .69-.56 1.25-1.25 1.25h-6.5c-.69 0-1.25-.56-1.25-1.25v-6.5Z" />
+                                                        <path d="M3.75 6.5a.75.75 0 0 1 .75.75v8a1.75 1.75 0 0 0 1.75 1.75h8a.75.75 0 0 1 0 1.5h-8A3.25 3.25 0 0 1 3 15.25v-8a.75.75 0 0 1 .75-.75Z" />
+                                                    </svg>
+
+                                                    <svg
+                                                        x-show="isTrackingLinkCopied(trackingRow)"
+                                                        class="h-4 w-4"
+                                                        viewBox="0 0 20 20"
+                                                        fill="#16a34a"
+                                                        aria-hidden="true"
+                                                    >
                                                         <path
                                                             fill-rule="evenodd"
-                                                            d="M5.25 4A2.25 2.25 0 0 0 3 6.25v8.5A2.25 2.25 0 0 0 5.25 17h8.5A2.25 2.25 0 0 0 16 14.75V11.5a.75.75 0 0 0-1.5 0v3.25a.75.75 0 0 1-.75.75h-8.5a.75.75 0 0 1-.75-.75v-8.5A.75.75 0 0 1 5.25 5.5H8.5a.75.75 0 0 0 0-1.5H5.25Zm5-1.25A.75.75 0 0 0 10 4.25v.5a.75.75 0 0 0 1.5 0V4.81l3.22 3.22a.75.75 0 1 0 1.06-1.06L12.56 3.75h-.44a.75.75 0 0 0-.62-1H10.25Zm.53 6.78a.75.75 0 0 1 0-1.06l4-4a.75.75 0 1 1 1.06 1.06l-4 4a.75.75 0 0 1-1.06 0Z"
+                                                            d="M16.704 5.29a1 1 0 0 1 .006 1.414l-8 8a1 1 0 0 1-1.415 0l-4-4a1 1 0 1 1 1.414-1.415l3.293 3.294 7.294-7.293a1 1 0 0 1 1.408 0Z"
                                                             clip-rule="evenodd"
                                                         />
                                                     </svg>
-                                                </a>
+                                                </button>
                                             </div>
                                         </td>
 
                                         <td class="py-2 pr-3 align-top">
-                                            <input
-                                                type="text"
-                                                class="block w-full rounded-md border-gray-300 px-2 py-1 text-sm shadow-none focus:border-primary-500 focus:ring-primary-500 dark:border-white/10 dark:bg-transparent dark:text-white"
-                                                x-model="mediumRow.medium_name"
-                                                x-on:input.debounce.300ms="syncState()"
-                                                placeholder="Google CPC"
-                                                @disabled($isDisabled)
-                                            />
+                                            <template x-if="trackingRow.type === 'source'">
+                                                <div class="rounded-md border border-transparent px-2 py-1 text-sm text-gray-900 dark:text-white" x-text="trackingRow.sourceRow?.name || '—'"></div>
+                                            </template>
+
+                                            <template x-if="trackingRow.type === 'medium'">
+                                                <input
+                                                    type="text"
+                                                    class="block w-full rounded-md border-gray-300 px-2 py-1 text-sm shadow-none focus:border-primary-500 focus:ring-primary-500 dark:border-white/10 dark:bg-transparent dark:text-white"
+                                                    x-model="trackingRow.mediumRow.medium_name"
+                                                    x-on:input.debounce.300ms="syncState()"
+                                                    placeholder="Google CPC"
+                                                    @disabled($isDisabled)
+                                                />
+                                            </template>
                                         </td>
 
                                         <td class="py-2 pr-3 align-top">
-                                            <select
-                                                class="block w-full rounded-md border-gray-300 px-2 py-1 text-sm shadow-none focus:border-primary-500 focus:ring-primary-500 dark:border-white/10 dark:bg-transparent dark:text-white"
-                                                x-model="mediumRow.phone_key"
-                                                x-on:change="syncState()"
-                                                @disabled($isDisabled)
-                                            >
-                                                <option value="">Выберите телефон</option>
-                                                <template x-for="phoneRow in state.phones" :key="phoneRow.key">
-                                                    <option
-                                                        x-bind:disabled="isPhoneOptionDisabled(phoneRow.key, { type: 'medium', key: mediumRow.key })"
-                                                        x-bind:selected="mediumRow.phone_key === phoneRow.key"
-                                                        x-bind:value="phoneRow.key"
-                                                        x-text="phoneOptionLabel(phoneRow.key, { type: 'medium', key: mediumRow.key })"
-                                                    ></option>
-                                                </template>
-                                            </select>
-                                        </td>
+                                            <template x-if="trackingRow.type === 'source'">
+                                                <div class="rounded-md border border-transparent px-2 py-1 text-sm text-gray-900 dark:text-white" x-text="phoneLabel(trackingRow.sourceRow?.default_phone_key)"></div>
+                                            </template>
 
-                                        <td class="py-2 pr-3 align-top">
-                                            <input
-                                                type="date"
-                                                class="block w-full rounded-md border-gray-300 px-2 py-1 text-sm shadow-none focus:border-primary-500 focus:ring-primary-500 dark:border-white/10 dark:bg-transparent dark:text-white"
-                                                x-model="mediumRow.start_date"
-                                                x-on:change="syncState()"
-                                                @disabled($isDisabled)
-                                            />
-                                        </td>
-
-                                        <td class="py-2 pr-3 align-top">
-                                            <input
-                                                type="date"
-                                                class="block w-full rounded-md border-gray-300 px-2 py-1 text-sm shadow-none focus:border-primary-500 focus:ring-primary-500 dark:border-white/10 dark:bg-transparent dark:text-white"
-                                                x-model="mediumRow.end_date"
-                                                x-on:change="syncState()"
-                                                @disabled($isDisabled)
-                                            />
-                                        </td>
-
-                                        <td class="py-2 pr-3 align-top">
-                                            <span
-                                                class="inline-flex h-8 w-8 items-center justify-center rounded-full"
-                                                x-bind:class="mediumStatusClass(mediumRow)"
-                                                x-bind:title="mediumStatusLabel(mediumRow)"
-                                            >
-                                                <svg
-                                                    x-show="isMediumActive(mediumRow)"
-                                                    class="h-4 w-4"
-                                                    viewBox="0 0 20 20"
-                                                    fill="#16a34a"
-                                                    aria-hidden="true"
+                                            <template x-if="trackingRow.type === 'medium'">
+                                                <select
+                                                    class="block w-full rounded-md border-gray-300 px-2 py-1 text-sm shadow-none focus:border-primary-500 focus:ring-primary-500 dark:border-white/10 dark:bg-transparent dark:text-white"
+                                                    x-model="trackingRow.mediumRow.phone_key"
+                                                    x-on:change="syncState()"
+                                                    @disabled($isDisabled)
                                                 >
-                                                    <path
-                                                        fill-rule="evenodd"
-                                                        d="M16.704 5.29a1 1 0 0 1 .006 1.414l-8 8a1 1 0 0 1-1.415 0l-4-4a1 1 0 1 1 1.414-1.415l3.293 3.294 7.294-7.293a1 1 0 0 1 1.408 0Z"
-                                                        clip-rule="evenodd"
-                                                    />
-                                                </svg>
+                                                    <option value="">Выберите телефон</option>
+                                                    <template x-for="phoneRow in state.phones" :key="phoneRow.key">
+                                                        <option
+                                                            x-bind:disabled="isPhoneOptionDisabled(phoneRow.key, { type: 'medium', key: trackingRow.mediumRow.key })"
+                                                            x-bind:selected="trackingRow.mediumRow.phone_key === phoneRow.key"
+                                                            x-bind:value="phoneRow.key"
+                                                            x-text="phoneOptionLabel(phoneRow.key, { type: 'medium', key: trackingRow.mediumRow.key })"
+                                                        ></option>
+                                                    </template>
+                                                </select>
+                                            </template>
+                                        </td>
 
-                                                <svg
-                                                    x-show="isMediumStopped(mediumRow)"
-                                                    class="h-4 w-4"
-                                                    viewBox="0 0 20 20"
-                                                    fill="#dc2626"
-                                                    aria-hidden="true"
+                                        <td class="py-2 pr-3 align-top">
+                                            <template x-if="trackingRow.type === 'source'">
+                                                <div class="rounded-md border border-transparent px-2 py-1 text-sm text-gray-400 dark:text-gray-500">—</div>
+                                            </template>
+
+                                            <template x-if="trackingRow.type === 'medium'">
+                                                <input
+                                                    type="date"
+                                                    class="block w-full rounded-md border-gray-300 px-2 py-1 text-sm shadow-none focus:border-primary-500 focus:ring-primary-500 dark:border-white/10 dark:bg-transparent dark:text-white"
+                                                    x-model="trackingRow.mediumRow.start_date"
+                                                    x-on:change="syncState()"
+                                                    @disabled($isDisabled)
+                                                />
+                                            </template>
+                                        </td>
+
+                                        <td class="py-2 pr-3 align-top">
+                                            <template x-if="trackingRow.type === 'source'">
+                                                <div class="rounded-md border border-transparent px-2 py-1 text-sm text-gray-400 dark:text-gray-500">—</div>
+                                            </template>
+
+                                            <template x-if="trackingRow.type === 'medium'">
+                                                <input
+                                                    type="date"
+                                                    class="block w-full rounded-md border-gray-300 px-2 py-1 text-sm shadow-none focus:border-primary-500 focus:ring-primary-500 dark:border-white/10 dark:bg-transparent dark:text-white"
+                                                    x-model="trackingRow.mediumRow.end_date"
+                                                    x-on:change="syncState()"
+                                                    @disabled($isDisabled)
+                                                />
+                                            </template>
+                                        </td>
+
+                                        <td class="py-2 pr-3 align-top">
+                                            <template x-if="trackingRow.type === 'source'">
+                                                <div class="rounded-md border border-transparent px-2 py-1 text-sm text-gray-400 dark:text-gray-500">—</div>
+                                            </template>
+
+                                            <template x-if="trackingRow.type === 'medium'">
+                                                <span
+                                                    class="inline-flex h-8 w-8 items-center justify-center rounded-full"
+                                                    x-bind:class="mediumStatusClass(trackingRow.mediumRow)"
+                                                    x-bind:title="mediumStatusLabel(trackingRow.mediumRow)"
                                                 >
-                                                    <path
-                                                        fill-rule="evenodd"
-                                                        d="M4.293 4.293a1 1 0 0 1 1.414 0L10 8.586l4.293-4.293a1 1 0 1 1 1.414 1.414L11.414 10l4.293 4.293a1 1 0 0 1-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 0 1-1.414-1.414L8.586 10 4.293 5.707a1 1 0 0 1 0-1.414Z"
-                                                        clip-rule="evenodd"
-                                                    />
-                                                </svg>
+                                                    <svg
+                                                        x-show="isMediumActive(trackingRow.mediumRow)"
+                                                        class="h-4 w-4"
+                                                        viewBox="0 0 20 20"
+                                                        fill="#16a34a"
+                                                        aria-hidden="true"
+                                                    >
+                                                        <path
+                                                            fill-rule="evenodd"
+                                                            d="M16.704 5.29a1 1 0 0 1 .006 1.414l-8 8a1 1 0 0 1-1.415 0l-4-4a1 1 0 1 1 1.414-1.415l3.293 3.294 7.294-7.293a1 1 0 0 1 1.408 0Z"
+                                                            clip-rule="evenodd"
+                                                        />
+                                                    </svg>
 
-                                                <svg
-                                                    x-show="isMediumScheduled(mediumRow)"
-                                                    class="h-4 w-4"
-                                                    viewBox="0 0 20 20"
-                                                    fill="#d97706"
-                                                    aria-hidden="true"
-                                                >
-                                                    <path
-                                                        fill-rule="evenodd"
-                                                        d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm1-12a1 1 0 1 0-2 0v4c0 .265.105.52.293.707l2.5 2.5a1 1 0 1 0 1.414-1.414L11 9.586V6Z"
-                                                        clip-rule="evenodd"
-                                                    />
-                                                </svg>
+                                                    <svg
+                                                        x-show="isMediumStopped(trackingRow.mediumRow)"
+                                                        class="h-4 w-4"
+                                                        viewBox="0 0 20 20"
+                                                        fill="#dc2626"
+                                                        aria-hidden="true"
+                                                    >
+                                                        <path
+                                                            fill-rule="evenodd"
+                                                            d="M4.293 4.293a1 1 0 0 1 1.414 0L10 8.586l4.293-4.293a1 1 0 1 1 1.414 1.414L11.414 10l4.293 4.293a1 1 0 0 1-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 0 1-1.414-1.414L8.586 10 4.293 5.707a1 1 0 0 1 0-1.414Z"
+                                                            clip-rule="evenodd"
+                                                        />
+                                                    </svg>
 
-                                                <span class="sr-only" x-text="mediumStatusLabel(mediumRow)"></span>
-                                            </span>
+                                                    <svg
+                                                        x-show="isMediumScheduled(trackingRow.mediumRow)"
+                                                        class="h-4 w-4"
+                                                        viewBox="0 0 20 20"
+                                                        fill="#d97706"
+                                                        aria-hidden="true"
+                                                    >
+                                                        <path
+                                                            fill-rule="evenodd"
+                                                            d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm1-12a1 1 0 1 0-2 0v4c0 .265.105.52.293.707l2.5 2.5a1 1 0 1 0 1.414-1.414L11 9.586V6Z"
+                                                            clip-rule="evenodd"
+                                                        />
+                                                    </svg>
+
+                                                    <span class="sr-only" x-text="mediumStatusLabel(trackingRow.mediumRow)"></span>
+                                                </span>
+                                            </template>
                                         </td>
 
                                         <td class="py-2 text-right align-top">
-                                            <div class="flex justify-end gap-2 whitespace-nowrap">
-                                                <button
-                                                    type="button"
-                                                    class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 text-gray-600 transition hover:bg-gray-50 dark:border-white/10 dark:text-gray-300 dark:hover:bg-white/5"
-                                                    x-show="! isMediumStopped(mediumRow)"
-                                                    x-on:click="stopMedium(mediumRow)"
-                                                    title="Остановить"
-                                                    aria-label="Остановить"
-                                                    @disabled($isDisabled)
-                                                >
-                                                    <svg class="h-4 w-4" viewBox="0 0 20 20" fill="#374151" aria-hidden="true">
-                                                        <path d="M6 6.75A.75.75 0 0 1 6.75 6h6.5a.75.75 0 0 1 .75.75v6.5a.75.75 0 0 1-.75.75h-6.5A.75.75 0 0 1 6 13.25v-6.5Z" />
-                                                    </svg>
-                                                </button>
+                                            <template x-if="trackingRow.type === 'source'">
+                                                <div class="rounded-md border border-transparent px-2 py-1 text-sm text-gray-400 dark:text-gray-500">—</div>
+                                            </template>
 
-                                                <button
-                                                    type="button"
-                                                    class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-emerald-200 text-emerald-600 transition hover:bg-emerald-50 dark:border-emerald-500/20 dark:text-emerald-300 dark:hover:bg-emerald-500/10"
-                                                    x-show="isMediumStopped(mediumRow)"
-                                                    x-on:click="resumeMedium(mediumRow)"
-                                                    title="Возобновить"
-                                                    aria-label="Возобновить"
-                                                    @disabled($isDisabled)
-                                                >
-                                                    <svg class="h-4 w-4" viewBox="0 0 20 20" fill="#16a34a" aria-hidden="true">
-                                                        <path
-                                                            fill-rule="evenodd"
-                                                            d="M6.22 5.22a.75.75 0 0 1 1.06 0l6 4.25a.75.75 0 0 1 0 1.22l-6 4.25A.75.75 0 0 1 6 14.31V5.75a.75.75 0 0 1 .22-.53Z"
-                                                            clip-rule="evenodd"
-                                                        />
-                                                    </svg>
-                                                </button>
+                                            <template x-if="trackingRow.type === 'medium'">
+                                                <div class="flex justify-end gap-2 whitespace-nowrap">
+                                                    <button
+                                                        type="button"
+                                                        class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 text-gray-600 transition hover:bg-gray-50 dark:border-white/10 dark:text-gray-300 dark:hover:bg-white/5"
+                                                        x-show="! isMediumStopped(trackingRow.mediumRow)"
+                                                        x-on:click="stopMedium(trackingRow.mediumRow)"
+                                                        title="Остановить"
+                                                        aria-label="Остановить"
+                                                        @disabled($isDisabled)
+                                                    >
+                                                        <svg class="h-4 w-4" viewBox="0 0 20 20" fill="#374151" aria-hidden="true">
+                                                            <path d="M6 6.75A.75.75 0 0 1 6.75 6h6.5a.75.75 0 0 1 .75.75v6.5a.75.75 0 0 1-.75.75h-6.5A.75.75 0 0 1 6 13.25v-6.5Z" />
+                                                        </svg>
+                                                    </button>
 
-                                                <button
-                                                    type="button"
-                                                    class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-rose-200 text-rose-600 transition hover:bg-rose-50 dark:border-rose-500/20 dark:text-rose-300 dark:hover:bg-rose-500/10"
-                                                    x-on:click="deleteMedium(mediumRow.key)"
-                                                    title="Удалить"
-                                                    aria-label="Удалить"
-                                                    @disabled($isDisabled)
-                                                >
-                                                    <svg class="h-4 w-4" viewBox="0 0 20 20" fill="#dc2626" aria-hidden="true">
-                                                        <path
-                                                            fill-rule="evenodd"
-                                                            d="M8.75 2.5a1.75 1.75 0 0 0-1.75 1.75V5H4.75a.75.75 0 0 0 0 1.5h.443l.663 8.61A2.25 2.25 0 0 0 8.102 17.5h3.796a2.25 2.25 0 0 0 2.244-2.39l.663-8.61h.445a.75.75 0 0 0 0-1.5H13V4.25A1.75 1.75 0 0 0 11.25 2.5h-2.5ZM11.5 5V4.25a.25.25 0 0 0-.25-.25h-2.5a.25.25 0 0 0-.25.25V5h3Zm-2 3.25a.75.75 0 0 1 1.5 0v5a.75.75 0 0 1-1.5 0v-5Zm-2.5.75a.75.75 0 0 1 1.5 0v4.25a.75.75 0 0 1-1.5 0V9Zm5-.75a.75.75 0 0 1 .75.75v4.25a.75.75 0 0 1-1.5 0V9a.75.75 0 0 1 .75-.75Z"
-                                                            clip-rule="evenodd"
-                                                        />
-                                                    </svg>
-                                                </button>
-                                            </div>
+                                                    <button
+                                                        type="button"
+                                                        class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-emerald-200 text-emerald-600 transition hover:bg-emerald-50 dark:border-emerald-500/20 dark:text-emerald-300 dark:hover:bg-emerald-500/10"
+                                                        x-show="isMediumStopped(trackingRow.mediumRow)"
+                                                        x-on:click="resumeMedium(trackingRow.mediumRow)"
+                                                        title="Возобновить"
+                                                        aria-label="Возобновить"
+                                                        @disabled($isDisabled)
+                                                    >
+                                                        <svg class="h-4 w-4" viewBox="0 0 20 20" fill="#16a34a" aria-hidden="true">
+                                                            <path
+                                                                fill-rule="evenodd"
+                                                                d="M6.22 5.22a.75.75 0 0 1 1.06 0l6 4.25a.75.75 0 0 1 0 1.22l-6 4.25A.75.75 0 0 1 6 14.31V5.75a.75.75 0 0 1 .22-.53Z"
+                                                                clip-rule="evenodd"
+                                                            />
+                                                        </svg>
+                                                    </button>
+
+                                                    <button
+                                                        type="button"
+                                                        class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-rose-200 text-rose-600 transition hover:bg-rose-50 dark:border-rose-500/20 dark:text-rose-300 dark:hover:bg-rose-500/10"
+                                                        x-on:click="deleteMedium(trackingRow.mediumRow.key)"
+                                                        title="Удалить"
+                                                        aria-label="Удалить"
+                                                        @disabled($isDisabled)
+                                                    >
+                                                        <svg class="h-4 w-4" viewBox="0 0 20 20" fill="#dc2626" aria-hidden="true">
+                                                            <path
+                                                                fill-rule="evenodd"
+                                                                d="M8.75 2.5a1.75 1.75 0 0 0-1.75 1.75V5H4.75a.75.75 0 0 0 0 1.5h.443l.663 8.61A2.25 2.25 0 0 0 8.102 17.5h3.796a2.25 2.25 0 0 0 2.244-2.39l.663-8.61h.445a.75.75 0 0 0 0-1.5H13V4.25A1.75 1.75 0 0 0 11.25 2.5h-2.5ZM11.5 5V4.25a.25.25 0 0 0-.25-.25h-2.5a.25.25 0 0 0-.25.25V5h3Zm-2 3.25a.75.75 0 0 1 1.5 0v5a.75.75 0 0 1-1.5 0v-5Zm-2.5.75a.75.75 0 0 1 1.5 0v4.25a.75.75 0 0 1-1.5 0V9Zm5-.75a.75.75 0 0 1 .75.75v4.25a.75.75 0 0 1-1.5 0V9a.75.75 0 0 1 .75-.75Z"
+                                                                clip-rule="evenodd"
+                                                            />
+                                                        </svg>
+                                                    </button>
+                                                </div>
+                                            </template>
                                         </td>
                                     </tr>
                                 </template>

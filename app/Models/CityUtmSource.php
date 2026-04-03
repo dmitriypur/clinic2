@@ -16,6 +16,11 @@ class CityUtmSource extends Model
         'source',
         'name',
         'default_phone_id',
+        'open_booking_widget',
+    ];
+
+    protected $casts = [
+        'open_booking_widget' => 'boolean',
     ];
 
     public function city(): BelongsTo

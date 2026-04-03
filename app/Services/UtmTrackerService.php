@@ -61,6 +61,7 @@ class UtmTrackerService
                     'source' => $source->source,
                     'name' => $source->name,
                     'default_phone_key' => $source->default_phone_id ? $this->phoneKey($source->default_phone_id) : null,
+                    'open_booking_widget' => (bool) $source->open_booking_widget,
                 ])
                 ->all(),
             'mediums' => $city->utmMediums
@@ -76,6 +77,7 @@ class UtmTrackerService
                     'medium' => $medium->medium,
                     'medium_name' => $medium->medium_name,
                     'phone_key' => $medium->phone_id ? $this->phoneKey($medium->phone_id) : null,
+                    'open_booking_widget' => (bool) $medium->open_booking_widget,
                     'start_date' => $medium->start_date?->format('Y-m-d'),
                     'end_date' => $medium->end_date?->format('Y-m-d'),
                 ])
@@ -86,7 +88,7 @@ class UtmTrackerService
     public function sync(City $city, array $state): void
     {
         $state = $this->prioritizeMediumPhones($this->normalizeState($state));
-        $this->validateState($state);
+        $this->validateState($city, $state);
 
         $phoneSync = $this->syncPhones($city, $state['phones']);
         $sourceSync = $this->syncSources($city, $state['sources'], $phoneSync['key_to_id']);
@@ -173,6 +175,7 @@ class UtmTrackerService
             $model->default_phone_id = $row['default_phone_key']
                 ? ($phoneKeyToId[$row['default_phone_key']] ?? null)
                 : null;
+            $model->open_booking_widget = (bool) $row['open_booking_widget'];
             $model->save();
 
             $keyToId[$row['key']] = $model->id;
@@ -209,6 +212,7 @@ class UtmTrackerService
             $model->medium = $row['medium'];
             $model->medium_name = $row['medium_name'] ?: null;
             $model->phone_id = $phoneId;
+            $model->open_booking_widget = (bool) $row['open_booking_widget'];
             $model->start_date = $row['start_date'];
             $model->end_date = $row['end_date'];
             $model->save();
@@ -253,11 +257,12 @@ class UtmTrackerService
         $query->whereNotIn('id', $keptIds)->delete();
     }
 
-    private function validateState(array $state): void
+    private function validateState(City $city, array $state): void
     {
         $phoneRows = collect($state['phones']);
         $sourceRows = collect($state['sources']);
         $mediumRows = collect($state['mediums']);
+        $allowedLegacyMediumDuplicates = $this->allowedLegacyMediumDuplicateUsage($city);
 
         if ($phoneRows->pluck('phone')->duplicates()->isNotEmpty()) {
             throw ValidationException::withMessages([
@@ -296,6 +301,7 @@ class UtmTrackerService
         }
 
         $mediumKeysPerSource = [];
+        $mediumRowsByPhone = [];
 
         foreach ($mediumRows as $mediumRow) {
             if (! in_array($mediumRow['source_key'], $sourceKeys, true)) {
@@ -313,12 +319,6 @@ class UtmTrackerService
             if (! in_array($mediumRow['phone_key'], $phoneKeys, true)) {
                 throw ValidationException::withMessages([
                     'data.utm_tracker' => 'У одного из medium не выбран телефон из справочника.',
-                ]);
-            }
-
-            if (in_array($mediumRow['phone_key'], $usedPhoneKeys, true)) {
-                throw ValidationException::withMessages([
-                    'data.utm_tracker' => 'Телефон нельзя использовать повторно в разных source и medium.',
                 ]);
             }
 
@@ -345,7 +345,55 @@ class UtmTrackerService
             }
 
             $mediumKeysPerSource[] = $sourceMediumComposite;
-            $usedPhoneKeys[] = $mediumRow['phone_key'];
+            $mediumRowsByPhone[$mediumRow['phone_key']][] = $mediumRow;
+        }
+
+        foreach ($sourceRows as $sourceRow) {
+            $defaultPhoneKey = $sourceRow['default_phone_key'];
+
+            if (! $defaultPhoneKey) {
+                continue;
+            }
+
+            $rowsWithSamePhone = $mediumRowsByPhone[$defaultPhoneKey] ?? [];
+
+            if ($rowsWithSamePhone === []) {
+                continue;
+            }
+
+            $hasForeignMediumUsage = collect($rowsWithSamePhone)
+                ->contains(fn (array $mediumRow): bool => $mediumRow['source_key'] !== $sourceRow['key']);
+
+            if ($hasForeignMediumUsage) {
+                throw ValidationException::withMessages([
+                    'data.utm_tracker' => 'Source может использовать как дефолтный только свой телефон или телефон одного из собственных medium.',
+                ]);
+            }
+        }
+
+        foreach ($mediumRowsByPhone as $phoneKey => $rowsWithPhone) {
+            if (count($rowsWithPhone) <= 1) {
+                continue;
+            }
+
+            $mediumIds = collect($rowsWithPhone)
+                ->pluck('id')
+                ->filter()
+                ->sort()
+                ->values()
+                ->all();
+
+            $allowedMediumIds = $allowedLegacyMediumDuplicates[$phoneKey] ?? null;
+
+            if (
+                $allowedMediumIds === null ||
+                count($mediumIds) !== count($rowsWithPhone) ||
+                $mediumIds !== $allowedMediumIds
+            ) {
+                throw ValidationException::withMessages([
+                    'data.utm_tracker' => 'Телефон нельзя использовать повторно в разных source и medium.',
+                ]);
+            }
         }
     }
 
@@ -368,6 +416,7 @@ class UtmTrackerService
                     'source' => trim((string) data_get($row, 'source', '')),
                     'name' => trim((string) data_get($row, 'name', '')),
                     'default_phone_key' => data_get($row, 'default_phone_key') ? (string) data_get($row, 'default_phone_key') : null,
+                    'open_booking_widget' => (bool) data_get($row, 'open_booking_widget', false),
                 ])
                 ->filter(fn (array $row): bool => filled($row['source']))
                 ->values()
@@ -380,6 +429,7 @@ class UtmTrackerService
                     'medium' => trim((string) data_get($row, 'medium', '')),
                     'medium_name' => trim((string) data_get($row, 'medium_name', '')),
                     'phone_key' => data_get($row, 'phone_key') ? (string) data_get($row, 'phone_key') : null,
+                    'open_booking_widget' => (bool) data_get($row, 'open_booking_widget', false),
                     'start_date' => $this->normalizeDate(data_get($row, 'start_date')),
                     'end_date' => $this->normalizeDate(data_get($row, 'end_date')),
                 ])
@@ -416,6 +466,7 @@ class UtmTrackerService
                 'source' => $sourceValue,
                 'name' => '',
                 'default_phone_key' => $defaultPhoneKey,
+                'open_booking_widget' => false,
             ];
 
             foreach ((array) data_get($legacyRule, 'medium', []) as $legacyMedium) {
@@ -438,6 +489,7 @@ class UtmTrackerService
                     'medium' => $mediumValue,
                     'medium_name' => '',
                     'phone_key' => $phoneKey,
+                    'open_booking_widget' => false,
                     'start_date' => null,
                     'end_date' => null,
                 ];
@@ -521,21 +573,25 @@ class UtmTrackerService
 
     private function prioritizeMediumPhones(array $state): array
     {
-        $mediumPhoneKeys = collect(data_get($state, 'mediums', []))
-            ->pluck('phone_key')
-            ->filter()
-            ->unique()
+        $mediumPhoneSources = collect(data_get($state, 'mediums', []))
+            ->filter(fn (array $row): bool => filled($row['phone_key'] ?? null) && filled($row['source_key'] ?? null))
+            ->groupBy('phone_key')
+            ->map(fn ($rows): array => $rows->pluck('source_key')->filter()->unique()->values()->all())
             ->all();
 
-        if ($mediumPhoneKeys === []) {
+        if ($mediumPhoneSources === []) {
             return $state;
         }
 
         $state['sources'] = collect(data_get($state, 'sources', []))
-            ->map(function (array $sourceRow) use ($mediumPhoneKeys): array {
+            ->map(function (array $sourceRow) use ($mediumPhoneSources): array {
+                $defaultPhoneKey = $sourceRow['default_phone_key'] ?? null;
+
                 if (
-                    filled($sourceRow['default_phone_key'] ?? null) &&
-                    in_array($sourceRow['default_phone_key'], $mediumPhoneKeys, true)
+                    filled($defaultPhoneKey) &&
+                    isset($mediumPhoneSources[$defaultPhoneKey]) &&
+                    collect($mediumPhoneSources[$defaultPhoneKey])
+                        ->contains(fn (string $sourceKey): bool => $sourceKey !== $sourceRow['key'])
                 ) {
                     $sourceRow['default_phone_key'] = null;
                 }
@@ -545,6 +601,25 @@ class UtmTrackerService
             ->all();
 
         return $state;
+    }
+
+    private function allowedLegacyMediumDuplicateUsage(City $city): array
+    {
+        return $city->utmMediums()
+            ->get(['id', 'phone_id'])
+            ->filter(fn (CityUtmMedium $medium): bool => filled($medium->phone_id))
+            ->groupBy('phone_id')
+            ->filter(fn ($rows): bool => $rows->count() > 1)
+            ->mapWithKeys(function ($rows, $phoneId): array {
+                return [
+                    $this->phoneKey((int) $phoneId) => $rows
+                        ->pluck('id')
+                        ->sort()
+                        ->values()
+                        ->all(),
+                ];
+            })
+            ->all();
     }
 
     private function isMediumActive(CityUtmMedium $medium): bool
