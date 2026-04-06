@@ -1,38 +1,43 @@
 export function getDoctorReceivesText(doctor) {
-  const value = doctor?.extra?.receives || "";
+  const value = doctor?.receives || doctor?.extra?.receives || "";
   return String(value || "").trim();
 }
 
 export function extractMinimumAgeFromReceivesText(value) {
+  const range = extractAgeRangeFromReceivesText(value);
+  return range.minAge;
+}
+
+export function extractAgeRangeFromReceivesText(value) {
   const text = String(value || "").trim();
   if (!text) {
-    return null;
+    return { minAge: null, maxAge: null };
   }
 
-  const patterns = [
-    /(?:с|от)\s*(\d+)\s*(?:года?|лет)/i,
-    /дет(?:ей|и)\s*(?:с|от)?\s*(\d+)/i,
-    /(\d+)\s*(?:года?|лет)/i,
-    /(\d+)/,
-  ];
+  const matches = Array.from(text.matchAll(/(\d+)/g))
+    .map((match) => Number(match[1]))
+    .filter((age) => Number.isFinite(age) && age >= 0);
 
-  for (const pattern of patterns) {
-    const match = text.match(pattern);
-    if (!match) {
-      continue;
-    }
-
-    const age = Number(match[1]);
-    if (Number.isFinite(age) && age >= 0) {
-      return age;
-    }
+  if (!matches.length) {
+    return { minAge: null, maxAge: null };
   }
 
-  return null;
+  if (matches.length === 1) {
+    return { minAge: matches[0], maxAge: null };
+  }
+
+  return {
+    minAge: matches[0],
+    maxAge: matches[1],
+  };
 }
 
 export function extractDoctorMinimumAge(doctor) {
   return extractMinimumAgeFromReceivesText(getDoctorReceivesText(doctor));
+}
+
+export function extractDoctorAgeRange(doctor) {
+  return extractAgeRangeFromReceivesText(getDoctorReceivesText(doctor));
 }
 
 export function parseBirthDateInput(value) {
@@ -86,15 +91,23 @@ export function calculateAgeFromBirthDate(value, now = new Date()) {
 }
 
 export function formatDoctorMinimumAgeText(age) {
-  if (!Number.isFinite(age) || age < 0) {
+  return formatDoctorAgeRangeText({ minAge: age, maxAge: null });
+}
+
+export function formatDoctorAgeRangeText({ minAge = null, maxAge = null } = {}) {
+  if (!Number.isFinite(minAge) || minAge < 0) {
     return "";
   }
 
-  if (age === 1) {
+  if (Number.isFinite(maxAge) && maxAge >= minAge) {
+    return `с ${minAge} до ${maxAge} лет`;
+  }
+
+  if (minAge === 1) {
     return "с 1 года";
   }
 
-  return `с ${age} лет`;
+  return `с ${minAge} лет`;
 }
 
 export function formatDateForInput(date = new Date()) {

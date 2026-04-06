@@ -93,9 +93,9 @@
 <script>
 import {
   calculateAgeFromBirthDate,
-  extractDoctorMinimumAge,
+  extractDoctorAgeRange,
   formatDateForInput,
-  formatDoctorMinimumAgeText,
+  formatDoctorAgeRangeText,
 } from "../utils/doctorAgeUtils";
 
 const StepHeader = () => import("./shared/StepHeader.vue");
@@ -152,8 +152,8 @@ export default {
     maxBirthDate() {
       return formatDateForInput(new Date());
     },
-    selectedDoctorMinimumAge() {
-      return extractDoctorMinimumAge(this.selectedDoctor);
+    selectedDoctorAgeRange() {
+      return extractDoctorAgeRange(this.selectedDoctor);
     },
     formattedAppointment() {
       if (!this.selectedDate || !this.selectedSlot?.time) {
@@ -206,15 +206,18 @@ export default {
         if (patientAge === null) {
           this.errors.birth_date = "Укажите корректную дату рождения";
           isValid = false;
-        } else if (
-          Number.isFinite(this.selectedDoctorMinimumAge) &&
-          patientAge < this.selectedDoctorMinimumAge
-        ) {
-          this.errors.birth_date =
-            `Выбранный врач принимает пациентов ${formatDoctorMinimumAgeText(
-              this.selectedDoctorMinimumAge
-            )}`;
-          isValid = false;
+        } else {
+          const { minAge, maxAge } = this.selectedDoctorAgeRange;
+          const isBelowMinimum = Number.isFinite(minAge) && patientAge < minAge;
+          const isAboveMaximum = Number.isFinite(maxAge) && patientAge > maxAge;
+
+          if (isBelowMinimum || isAboveMaximum) {
+            this.errors.birth_date =
+              `Выбранный врач принимает пациентов ${formatDoctorAgeRangeText(
+                this.selectedDoctorAgeRange
+              )}`;
+            isValid = false;
+          }
         }
       }
 
