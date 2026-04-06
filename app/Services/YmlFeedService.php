@@ -8,7 +8,10 @@ use App\Enums\PageType;
 use App\Models\City;
 use App\Models\Doctor;
 use App\Models\Page;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 use App\Settings\GeneralSettings;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -38,29 +41,12 @@ class YmlFeedService
 
     public function generateDoctorsFeed(?City $city = null): string
     {
-        if ($city) {
-            $this->cityService->setCurrentCity($city);
-            $this->city = $city;
-            $this->shopEmail = $this->resolveEmail($this->city->email ?? null)
-                ?? $this->resolveEmail(config('mail.from.address'));
-        }
+        $targetCity = $this->resolveTargetCity($city);
+        $this->setFeedContextCity($targetCity);
 
         $generatedAt = now()->format('Y-m-d H:i');
-
-        $doctors = Doctor::query()
-            ->publiclyVisible()
-            ->with([
-                'reviews' => static function ($query) {
-                    $query->latest()->limit(5);
-                },
-            ])
-            ->get();
-
-        $services = Page::query()
-            ->where('type', PageType::Services)
-            ->where('active', true)
-            ->orderBy('sorting')
-            ->get();
+        $doctors = $this->getDoctorsForCity($targetCity);
+        $services = $this->getServicesForCity($targetCity);
 
         $xml = new \SimpleXMLElement('<?xml version="1.0" encoding="UTF-8"?><yml_catalog/>');
 
@@ -81,6 +67,30 @@ class YmlFeedService
         $this->addOffers($shop->addChild('offers'), $doctors, $services);
 
         return $xml->asXML();
+    }
+
+    /**
+     * @return array<int, array{city_slug: string, city_name: string, filename: string, is_default: bool, content: string}>
+     */
+    public function generateDoctorsFeedsForActiveCities(): array
+    {
+        return $this->cityService
+            ->getActiveCities()
+            ->sortBy([
+                ['is_default', 'desc'],
+                ['name', 'asc'],
+            ])
+            ->values()
+            ->map(function (City $city): array {
+                return [
+                    'city_slug' => $city->slug,
+                    'city_name' => $city->name,
+                    'filename' => $this->buildFeedFilename($city),
+                    'is_default' => (bool) $city->is_default,
+                    'content' => $this->generateDoctorsFeed($city),
+                ];
+            })
+            ->all();
     }
 
     /**
@@ -300,29 +310,131 @@ class YmlFeedService
         return null;
     }
 
-    public function saveFeedToFile(string $content): string
+    public function saveFeedToFile(string $content, ?City $city = null): string
+    {
+        $targetCity = $this->resolveTargetCity($city);
+        $filename = $this->buildFeedFilename($targetCity);
+
+        Storage::disk('public')->put($filename, $content);
+        if ($targetCity->is_default) {
+            Storage::disk('public')->put('doctors_feed.xml', $content);
+        }
+
+        return $filename;
+    }
+
+    /**
+     * @param array<int, array{city_slug: string, city_name: string, filename: string, is_default: bool, content: string}> $feeds
+     * @return array<int, array{city_slug: string, city_name: string, filename: string, is_default: bool}>
+     */
+    public function saveFeedsToFiles(array $feeds): array
     {
         $this->deleteOldFeeds();
 
-        $filename = 'doctors_feed.xml';
+        return collect($feeds)
+            ->map(function (array $feed): array {
+                Storage::disk('public')->put($feed['filename'], $feed['content']);
 
-        Storage::disk('public')->put($filename, $content);
+                if (!empty($feed['is_default'])) {
+                    Storage::disk('public')->put('doctors_feed.xml', $feed['content']);
+                }
 
-        return $filename;
+                return [
+                    'city_slug' => $feed['city_slug'],
+                    'city_name' => $feed['city_name'],
+                    'filename' => $feed['filename'],
+                    'is_default' => (bool) $feed['is_default'],
+                ];
+            })
+            ->all();
     }
 
     private function deleteOldFeeds(): void
     {
         $feedFiles = Storage::disk('public')->files();
         $feedFiles = array_filter($feedFiles, static function ($file) {
-            return str_starts_with($file, 'doctors_feed_') && str_ends_with($file, '.xml');
+            return str_starts_with($file, 'doctors_feed') && str_ends_with($file, '.xml');
         });
-
-        Storage::disk('public')->delete('doctors_feed.xml');
 
         foreach ($feedFiles as $file) {
             Storage::disk('public')->delete($file);
         }
+    }
+
+    private function resolveTargetCity(?City $city = null): City
+    {
+        return $city
+            ?? $this->cityService->getCurrentCity()
+            ?? $this->cityService->getDefaultCity();
+    }
+
+    private function setFeedContextCity(City $city): void
+    {
+        $this->cityService->setCurrentCity($city);
+        $this->city = $city;
+        $this->shopEmail = $this->resolveEmail($this->city->email ?? null)
+            ?? $this->resolveEmail(config('mail.from.address'));
+    }
+
+    /**
+     * @return Collection<int, Doctor>
+     */
+    private function getDoctorsForCity(City $city): Collection
+    {
+        $query = Doctor::query()
+            ->withoutGlobalScopes()
+            ->where(function (Builder $query) use ($city): void {
+                $query->whereHas('cities', function (Builder $cityQuery) use ($city): void {
+                    $cityQuery->where('cities.id', $city->id);
+                })->orDoesntHave('cities');
+            })
+            ->with([
+                'reviews' => static function ($query) {
+                    $query->latest()->limit(5);
+                },
+            ]);
+
+        $this->applyPubliclyVisibleDoctorFilter($query);
+
+        return $query->get();
+    }
+
+    /**
+     * @return Collection<int, Page>
+     */
+    private function getServicesForCity(City $city): Collection
+    {
+        return Page::query()
+            ->withoutGlobalScopes()
+            ->where('type', PageType::Services)
+            ->where('active', true)
+            ->where(function (Builder $query) use ($city): void {
+                $query->whereHas('cities', function (Builder $cityQuery) use ($city): void {
+                    $cityQuery->where('cities.id', $city->id);
+                })->orDoesntHave('cities');
+            })
+            ->orderBy('sorting')
+            ->get();
+    }
+
+    private function buildFeedFilename(City $city): string
+    {
+        return 'doctors_feed_' . $city->slug . '.xml';
+    }
+
+    private function applyPubliclyVisibleDoctorFilter(Builder $query): void
+    {
+        if (DB::connection()->getDriverName() !== 'sqlite') {
+            $query->publiclyVisible();
+            return;
+        }
+
+        $query->where(function (Builder $builder): void {
+            $builder->whereNull('seo')
+                ->orWhereRaw(
+                    "LOWER(COALESCE(json_extract(seo, '$.\"noindex\"'), 'false')) NOT IN ('true', '1')"
+                );
+        });
     }
 
     private function addChildIfNotEmpty(\SimpleXMLElement $parent, string $name, ?string $value): ?\SimpleXMLElement

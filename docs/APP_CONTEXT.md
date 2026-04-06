@@ -15,6 +15,7 @@
 - Отдельно есть админ-панель на Filament для управления контентом, услугами, врачами, городами, отзывами, меню и настройками.
 
 ## Что изменилось (последнее)
+- 2026-04-06: doctor YML feed переведён на multi-city генерацию. В [app/Services/YmlFeedService.php](/Applications/MAMP/htdocs/zrenie.clinic-7/app/Services/YmlFeedService.php) выборки врачей и услуг теперь явно фильтруются по целевому городу с добавлением глобальных записей без привязки к городам, а `generateDoctorsFeedsForActiveCities()` и `saveFeedsToFiles()` генерируют отдельный XML на каждый активный город. Legacy `GET /yml-feed/doctors` сохранён как feed default-города, для non-default городов добавлен `GET /{city}/yml-feed/doctors`, файлы сохраняются как `doctors_feed_{slug}.xml`, а для default-города дополнительно поддерживается alias `doctors_feed.xml`. Генерация из [app/Http/Controllers/YmlFeedController.php](/Applications/MAMP/htdocs/zrenie.clinic-7/app/Http/Controllers/YmlFeedController.php), [app/Console/Commands/GenerateYmlFeedCommand.php](/Applications/MAMP/htdocs/zrenie.clinic-7/app/Console/Commands/GenerateYmlFeedCommand.php) и [app/Filament/Resources/DoctorResource/Pages/ListDoctors.php](/Applications/MAMP/htdocs/zrenie.clinic-7/app/Filament/Resources/DoctorResource/Pages/ListDoctors.php) теперь работает массово по всем активным городам; CLI дополнительно поддерживает `--city=<slug>`. Поведение зафиксировано тестами в [tests/Feature/YmlFeedTest.php](/Applications/MAMP/htdocs/zrenie.clinic-7/tests/Feature/YmlFeedTest.php).
 - 2026-04-03: у sortable-колонок UTM-таблиц добавлены постоянные иконки сортировки. В [resources/views/filament/forms/components/utm-tracker-manager.blade.php](/Applications/MAMP/htdocs/zrenie.clinic-7/resources/views/filament/forms/components/utm-tracker-manager.blade.php) заголовки `Source`, `Телефон`, `Запуск`, `Статус` в `Основной` и `Архиве` теперь показывают chevron-иконки всегда, а активное направление сортировки просто подсвечивается, поэтому видно, что колонка кликабельна даже до первого нажатия.
 - 2026-04-03: из UTM-фильтров в `Основной` и `Архиве` убрана `Дата добавления`. В [resources/views/filament/forms/components/utm-tracker-manager.blade.php](/Applications/MAMP/htdocs/zrenie.clinic-7/resources/views/filament/forms/components/utm-tracker-manager.blade.php) эта дата осталась только как серверная дефолтная сортировка кампаний (`created_at desc`), но больше не показывается отдельным фильтром в UI.
 - 2026-04-03: фильтры UTM-таблиц свернуты по умолчанию и открываются по клику на иконку-filter рядом с полем поиска. В [resources/views/filament/forms/components/utm-tracker-manager.blade.php](/Applications/MAMP/htdocs/zrenie.clinic-7/resources/views/filament/forms/components/utm-tracker-manager.blade.php) для `Основной` и `Архива` поиск всегда видим, а остальные фильтры скрыты за toggle-кнопкой, чтобы форма занимала меньше места.
@@ -265,6 +266,7 @@
   - `POST /admin/yml-feed/generate`
   - `GET /admin/yml-feed/download/{filename}`
   - `GET /yml-feed/doctors`
+  - `GET /{city}/yml-feed/doctors`
 
 #### Контентные маршруты
 Один и тот же набор работает:
@@ -427,6 +429,10 @@ Middleware:
 - `PhoneService`
 - `SmsAeroService`
 - `YmlFeedService`
+  - генерирует отдельный doctor XML на каждый активный город;
+  - legacy `GET /yml-feed/doctors` и `doctors_feed.xml` всегда соответствуют default-городу;
+  - city-specific feed включает записи текущего города плюс глобальные записи без привязки к городам;
+  - mass generation сохраняет `doctors_feed_{slug}.xml` для каждого активного города.
 - `ArticleImportService` и связанные классы для импорта статей из Google Docs.
 
 ## Frontend
@@ -607,6 +613,9 @@ Middleware:
 
 ### Кастомные команды
 - `yml-feed:generate`
+  - по умолчанию генерирует YML feeds для всех активных городов;
+  - `--save` сохраняет весь набор файлов в `public`;
+  - `--city=<slug>` позволяет собрать только один город.
 - `app:add-ulid-to-all-doctors`
 - `app:services-ai-agent`
 - `app:import-services-legacy`
@@ -671,8 +680,10 @@ Middleware:
 - `BookingWidgetApiService` теперь предполагает корректно заданный `BOOKING_API_BASE_URL`; пустой или невалидный URL считается конфигурационной ошибкой и приводит к `BookingWidgetApiException` с логированием контекста.
 - Инвалидация page-кеша стала точечной; при доработках `PageService`, `PageObserver` и `BlockObserver` нельзя возвращаться к полному `Cache::flush()`, иначе это снова будет сбрасывать несвязанные кеши по всему приложению.
 - На production nginx перехватывает любые URL с расширением `.js` как статические файлы (`try_files $uri =404`), поэтому route-based Livewire assets под `/livewire/*.js` там неработоспособны; для Filament/Livewire нужно использовать опубликованные assets в `public/vendor/livewire`, и деплой обязан их публиковать каждый релиз.
+- Для doctor YML feed нельзя рассчитывать на `HasCityScope`: в `admin/*` и console он отключён, поэтому любые новые multi-city доработки этого фида должны сохранять явную фильтрацию по `cities`/global-records внутри `YmlFeedService`.
 
 ## Журнал изменений
+- 2026-04-06: doctor YML feed переведён на отдельные XML по активным городам; legacy `/yml-feed/doctors` сохранён для default-города, а city-specific feeds вынесены на `/{city}/yml-feed/doctors`.
 - 2026-04-03: у сортируемых колонок UTM-таблиц появились постоянные chevron-иконки, чтобы sortable-header было видно даже в неактивном состоянии.
 - 2026-04-03: фильтр `Дата добавления` убран из UTM-табов; `created_at` остался только как внутреннее поле для дефолтной сортировки кампаний по новизне.
 - 2026-04-03: поиск в UTM-табах оставлен постоянно видимым, а расширенные фильтры свернуты по умолчанию и открываются по иконке фильтра рядом с полем поиска.

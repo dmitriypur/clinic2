@@ -65,7 +65,6 @@ Route::get('/menu-files/download/{encodedPath}', MenuFileDownloadController::cla
 // --- Content Routes (Multicity) ---
 
 $contentRoutes = function () {
-
     Route::get('/search', [SearchController::class, 'search'])->name('search');
     Route::get('/live-search', [SearchController::class, 'liveSearch'])->name('live.search');
 
@@ -153,7 +152,10 @@ if (empty($citySlugs)) {
 
 Route::prefix('{city}')
     ->where(['city' => $citySlugs]) // Dynamic slug validation
-    ->group($contentRoutes);
+    ->group(function () use ($contentRoutes) {
+        Route::get('/yml-feed/doctors', [YmlFeedController::class, 'showDoctorsFeed'])->name('yml-feed.show.city');
+        $contentRoutes();
+    });
 
 // 2. Default Context Routes (e.g. /services)
 Route::group([], $contentRoutes);

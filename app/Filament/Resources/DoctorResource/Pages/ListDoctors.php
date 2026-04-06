@@ -75,25 +75,27 @@ class ListDoctors extends ListRecords
                 ->color('success')
                 ->action(function () {
                     try {
-                        // Генерируем фид напрямую, без HTTP запроса
                         $ymlFeedService = app(\App\Services\YmlFeedService::class);
-                        set_time_limit(120); // Увеличиваем лимит времени
-                        
-                        $feedContent = $ymlFeedService->generateDoctorsFeed();
-                        $filename = $ymlFeedService->saveFeedToFile($feedContent);
-                        
+                        set_time_limit(120);
+
+                        $feeds = $ymlFeedService->generateDoctorsFeedsForActiveCities();
+                        $savedFeeds = $ymlFeedService->saveFeedsToFiles($feeds);
+                        $summary = collect($savedFeeds)
+                            ->map(fn (array $feed) => "{$feed['city_name']} ({$feed['city_slug']}): {$feed['filename']}")
+                            ->implode(PHP_EOL);
+
                         Notification::make()
-                            ->title('Фид успешно сгенерирован')
-                            ->body('Файл сохранен: ' . $filename . PHP_EOL . 'Ссылка для просмотра: ' . $this->getFeedUrl())
+                            ->title('Фиды успешно сгенерированы')
+                            ->body($summary . PHP_EOL . 'Legacy ссылка default-города: ' . $this->getFeedUrl())
                             ->success()
                             ->actions([
                                 \Filament\Notifications\Actions\Action::make('view')
-                                    ->label('Просмотреть')
+                                    ->label('Открыть default feed')
                                     ->url($this->getFeedUrl())
                                     ->openUrlInNewTab(),
                                 \Filament\Notifications\Actions\Action::make('download')
-                                    ->label('Скачать')
-                                    ->url(route('yml-feed.download', $filename))
+                                    ->label('Скачать default XML')
+                                    ->url(route('yml-feed.download', data_get(collect($savedFeeds)->firstWhere('is_default', true), 'filename', 'doctors_feed.xml')))
                                     ->openUrlInNewTab()
                             ])
                             ->send();
@@ -106,9 +108,9 @@ class ListDoctors extends ListRecords
                     }
                 })
                 ->requiresConfirmation()
-                ->modalHeading('Генерация YML фида врачей')
-                ->modalSubheading('Будет создан XML файл с данными всех врачей для передачи в Яндекс')
-                ->modalButton('Генерировать')
+                ->modalHeading('Генерация YML фидов врачей')
+                ->modalSubheading('Будут созданы отдельные XML-файлы по всем активным городам. Legacy ссылка /yml-feed/doctors останется для default-города.')
+                ->modalButton('Генерировать все фиды')
         ];
     }
 

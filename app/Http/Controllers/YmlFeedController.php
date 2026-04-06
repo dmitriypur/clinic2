@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Models\City;
 use App\Services\YmlFeedService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -18,17 +19,26 @@ class YmlFeedController extends Controller
     public function generateDoctorsFeed(Request $request): JsonResponse
     {
         try {
-            // Увеличиваем лимит времени выполнения
             set_time_limit(120);
-            
-            $feedContent = $this->ymlFeedService->generateDoctorsFeed();
-            $filename = $this->ymlFeedService->saveFeedToFile($feedContent);
-            
+
+            $feeds = $this->ymlFeedService->generateDoctorsFeedsForActiveCities();
+            $savedFeeds = $this->ymlFeedService->saveFeedsToFiles($feeds);
+
             return response()->json([
                 'success' => true,
-                'message' => 'Фид врачей успешно сгенерирован',
-                'filename' => $filename,
-                'download_url' => Storage::url($filename)
+                'message' => 'Фиды врачей успешно сгенерированы',
+                'files' => array_map(function (array $feed): array {
+                    return [
+                        'city_slug' => $feed['city_slug'],
+                        'city_name' => $feed['city_name'],
+                        'filename' => $feed['filename'],
+                        'is_default' => $feed['is_default'],
+                        'download_url' => route('yml-feed.download', $feed['filename']),
+                        'public_url' => $feed['is_default']
+                            ? route('yml-feed.show')
+                            : route('yml-feed.show.city', ['city' => $feed['city_slug']]),
+                    ];
+                }, $savedFeeds),
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -52,10 +62,18 @@ class YmlFeedController extends Controller
         ]);
     }
 
-    public function showDoctorsFeed()
+    public function showDoctorsFeed(?string $city = null)
     {
-        $feedContent = $this->ymlFeedService->generateDoctorsFeed();
-        
+        $targetCity = null;
+        if ($city !== null) {
+            $targetCity = City::query()
+                ->where('slug', $city)
+                ->where('active', true)
+                ->firstOrFail();
+        }
+
+        $feedContent = $this->ymlFeedService->generateDoctorsFeed($targetCity);
+
         return response($feedContent, 200, [
             'Content-Type' => 'application/xml; charset=utf-8',
             'Cache-Control' => 'no-cache, no-store, must-revalidate',
