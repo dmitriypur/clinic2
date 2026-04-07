@@ -87,7 +87,7 @@
 - Вью добавляет canonical/noindex и схемы (см. раздел Макеты/Blade).
 
 ## API справочник
-- `GET /api/schedule` → `{ doctors: [ { id, uuid, name, speciality, avatar_image, cells, receives, seniority } ] }`.
+- `GET /api/schedule` → `{ doctors: [ { id, uuid, name, speciality, avatar_image, cells, receives_display, age_min_months, age_max_months, receives_text, seniority } ] }`.
 - `POST /api/making-an-appointment` → `doctorId`, `date`, `time`, ФИО, `phone` → UNF `events?action=newrecord`.
 - `POST /api/callback` → `name`, `phone`, цель метрики → UNF `events?action=callrequest`.
 - `POST /api/review` → `name`, `body`, `rating` → создает `Review`.

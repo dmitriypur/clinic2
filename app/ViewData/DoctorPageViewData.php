@@ -84,8 +84,8 @@ class DoctorPageViewData
             filled(data_get($this->doctor->extra, 'seniority'))
                 ? 'Стаж работы: ' . trim((string) data_get($this->doctor->extra, 'seniority'))
                 : null,
-            filled(data_get($this->doctor->extra, 'receives'))
-                ? trim((string) data_get($this->doctor->extra, 'receives'))
+            filled($this->doctor->receives_display)
+                ? trim((string) $this->doctor->receives_display)
                 : null,
         ])
             ->filter()

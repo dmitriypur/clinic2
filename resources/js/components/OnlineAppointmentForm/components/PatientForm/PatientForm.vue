@@ -98,7 +98,7 @@
           />
         </div>
         <p v-if="showErrorMessages" class="text-sm font-semibold text-red-500 text-center">
-          Выбранный вами доктор принимает детей от {{ receives }} лет и взрослых
+          Выбранный вами доктор принимает пациентов {{ receivesDisplay }}
         </p>
         <div v-if="showErrorMessages" class="mb-8">
           <button
@@ -148,6 +148,10 @@
 <script>
 import { classNames } from "../../../../utilities/css";
 import { Form } from "../../../../utilities/form";
+import {
+  buildDoctorReceivesDisplay,
+  calculateAgeMonthsFromBirthDate,
+} from "@/utilities/doctorAge";
 
 const TextField = () => import('../../../TextField')
 
@@ -157,7 +161,22 @@ export default {
   props: {
     doctorId: String,
     doctorName: String,
-    doctorReceives: String,
+    doctorReceivesDisplay: {
+      type: String,
+      default: "",
+    },
+    doctorAgeMinMonths: {
+      type: [Number, String, null],
+      default: null,
+    },
+    doctorAgeMaxMonths: {
+      type: [Number, String, null],
+      default: null,
+    },
+    doctorReceivesText: {
+      type: String,
+      default: "",
+    },
     date: Date,
     time: String,
     target: {
@@ -194,28 +213,41 @@ export default {
           : "text-white bg-interactive hover:bg-interactive-button-hovered active:bg-interactive-button-hovered shadow-md"
       );
     },
-    receives(){
-      let numberPattern = /\d+/g
-      return Number(this.doctorReceives.match( numberPattern )[0])
+    receivesDisplay() {
+      return (
+        this.doctorReceivesDisplay ||
+        buildDoctorReceivesDisplay({
+          minAgeMonths: this.doctorAgeMinMonths,
+          maxAgeMonths: this.doctorAgeMaxMonths,
+          receivesText: this.doctorReceivesText,
+        })
+      );
     }
   },
 
   methods: {
-    getAge(dateString) {
-      let birth = new Date(dateString);
-      let now = new Date();
-      let beforeBirth = ((() => {
-        birth.setDate(now.getDate());
-        birth.setMonth(now.getMonth());
-        return birth.getTime()
-      })() < birth.getTime()) ? 0 : 1;
-      return (now.getFullYear() - birth.getFullYear() - beforeBirth) < 0 ? 0 : now.getFullYear() - birth.getFullYear() - beforeBirth;
+    normalizeAgeLimit(value) {
+      if (value === null || value === undefined || value === "") {
+        return null;
+      }
+
+      const number = Number(value);
+
+      return Number.isFinite(number) && number >= 0 ? number : null;
     },
     submit() {
-      if(this.getAge(this.form.birthdate) < this.receives){
+      const patientAgeMonths = calculateAgeMonthsFromBirthDate(this.form.birthdate);
+      const minAgeMonths = this.normalizeAgeLimit(this.doctorAgeMinMonths);
+      const maxAgeMonths = this.normalizeAgeLimit(this.doctorAgeMaxMonths);
+      const isBelowMinimum = Number.isFinite(minAgeMonths) && patientAgeMonths < minAgeMonths;
+      const isAboveMaximum = Number.isFinite(maxAgeMonths) && patientAgeMonths > maxAgeMonths;
+
+      if (patientAgeMonths === null || isBelowMinimum || isAboveMaximum) {
         this.showErrorMessages = true
         return false
       }
+
+      this.showErrorMessages = false
 
       this.form.post(`/api/making-an-appointment${window.location.search}`).then((res) => {
         this.finalDate = res

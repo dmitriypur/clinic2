@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Jobs\RegenerateSitemap;
 use App\Models\Traits\HasCityScope;
+use App\Support\DoctorAge;
 use App\Support\CitySeoVariables;
 use App\Settings\SeoSettings;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -197,7 +198,7 @@ class Doctor extends Model implements HasMedia
             fn() => collect([
                     $this->extra['seniority'],
                     $this->extra['category'],
-                    $this->extra['receives'],
+                    $this->receives_display,
                     $this->extra['education'],
                     $this->extra['professional_development'],
                     count($this->extra['skills'] ?? []),
@@ -205,6 +206,26 @@ class Doctor extends Model implements HasMedia
                     ->filter()
                     ->count() > 0
         )->shouldCache();
+    }
+
+    public function ageMinMonths(): Attribute
+    {
+        return Attribute::get(fn() => DoctorAge::minMonths($this->extra ?? []))->shouldCache();
+    }
+
+    public function ageMaxMonths(): Attribute
+    {
+        return Attribute::get(fn() => DoctorAge::maxMonths($this->extra ?? []))->shouldCache();
+    }
+
+    public function receivesText(): Attribute
+    {
+        return Attribute::get(fn() => DoctorAge::receivesText($this->extra ?? []))->shouldCache();
+    }
+
+    public function receivesDisplay(): Attribute
+    {
+        return Attribute::get(fn() => DoctorAge::display($this->extra ?? []))->shouldCache();
     }
 
     public function getActualVideoUrlAttribute(): ?string

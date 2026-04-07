@@ -92,6 +92,7 @@
 
 <script>
 import {
+  calculateAgeMonths,
   calculateAgeFromBirthDate,
   extractDoctorAgeRange,
   formatDateForInput,
@@ -207,9 +208,12 @@ export default {
           this.errors.birth_date = "Укажите корректную дату рождения";
           isValid = false;
         } else {
-          const { minAge, maxAge } = this.selectedDoctorAgeRange;
-          const isBelowMinimum = Number.isFinite(minAge) && patientAge < minAge;
-          const isAboveMaximum = Number.isFinite(maxAge) && patientAge > maxAge;
+          const patientAgeMonths = calculateAgeMonths(this.form.birth_date);
+          const { minAgeMonths, maxAgeMonths } = this.selectedDoctorAgeRange;
+          const isBelowMinimum =
+            Number.isFinite(minAgeMonths) && patientAgeMonths < minAgeMonths;
+          const isAboveMaximum =
+            Number.isFinite(maxAgeMonths) && patientAgeMonths > maxAgeMonths;
 
           if (isBelowMinimum || isAboveMaximum) {
             this.errors.birth_date =

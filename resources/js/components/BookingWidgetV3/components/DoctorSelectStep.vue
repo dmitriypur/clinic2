@@ -61,7 +61,7 @@
             {{ doctor.speciality || doctor.specialization || "Специалист" }}
           </div>
           <div class="bg-light-gray p-1 border border-interactive/10 rounded-md flex-1 flex items-center justify-center">
-            {{ doctor.receives || doctor.extra?.receives || "—" }}
+            {{ doctorReceivesDisplay(doctor) }}
           </div>
           <div class="bg-light-gray p-1 border border-interactive/10 rounded-md flex-1 flex items-center justify-center">
             Стаж: {{ doctor.seniority || doctor.extra?.seniority || "—" }}
@@ -83,6 +83,7 @@
 
 <script>
 import { eventBus } from "@/eventBus";
+import { getDoctorReceivesDisplay } from "@/utilities/doctorAge";
 
 const StepHeader = () => import("./shared/StepHeader.vue");
 const PrimaryButton = () => import("./shared/PrimaryButton.vue");
@@ -112,6 +113,9 @@ export default {
     };
   },
   methods: {
+    doctorReceivesDisplay(doctor) {
+      return getDoctorReceivesDisplay(doctor) || "—";
+    },
     doctorVideoUrl(doctor) {
       return doctor?.video_url || doctor?.actual_video_url || doctor?.video || null;
     },

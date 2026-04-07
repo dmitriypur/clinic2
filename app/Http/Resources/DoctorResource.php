@@ -29,6 +29,10 @@ class DoctorResource extends JsonResource
             'speciality' => $this->speciality,
             'video_url' => $this->actual_video_url,
             'avatar_image' => $this->avatar_image?->toHtml() ?? null,
+            'receives_display' => $this->receives_display,
+            'age_min_months' => $this->age_min_months,
+            'age_max_months' => $this->age_max_months,
+            'receives_text' => $this->receives_text,
         ];
     }
 }

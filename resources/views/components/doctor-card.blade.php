@@ -25,7 +25,7 @@
             </li>
             <li class="bg-surface-subdued py-2 px-3 rounded-md">
                 <p class="text-xs leading-[100%] opacity-60">Ведёт приём:</p>
-                <p class="text-xs font-semibold leading-4 mt-0.5">{{ $doctor->extra['receives'] }}</p>
+                <p class="text-xs font-semibold leading-4 mt-0.5">{{ $doctor->receives_display }}</p>
             </li>
         </ul>
         <div class="flex items-end gap-2 relative mt-2.5">

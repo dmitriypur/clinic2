@@ -245,6 +245,7 @@
 
 <script>
 import { eventBus } from "@/eventBus";
+import { getDoctorReceivesDisplay } from "@/utilities/doctorAge";
 import { addMonthsSafe } from "../utils/dateUtils";
 import {
   areSameSlot,
@@ -382,7 +383,7 @@ export default {
         },
         {
           title: "Ведёт приём",
-          value: this.activeDoctor?.receives || this.activeDoctor?.extra?.receives || "—",
+          value: getDoctorReceivesDisplay(this.activeDoctor) || "—",
           borderClass: "border-l-action-primary w-6/12",
         },
         {

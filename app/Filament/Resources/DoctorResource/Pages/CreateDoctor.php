@@ -9,4 +9,9 @@ use Filament\Resources\Pages\CreateRecord;
 class CreateDoctor extends CreateRecord
 {
     protected static string $resource = DoctorResource::class;
+
+    protected function mutateFormDataBeforeCreate(array $data): array
+    {
+        return DoctorResource::dehydrateAgeFields($data);
+    }
 }

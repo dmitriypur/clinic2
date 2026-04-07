@@ -221,8 +221,8 @@
                                         @if ($doctor->extra['category'])
                                             <x-doctor-info-block title="Категория:" :value="$doctor->extra['category']" />
                                         @endif
-                                        @if ($doctor->extra['receives'])
-                                            <x-doctor-info-block title="Ведёт приём:" :value="$doctor->extra['receives']" />
+                                        @if ($doctor->receives_display)
+                                            <x-doctor-info-block title="Ведёт приём:" :value="$doctor->receives_display" />
                                         @endif
                                     </div>
 

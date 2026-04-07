@@ -68,9 +68,12 @@ class MenuService
                         'avatar' => $doctor->getFirstMediaUrl(),
                         'video_url' => $doctor->actual_video_url,
                         'url' => route('doctor.show', $doctor->id),
+                        'receives_display' => $doctor->receives_display,
+                        'age_min_months' => $doctor->age_min_months,
+                        'age_max_months' => $doctor->age_max_months,
                         'extra' => [
                             'seniority' => $doctor->extra['seniority'] ?? null,
-                            'receives' => $doctor->extra['receives'] ?? null
+                            'receives_text' => $doctor->receives_text,
                         ]
                     ];
                 }

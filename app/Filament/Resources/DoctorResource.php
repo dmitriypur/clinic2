@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\DoctorResource\Pages;
 use App\Filament\Resources\DoctorResource\RelationManagers;
 use App\Models\Doctor;
+use App\Support\DoctorAge;
 use Filament\Forms;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
@@ -18,6 +19,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class DoctorResource extends Resource
 {
@@ -94,7 +96,54 @@ class DoctorResource extends Resource
                     ->schema([
                         Forms\Components\TextInput::make('extra.seniority')->label('Стаж'),
                         Forms\Components\TextInput::make('extra.category')->label('Категория'),
-                        Forms\Components\TextInput::make('extra.receives')->label('Ведёт приём')->columnSpanFull(),
+                        Forms\Components\Grid::make(4)
+                            ->columnSpanFull()
+                            ->schema([
+                                Forms\Components\TextInput::make('age_min_value')
+                                    ->label('Возраст от')
+                                    ->numeric()
+                                    ->minValue(0)
+                                    ->live(),
+                                Forms\Components\Select::make('age_min_unit')
+                                    ->label('Единица')
+                                    ->options([
+                                        'months' => 'Месяцы',
+                                        'years' => 'Годы',
+                                    ])
+                                    ->default('years')
+                                    ->live(),
+                                Forms\Components\TextInput::make('age_max_value')
+                                    ->label('Возраст до')
+                                    ->numeric()
+                                    ->minValue(0)
+                                    ->live(),
+                                Forms\Components\Select::make('age_max_unit')
+                                    ->label('Единица')
+                                    ->options([
+                                        'months' => 'Месяцы',
+                                        'years' => 'Годы',
+                                    ])
+                                    ->default('years')
+                                    ->live(),
+                            ]),
+                        Forms\Components\Textarea::make('extra.receives_text')
+                            ->label('Шаблон текста')
+                            ->rows(2)
+                            ->helperText('Необязательно. Доступны плейсхолдеры {min} и {max}. Если поле пустое, текст будет собран автоматически.')
+                            ->columnSpanFull()
+                            ->live(),
+                        Forms\Components\Placeholder::make('receives_preview')
+                            ->label('Предпросмотр')
+                            ->columnSpanFull()
+                            ->content(function (Get $get): string {
+                                $display = DoctorAge::buildDisplay(
+                                    DoctorAge::convertInputToMonths($get('age_min_value'), $get('age_min_unit')),
+                                    DoctorAge::convertInputToMonths($get('age_max_value'), $get('age_max_unit')),
+                                    $get('extra.receives_text'),
+                                );
+
+                                return $display ?: '—';
+                            }),
 
                         Forms\Components\Repeater::make('extra.education')
                             ->columnSpanFull()
@@ -219,6 +268,55 @@ class DoctorResource extends Resource
                         ->label('Запретить поисковикам индексировать эту страницу'),
                 ]),
             ]);
+    }
+
+    public static function hydrateAgeFields(array $data): array
+    {
+        $extra = (array) ($data['extra'] ?? []);
+        $min = DoctorAge::splitMonths(DoctorAge::minMonths($extra));
+        $max = DoctorAge::splitMonths(DoctorAge::maxMonths($extra));
+
+        $data['age_min_value'] = $min['value'];
+        $data['age_min_unit'] = $min['unit'];
+        $data['age_max_value'] = $max['value'];
+        $data['age_max_unit'] = $max['unit'];
+        $data['extra']['receives_text'] = DoctorAge::receivesText($extra);
+
+        return $data;
+    }
+
+    public static function dehydrateAgeFields(array $data): array
+    {
+        $extra = (array) ($data['extra'] ?? []);
+
+        $extra['age_min_months'] = DoctorAge::convertInputToMonths($data['age_min_value'] ?? null, $data['age_min_unit'] ?? 'years');
+        $extra['age_max_months'] = DoctorAge::convertInputToMonths($data['age_max_value'] ?? null, $data['age_max_unit'] ?? 'years');
+
+        if (
+            $extra['age_min_months'] !== null &&
+            $extra['age_max_months'] !== null &&
+            $extra['age_max_months'] < $extra['age_min_months']
+        ) {
+            throw ValidationException::withMessages([
+                'age_max_value' => 'Возраст "до" не может быть меньше возраста "от".',
+            ]);
+        }
+
+        $receivesText = trim((string) ($extra['receives_text'] ?? ''));
+        $extra['receives_text'] = $receivesText !== '' ? $receivesText : null;
+
+        unset($extra['receives']);
+
+        $data['extra'] = $extra;
+
+        unset(
+            $data['age_min_value'],
+            $data['age_min_unit'],
+            $data['age_max_value'],
+            $data['age_max_unit'],
+        );
+
+        return $data;
     }
 
     public static function table(Table $table): Table

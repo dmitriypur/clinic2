@@ -12,6 +12,16 @@ class EditDoctor extends EditRecord
 {
     protected static string $resource = DoctorResource::class;
 
+    protected function mutateFormDataBeforeFill(array $data): array
+    {
+        return DoctorResource::hydrateAgeFields($data);
+    }
+
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        return DoctorResource::dehydrateAgeFields($data);
+    }
+
     protected function getSaveFormAction(): \Filament\Actions\Action
     {
         return parent::getSaveFormAction()

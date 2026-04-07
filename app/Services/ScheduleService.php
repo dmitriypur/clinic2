@@ -50,7 +50,10 @@ class ScheduleService implements Contract
                     'name' => $item['efio'],
                     'speciality' => $item['espec'],
                     'cells' => $item['cells'],
-                    'receives' => $doctor->extra['receives'],
+                    'receives_display' => $doctor->receives_display,
+                    'age_min_months' => $doctor->age_min_months,
+                    'age_max_months' => $doctor->age_max_months,
+                    'receives_text' => $doctor->receives_text,
                     'seniority' => $doctor->extra['seniority'],
                 ];
             })

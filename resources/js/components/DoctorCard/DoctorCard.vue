@@ -69,7 +69,7 @@
           <li
             class="bg-blue-superlite py-3 pr-3 pl-6 rounded-md relative before:absolute before:h-full before:w-3 before:superlight-blue-gradient before:top-0 before:left-0 before:rounded">
             <p class="text-es font-bold">Ведёт приём:</p>
-            <p class="text-xs leading-4">{{ doctor.extra.receives }}</p>
+            <p class="text-xs leading-4">{{ doctorReceivesDisplay() }}</p>
           </li>
         </ul>
         <div class="flex w-full gap-2 relative mt-2.5">
@@ -133,6 +133,7 @@
 
 <script>
 import {eventBus} from '../../eventBus';
+import { getDoctorReceivesDisplay } from "@/utilities/doctorAge";
 
 export default {
   name: 'DoctorCard',
@@ -143,6 +144,9 @@ export default {
     }
   },
   methods: {
+    doctorReceivesDisplay() {
+      return getDoctorReceivesDisplay(this.doctor) || "—";
+    },
     showCallbackModal(event, goal, options = null) {
       eventBus.$emit('showCallbackModal', event, goal, options);
     },

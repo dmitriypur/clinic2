@@ -43,7 +43,7 @@
           </li>
           <li class="bg-white py-1.5 px-3.5 rounded-md text-interactive">
             <p class="text-xs font-normal leading-[100%] opacity-60">Ведёт приём:</p>
-            <p class="text-[13px] font-semibold leading-4 mt-0.5">{{ doctor.receives }}</p>
+            <p class="text-[13px] font-semibold leading-4 mt-0.5">{{ receivesDisplay }}</p>
           </li>
         </ul>
 
@@ -78,6 +78,7 @@
 <script>
 import {eventBus} from "@/eventBus";
 import {classNames} from "@/utilities/css.js";
+import { getDoctorReceivesDisplay } from "@/utilities/doctorAge";
 
 export default {
   props: {
@@ -86,6 +87,9 @@ export default {
   },
 
   computed: {
+    receivesDisplay() {
+      return getDoctorReceivesDisplay(this.doctor) || "—";
+    },
     buttonClassName() {
       return classNames('mt-2 inline-flex items-center text-sm', this.doctor.video_url ? 'text-[#FF8C00] hover:text-[#E67A00]' : 'cursor-default opacity-30')
     },

@@ -74,7 +74,7 @@
                 {{ doctor.speciality || doctor.specialization || "Специалист" }}
               </div>
               <div class="w-[calc(50%-0.25rem)] bg-light-gray p-1 border border-interactive/10 rounded-md text-sm flex items-center justify-center">
-                {{ doctor.receives || doctor.extra?.receives || "—" }}
+                {{ doctorReceivesDisplay(doctor) }}
               </div>
               <div class="w-[calc(50%-0.25rem)] bg-light-gray p-1 border border-interactive/10 rounded-md text-sm flex items-center justify-center">
                 Стаж: {{ doctor.seniority || doctor.extra?.seniority || "—" }}
@@ -244,6 +244,7 @@
 
 <script>
 import { eventBus } from "@/eventBus";
+import { getDoctorReceivesDisplay } from "@/utilities/doctorAge";
 import { addMonthsSafe } from "../utils/dateUtils";
 import {
   areSameSlot,
@@ -390,6 +391,9 @@ export default {
     },
   },
   methods: {
+    doctorReceivesDisplay(doctor) {
+      return getDoctorReceivesDisplay(doctor) || "—";
+    },
     handleOpenVideo() {
       if (!this.hasVideoVisit) {
         return;

@@ -102,14 +102,21 @@
                                 @endif
                             </div>
 
-                            @if ($topFacts->isNotEmpty())
+                            @if (filled(data_get($doctor->extra, 'seniority')) || filled($doctor->receives_display))
                                 <div class="grid grid-cols-2 gap-2 md:flex md:flex-wrap md:gap-3">
-                                    @foreach ($topFacts as $topFact)
+                                    @if (filled(data_get($doctor->extra, 'seniority')))
                                         <div
                                             class="inline-flex min-h-6 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 px-3 text-center text-xs leading-4 text-interactive/80 md:min-h-8 md:px-6 md:text-sm md:leading-5">
-                                            {{ $topFact }}
+                                            Стаж работы: {{ trim((string) data_get($doctor->extra, 'seniority')) }}
                                         </div>
-                                    @endforeach
+                                    @endif
+
+                                    @if (filled($doctor->receives_display))
+                                        <div
+                                            class="inline-flex min-h-6 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 px-3 text-center text-xs leading-4 text-interactive/80 md:min-h-8 md:px-6 md:text-sm md:leading-5">
+                                            {{ $doctor->receives_display }}
+                                        </div>
+                                    @endif
                                 </div>
                             @endif
 

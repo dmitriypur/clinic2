@@ -62,6 +62,10 @@ class BookingDoctorsController extends Controller
                         'video_url' => $doctor->actual_video_url,
                         'avatar_url' => $doctor->getFirstMediaUrl('default', 'main') ?: null,
                         'avatar_image' => $doctor->avatar_image?->toHtml() ?? null,
+                        'receives_display' => $doctor->receives_display,
+                        'age_min_months' => $doctor->age_min_months,
+                        'age_max_months' => $doctor->age_max_months,
+                        'receives_text' => $doctor->receives_text,
                         'extra' => $doctor->extra ?? [],
                     ];
                 })

@@ -1,4 +1,5 @@
 import { extractDoctorMinimumAge } from "./doctorAgeUtils";
+import { getDoctorReceivesDisplay } from "@/utilities/doctorAge";
 
 export function doctorExternalUuid(doctor) {
   const raw = doctor?.external_id || doctor?.uuid || null;
@@ -77,14 +78,34 @@ export function mergeDoctorWithSiteData(doctor, siteDoctor) {
     avatar_url: siteDoctor.avatar_url || doctor.avatar_url,
     avatar_image: siteDoctor.avatar_image || doctor.avatar_image,
     extra: siteDoctor.extra || doctor.extra || {},
+    age_min_months:
+      siteDoctor.age_min_months ??
+      siteDoctor.extra?.age_min_months ??
+      doctor.age_min_months ??
+      doctor.extra?.age_min_months ??
+      null,
+    age_max_months:
+      siteDoctor.age_max_months ??
+      siteDoctor.extra?.age_max_months ??
+      doctor.age_max_months ??
+      doctor.extra?.age_max_months ??
+      null,
+    receives_text:
+      siteDoctor.receives_text ||
+      siteDoctor.extra?.receives_text ||
+      doctor.receives_text ||
+      doctor.extra?.receives_text ||
+      null,
+    receives_display:
+      siteDoctor.receives_display ||
+      doctor.receives_display ||
+      getDoctorReceivesDisplay(siteDoctor) ||
+      getDoctorReceivesDisplay(doctor) ||
+      null,
     seniority:
       siteDoctor.extra?.seniority ||
       doctor.seniority ||
       doctor.extra?.seniority,
-    receives:
-      siteDoctor.extra?.receives ||
-      doctor.receives ||
-      doctor.extra?.receives,
   };
 }
 

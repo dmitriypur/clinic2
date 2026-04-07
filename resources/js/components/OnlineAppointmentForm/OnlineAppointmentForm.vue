@@ -52,7 +52,10 @@
           />
           <PatientForm
             :doctorId="selectedDoctor.id"
-            :doctorReceives="selectedDoctor.receives"
+            :doctorReceivesDisplay="selectedDoctor.receives_display"
+            :doctorAgeMinMonths="selectedDoctor.age_min_months"
+            :doctorAgeMaxMonths="selectedDoctor.age_max_months"
+            :doctorReceivesText="selectedDoctor.receives_text"
             :doctorName="selectedDoctor.name"
             :time="selectedTime"
             :date="selectedDate"
@@ -123,7 +126,10 @@
           />
           <PatientForm
             :doctorId="selectedDoctor.id"
-            :doctorReceives="selectedDoctor.receives"
+            :doctorReceivesDisplay="selectedDoctor.receives_display"
+            :doctorAgeMinMonths="selectedDoctor.age_min_months"
+            :doctorAgeMaxMonths="selectedDoctor.age_max_months"
+            :doctorReceivesText="selectedDoctor.receives_text"
             :doctorName="selectedDoctor.name"
             :time="selectedTime"
             :date="selectedDate"

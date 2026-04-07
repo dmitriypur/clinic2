@@ -28,7 +28,7 @@
             </li>
             <li class="bg-transparent backdrop-blur-sm border border-l-[10px] border-l-action-primary py-3 px-2 rounded-md w-7/12 relative overflow-hidden before:absolute  before:white-to-blue-gradient before:inset-0 before:accessibility:content-[none] before:opacity-30 z-50 before:-z-10">
                 <p class="text-xs font-bold">Ведёт приём:</p>
-                <p class="text-sm leading-4">{{ $doctor->extra['receives'] }}</p>
+                <p class="text-sm leading-4">{{ $doctor->receives_display }}</p>
             </li>
             <li class="bg-transparent backdrop-blur-sm border border-l-[10px] border-l-blue-label py-3 px-2 rounded-md w-6/12 md:w-5/12 relative overflow-hidden before:absolute  before:white-to-orange-gradient before:inset-0 before:accessibility:content-[none] before:opacity-30 z-50 before:-z-10">
                 <p class="text-xs font-bold">Врачебный стаж:</p>
