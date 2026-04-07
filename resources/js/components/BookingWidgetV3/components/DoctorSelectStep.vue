@@ -1,6 +1,6 @@
 <template>
   <div class="bg-white md:p-6">
-    <StepHeader chipText="Шаг №2" @close="$emit('close')">
+    <StepHeader :chipText="stepChipText" @close="$emit('close')">
       Выберите специалиста
     </StepHeader>
 
@@ -17,6 +17,13 @@
     </div>
 
     <div class="mt-6 h-[272px] overflow-y-auto pr-1 md:w-[450px]">
+      <div
+        v-if="!loading && !filteredDoctors.length"
+        class="rounded-[12px] border border-surface-subdued bg-[#F6F7F9] px-4 py-4 text-sm font-medium text-interactive"
+      >
+        {{ emptyMessage }}
+      </div>
+
       <div
         v-for="doctor in filteredDoctors"
         :key="doctor.id"
@@ -105,6 +112,14 @@ export default {
     loading: {
       type: Boolean,
       default: false,
+    },
+    stepChipText: {
+      type: String,
+      default: "Шаг №2",
+    },
+    emptyMessage: {
+      type: String,
+      default: "Для указанной даты рождения подходящих специалистов не найдено",
     },
   },
   data() {

@@ -1,6 +1,6 @@
 <template>
   <div class="bg-white md:px-12 md:py-6">
-    <StepHeader chipText="Шаг №4" @close="$emit('close')">
+    <StepHeader :chipText="stepChipText" @close="$emit('close')">
       Заполните данные
     </StepHeader>
 
@@ -130,6 +130,14 @@ export default {
       type: Boolean,
       default: false,
     },
+    initialBirthDate: {
+      type: String,
+      default: "",
+    },
+    stepChipText: {
+      type: String,
+      default: "Шаг №4",
+    },
   },
   data() {
     return {
@@ -138,7 +146,7 @@ export default {
         first_name: "",
         middle_name: "",
         full_name_parent: "",
-        birth_date: "",
+        birth_date: this.initialBirthDate || "",
         phone: "",
         promo_code: "",
         comment: "",
@@ -217,7 +225,7 @@ export default {
 
           if (isBelowMinimum || isAboveMaximum) {
             this.errors.birth_date =
-              `Выбранный врач принимает пациентов ${formatDoctorAgeRangeText(
+              `Возраст пациента не подходит. ${formatDoctorAgeRangeText(
                 this.selectedDoctorAgeRange
               )}`;
             isValid = false;
@@ -259,6 +267,11 @@ export default {
     },
   },
   watch: {
+    initialBirthDate(value) {
+      if (!this.form.birth_date) {
+        this.form.birth_date = value || "";
+      }
+    },
     "form.birth_date"(value) {
       if (!value) {
         this.showParentField = false;

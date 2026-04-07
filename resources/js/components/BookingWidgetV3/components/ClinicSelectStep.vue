@@ -1,6 +1,6 @@
 <template>
   <div class="bg-white md:p-6">
-    <StepHeader chipText="Шаг №2" @close="$emit('close')">
+    <StepHeader :chipText="stepChipText" @close="$emit('close')">
       Выберите адрес
     </StepHeader>
 
@@ -56,6 +56,10 @@ export default {
     loading: {
       type: Boolean,
       default: false,
+    },
+    stepChipText: {
+      type: String,
+      default: "Шаг №2",
     },
   },
 };

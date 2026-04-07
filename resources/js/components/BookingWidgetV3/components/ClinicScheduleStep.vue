@@ -8,7 +8,7 @@
           <span
             class="inline-flex h-[22px] items-center justify-center rounded-[4px] bg-[#F6F7F9] px-5 text-xs font-semibold leading-[1.2] text-[#1D1D1D] shadow-[0_0_1.8px_0_rgba(31,52,98,0.26)]"
           >
-            Шаг №3
+            {{ stepChipText }}
           </span>
         </div>
       </div>
@@ -18,7 +18,7 @@
     <div class="pb-6 pt-6 md:pb-10 md:pt-[30px]">
       <div class="grid grid-cols-1 items-start gap-4 lg:grid-cols-[400px_444px] lg:justify-between lg:gap-10">
         <div>
-          <div v-if="doctors.length" class="clinic-schedule-step__doctors-scroll flex gap-2 overflow-x-auto pb-1">
+          <div v-if="hasDoctors" class="clinic-schedule-step__doctors-scroll flex gap-2 overflow-x-auto pb-1">
             <button
               v-for="(doctor, index) in doctors"
               :key="doctor.id || index"
@@ -32,13 +32,13 @@
           </div>
 
           <div
-            v-else
+            v-else-if="!loadingDoctors"
             class="rounded-[12px] border border-surface-subdued bg-[#F6F7F9] px-4 py-3 text-sm font-medium text-interactive"
           >
-            В выбранном филиале врачей нет
+            {{ emptyDoctorsMessage }}
           </div>
 
-          <div class="w-full flex items-center gap-4 md:hidden cursor-pointer rounded-xl border-2 bg-white px-2 py-1 mt-2">
+          <div v-if="hasDoctors" class="w-full flex items-center gap-4 md:hidden cursor-pointer rounded-xl border-2 bg-white px-2 py-1 mt-2">
             <div class="h-auto w-14 min-w-14 overflow-hidden rounded-lg md:rounded-full md:bg-surface-subdued md:h-16 md:w-16 md:min-w-16">
               <img
                 v-if="doctorAvatar"
@@ -69,7 +69,7 @@
             </div>
           </div>
 
-          <div v-if="doctors.length" class="hidden md:block relative mt-3 h-auto overflow-hidden rounded-[16px] border border-[rgba(29,29,29,0.2)] bg-white">
+          <div v-if="hasDoctors" class="hidden md:block relative mt-3 h-auto overflow-hidden rounded-[16px] border border-[rgba(29,29,29,0.2)] bg-white">
             <div class="absolute bottom-0 -right-12 md:right-0 h-[250px] w-[220px] overflow-hidden z-20">
               <img
                 v-if="doctorAvatar"
@@ -143,7 +143,7 @@
           </div>
         </div>
 
-        <div>
+        <div v-if="hasDoctors">
           <div class="flex items-center justify-center gap-4">
             <button
               type="button"
@@ -238,6 +238,24 @@
             </PrimaryButton>
           </div>
         </div>
+
+        <div v-else-if="!loadingDoctors" class="flex items-center">
+          <div class="w-full rounded-[16px] border border-surface-subdued bg-[#F6F7F9] px-5 py-6 text-center">
+            <p class="text-base font-semibold leading-[1.3] text-interactive">
+              {{ emptyDoctorsMessage }}
+            </p>
+            <div class="mx-auto mt-6 flex w-full max-w-[444px] flex-col gap-4">
+              <SecondaryButton @click="$emit('back')">Назад</SecondaryButton>
+            </div>
+          </div>
+        </div>
+
+        <div v-else class="flex min-h-[220px] items-center justify-center">
+          <div class="flex flex-col items-center gap-3 text-interactive">
+            <span class="h-8 w-8 animate-spin rounded-full border-2 border-surface-subdued border-t-action-primary"></span>
+            <p class="text-sm font-semibold">Подбираем доступные варианты...</p>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -302,6 +320,14 @@ export default {
       type: Boolean,
       default: false,
     },
+    stepChipText: {
+      type: String,
+      default: "Шаг №3",
+    },
+    emptyDoctorsMessage: {
+      type: String,
+      default: "Для указанной даты рождения подходящих специалистов не найдено",
+    },
   },
   data() {
     return {
@@ -310,6 +336,9 @@ export default {
     };
   },
   computed: {
+    hasDoctors() {
+      return Array.isArray(this.doctors) && this.doctors.length > 0;
+    },
     activeDoctor() {
       if (this.selectedDoctor && Object.keys(this.selectedDoctor).length) {
         return this.selectedDoctor;

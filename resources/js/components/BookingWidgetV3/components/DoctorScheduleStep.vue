@@ -8,7 +8,7 @@
         <span
           class="inline-flex h-[22px] items-center justify-center rounded-[4px] bg-[#F6F7F9] px-5 text-xs font-semibold leading-[1.2] text-[#1D1D1D] shadow-[0_0_1.8px_0_rgba(31,52,98,0.26)]"
         >
-          Шаг №3
+          {{ stepChipText }}
         </span>
       </div>
     </div>
@@ -300,6 +300,10 @@ export default {
     loadingBranches: {
       type: Boolean,
       default: false,
+    },
+    stepChipText: {
+      type: String,
+      default: "Шаг №3",
     },
   },
   data() {

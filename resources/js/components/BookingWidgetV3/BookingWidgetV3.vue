@@ -25,15 +25,25 @@
           @leave-request="handleLeaveRequest"
         />
 
+        <BirthDateStep
+          v-else-if="currentStep === 'birth-date'"
+          :initialValue="patientBirthDateDisplay"
+          :showBackButton="showBirthDateBackButton"
+          :backDisabled="birthDateBackDisabled"
+          @back="goToStart"
+          @next="handleBirthDateSubmit"
+        />
+
         <DoctorSelectStep
           v-else-if="currentStep === 'doctor-select'"
           :doctors="doctors"
           :selectedDoctorId="selectedDoctor?.id"
           :loading="loadingDoctors"
+          :stepChipText="doctorSelectStepChipText"
           @close="handleClose"
           @select="handleDoctorSelect"
           @next="goToDoctorSchedule"
-          @back="goToStart"
+          @back="goToBirthDate"
         />
 
         <ClinicSelectStep
@@ -41,10 +51,11 @@
           :branches="cityBranches"
           :selectedBranchId="selectedBranch?.id"
           :loading="loadingCityBranches"
+          :stepChipText="clinicSelectStepChipText"
           @close="handleClose"
           @select-branch="handleBranchSelect"
           @next="goToClinicSchedule"
-          @back="goToStart"
+          @back="goToBirthDate"
         />
 
         <DoctorScheduleStep
@@ -60,6 +71,7 @@
           :selectedSlot="selectedSlot"
           :loading="loadingSlots"
           :loadingBranches="loadingDoctorFlowBranches"
+          :stepChipText="doctorScheduleStepChipText"
           @select-branch="handleBranchSelect"
           @select-date="handleDateSelect"
           @select-slot="handleSlotSelect"
@@ -80,6 +92,7 @@
           :selectedSlot="selectedSlot"
           :loadingDoctors="loadingDoctors"
           :loading="loadingSlots"
+          :stepChipText="clinicScheduleStepChipText"
           @select-doctor="handleDoctorSelect"
           @select-date="handleDateSelect"
           @select-slot="handleSlotSelect"
@@ -95,6 +108,8 @@
           :selectedDate="selectedDate"
           :selectedSlot="selectedSlot"
           :isSubmitting="isSubmitting"
+          :initialBirthDate="patientBirthDateIso"
+          :stepChipText="formStepChipText"
           ref="patientForm"
           @close="handleClose"
           @back="goBackFromForm"
@@ -140,6 +155,11 @@ import {
   mergeDoctorsWithSitePayload,
   sortDoctorsByMinimumAge,
 } from "./utils/doctorUtils";
+import { validateBirthDateDisplay } from "./utils/birthDate";
+import {
+  calculateAgeMonthsFromBirthDate,
+  getDoctorAgeRange,
+} from "../../utilities/doctorAge";
 import {
   getClinicDoctorSortOrders,
   getDoctorSelectSortOrders,
@@ -147,6 +167,7 @@ import {
 
 const Modal = () => import("../Modal");
 const StartStep = () => import("./components/StartStep.vue");
+const BirthDateStep = () => import("./components/BirthDateStep.vue");
 const DoctorSelectStep = () => import("./components/DoctorSelectStep.vue");
 const ClinicSelectStep = () => import("./components/ClinicSelectStep.vue");
 const DoctorScheduleStep = () => import("./components/DoctorScheduleStep.vue");
@@ -160,6 +181,7 @@ export default {
   components: {
     Modal,
     StartStep,
+    BirthDateStep,
     DoctorSelectStep,
     ClinicSelectStep,
     DoctorScheduleStep,
@@ -185,9 +207,12 @@ export default {
   data() {
     return {
       currentStep: "start",
+      selectedMode: null,
       selectedDoctor: null,
       selectedClinic: null,
       selectedBranch: null,
+      patientBirthDateDisplay: "",
+      patientBirthDateIso: "",
       selectedDate: new Date(),
       selectedSlot: null,
       clinics: [],
@@ -295,6 +320,34 @@ export default {
     },
     clinicFlowEmptySlotsMessage() {
       return this.getEmptySlotsMessage(this.clinicFlowLastAvailableDate);
+    },
+    doctorSelectStepChipText() {
+      return "Шаг №3";
+    },
+    clinicSelectStepChipText() {
+      return "Шаг №3";
+    },
+    doctorScheduleStepChipText() {
+      return "Шаг №4";
+    },
+    clinicScheduleStepChipText() {
+      return this.cityBranches.length > 1 ? "Шаг №4" : "Шаг №3";
+    },
+    formStepChipText() {
+      if (this.selectedMode === "clinic" && this.cityBranches.length <= 1) {
+        return "Шаг №4";
+      }
+
+      return "Шаг №5";
+    },
+    isForcedModeEntry() {
+      return this.mode === "doctor" || this.mode === "clinic";
+    },
+    showBirthDateBackButton() {
+      return !this.isForcedModeEntry;
+    },
+    birthDateBackDisabled() {
+      return this.isForcedModeEntry;
     },
   },
   watch: {
@@ -447,19 +500,22 @@ export default {
       }
 
       if (this.mode === "doctor") {
-        await this.withTransitionLoader(async () => {
-          await this.openDoctorFlow();
-        });
+        this.selectedMode = "doctor";
+        this.currentStep = "birth-date";
         return;
       }
 
       if (this.mode === "clinic") {
-        await this.withTransitionLoader(async () => {
-          await this.openClinicFlowWithAutoBranchSkip();
-        });
+        this.selectedMode = "clinic";
+        this.currentStep = "birth-date";
       }
     },
     async openClinicFlowWithAutoBranchSkip() {
+      if (!this.patientBirthDateIso) {
+        this.currentStep = "birth-date";
+        return;
+      }
+
       await this.loadCityBranches();
 
       if (this.cityBranches.length > 1) {
@@ -476,12 +532,14 @@ export default {
       await this.goToClinicSchedule();
     },
     async openDoctorFlow() {
+      if (!this.patientBirthDateIso) {
+        this.currentStep = "birth-date";
+        return;
+      }
+
       await this.initCities();
       this.currentStep = "doctor-select";
-
-      if (!this.doctors.length) {
-        await this.loadDoctorsByCity();
-      }
+      await this.loadDoctorsByCity();
     },
     isClinicAllowed(clinicId) {
       if (!this.allowedClinicIds.length) {
@@ -583,7 +641,8 @@ export default {
       await this.initCities();
       if (!this.currentCityId) return;
 
-      const cached = this.doctorsCacheByCity[this.currentCityId];
+      const cacheKey = `${this.currentCityId}:${this.patientBirthDateIso || "all"}`;
+      const cached = this.doctorsCacheByCity[cacheKey];
       if (
         cached &&
         Array.isArray(cached.data) &&
@@ -595,13 +654,19 @@ export default {
 
       this.loadingDoctors = true;
       try {
-        const response = await bookingApi.getDoctorsByCity(this.currentCityId);
+        const response = await bookingApi.getDoctorsByCity(
+          this.currentCityId,
+          this.patientBirthDateIso || null
+        );
         const doctors = response.data || response || [];
         const enrichedDoctors = await this.enrichDoctorsWithSiteData(doctors);
-        this.doctors = sortDoctorsByMinimumAge(enrichedDoctors, {
-          primaryOrders: getDoctorSelectSortOrders(),
-        });
-        this.doctorsCacheByCity[this.currentCityId] = {
+        this.doctors = sortDoctorsByMinimumAge(
+          this.filterDoctorsByBirthDate(enrichedDoctors),
+          {
+            primaryOrders: getDoctorSelectSortOrders(),
+          }
+        );
+        this.doctorsCacheByCity[cacheKey] = {
           ts: Date.now(),
           data: this.doctors,
         };
@@ -618,15 +683,18 @@ export default {
       try {
         const response = await bookingApi.getClinicDoctors(
           clinicId,
-          null,
+          this.patientBirthDateIso || null,
           branchId
         );
         const doctors = response.data || response || [];
         const enrichedDoctors = await this.enrichDoctorsWithSiteData(doctors);
-        this.clinicDoctors = sortDoctorsByMinimumAge(enrichedDoctors, {
-          primaryOrders: getClinicDoctorSortOrders(),
-          fallbackOrders: getDoctorSelectSortOrders(),
-        });
+        this.clinicDoctors = sortDoctorsByMinimumAge(
+          this.filterDoctorsByBirthDate(enrichedDoctors),
+          {
+            primaryOrders: getClinicDoctorSortOrders(),
+            fallbackOrders: getDoctorSelectSortOrders(),
+          }
+        );
       } finally {
         this.loadingDoctors = false;
       }
@@ -708,7 +776,7 @@ export default {
             try {
               const doctorResponse = await bookingApi.getClinicDoctors(
                 clinicId,
-                null,
+                this.patientBirthDateIso || null,
                 branch.id
               );
               const doctors = doctorResponse.data || doctorResponse || [];
@@ -1059,12 +1127,65 @@ export default {
         this.loadingSlots = false;
       }
     },
-    async handleModeSelect(mode) {
-      if (mode === "doctor") {
+    handleModeSelect(mode) {
+      this.selectedMode = mode;
+      this.currentStep = "birth-date";
+    },
+    filterDoctorsByBirthDate(doctors = []) {
+      const patientAgeMonths = calculateAgeMonthsFromBirthDate(
+        this.patientBirthDateIso
+      );
+
+      if (!Number.isFinite(patientAgeMonths)) {
+        return doctors;
+      }
+
+      return (doctors || []).filter((doctor) => {
+        const { minAgeMonths, maxAgeMonths } = getDoctorAgeRange(doctor);
+        const isBelowMinimum =
+          Number.isFinite(minAgeMonths) && patientAgeMonths < minAgeMonths;
+        const isAboveMaximum =
+          Number.isFinite(maxAgeMonths) && patientAgeMonths > maxAgeMonths;
+
+        return !isBelowMinimum && !isAboveMaximum;
+      });
+    },
+    resetFlowSelections() {
+      this.selectedDoctor = null;
+      this.selectedClinic = null;
+      this.selectedBranch = null;
+      this.selectedDate = new Date();
+      this.selectedSlot = null;
+      this.doctors = [];
+      this.clinicDoctors = [];
+      this.clinicDoctorShiftMap = {};
+      this.slots = [];
+      this.branches = [];
+      this.doctorFlowBranches = [];
+      this.doctorFlowHighlightedDates = [];
+      this.clinicFlowHighlightedDates = [];
+      this.doctorFlowLastAvailableDate = null;
+      this.clinicFlowLastAvailableDate = null;
+      this.formSourceStep = null;
+    },
+    async handleBirthDateSubmit({ display, iso }) {
+      const validationMessage = validateBirthDateDisplay(display);
+      if (validationMessage || !iso) {
+        return;
+      }
+
+      this.patientBirthDateDisplay = display;
+      this.patientBirthDateIso = iso;
+      this.resetFlowSelections();
+
+      if (this.selectedMode === "doctor") {
         await this.withTransitionLoader(async () => {
           await this.openDoctorFlow();
         });
-      } else if (mode === "clinic") {
+        return;
+      }
+
+      if (this.selectedMode === "clinic") {
         await this.withTransitionLoader(async () => {
           await this.openClinicFlowWithAutoBranchSkip();
         });
@@ -1169,17 +1290,31 @@ export default {
     },
     goToStart() {
       this.currentStep = "start";
+      this.selectedMode = null;
+    },
+    goToBirthDate() {
+      this.currentStep = "birth-date";
     },
     async goToDoctorSelect() {
+      if (!this.patientBirthDateIso) {
+        this.currentStep = "birth-date";
+        return;
+      }
+
       await this.openDoctorFlow();
     },
     async goToClinicSelect() {
+      if (!this.patientBirthDateIso) {
+        this.currentStep = "birth-date";
+        return;
+      }
+
       if (!this.cityBranches.length) {
         await this.loadCityBranches();
       }
 
       if (this.cityBranches.length <= 1) {
-        this.currentStep = "start";
+        this.currentStep = "birth-date";
         return;
       }
 
@@ -1290,9 +1425,12 @@ export default {
     },
     resetState() {
       this.currentStep = "start";
+      this.selectedMode = null;
       this.selectedDoctor = null;
       this.selectedClinic = null;
       this.selectedBranch = null;
+      this.patientBirthDateDisplay = "";
+      this.patientBirthDateIso = "";
       this.selectedDate = new Date();
       this.selectedSlot = null;
       this.slots = [];
