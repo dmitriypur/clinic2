@@ -61,7 +61,7 @@
                 <div class="flex flex-col gap-6 lg:flex-row lg:gap-8">
                     <div class="shrink-0 lg:w-[300px]">
                         <div
-                            class="overflow-hidden rounded-xl bg-slate-100 [&_img]:h-full [&_img]:w-full [&_img]:object-contain md:rounded-3xl">
+                            class="overflow-hidden rounded-xl bg-slate-100 h-full md:max-h-80 [&_img]:h-full [&_img]:w-full [&_img]:object-contain md:rounded-3xl">
                             @if ($doctor->avatar_image)
                                 {{ $doctor->avatar_image }}
                             @else
