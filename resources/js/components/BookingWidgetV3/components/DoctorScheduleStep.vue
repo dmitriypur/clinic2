@@ -16,7 +16,7 @@
     <div class="hidden md:block mt-5 h-px w-full bg-surface-subdued md:mt-7"></div>
 
     <div class="md:bg-surface-subdued">
-        <div class="grid grid-cols-1 items-start lg:grid-cols-[460px_460px] lg:justify-between">
+        <div class="grid grid-cols-1 items-stretch lg:grid-cols-[460px_460px] lg:justify-between">
           <div v-show="showCalendarPane" class="md:p-6 bg-white">
             <div class="flex items-center justify-center gap-4">
               <button
@@ -63,7 +63,7 @@
               Время
             </div>
 
-            <div class="mx-auto mt-4 w-full max-w-[444px]">
+            <div class="mx-auto mt-4 w-full max-w-[444px] min-h-[92px] md:min-h-[60px]">
               <div
                 v-if="loading"
                 class="grid grid-cols-4 md:grid-cols-5 gap-1"
