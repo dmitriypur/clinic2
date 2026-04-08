@@ -23,3 +23,6 @@ yarn-error.log
 /.trae
 /.roo
 forge.sh
+.DS_Store
+/.DS_Store
+.playwright-cli
