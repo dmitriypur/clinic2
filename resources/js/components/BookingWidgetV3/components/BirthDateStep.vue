@@ -1,11 +1,10 @@
 <template>
-  <div class="bg-white px-4 pb-6 pt-4 md:px-12 md:pb-8 md:pt-6">
-    <div class="mx-auto w-full max-w-[508px]">
-      <h2 class="text-center text-[38px] font-semibold leading-[1.1] text-interactive md:text-[52px]">
-        Дата рождения пациента
-      </h2>
+  <div class="bg-white p-2 md:py-6 md:px-14">
+      <StepHeader @close="$emit('close')">
+         Дата рождения пациента
+      </StepHeader>
 
-      <div class="mt-10 md:mt-9">
+      <div class="mt-6 md:mt-10">
         <input
           v-model="form.birthDate"
           v-mask="'##.##.####'"
@@ -33,14 +32,12 @@
         <PrimaryButton @click="handleNext">Далее</PrimaryButton>
       </div>
 
-      <div class="mt-6 md:hidden">
+      <div class="mt-6 flex flex-col md:hidden">
         <PrimaryButton @click="handleNext">Далее</PrimaryButton>
-      </div>
-
-      <div v-if="showBackButton" class="mt-5 text-center md:hidden">
         <button
+          v-if="showBackButton"
           type="button"
-          class="text-base font-semibold underline underline-offset-4"
+          class="text-base font-semibold underline underline-offset-4 mt-6"
           :class="backDisabled ? 'cursor-default text-interactive/40 no-underline' : 'text-interactive'"
           :disabled="backDisabled"
           @click="handleBack"
@@ -48,7 +45,7 @@
           Назад
         </button>
       </div>
-    </div>
+
   </div>
 </template>
 
@@ -58,6 +55,7 @@ import {
   validateBirthDateDisplay,
 } from "../utils/birthDate";
 
+const StepHeader = () => import("./shared/StepHeader.vue");
 const PrimaryButton = () => import("./shared/PrimaryButton.vue");
 const SecondaryButton = () => import("./shared/SecondaryButton.vue");
 
@@ -66,6 +64,7 @@ export default {
   components: {
     PrimaryButton,
     SecondaryButton,
+    StepHeader,
   },
   props: {
     initialValue: {

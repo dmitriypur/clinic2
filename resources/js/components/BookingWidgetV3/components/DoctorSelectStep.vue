@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-white md:p-6">
+  <div class="bg-white md:p-3">
     <StepHeader :chipText="stepChipText" @close="$emit('close')">
       Выберите специалиста
     </StepHeader>
@@ -16,7 +16,7 @@
       </span>
     </div>
 
-    <div class="mt-6 h-[272px] overflow-y-auto pr-1 md:w-[450px]">
+    <div class="mt-6 h-[300px] md:h-[380px] overflow-y-auto pr-1 md:w-[520px]">
       <div
         v-if="!loading && !filteredDoctors.length"
         class="rounded-[12px] border border-surface-subdued bg-[#F6F7F9] px-4 py-4 text-sm font-medium text-interactive"
@@ -27,16 +27,16 @@
       <div
         v-for="doctor in filteredDoctors"
         :key="doctor.id"
-        class="w-full rounded-xl border-2 bg-white p-2 text-left mt-2 first:mt-0"
+        class="w-full rounded-xl border-2 p-2 text-left mt-2 first:mt-0"
         :class="
           selectedDoctorId === doctor.id
             ? 'border-action-primary bg-action-primary/5'
-            : 'border-surface-subdued'
+            : 'border-surface-subdued bg-white'
         "
         @click="$emit('select', doctor)"
       >
-        <div class="w-full flex items-center gap-2 md:gap-4 cursor-pointer">
-          <div class="h-14 w-14 min-w-14 overflow-hidden rounded-lg md:rounded-full md:bg-surface-subdued md:h-16 md:w-16 md:min-w-16">
+        <div class="relative w-full flex items-center gap-2 md:gap-4 cursor-pointer">
+          <div class="h-14 w-14 min-w-14 overflow-hidden rounded-full bg-surface-subdued border border-interactive/20 md:h-24 md:w-24 md:min-w-24">
             <img
               v-if="doctor.avatar_url"
               :src="doctor.avatar_url"
@@ -45,45 +45,43 @@
               loading="lazy"
             />
           </div>
-          <div class="w-2/3 md:w-1/2">
-            <button
-              type="button"
-              class="text-xs font-semibold mb-1"
-              :class="doctorVideoUrl(doctor) ? 'text-action-primary hover:underline cursor-pointer' : 'text-subdued cursor-default'"
-              :disabled="!doctorVideoUrl(doctor)"
-              @click.stop="openDoctorVideo(doctor)"
-            >
-              Видео-визитка
-            </button>
-            <div class="text-sm md:text-base font-semibold leading-tight">
+          <div class="text-sm w-auto">
+            <div class="md:text-base font-bold leading-tight">
               {{ doctor.name || doctor.full_name }}
             </div>
+            <div class="hidden md:block">
+              {{ doctor.speciality || doctor.specialization || "Специалист" }}
+            </div>
+            <div class="hidden md:block">
+              Стаж: {{ doctor.seniority || doctor.extra?.seniority || "—" }}, {{ doctorReceivesDisplay(doctor) }}
+            </div>
+            <div class="flex md:items-center justify-between md:justify-start md:gap-3 mt-1">
+              <p v-if="doctor.extra.price" class="text-xl font-semibold leading-normal">{{ doctor.extra?.price }} ₽</p>
+              <button
+                  v-if="doctorVideoUrl(doctor)"
+                  type="button"
+                  class="text-xs font-semibold py-1 px-3 md:py-2 md:px-5 border border-interactive rounded-xl"
+                  @click.stop="openDoctorVideo(doctor)"
+                >
+                  Видео-визитка
+              </button>
+            </div>
           </div>
-          <div v-if="selectedDoctorId === doctor.id" class="text-action-primary ml-auto">
-            <IconCheck class="w-4 h-4 md:w-6 md:h-6" />
+          <div v-if="selectedDoctorId === doctor.id" class="absolute top-2 right-2 text-action-primary ml-auto">
+            <IconCheck class="w-5 h-5" />
           </div>
         </div>
-        <div class="hidden md:flex md:items-stretch md:gap-2 md:mt-3 text-xs">
-          <div class="bg-light-gray p-1 border border-interactive/10 rounded-md flex-1 flex items-center justify-center">
-            {{ doctor.speciality || doctor.specialization || "Специалист" }}
-          </div>
-          <div class="bg-light-gray p-1 border border-interactive/10 rounded-md flex-1 flex items-center justify-center">
-            {{ doctorReceivesDisplay(doctor) }}
-          </div>
-          <div class="bg-light-gray p-1 border border-interactive/10 rounded-md flex-1 flex items-center justify-center">
-            Стаж: {{ doctor.seniority || doctor.extra?.seniority || "—" }}
-          </div>
-        </div>
+        
       </div>
     </div>
 
     <div v-if="loading" class="mt-4 text-sm text-[#1F3462]">Загрузка...</div>
 
-    <div class="mt-6 flex flex-col md:flex-row gap-4">
-      <SecondaryButton @click="$emit('back')">Назад</SecondaryButton>
+    <div class="mt-6 flex flex-col md:flex-row-reverse gap-4">
       <PrimaryButton :disabled="!selectedDoctorId" @click="$emit('next')">
-        Продолжить
+        Далее
       </PrimaryButton>
+      <SecondaryButton @click="$emit('back')">Назад</SecondaryButton>
     </div>
   </div>
 </template>

@@ -6,7 +6,7 @@
           Выберите дату, время и филиал
         </h2>
         <span
-          class="inline-flex h-[22px] items-center justify-center rounded-[4px] bg-[#F6F7F9] px-5 text-xs font-semibold leading-[1.2] text-[#1D1D1D] shadow-[0_0_1.8px_0_rgba(31,52,98,0.26)]"
+          class="hidden inline-flex h-[22px] items-center justify-center rounded-[4px] bg-[#F6F7F9] px-5 text-xs font-semibold leading-[1.2] text-[#1D1D1D] shadow-[0_0_1.8px_0_rgba(31,52,98,0.26)]"
         >
           {{ stepChipText }}
         </span>
@@ -15,230 +15,199 @@
 
     <div class="hidden md:block mt-5 h-px w-full bg-surface-subdued md:mt-7"></div>
 
-    <div class="pb-6 pt-6 md:pb-10 md:pt-[34px]">
-      <div class="grid grid-cols-1 items-start gap-8 lg:grid-cols-[400px_444px] lg:justify-between lg:gap-[40px]">
-        <div v-show="showBranchPane">
-          <div class="rounded-[12px] border-2 border-surface-subdued bg-white p-2">
-            <div class="flex items-center gap-[25px]">
-              <div class="h-auto w-[60px] overflow-hidden rounded-[8px] bg-white">
-                <img
-                  v-if="doctorAvatar"
-                  :src="doctorAvatar"
-                  :alt="doctorName"
-                  class="h-full w-full object-cover"
-                  loading="lazy"
-                />
-              </div>
-              <p class="text-base font-semibold leading-[1.2] text-interactive whitespace-pre-line">
-                {{ doctorName }}
-              </p>
+    <div class="md:bg-surface-subdued">
+        <div class="grid grid-cols-1 items-start lg:grid-cols-[460px_460px] lg:justify-between">
+          <div v-show="showCalendarPane" class="md:p-6 bg-white">
+            <div class="flex items-center justify-center gap-4">
+              <button
+                type="button"
+                class="grid h-6 w-6 place-items-center rounded text-interactive transition-colors hover:bg-surface-subdued"
+                aria-label="Предыдущий месяц"
+                @click="goToPrevMonth"
+              >
+                <svg viewBox="0 0 16 16" class="h-4 w-4" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M10 3L5 8L10 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </button>
 
-              <div class="ml-auto">
-                <button
-                  v-if="hasVideoVisit"
-                  type="button"
-                  class="flex items-center justify-center"
-                  @click="handleOpenVideo"
-                >
-                  <svg width="15" height="20" viewBox="0 0 15 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path
-                      d="M11.0562 9.34246C11.0562 10.3122 10.6819 11.2421 10.0156 11.9278C9.34937 12.6135 8.44574 12.9987 7.50352 12.9987C6.56131 12.9987 5.65768 12.6135 4.99143 11.9278C4.32519 11.2421 3.95089 10.3122 3.95089 9.34246C3.95089 8.37276 4.32519 7.44278 4.99143 6.7571C5.65768 6.07142 6.56131 5.6862 7.50352 5.6862C8.44574 5.6862 9.34937 6.07142 10.0156 6.7571C10.6819 7.44278 11.0562 8.37276 11.0562 9.34246Z"
-                      :fill="hasVideoVisit ? '#1F3462' : '#1f346266'"
-                    />
-                    <path
-                      d="M15 17.0625V5.48437L9.375 0H2.5C1.83696 0 1.20107 0.256807 0.732233 0.713927C0.263392 1.17105 0 1.79103 0 2.4375V17.0625C0 17.709 0.263392 18.329 0.732233 18.7861C1.20107 19.2432 1.83696 19.5 2.5 19.5H12.5C13.163 19.5 13.7989 19.2432 14.2678 18.7861C14.7366 18.329 15 17.709 15 17.0625ZM9.375 3.65625C9.375 4.1411 9.57254 4.60609 9.92417 4.94893C10.2758 5.29177 10.7527 5.48437 11.25 5.48437H13.75V16.7639C13.75 16.7639 12.5 14.625 7.5 14.625C2.5 14.625 1.25 16.7639 1.25 16.7639V2.4375C1.25 2.11427 1.3817 1.80427 1.61612 1.57571C1.85054 1.34715 2.16848 1.21875 2.5 1.21875H9.375V3.65625Z"
-                      :fill="hasVideoVisit ? '#1F3462' : '#1f346266'"
-                    />
-                  </svg>
-                </button>
-                
+              <div class="text-xl font-semibold leading-[1.2] text-interactive">
+                {{ monthTitle }}
+              </div>
+
+              <button
+                type="button"
+                class="grid h-6 w-6 place-items-center rounded text-interactive transition-colors hover:bg-surface-subdued"
+                aria-label="Следующий месяц"
+                @click="goToNextMonth"
+              >
+                <svg viewBox="0 0 16 16" class="h-4 w-4" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M6 3L11 8L6 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </button>
+            </div>
+
+            <div class="mt-[23px]">
+              <v-date-picker
+                :key="calendarRenderKey"
+                v-model="internalDate"
+                :min-date="minDate"
+                :attributes="calendarAttributes"
+                color="orange"
+                is-expanded
+                @input="handleDate"
+                class="booking-calendar"
+              />
+            </div>
+
+            <div class="md:mt-3 text-center text-base font-semibold leading-[1.2] text-interactive">
+              Время
+            </div>
+
+            <div class="mx-auto mt-4 w-full max-w-[444px]">
+              <div
+                v-if="loading"
+                class="grid grid-cols-4 md:grid-cols-5 gap-1"
+                aria-hidden="true"
+              >
                 <div
-                  v-else
-                  class="flex items-center justify-center text-interactive/40 cursor-default"
+                  v-for="n in skeletonSlotsCount"
+                  :key="`doctor-slot-skeleton-${n}`"
+                  class="h-7 rounded-md bg-surface-subdued animate-pulse"
+                ></div>
+              </div>
+
+              <div v-else-if="!slots.length" class="text-center">
+                <p class="font-semibold">{{ emptySlotsMessage }}</p>
+                <p
+                  v-if="emptySlotsMessage === 'Данный врач не принимает в выбранный день'"
+                  class="text-sm text-interactive/50"
                 >
-                  <svg width="15" height="20" viewBox="0 0 15 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path
-                      d="M11.0562 9.34246C11.0562 10.3122 10.6819 11.2421 10.0156 11.9278C9.34937 12.6135 8.44574 12.9987 7.50352 12.9987C6.56131 12.9987 5.65768 12.6135 4.99143 11.9278C4.32519 11.2421 3.95089 10.3122 3.95089 9.34246C3.95089 8.37276 4.32519 7.44278 4.99143 6.7571C5.65768 6.07142 6.56131 5.6862 7.50352 5.6862C8.44574 5.6862 9.34937 6.07142 10.0156 6.7571C10.6819 7.44278 11.0562 8.37276 11.0562 9.34246Z"
-                      fill="#1f346266"
-                    />
-                    <path
-                      d="M15 17.0625V5.48437L9.375 0H2.5C1.83696 0 1.20107 0.256807 0.732233 0.713927C0.263392 1.17105 0 1.79103 0 2.4375V17.0625C0 17.709 0.263392 18.329 0.732233 18.7861C1.20107 19.2432 1.83696 19.5 2.5 19.5H12.5C13.163 19.5 13.7989 19.2432 14.2678 18.7861C14.7366 18.329 15 17.709 15 17.0625ZM9.375 3.65625C9.375 4.1411 9.57254 4.60609 9.92417 4.94893C10.2758 5.29177 10.7527 5.48437 11.25 5.48437H13.75V16.7639C13.75 16.7639 12.5 14.625 7.5 14.625C2.5 14.625 1.25 16.7639 1.25 16.7639V2.4375C1.25 2.11427 1.3817 1.80427 1.61612 1.57571C1.85054 1.34715 2.16848 1.21875 2.5 1.21875H9.375V3.65625Z"
-                      fill="#1f346266"
-                    />
-                  </svg>
+                  Пожалуйста выберите другой день
+                </p>
+              </div>
+
+              <div v-else class="grid grid-cols-4 md:grid-cols-5 w-full flex-wrap gap-1">
+                <button
+                  v-for="slot in slots"
+                  :key="slotKey(slot)"
+                  type="button"
+                  class="h-7 rounded-md border border-surface-subdued text-base font-semibold leading-[1.2]"
+                  :class="slotClass(slot)"
+                  :disabled="!isSlotAvailable(slot)"
+                  @click="$emit('select-slot', slot)"
+                >
+                  {{ slot.time }}
+                </button>
+              </div>
+            </div>
+
+            <div class="mx-auto mt-6 md:mt-8 flex flex-col-reverse md:flex-row w-full max-w-[444px] gap-4">
+              <SecondaryButton @click="handleBackClick">Назад</SecondaryButton>
+              <PrimaryButton :disabled="!selectedSlot" @click="$emit('next')">
+                Далее
+              </PrimaryButton>
+            </div>
+          </div>
+
+          <div v-show="showBranchPane" class="md:p-6">
+            <p class="text-lg font-semibold text-center md:text-left">Выбранный врач</p>
+            <div class="rounded-full border-2 border-[#e6ebef] bg-white p-2 mt-4 md:mt-2">
+              <div class="flex items-center gap-4">
+                <div class="h-[60px] w-[60px] min-w-[60px] overflow-hidden rounded-full bg-surface-subdued border border-[#d8dee2]">
+                  <img
+                    v-if="doctorAvatar"
+                    :src="doctorAvatar"
+                    :alt="doctorName"
+                    class="h-full w-full object-cover"
+                    loading="lazy"
+                  />
+                </div>
+                <div class="font-semibold text-interactive whitespace-pre-line leading-none">
+                  <p>{{ doctorName }}</p>
+                  <button
+                    v-if="hasVideoVisit"
+                    type="button"
+                    class="text-xs text-action-primary"
+                    @click="handleOpenVideo"
+                  >
+                    Видео-визитка
+                  </button>
                 </div>
               </div>
             </div>
-            <div class="flex flex-wrap gap-2 mt-2">
-              <div class="w-full bg-light-gray p-1 border border-interactive/10 rounded-md text-sm flex items-center justify-center">
-                {{ doctor.speciality || doctor.specialization || "Специалист" }}
-              </div>
-              <div class="w-[calc(50%-0.25rem)] bg-light-gray p-1 border border-interactive/10 rounded-md text-sm flex items-center justify-center">
-                {{ doctorReceivesDisplay(doctor) }}
-              </div>
-              <div class="w-[calc(50%-0.25rem)] bg-light-gray p-1 border border-interactive/10 rounded-md text-sm flex items-center justify-center">
-                Стаж: {{ doctor.seniority || doctor.extra?.seniority || "—" }}
-              </div>
+
+            <div class="hidden md:block w-full mt-4 border-b border-dotted border-[#d8dee2]"></div>
+
+            <div class="mt-4 text-xl font-semibold text-interactive text-center md:text-left">
+              Адрес офтальмологии
             </div>
-          </div>
-          
 
-          <div class="mt-6 text-center text-xl font-semibold leading-[1.2] text-interactive md:mt-8">
-            Филиалы
-          </div>
-
-          <div class="relative mt-2 ">
-            <div
-              v-if="loadingBranches"
-              class="doctor-schedule-step__branches-scroll max-h-64 min-h-[272px] space-y-2 overflow-y-auto pr-3"
-              aria-hidden="true"
-            >
+            <div class="relative mt-4 md:mt-2 px-4 md:px-0">
               <div
-                v-for="n in branchSkeletonCount"
-                :key="`doctor-branch-skeleton-${n}`"
-                class="h-[64px] w-full rounded-[12px] border-2 border-surface-subdued bg-surface-subdued animate-pulse"
-              ></div>
-            </div>
-
-            <div
-              v-else
-              ref="branchesList"
-              class="doctor-schedule-step__branches-scroll h-full max-h-64 max-h-[272px] space-y-2 overflow-y-auto pr-3"
-              @scroll="handleBranchScroll"
-            >
-              <button
-                v-for="branch in branches"
-                :key="branch.id"
-                type="button"
-                class="h-[64px] w-full rounded-[12px] border-2 px-6 py-[13px] text-left"
-                :class="{
-                  'border-surface-subdued bg-white': selectedBranchId !== branch.id,
-                  'border-surface-subdued bg-surface-subdued': selectedBranchId === branch.id,
-                  'opacity-40 cursor-not-allowed': branch.enabled === false,
-                }"
-                :disabled="branch.enabled === false"
-                @click="$emit('select-branch', branch)"
+                v-if="loadingBranches"
+                class="doctor-schedule-step__branches-scroll max-h-64 min-h-[272px] space-y-2 overflow-y-auto pr-3"
+                aria-hidden="true"
               >
-                <span class="text-base font-semibold leading-[1.2] text-interactive">
-                  {{ branchLabel(branch) }}
-                </span>
-              </button>
-            </div>
+                <div
+                  v-for="n in branchSkeletonCount"
+                  :key="`doctor-branch-skeleton-${n}`"
+                  class="h-[64px] w-full rounded-[12px] border-2 border-surface-subdued bg-surface-subdued animate-pulse"
+                ></div>
+              </div>
 
-            <div class="pointer-events-none absolute bottom-0 left-0 h-[71px] w-full bg-gradient-to-b from-white/0 to-white"></div>
-
-            <div class="pointer-events-none absolute right-[2px] top-0 hidden h-full w-1 lg:block">
               <div
-                v-if="showBranchScrollThumb && !loadingBranches"
-                class="absolute h-6 w-1 rounded-[28px] bg-interactive"
-                :style="{ top: `${branchScrollThumbTop}px` }"
-              ></div>
-            </div>
-          </div>
-
-          <div class="mx-auto mt-8 flex w-full max-w-[444px] flex-col gap-4 md:hidden">
-            <SecondaryButton @click="$emit('back')">Назад</SecondaryButton>
-            <PrimaryButton :disabled="!canProceedFromBranch" @click="goToMobileCalendarStage">
-              Далее
-            </PrimaryButton>
-          </div>
-        </div>
-
-        <div v-show="showCalendarPane">
-          <div class="flex items-center justify-center gap-4">
-            <button
-              type="button"
-              class="grid h-6 w-6 place-items-center rounded text-interactive transition-colors hover:bg-surface-subdued"
-              aria-label="Предыдущий месяц"
-              @click="goToPrevMonth"
-            >
-              <svg viewBox="0 0 16 16" class="h-4 w-4" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M10 3L5 8L10 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-              </svg>
-            </button>
-
-            <div class="text-xl font-semibold leading-[1.2] text-interactive">
-              {{ monthTitle }}
-            </div>
-
-            <button
-              type="button"
-              class="grid h-6 w-6 place-items-center rounded text-interactive transition-colors hover:bg-surface-subdued"
-              aria-label="Следующий месяц"
-              @click="goToNextMonth"
-            >
-              <svg viewBox="0 0 16 16" class="h-4 w-4" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M6 3L11 8L6 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-              </svg>
-            </button>
-          </div>
-
-          <div class="mt-[23px]">
-            <v-date-picker
-              :key="calendarRenderKey"
-              v-model="internalDate"
-              :min-date="minDate"
-              :attributes="calendarAttributes"
-              color="orange"
-              is-expanded
-              @input="handleDate"
-              class="booking-calendar"
-            />
-          </div>
-
-          <div class="hidden md:block mt-2 h-px w-full bg-surface-subdued"></div>
-
-          <div class="md:mt-6 text-center text-base font-semibold leading-[1.2] text-interactive">
-            Время
-          </div>
-
-          <div class="mx-auto mt-4 w-full max-w-[444px] min-h-[92px]">
-            <div
-              v-if="loading"
-              class="grid grid-cols-4 md:grid-cols-5 gap-1"
-              aria-hidden="true"
-            >
-              <div
-                v-for="n in skeletonSlotsCount"
-                :key="`doctor-slot-skeleton-${n}`"
-                class="h-7 rounded-md bg-surface-subdued animate-pulse"
-              ></div>
-            </div>
-
-            <div v-else-if="!slots.length" class="text-center">
-              <p class="font-semibold">{{ emptySlotsMessage }}</p>
-              <p
-                v-if="emptySlotsMessage === 'Данный врач не принимает в выбранный день'"
-                class="text-sm text-interactive/50"
+                v-else
+                ref="branchesList"
+                class="doctor-schedule-step__branches-scroll h-full max-h-64 max-h-[210px] space-y-4 overflow-y-auto pr-3"
+                @scroll="handleBranchScroll"
               >
-                Пожалуйста выберите другой день
-              </p>
+                <button
+                  v-for="branch in branches"
+                  :key="branch.id"
+                  type="button"
+                  class="h-auto w-full text-left relative before:w-5 before:h-5 before:rounded-full before:top-1/2 before:-translate-y-1/2 before:left-0 pl-8"
+                  :class="{
+                    'before:border-2 before:border-interactive/70': selectedBranchId !== branch.id,
+                    'before:border-4 before:border-action-primary': selectedBranchId === branch.id,
+                    'opacity-40 cursor-not-allowed': branch.enabled === false,
+                  }"
+                  :disabled="branch.enabled === false"
+                  @click="$emit('select-branch', branch)"
+                >
+                  <div class="flex items-center gap-2 text-xs font-semibold">
+                    <img src="/public/images/metro2.webp" alt="Иконка метро" class="w-3.5 h-3.5">
+                    <p>ВДНХ</p>
+                  </div>
+                  <span class="text-interactive">
+                    {{ branchLabel(branch) }}
+                  </span>
+                </button>
+              </div>
+
+              <div class="pointer-events-none absolute right-[2px] top-0 hidden h-full w-1 lg:block">
+                <div
+                  v-if="showBranchScrollThumb && !loadingBranches"
+                  class="absolute h-6 w-1 rounded-[28px] bg-interactive"
+                  :style="{ top: `${branchScrollThumbTop}px` }"
+                ></div>
+              </div>
             </div>
 
-            <div v-else class="grid grid-cols-4 md:grid-cols-5 w-full flex-wrap gap-1">
-              <button
-                v-for="slot in slots"
-                :key="slotKey(slot)"
-                type="button"
-                class="h-7 rounded-md border border-surface-subdued text-base font-semibold leading-[1.2]"
-                :class="slotClass(slot)"
-                :disabled="!isSlotAvailable(slot)"
-                @click="$emit('select-slot', slot)"
-              >
-                {{ slot.time }}
-              </button>
-            </div>
-          </div>
+            <div v-if="doctorPrice" class="hidden md:block w-full mt-4 border-b border-dotted border-[#d8dee2]"></div>
 
-          <div class="mx-auto mt-8 flex flex-col md:flex-row w-full max-w-[444px] gap-4">
-            <SecondaryButton @click="handleBackClick">Назад</SecondaryButton>
-            <PrimaryButton :disabled="!selectedSlot" @click="$emit('next')">
-              Далее
-            </PrimaryButton>
+            <div v-if="doctorPrice" class="hidden md:flex items-center text-xl mt-4">
+              <p>Стоимость приёма: <b>{{ doctorPrice }}</b><span class="text-sm font-semibold"> ₽</span></p>
+            </div>
+
+            <div class="mx-auto mt-6 md:mt-8 flex w-full max-w-[444px] flex-col-reverse gap-4 md:hidden">
+              <SecondaryButton @click="$emit('back')">Назад</SecondaryButton>
+              <PrimaryButton :disabled="!canProceedFromBranch" @click="goToMobileCalendarStage">
+                Далее
+              </PrimaryButton>
+            </div>
           </div>
         </div>
       </div>
-    </div>
   </div>
 </template>
 
@@ -371,6 +340,9 @@ export default {
     },
     doctorUrl() {
       return this.doctor?.id || null;
+    },
+    doctorPrice() {
+      return this.doctor?.extra.price || null;
     },
     branchSkeletonCount() {
       return 4;
@@ -545,7 +517,7 @@ export default {
 
 <style>
 .doctor-schedule-step {
-  --calendar-cell-width: 60px;
+  --calendar-cell-width: 100%;
 }
 
 .doctor-schedule-step__branches-scroll {
@@ -664,23 +636,5 @@ export default {
 
 .doctor-schedule-step .booking-calendar .vc-highlights + .vc-day-content{
   color: #ffffff !important;
-}
-
-@media (max-width: 1023px) {
-  .doctor-schedule-step {
-    --calendar-cell-width: 52px;
-  }
-}
-
-@media (max-width: 767px) {
-  .doctor-schedule-step {
-    --calendar-cell-width: 46px;
-  }
-}
-
-@media (max-width: 479px) {
-  .doctor-schedule-step {
-    --calendar-cell-width: 40px;
-  }
 }
 </style>

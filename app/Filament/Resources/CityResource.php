@@ -116,6 +116,8 @@ class CityResource extends Resource
                                 TextInput::make('schedule')
                                     ->label('Режим работы')
                                     ->columnSpanFull(),
+                                TextInput::make('external_id')
+                                    ->label('External ID'),
                             ])
                             ->columnSpanFull()
                             ->collapsed()

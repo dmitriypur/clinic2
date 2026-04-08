@@ -1,7 +1,7 @@
 <template>
   <button
     :disabled="disabled"
-    class="flex-1 rounded-xl border border-interactive px-[30px] py-4 font-semibold text-interactive hover:text-white hover:border-action-primary"
+    class="flex-1 md:rounded-xl md:border border-interactive md:px-7 md:py-4 font-semibold text-interactive md:hover:text-white md:hover:border-action-primary"
     :class="disabled ? 'opacity-50 cursor-not-allowed' : 'btn-white'"
     @click="$emit('click')"
   >

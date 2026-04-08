@@ -178,6 +178,8 @@ class DoctorResource extends Resource
 
                         Forms\Components\TextInput::make('extra.rating')
                             ->label('Текст рейтига'),
+                        Forms\Components\TextInput::make('extra.price')
+                            ->label('Стоимость приема'),
                     ]),
 
 
