@@ -1,14 +1,14 @@
 <template>
-  <div class="booking-success-step bg-white min-w-80 ">
-    <div class="px-4 pb-8 pt-12 md:px-14 md:py-8">
+  <div class="booking-success-step bg-white md:min-w-80 ">
+    <div class="py-6 md:px-14 md:py-8">
       <h2 class="text-center text-[28px] font-semibold leading-[1.15] text-interactive md:text-[36px]">
         Вы записаны!
       </h2>
 
       <div class="mx-auto mt-8 flex w-full max-w-[404px] flex-col gap-3 md:mt-9 md:max-w-[420px]">
-        <div class="rounded-full border border-surface-subdued bg-white px-4 py-3 md:px-5">
+        <div class="rounded-full border border-surface-subdued bg-white py-2 px-3">
           <div class="flex items-center gap-4">
-            <div class="h-[56px] w-[56px] shrink-0 overflow-hidden rounded-full border border-[#d8dee2] bg-surface-subdued">
+            <div class="h-[70px] w-[70px] shrink-0 overflow-hidden rounded-full border border-[#d8dee2] bg-surface-subdued">
               <img
                 v-if="doctorAvatar"
                 :src="doctorAvatar"
@@ -19,11 +19,11 @@
             </div>
 
             <div class="min-w-0">
-              <div class="text-base font-semibold leading-[1.2] text-interactive md:text-lg">
+              <div class="font-semibold text-interactive leading-none">
                 {{ doctorDisplayName }}
               </div>
 
-              <div v-if="doctorSpeciality" class="mt-1 text-sm leading-[1.2] text-action-primary">
+              <div v-if="doctorSpeciality" class="mt-1 text-xs text-action-primary">
                 {{ doctorSpeciality }}
               </div>
             </div>
@@ -35,7 +35,7 @@
             Адрес приёма
           </div>
 
-          <div class="mt-2 text-base leading-[1.2] text-interactive">
+          <div class="mt-2 text-sm md:text-base leading-[1.2] text-interactive">
             {{ addressLine }}
           </div>
         </div>
@@ -45,7 +45,7 @@
             Дата и время
           </div>
 
-          <div class="mt-2 text-base leading-[1.2] text-interactive">
+          <div class="mt-2 text-sm md:text-base leading-[1.2] text-interactive">
             {{ formattedDateTime }}
           </div>
         </div>
