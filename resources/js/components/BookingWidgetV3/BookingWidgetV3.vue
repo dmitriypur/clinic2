@@ -1,7 +1,8 @@
 <template>
-  <Modal
+  <BookingWidgetModal
     :open="open"
     :zIndexOverride="49"
+    :layoutMode="widgetLayoutMode"
     closeButtonHiddenOnMobile
     @close="handleClose"
   >
@@ -147,7 +148,7 @@
         </div>
       </div>
     </div>
-  </Modal>
+  </BookingWidgetModal>
 </template>
 
 <script>
@@ -167,7 +168,7 @@ import {
   getDoctorSelectSortOrders,
 } from "../../services/bookingOrdering";
 
-const Modal = () => import("../Modal");
+const BookingWidgetModal = () => import("./components/BookingWidgetModal.vue");
 const StartStep = () => import("./components/StartStep.vue");
 const BirthDateStep = () => import("./components/BirthDateStep.vue");
 const DoctorSelectStep = () => import("./components/DoctorSelectStep.vue");
@@ -181,7 +182,7 @@ const SuccessStep = () => import("./components/SuccessStep.vue");
 export default {
   name: "BookingWidgetV3",
   components: {
-    Modal,
+    BookingWidgetModal,
     StartStep,
     BirthDateStep,
     DoctorSelectStep,
@@ -252,6 +253,11 @@ export default {
     };
   },
   computed: {
+    widgetLayoutMode() {
+      return this.currentStep === "doctor-schedule" || this.currentStep === "clinic-schedule"
+        ? "schedule"
+        : "default";
+    },
     currentCityId() {
       if (!this.allCities || !this.allCities.length) {
         return null;
@@ -1481,7 +1487,6 @@ export default {
           clinicId: this.selectedClinic.id,
           branchId: this.selectedBranch.id,
         });
-
         const items = Array.isArray(response?.data)
           ? response.data
           : Array.isArray(response?.items)

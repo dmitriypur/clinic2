@@ -1,23 +1,18 @@
 <template>
-  <div class="doctor-schedule-step bg-white">
+  <div class="doctor-schedule-step bg-white rounded-3xl overflow-hidden">
     <div class="flex items-start justify-between gap-4">
-      <div class="w-full flex flex-col-reverse md:flex-row flex-wrap items-center gap-3 md:gap-6">
+      <div class="w-full flex flex-col-reverse md:flex-row flex-wrap items-center gap-3 md:gap-6 md:px-10 md:py-7">
         <h2 class="hidden md:block text-center text-[28px] font-semibold leading-[1.2] text-interactive md:text-[34px]">
           Выберите дату, время и филиал
         </h2>
-        <span
-          class="hidden inline-flex h-[22px] items-center justify-center rounded-[4px] bg-[#F6F7F9] px-5 text-xs font-semibold leading-[1.2] text-[#1D1D1D] shadow-[0_0_1.8px_0_rgba(31,52,98,0.26)]"
-        >
-          {{ stepChipText }}
-        </span>
       </div>
     </div>
 
-    <div class="hidden md:block mt-5 h-px w-full bg-surface-subdued md:mt-7"></div>
+    <div class="hidden md:block h-px w-full bg-surface-subdued"></div>
 
     <div class="md:bg-surface-subdued">
         <div class="grid grid-cols-1 items-stretch lg:grid-cols-[460px_460px] lg:justify-between">
-          <div v-show="showCalendarPane" class="md:p-6 bg-white">
+          <div v-show="showCalendarPane" class="p-4 pb-6 md:p-8 md:pb-10 bg-white">
             <div class="flex items-center justify-center gap-4">
               <button
                 type="button"
@@ -109,7 +104,7 @@
             </div>
           </div>
 
-          <div v-show="showBranchPane" class="md:p-6">
+          <div v-show="showBranchPane" class="px-4 py-5 md:p-6">
             <p class="text-lg font-semibold text-center md:text-left">Выбранный врач</p>
             <div class="rounded-full border-2 border-[#e6ebef] bg-white p-2 mt-4 md:mt-2">
               <div class="flex items-center gap-4">
@@ -158,7 +153,7 @@
               <div
                 v-else
                 ref="branchesList"
-                class="doctor-schedule-step__branches-scroll h-full max-h-64 max-h-[210px] space-y-4 overflow-y-auto pr-3"
+                class="doctor-schedule-step__branches-scroll h-full max-h-64 md:max-h-[250px] space-y-4 overflow-y-auto pr-3"
                 @scroll="handleBranchScroll"
               >
                 <button

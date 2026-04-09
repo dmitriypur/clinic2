@@ -1,18 +1,18 @@
 <template>
-  <div class="clinic-schedule-step bg-white">
+  <div class="clinic-schedule-step bg-white rounded-3xl overflow-hidden">
     <div class="flex items-start justify-between gap-4">
-      <div class="w-full flex flex-col-reverse md:flex-row flex-wrap items-center gap-3 md:gap-6">
+      <div class="w-full flex flex-col-reverse md:flex-row flex-wrap items-center gap-3 md:gap-6 md:px-10 md:py-7">
         <h2 class="hidden md:block text-center text-[28px] font-semibold leading-[1.2] text-interactive md:text-[34px]">
           Выберите дату, время и специалиста
         </h2>
       </div>
     </div>
 
-    <div class="hidden md:block mt-5 h-px w-full bg-surface-subdued md:mt-7"></div>
+    <div class="hidden md:block h-px w-full bg-surface-subdued"></div>
 
     <div class="md:bg-surface-subdued">
       <div class="grid grid-cols-1 items-stretch lg:grid-cols-[460px_460px] lg:justify-between">
-        <div v-show="showCalendarPane" class="md:p-6 md:pl-0 bg-white">
+        <div v-show="showCalendarPane" class="p-4 pb-6 md:p-8 md:pb-10 bg-white">
           <div>
             <div class="flex items-center justify-center gap-4">
               <button
@@ -59,7 +59,7 @@
               Время
             </div>
 
-            <div class="mx-auto mt-4 w-full max-w-[444px] min-h-[92px] md:min-h-[60px]">
+            <div class="mx-auto mt-4 w-full max-w-[444px] min-h-[92px]">
                 <div
                   v-if="loadingDoctors || loading"
                   class="grid grid-cols-4 md:grid-cols-5 gap-1"
@@ -108,7 +108,7 @@
 
         <div
           v-show="showDoctorsPane"
-          class="clinic-schedule-step__doctor-pane md:p-6 md:pr-4"
+          class="clinic-schedule-step__doctor-pane p-4 md:p-6 md:pr-4"
         >
           <div v-if="!hasDoctors && !loadingDoctors" class="flex h-full items-center">
             <div class="w-full rounded-[16px] border border-surface-subdued bg-[#F6F7F9] px-5 py-6 text-center">
@@ -138,9 +138,10 @@
             </div>
 
             <div class="relative mt-6 md:mt-2 md:px-0">
+              <div class="absolute inset-x-0 top-0 z-10 h-10 bg-gradient-to-t from-transparent via-white/30 to-white md:via-[#EBF0F3]/30 md:to-[#EBF0F3] pointer-events-none"></div>
               <div
                 ref="doctorList"
-                class="clinic-schedule-step__doctor-list h-full max-h-64 max-h-[460px] space-y-4 overflow-y-auto md:pr-2"
+                class="clinic-schedule-step__doctor-list h-full max-h-64 max-h-[400px] md:max-h-[465px] space-y-3 overflow-y-auto md:pr-2"
                 @scroll="handleDoctorListScroll"
               >
                 <button
@@ -219,6 +220,8 @@
                   :style="{ top: `${doctorListScrollThumbTop}px` }"
                 ></div>
               </div>
+
+              <div class="absolute inset-x-0 bottom-0 z-10 h-10 bg-gradient-to-t from-white via-white/70 md:from-[#EBF0F3] md:via-[#EBF0F3]/70 to-transparent pointer-events-none"></div>
             </div>
 
             <div v-if="isMobile" class="mx-auto mt-6 md:mt-8 flex w-full max-w-[444px] flex-col gap-4">

@@ -33,7 +33,7 @@ export default {
   computed: {
     className() {
       return classNames(
-        'relative max-h-none',
+        'relative max-h-none rounded-3xl',
         this.vertical ? 'overflow-y-auto' : 'overflow-y-hidden',
         this.horizontal ? 'overflow-x-auto' : 'overflow-x-hidden',
         this.topShadow && !this.bottomShadow && 'shadow-scrollable-top',
