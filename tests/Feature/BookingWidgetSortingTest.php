@@ -183,13 +183,75 @@ class BookingWidgetSortingTest extends TestCase
         ]);
     }
 
-    private function createCity(string $name = 'Москва', string $slug = 'moskva'): City
+    public function test_booking_clinic_branches_endpoint_enriches_payload_for_explicit_site_city(): void
+    {
+        $moscow = $this->createCity(
+            name: 'Москва',
+            slug: 'moskva',
+            branches: [[
+                'name' => 'Москва ВДНХ',
+                'external_id' => 'branch-1',
+                'address' => 'Москва, адрес из админки',
+                'metro' => 'ВДНХ',
+            ]]
+        );
+
+        $kirov = $this->createCity(
+            name: 'Киров',
+            slug: 'kirov',
+            branches: [[
+                'name' => 'Киров Центр',
+                'external_id' => 'branch-1',
+                'address' => 'Киров, адрес из админки',
+                'metro' => 'Центральная',
+            ]]
+        );
+
+        Http::fake([
+            'https://adminzrenie.ru/api/v1/clinics/2/branches*' => Http::response([
+                'data' => [
+                    [
+                        'id' => 501,
+                        'external_id' => 'branch-1',
+                        'name' => 'Филиал из API',
+                        'address' => 'Адрес из API',
+                        'metro' => 'Метро из API',
+                    ],
+                    [
+                        'id' => 502,
+                        'external_id' => 'branch-2',
+                        'name' => 'Филиал 2 из API',
+                        'address' => 'Адрес 2 из API',
+                        'metro' => 'Метро 2 из API',
+                    ],
+                ],
+            ]),
+        ]);
+
+        $moscowResponse = $this->getJson('/api/booking/clinics/2/branches?site_city_id=' . $moscow->id . '&city_id=10');
+        $moscowResponse->assertOk();
+        $moscowResponse->assertJsonPath('data.0.address', 'Москва, адрес из админки');
+        $moscowResponse->assertJsonPath('data.0.metro', 'ВДНХ');
+        $moscowResponse->assertJsonPath('data.0.city', 'Москва');
+        $moscowResponse->assertJsonPath('data.1.address', 'Адрес 2 из API');
+        $moscowResponse->assertJsonPath('data.1.metro', 'Метро 2 из API');
+        $moscowResponse->assertJsonPath('data.1.city', 'Москва');
+
+        $kirovResponse = $this->getJson('/api/booking/clinics/2/branches?site_city_id=' . $kirov->id . '&city_id=10');
+        $kirovResponse->assertOk();
+        $kirovResponse->assertJsonPath('data.0.address', 'Киров, адрес из админки');
+        $kirovResponse->assertJsonPath('data.0.metro', 'Центральная');
+        $kirovResponse->assertJsonPath('data.0.city', 'Киров');
+    }
+
+    private function createCity(string $name = 'Москва', string $slug = 'moskva', array $branches = []): City
     {
         return City::query()->create([
             'name' => $name,
             'slug' => $slug,
             'is_default' => true,
             'active' => true,
+            'branches' => $branches,
         ]);
     }
 

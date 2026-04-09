@@ -174,9 +174,9 @@
                   :disabled="branch.enabled === false"
                   @click="$emit('select-branch', branch)"
                 >
-                  <div class="flex items-center gap-2 text-xs font-semibold">
-                    <img src="/public/images/metro2.webp" alt="Иконка метро" class="w-3.5 h-3.5">
-                    <p>ВДНХ</p>
+                  <div v-if="branchMetro(branch)" class="flex items-center gap-2 text-xs font-semibold">
+                    <img src="/images/metro2.webp" alt="Иконка метро" class="w-3.5 h-3.5">
+                    <p>{{ branchMetro(branch) }}</p>
                   </div>
                   <span class="text-interactive">
                     {{ branchLabel(branch) }}
@@ -215,6 +215,7 @@
 import { eventBus } from "@/eventBus";
 import { getDoctorReceivesDisplay } from "@/utilities/doctorAge";
 import { addMonthsSafe } from "../utils/dateUtils";
+import { getBranchAddressLine, getBranchMetro } from "../utils/branchUtils";
 import {
   areSameSlot,
   isSlotAvailable as isSlotAvailableUtil,
@@ -394,11 +395,10 @@ export default {
       this.handleDate(nextDate);
     },
     branchLabel(branch) {
-      if (!branch) {
-        return "Филиал";
-      }
-
-      return branch.address || branch.name || branch.title || "Филиал";
+      return getBranchAddressLine(branch);
+    },
+    branchMetro(branch) {
+      return getBranchMetro(branch);
     },
     handleBranchScroll() {
       this.updateBranchScrollThumb();

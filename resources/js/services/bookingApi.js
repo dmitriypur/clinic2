@@ -82,6 +82,12 @@ class BookingApiService {
     return payload;
   }
 
+  getSiteCityId() {
+    const siteCityId = Number(window.config?.booking?.siteCityId);
+
+    return Number.isFinite(siteCityId) ? siteCityId : null;
+  }
+
   /**
    * Получить список городов
    * GET /api/v1/cities
@@ -203,13 +209,18 @@ class BookingApiService {
   }
 
   /**
-   * Получить филиалы клиники
-   * GET /api/v1/clinics/{clinic_id}/branches?city_id=
+   * Получить филиалы клиники, обогащённые локальными данными сайта
+   * GET /api/booking/clinics/{clinic_id}/branches?city_id=&site_city_id=
    */
   async getClinicBranches(clinicId, cityId = null) {
     try {
-      const response = await this.client.get(`/clinics/${clinicId}/branches`, {
-        params: cityId ? { city_id: cityId } : undefined,
+      const params = {
+        site_city_id: this.getSiteCityId() || undefined,
+        city_id: cityId || undefined,
+      };
+
+      const response = await axios.get(`/api/booking/clinics/${clinicId}/branches`, {
+        params,
       });
       const payload = response.data;
       const list = Array.isArray(payload?.data) ? payload.data : payload || [];

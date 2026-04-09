@@ -80,8 +80,7 @@ class CityResource extends Resource
                         TextInput::make('postal_code')
                             ->label('Индекс'),
                         TextInput::make('address')
-                            ->label('Адрес')
-                            ->columnSpanFull(),
+                            ->label('Адрес'),
                         TextInput::make('metro')
                             ->label('Метро'),
                         TextInput::make('coordinates')
@@ -107,21 +106,19 @@ class CityResource extends Resource
                                 TextInput::make('postal_code')
                                     ->label('Индекс'),
                                 TextInput::make('address')
-                                    ->label('Адрес')
-                                    ->columnSpanFull(),
+                                    ->label('Адрес'),
                                 TextInput::make('metro')
                                     ->label('Метро'),
                                 TextInput::make('coordinates')
                                     ->label('Координаты (lat, lng)'),
                                 TextInput::make('schedule')
-                                    ->label('Режим работы')
-                                    ->columnSpanFull(),
+                                    ->label('Режим работы'),
                                 TextInput::make('price')
                                     ->label('Акционная цена'),
                                 TextInput::make('external_id')
                                     ->label('External ID'),
                             ])
-                            ->columnSpanFull()
+                            ->columns(2)
                             ->collapsed()
                             ->itemLabel(fn (array $state): ?string => $state['name'] ?? null),
                     ]),

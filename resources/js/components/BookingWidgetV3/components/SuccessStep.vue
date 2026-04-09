@@ -37,6 +37,8 @@
 </template>
 
 <script>
+import { getBranchFullLocation } from "../utils/branchUtils";
+
 const PrimaryButton = () => import("./shared/PrimaryButton.vue");
 
 export default {
@@ -48,6 +50,10 @@ export default {
     },
     clinicName: {
       type: String,
+      default: null,
+    },
+    selectedBranch: {
+      type: Object,
       default: null,
     },
     branchName: {
@@ -69,6 +75,7 @@ export default {
       return `${this.appointmentDate.toLocaleDateString('ru-RU')} ${this.appointmentTime}`;
     },
     addressLine() {
+      if (this.selectedBranch) return getBranchFullLocation(this.selectedBranch);
       if (this.branchName) return this.branchName;
       if (this.clinicName) return this.clinicName;
       return '—';

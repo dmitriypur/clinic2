@@ -149,6 +149,7 @@ class Clinic
             'detectedCity' => $detectedCity,
             'cities' => $preparedCities,
             'booking' => [
+                'siteCityId' => $currentCity?->id,
                 'allowedClinicIds' => config('zrenie-clinic.booking_allowed_clinic_ids', []),
                 'formVariant' => $generalSettings->booking_form_variant ?? 'old',
                 'doctorSortOrders' => $bookingWidgetOrderingService->getDoctorOrderMapForCity($currentCity?->id),

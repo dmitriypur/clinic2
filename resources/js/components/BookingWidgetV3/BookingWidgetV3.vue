@@ -128,6 +128,7 @@
           v-else-if="currentStep === 'success'"
           :doctorName="selectedDoctor?.name"
           :clinicName="selectedClinic?.name"
+          :selectedBranch="selectedBranch"
           :branchName="selectedBranch?.name"
           :appointmentDate="selectedDate"
           :appointmentTime="selectedSlot?.time"
