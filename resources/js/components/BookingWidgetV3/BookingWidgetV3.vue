@@ -2,7 +2,6 @@
   <Modal
     :open="open"
     :zIndexOverride="49"
-    :flushSection="isScheduleStep"
     closeButtonHiddenOnMobile
     @close="handleClose"
   >
@@ -253,9 +252,6 @@ export default {
     };
   },
   computed: {
-    isScheduleStep() {
-      return this.currentStep === "doctor-schedule" || this.currentStep === "clinic-schedule";
-    },
     currentCityId() {
       if (!this.allCities || !this.allCities.length) {
         return null;

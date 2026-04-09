@@ -31,7 +31,7 @@
 
         <div class="flex grow overflow-x-hidden md:rounded-t-lg min-w-full md:min-w-[500px] md:min-h-[300px]">
           <Scrollable shadow class="w-full">
-            <Section :flush="flushSection">
+            <Section>
               <slot/>
             </Section>
           </Scrollable>
@@ -105,7 +105,6 @@ export default {
       type: Array,
       default: null,
     },
-    flushSection: Boolean,
   },
 
   computed: {
