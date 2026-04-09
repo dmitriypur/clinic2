@@ -137,7 +137,6 @@
           :selectedSlot="selectedSlot"
           :isSubmitting="isSubmitting"
           :initialBirthDate="patientBirthDateIso"
-          :previewMode="isPreviewMode"
           :stepChipText="formStepChipText"
           ref="patientForm"
           @close="handleClose"
@@ -293,14 +292,6 @@ export default {
       return this.currentStep === "doctor-schedule" || this.currentStep === "clinic-schedule" || this.currentStep === "date-select"
         ? "schedule"
         : "default";
-    },
-    isPreviewMode() {
-      if (typeof window === "undefined") {
-        return false;
-      }
-
-      const params = new URLSearchParams(window.location.search);
-      return params.get("booking_preview") === "1";
     },
     currentCityId() {
       if (!this.allCities || !this.allCities.length) {
@@ -1669,12 +1660,6 @@ export default {
           comment: formData.comment || null,
           appointment_source: "site",
         };
-
-        if (this.isPreviewMode) {
-          await new Promise((resolve) => setTimeout(resolve, 150));
-          this.currentStep = "success";
-          return;
-        }
 
         await bookingApi.createApplication(applicationData);
         this.currentStep = "success";

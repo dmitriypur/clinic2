@@ -85,7 +85,7 @@
     <div class="mx-auto mt-6 md:mt-8 flex flex-col-reverse md:flex-row w-full max-w-[444px] gap-4">
       <SecondaryButton @click="$emit('back')">Назад</SecondaryButton>
       <PrimaryButton :disabled="isSubmitting" @click="handleSubmit">
-        {{ submitButtonText }}
+        {{ isSubmitting ? "Отправка..." : "Записаться" }}
       </PrimaryButton>
     </div>
   </div>
@@ -124,10 +124,6 @@ export default {
       default: null,
     },
     isSubmitting: {
-      type: Boolean,
-      default: false,
-    },
-    previewMode: {
       type: Boolean,
       default: false,
     },
@@ -172,13 +168,6 @@ export default {
         year: "numeric",
       });
       return `${date} в ${this.selectedSlot.time}`;
-    },
-    submitButtonText() {
-      if (this.isSubmitting) {
-        return this.previewMode ? "Открываем экран..." : "Отправка...";
-      }
-
-      return this.previewMode ? "Показать результат" : "Записаться";
     },
   },
   methods: {
