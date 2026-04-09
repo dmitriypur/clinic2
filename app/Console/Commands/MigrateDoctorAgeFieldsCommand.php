@@ -54,6 +54,7 @@ class MigrateDoctorAgeFieldsCommand extends Command
 
                     $extra['age_min_months'] = $range['min_years'] !== null ? $range['min_years'] * 12 : null;
                     $extra['age_max_months'] = $range['max_years'] !== null ? $range['max_years'] * 12 : null;
+                    $extra['receives_text'] = $legacyReceives;
 
                     if (!$dryRun) {
                         $doctor->forceFill(['extra' => $extra])->saveQuietly();
