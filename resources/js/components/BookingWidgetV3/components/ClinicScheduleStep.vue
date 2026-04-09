@@ -589,7 +589,7 @@ export default {
       }
 
       if (this.flowMode === "date") {
-        if (this.mobileStage !== "calendar") {
+        if (this.mobileStage !== "calendar" && this.mobileStage !== "doctor") {
           this.mobileStage = "calendar";
         }
         return;

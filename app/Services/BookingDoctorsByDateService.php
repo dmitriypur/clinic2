@@ -82,13 +82,24 @@ class BookingDoctorsByDateService
                 $branchId
             );
 
-            $items = collect($dates)
+            $allEntries = collect($dates)
                 ->map(function (string $date) use ($payloads, $siteCity): array {
+                    $entries = $this->bookingWidgetApiService->extractList($payloads[$date] ?? []);
+                    return $entries;
+                })
+                ->flatten(1)
+                ->values()
+                ->all();
+
+            $siteDoctorsByUuid = $this->buildSiteDoctorsMap($allEntries);
+
+            $items = collect($dates)
+                ->map(function (string $date) use ($payloads, $siteCity, $siteDoctorsByUuid): array {
                     $entries = $this->enrichDoctorEntries(
                         $this->bookingWidgetApiService->extractList($payloads[$date] ?? []),
-                        $siteCity
+                        $siteCity,
+                        $siteDoctorsByUuid
                     );
-
                     $availableEntries = collect($entries)
                         ->filter(fn (array $entry): bool => (int) ($entry['available_slots'] ?? 0) > 0)
                         ->values();
@@ -113,13 +124,13 @@ class BookingDoctorsByDateService
         });
     }
 
-    private function enrichDoctorEntries(array $entries, ?City $siteCity): array
+    private function enrichDoctorEntries(array $entries, ?City $siteCity, ?array $siteDoctorsByUuid = null): array
     {
         if ($entries === []) {
             return [];
         }
 
-        $siteDoctorsByUuid = $this->buildSiteDoctorsMap($entries);
+        $siteDoctorsByUuid = $siteDoctorsByUuid ?? $this->buildSiteDoctorsMap($entries);
 
         return collect($entries)
             ->map(function ($entry) use ($siteDoctorsByUuid, $siteCity) {
@@ -216,9 +227,13 @@ class BookingDoctorsByDateService
     {
         $branch = [
             'id' => data_get($entry, 'branch_id'),
+            'external_id' => data_get($entry, 'branch_external_id')
+                ?: data_get($entry, 'branch.external_id')
+                ?: data_get($entry, 'branch.externalId'),
             'name' => data_get($entry, 'branch_name'),
             'title' => data_get($entry, 'branch_name'),
             'address' => data_get($entry, 'branch_address'),
+            'metro' => data_get($entry, 'branch_metro') ?: data_get($entry, 'branch.metro'),
             'city' => $siteCity?->name,
         ];
 

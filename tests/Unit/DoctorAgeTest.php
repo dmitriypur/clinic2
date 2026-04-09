@@ -12,10 +12,10 @@ class DoctorAgeTest extends TestCase
     /** @test */
     public function it_builds_default_display_from_structured_months(): void
     {
-        $this->assertSame('с рождения', DoctorAge::buildDisplay(0, null));
-        $this->assertSame('с 1 месяца', DoctorAge::buildDisplay(1, null));
-        $this->assertSame('с 3 лет до 17 лет', DoctorAge::buildDisplay(36, 204));
-        $this->assertSame('до 17 лет', DoctorAge::buildDisplay(null, 204));
+        $this->assertSame('Ведет прием с 0', DoctorAge::buildDisplay(0, null));
+        $this->assertSame('Ведет прием с 1 месяца', DoctorAge::buildDisplay(1, null));
+        $this->assertSame('Ведет прием с 3 лет до 17 лет', DoctorAge::buildDisplay(36, 204));
+        $this->assertSame('Ведет прием до 17 лет', DoctorAge::buildDisplay(null, 204));
     }
 
     /** @test */

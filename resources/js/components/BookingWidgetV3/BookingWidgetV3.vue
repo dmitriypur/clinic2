@@ -1773,10 +1773,6 @@ export default {
         ) {
           this.doctorFlowLastAvailableDate = lastAvailableDate;
         }
-        console.log(
-          "[BookingWidgetV3] doctorFlowHighlightedDates",
-          dates.map((d) => this.formatDateForApi(d))
-        );
       } catch (e) {
         this.doctorFlowHighlightedDates = [];
       }
@@ -1846,10 +1842,6 @@ export default {
         ) {
           this.clinicFlowLastAvailableDate = lastAvailableDate;
         }
-        console.log(
-          "[BookingWidgetV3] clinicFlowHighlightedDates",
-          dates.map((d) => this.formatDateForApi(d))
-        );
       } catch (e) {
         this.clinicFlowHighlightedDates = [];
       }
