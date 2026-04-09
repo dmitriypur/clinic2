@@ -175,7 +175,7 @@
                   @click="$emit('select-branch', branch)"
                 >
                   <div v-if="branchMetro(branch)" class="flex items-center gap-2 text-xs font-semibold">
-                    <img src="/images/metro2.webp" alt="Иконка метро" class="w-3.5 h-3.5">
+                    <img :src="metroIconSrc()" alt="Иконка метро" class="w-3.5 h-3.5">
                     <p>{{ branchMetro(branch) }}</p>
                   </div>
                   <span class="text-interactive">
@@ -221,6 +221,7 @@ import {
   isSlotAvailable as isSlotAvailableUtil,
 } from "../utils/slotUtils";
 
+const METRO_ICON_SRC = "/images/metro2.webp";
 const PrimaryButton = () => import("./shared/PrimaryButton.vue");
 const SecondaryButton = () => import("./shared/SecondaryButton.vue");
 
@@ -399,6 +400,9 @@ export default {
     },
     branchMetro(branch) {
       return getBranchMetro(branch);
+    },
+    metroIconSrc() {
+      return METRO_ICON_SRC;
     },
     handleBranchScroll() {
       this.updateBranchScrollThumb();

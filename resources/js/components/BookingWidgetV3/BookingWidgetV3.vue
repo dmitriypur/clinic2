@@ -2,6 +2,7 @@
   <Modal
     :open="open"
     :zIndexOverride="49"
+    :flushSection="isScheduleStep"
     closeButtonHiddenOnMobile
     @close="handleClose"
   >
@@ -82,6 +83,7 @@
         <ClinicScheduleStep
           v-else-if="currentStep === 'clinic-schedule'"
           :selectedDoctor="selectedDoctor"
+          :selectedBranch="selectedBranch"
           :doctors="clinicDoctors"
           :doctorShiftMap="clinicDoctorShiftMap"
           :selectedDoctorId="selectedDoctor?.id"
@@ -251,6 +253,9 @@ export default {
     };
   },
   computed: {
+    isScheduleStep() {
+      return this.currentStep === "doctor-schedule" || this.currentStep === "clinic-schedule";
+    },
     currentCityId() {
       if (!this.allCities || !this.allCities.length) {
         return null;
