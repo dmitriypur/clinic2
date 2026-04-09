@@ -88,6 +88,13 @@ class BookingApiService {
     return Number.isFinite(siteCityId) ? siteCityId : null;
   }
 
+  getBookingProxyParams(params = {}) {
+    return {
+      site_city_id: this.getSiteCityId() || undefined,
+      ...params,
+    };
+  }
+
   /**
    * Получить список городов
    * GET /api/v1/cities
@@ -243,6 +250,48 @@ class BookingApiService {
           branch_id: branchId || undefined,
         },
       });
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Получить список врачей на выбранную дату, обогащённый локальными данными сайта
+   * GET /api/booking/cities/{city_id}/doctors-by-date
+   */
+  async getDoctorsByDate(cityId, date, birthDate = null) {
+    try {
+      const response = await axios.get(`/api/booking/cities/${cityId}/doctors-by-date`, {
+        params: this.getBookingProxyParams({
+          date,
+          birth_date: birthDate || undefined,
+        }),
+      });
+
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Получить подсветку календаря для ветки "выбрать дату"
+   * GET /api/booking/cities/{city_id}/doctors-by-date/calendar
+   */
+  async getDoctorsByDateCalendarAvailability(cityId, dateFrom, dateTo, birthDate = null) {
+    try {
+      const response = await axios.get(
+        `/api/booking/cities/${cityId}/doctors-by-date/calendar`,
+        {
+          params: this.getBookingProxyParams({
+            date_from: dateFrom,
+            date_to: dateTo,
+            birth_date: birthDate || undefined,
+          }),
+        }
+      );
+
       return response.data;
     } catch (error) {
       throw this.handleError(error);

@@ -27,6 +27,7 @@
       
       <button
         class="rounded-2xl flex md:flex-col items-center gap-3 border border-interactive bg-white py-4 px-6 md:py-6 md:px-4 text-sm text-interactive w-full min-w-40 hover:border-action-primary hover:bg-[#FBEDDF]"
+        @click="$emit('select-mode', 'date')"
       >
       <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
       <g clip-path="url(#clip0_5420_1176)">

@@ -99,7 +99,7 @@
 
             <div class="mx-auto mt-6 md:mt-8 flex flex-col-reverse md:flex-row w-full max-w-[444px] gap-4">
               <SecondaryButton @click="handleBackClick">Назад</SecondaryButton>
-              <PrimaryButton :disabled="!selectedSlot || !doctors.length" @click="$emit('next')">
+              <PrimaryButton :disabled="calendarPrimaryButtonDisabled" @click="handleCalendarPrimaryClick">
                 Далее
               </PrimaryButton>
             </div>
@@ -137,7 +137,7 @@
               Специалисты
             </div>
 
-            <div class="relative mt-6 md:mt-2 md:px-0">
+            <div class="relative mt-6 md:mt-2 md:px-0 min-h-[300px]">
               <div class="absolute inset-x-0 top-0 z-10 h-10 bg-gradient-to-t from-transparent via-white/30 to-white md:via-[#EBF0F3]/30 md:to-[#EBF0F3] pointer-events-none"></div>
               <div
                 ref="doctorList"
@@ -146,7 +146,7 @@
               >
                 <button
                   v-for="doctor in doctors"
-                  :key="doctor.id"
+                  :key="doctorCardKey(doctor)"
                   type="button"
                   class="clinic-schedule-step__doctor-card w-full rounded-[16px] border-2 p-3 md:p-4 text-left transition-colors before:content-none"
                   :class="doctorCardClass(doctor)"
@@ -180,12 +180,12 @@
                         {{ doctorSpeciality(doctor) }}
                       </div>
 
-                      <div v-if="selectedBranchAddress" class="mt-2 md:mt-1 text-sm text-interactive flex flex-col md:flex-row md:gap-1">
-                        <div v-if="selectedBranchMetro" class="flex items-center gap-2 text-xs font-semibold text-interactive">
+                      <div v-if="doctorBranchAddress(doctor)" class="mt-2 md:mt-1 text-sm text-interactive flex flex-col md:flex-row md:gap-1">
+                        <div v-if="doctorBranchMetro(doctor)" class="flex items-center gap-2 text-xs font-semibold text-interactive">
                           <img :src="metroIconSrc()" alt="Иконка метро" class="h-3.5 w-3.5">
-                          <span>{{ selectedBranchMetro }}, </span>
+                          <span>{{ doctorBranchMetro(doctor) }}, </span>
                         </div>
-                        {{ selectedBranchAddress }}
+                        {{ doctorBranchAddress(doctor) }}
                       </div>
 
                       <div class="mt-1 md:mt-3 flex items-end justify-between gap-3">
@@ -225,10 +225,10 @@
             </div>
 
             <div v-if="isMobile" class="mx-auto mt-6 md:mt-8 flex w-full max-w-[444px] flex-col gap-4">
-              <PrimaryButton :disabled="!canProceedFromDoctor" @click="goToMobileCalendarStage">
+              <PrimaryButton :disabled="doctorPrimaryButtonDisabled" @click="handleDoctorPrimaryClick">
                 Далее
               </PrimaryButton>
-              <SecondaryButton @click="$emit('back')">Назад</SecondaryButton>
+              <SecondaryButton @click="handleDoctorBackClick">Назад</SecondaryButton>
             </div>
           </div>
         </div>
@@ -240,7 +240,7 @@
 <script>
 import { eventBus } from "@/eventBus";
 import { addMonthsSafe } from "../utils/dateUtils";
-import { getBranchAddressLine, getBranchMetro } from "../utils/branchUtils";
+import { getBranchMetro } from "../utils/branchUtils";
 import {
   areSameSlot,
   isSlotAvailable as isSlotAvailableUtil,
@@ -271,6 +271,10 @@ export default {
       default: () => ({}),
     },
     selectedDoctorId: {
+      type: [String, Number],
+      default: null,
+    },
+    selectedDoctorKey: {
       type: [String, Number],
       default: null,
     },
@@ -310,6 +314,10 @@ export default {
       type: String,
       default: "Для указанной даты рождения подходящих специалистов не найдено",
     },
+    flowMode: {
+      type: String,
+      default: "clinic",
+    },
   },
   data() {
     return {
@@ -317,7 +325,7 @@ export default {
       minDate: new Date(),
       viewportWidth:
         typeof window !== "undefined" ? window.innerWidth : 1024,
-      mobileStage: "doctor",
+      mobileStage: this.flowMode === "date" ? "calendar" : "doctor",
       doctorListScrollThumbTop: 0,
       showDoctorListScrollThumb: false,
     };
@@ -327,10 +335,10 @@ export default {
       return this.viewportWidth < 768;
     },
     showDoctorsPane() {
-      return !this.isMobile || this.mobileStage === "doctor";
+      return !this.isMobile || this.mobileStage === "doctor" || (this.flowMode === "date" && !this.hasDoctors);
     },
     showCalendarPane() {
-      return !this.isMobile || this.mobileStage === "calendar";
+      return !this.isMobile || this.mobileStage === "calendar" || (this.flowMode === "date" && !this.hasDoctors);
     },
     mobileTitle() {
       return this.mobileStage === "calendar" ? "Выберите дату и время" : "Выберите специалиста";
@@ -343,8 +351,19 @@ export default {
         return this.selectedDoctor;
       }
 
+      if (this.selectedDoctorKey !== null && this.selectedDoctorKey !== undefined) {
+        const byKey = this.doctors.find(
+          (doctor) => this.doctorSelectionKey(doctor) === this.selectedDoctorKey
+        );
+        if (byKey) {
+          return byKey;
+        }
+      }
+
       if (this.selectedDoctorId != null) {
-        const byId = this.doctors.find((doctor) => doctor?.id === this.selectedDoctorId);
+        const byId = this.doctors.find(
+          (doctor) => this.doctorApiId(doctor) === this.selectedDoctorId
+        );
         if (byId) {
           return byId;
         }
@@ -354,6 +373,20 @@ export default {
     },
     canProceedFromDoctor() {
       return Boolean(this.activeDoctor?.id);
+    },
+    calendarPrimaryButtonDisabled() {
+      if (this.isMobile && this.flowMode === "date") {
+        return !this.selectedSlot || !this.doctors.length;
+      }
+
+      return !this.selectedSlot || !this.doctors.length;
+    },
+    doctorPrimaryButtonDisabled() {
+      if (this.flowMode === "date") {
+        return !this.selectedSlot || !this.canProceedFromDoctor;
+      }
+
+      return !this.canProceedFromDoctor;
     },
     monthTitle() {
       const date = this.internalDate instanceof Date
@@ -373,20 +406,6 @@ export default {
     skeletonSlotsCount() {
       return 10;
     },
-    selectedBranchMetro() {
-      return getBranchMetro(this.selectedBranch);
-    },
-    selectedBranchAddress() {
-      const rawAddress = this.selectedBranch?.address;
-
-      if (rawAddress === null || rawAddress === undefined) {
-        return null;
-      }
-
-      const normalized = String(rawAddress).trim();
-
-      return normalized || null;
-    },
     calendarAttributes() {
       if (!Array.isArray(this.highlightedDates) || !this.highlightedDates.length) {
         return [];
@@ -404,6 +423,18 @@ export default {
     },
   },
   methods: {
+    doctorSelectionKey(doctor) {
+      return doctor?.entry_key || doctor?.id || null;
+    },
+    doctorApiId(doctor) {
+      return doctor?.doctor_id ?? doctor?.id ?? null;
+    },
+    doctorCardKey(doctor) {
+      return this.doctorSelectionKey(doctor) || this.doctorApiId(doctor) || "doctor-card";
+    },
+    doctorBranch(doctor) {
+      return doctor?.branch || this.selectedBranch || null;
+    },
     doctorName(doctor) {
       return doctor?.name || doctor?.full_name || "Выберите врача";
     },
@@ -432,6 +463,10 @@ export default {
         return "border-action-primary bg-action-primary/5";
       }
 
+      if (this.flowMode === "date") {
+        return "border-interactive/15 bg-white";
+      }
+
       if (this.hasDoctorShifts(doctor)) {
         return "border-action-primary bg-white";
       }
@@ -439,15 +474,40 @@ export default {
       return "border-interactive/15 text-interactive/55 bg-white";
     },
     isDoctorSelected(doctor) {
-      return Boolean(this.activeDoctor?.id != null && doctor?.id === this.activeDoctor?.id);
+      const activeKey = this.doctorSelectionKey(this.activeDoctor);
+      const currentKey = this.doctorSelectionKey(doctor);
+
+      if (activeKey && currentKey) {
+        return currentKey === activeKey;
+      }
+
+      return Boolean(
+        this.doctorApiId(this.activeDoctor) != null &&
+        this.doctorApiId(doctor) === this.doctorApiId(this.activeDoctor)
+      );
     },
     hasDoctorShifts(doctor) {
-      const doctorId = doctor?.id;
-      if (doctorId == null) {
+      const doctorKey = this.doctorSelectionKey(doctor) || this.doctorApiId(doctor);
+      if (doctorKey == null) {
         return false;
       }
 
-      return Boolean(this.doctorShiftMap[String(doctorId)]);
+      return Boolean(this.doctorShiftMap[String(doctorKey)]);
+    },
+    doctorBranchMetro(doctor) {
+      return getBranchMetro(this.doctorBranch(doctor));
+    },
+    doctorBranchAddress(doctor) {
+      const branch = this.doctorBranch(doctor);
+      const rawAddress = branch?.address;
+
+      if (rawAddress === null || rawAddress === undefined) {
+        return null;
+      }
+
+      const normalized = String(rawAddress).trim();
+
+      return normalized || null;
     },
     handleOpenVideo(doctor) {
       if (!this.doctorHasVideo(doctor)) {
@@ -479,7 +539,35 @@ export default {
 
       this.mobileStage = "calendar";
     },
+    goToMobileDoctorStage() {
+      if (!this.doctors.length) {
+        return;
+      }
+
+      this.mobileStage = "doctor";
+    },
+    handleCalendarPrimaryClick() {
+      if (this.isMobile && this.flowMode === "date") {
+        this.goToMobileDoctorStage();
+        return;
+      }
+
+      this.$emit("next");
+    },
+    handleDoctorPrimaryClick() {
+      if (this.flowMode === "date") {
+        this.$emit("next");
+        return;
+      }
+
+      this.goToMobileCalendarStage();
+    },
     handleBackClick() {
+      if (this.isMobile && this.flowMode === "date" && this.mobileStage === "calendar") {
+        this.$emit("back");
+        return;
+      }
+
       if (this.isMobile && this.mobileStage === "calendar") {
         this.mobileStage = "doctor";
         return;
@@ -487,8 +575,23 @@ export default {
 
       this.$emit("back");
     },
+    handleDoctorBackClick() {
+      if (this.isMobile && this.flowMode === "date") {
+        this.mobileStage = "calendar";
+        return;
+      }
+
+      this.$emit("back");
+    },
     syncMobileStage() {
       if (!this.isMobile) {
+        return;
+      }
+
+      if (this.flowMode === "date") {
+        if (this.mobileStage !== "calendar") {
+          this.mobileStage = "calendar";
+        }
         return;
       }
 
@@ -705,8 +808,12 @@ export default {
   font-weight: 600 !important;
 }
 
+.vc-highlights.vc-day-layer + .clinic-schedule-step .booking-calendar .vc-day-content.booking-calendar-day-has-slots {
+  color: #ffffff !important;
+}
+
 .clinic-schedule-step .booking-calendar .is-today .vc-day-content.booking-calendar-day-has-slots {
-  color: #ffffff;
+  color: #ffffff !important;
 }
 
 @media (max-width: 767px) {

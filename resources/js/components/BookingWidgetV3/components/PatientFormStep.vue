@@ -56,7 +56,8 @@
             v-model="form.birth_date"
             type="date"
             :max="maxBirthDate"
-            class="w-full rounded-lg text-sm px-6 py-4 bg-surface-subdued outline-icon-subdued"
+            disabled
+            class="w-full rounded-lg text-sm px-6 py-4 bg-surface-subdued text-interactive/70 outline-icon-subdued cursor-not-allowed"
             :class="errors.birth_date ? 'border border-[#E04F4F]' : ''"
             placeholder="Дата рождения"
           />
@@ -92,11 +93,7 @@
 
 <script>
 import {
-  calculateAgeMonths,
-  calculateAgeFromBirthDate,
-  extractDoctorAgeRange,
   formatDateForInput,
-  formatDoctorAgeRangeText,
 } from "../utils/doctorAgeUtils";
 
 const StepHeader = () => import("./shared/StepHeader.vue");
@@ -161,9 +158,6 @@ export default {
     maxBirthDate() {
       return formatDateForInput(new Date());
     },
-    selectedDoctorAgeRange() {
-      return extractDoctorAgeRange(this.selectedDoctor);
-    },
     formattedAppointment() {
       if (!this.selectedDate || !this.selectedSlot?.time) {
         return "Дата и время не выбраны";
@@ -210,27 +204,6 @@ export default {
       if (!this.form.birth_date) {
         this.errors.birth_date = "Укажите дату рождения";
         isValid = false;
-      } else {
-        const patientAge = calculateAgeFromBirthDate(this.form.birth_date);
-        if (patientAge === null) {
-          this.errors.birth_date = "Укажите корректную дату рождения";
-          isValid = false;
-        } else {
-          const patientAgeMonths = calculateAgeMonths(this.form.birth_date);
-          const { minAgeMonths, maxAgeMonths } = this.selectedDoctorAgeRange;
-          const isBelowMinimum =
-            Number.isFinite(minAgeMonths) && patientAgeMonths < minAgeMonths;
-          const isAboveMaximum =
-            Number.isFinite(maxAgeMonths) && patientAgeMonths > maxAgeMonths;
-
-          if (isBelowMinimum || isAboveMaximum) {
-            this.errors.birth_date =
-              `Возраст пациента не подходит. ${formatDoctorAgeRangeText(
-                this.selectedDoctorAgeRange
-              )}`;
-            isValid = false;
-          }
-        }
       }
 
       if (!this.form.phone || this.form.phone.replace(/\D/g, "").length < 11) {
@@ -261,23 +234,10 @@ export default {
     setGeneralError(message) {
       this.generalError = message;
     },
-    calculateAge(dateStr) {
-      const age = calculateAgeFromBirthDate(dateStr);
-      return Number.isFinite(age) ? age : 0;
-    },
   },
   watch: {
     initialBirthDate(value) {
-      if (!this.form.birth_date) {
-        this.form.birth_date = value || "";
-      }
-    },
-    "form.birth_date"(value) {
-      if (!value) {
-        this.showParentField = false;
-        return;
-      }
-      this.showParentField = this.calculateAge(value) < 18;
+      this.form.birth_date = value || "";
     },
   },
 };

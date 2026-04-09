@@ -32,6 +32,113 @@ class BookingWidgetApiService
         ], static fn ($value) => filled($value)));
     }
 
+    public function getDoctorsByDate(
+        int $cityId,
+        string $date,
+        ?string $birthDate = null,
+        ?int $clinicId = null,
+        ?int $branchId = null,
+    ): array {
+        return $this->get("/cities/{$cityId}/doctors-by-date", array_filter([
+            'date' => $date,
+            'birth_date' => $birthDate,
+            'clinic_id' => $clinicId,
+            'branch_id' => $branchId,
+        ], static fn ($value) => filled($value)));
+    }
+
+    public function getDoctorsByDateBatch(
+        int $cityId,
+        array $dates,
+        ?string $birthDate = null,
+        ?int $clinicId = null,
+        ?int $branchId = null,
+    ): array {
+        $normalizedDates = collect($dates)
+            ->map(fn ($date) => trim((string) $date))
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($normalizedDates->isEmpty()) {
+            return [];
+        }
+
+        $results = [];
+        $missingRequests = [];
+
+        foreach ($normalizedDates as $date) {
+            $path = "/cities/{$cityId}/doctors-by-date";
+            $query = array_filter([
+                'date' => $date,
+                'birth_date' => $birthDate,
+                'clinic_id' => $clinicId,
+                'branch_id' => $branchId,
+            ], static fn ($value) => filled($value));
+            $cacheKey = $this->makeCacheKey($path, $query);
+
+            if (Cache::has($cacheKey)) {
+                $results[$date] = (array) Cache::get($cacheKey, []);
+                continue;
+            }
+
+            $missingRequests[$date] = [
+                'path' => $path,
+                'query' => $query,
+                'cache_key' => $cacheKey,
+            ];
+        }
+
+        if (empty($missingRequests)) {
+            return $results;
+        }
+
+        $responses = Http::pool(function (Pool $pool) use ($missingRequests) {
+            $requests = [];
+
+            foreach ($missingRequests as $date => $request) {
+                $requests[$date] = $pool
+                    ->as($date)
+                    ->acceptJson()
+                    ->baseUrl($this->resolveBaseUrl())
+                    ->connectTimeout(self::CONNECT_TIMEOUT_SECONDS)
+                    ->timeout(self::REQUEST_TIMEOUT_SECONDS)
+                    ->get($request['path'], $request['query']);
+            }
+
+            return $requests;
+        });
+
+        foreach ($missingRequests as $date => $request) {
+            $response = $responses[$date] ?? null;
+
+            if ($response instanceof Response && $response->successful()) {
+                $payload = $this->decodeResponse(
+                    $response,
+                    $request['path'],
+                    $request['query'],
+                    ['date' => $date, 'mode' => 'batch']
+                );
+            } else {
+                $payload = $this->performGet(
+                    $request['path'],
+                    $request['query'],
+                    ['date' => $date, 'mode' => 'batch-fallback']
+                );
+            }
+
+            Cache::put(
+                $request['cache_key'],
+                $payload,
+                now()->addSeconds(self::CACHE_TTL_SECONDS)
+            );
+
+            $results[$date] = $payload;
+        }
+
+        return $results;
+    }
+
     public function getClinicsByCity(int $cityId): array
     {
         return $this->get("/cities/{$cityId}/clinics");
