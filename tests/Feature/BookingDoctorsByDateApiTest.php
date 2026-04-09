@@ -120,83 +120,29 @@ class BookingDoctorsByDateApiTest extends TestCase
         $visibleDoctorUuid = '00000000-0000-0000-0000-000000000201';
 
         $siteDoctorsService = Mockery::mock(BookingSiteDoctorsService::class);
-        $siteDoctorsService->shouldReceive('getPayloadByUuids')
+        $siteDoctorsService->shouldReceive('getVisibleUuidsForCity')
             ->once()
-            ->andReturn([
-                'data' => [[
-                    'uuid' => $visibleDoctorUuid,
-                    'full_name' => 'Петров Пётр',
-                    'speciality' => 'Офтальмолог',
-                    'avatar_url' => null,
-                    'avatar_image' => null,
-                    'video_url' => null,
-                    'excerpt' => null,
-                    'receives_display' => 'Ведет прием с 3 лет',
-                    'age_min_months' => 36,
-                    'age_max_months' => null,
-                    'receives_text' => null,
-                    'extra' => [],
-                ]],
-                'meta' => [
-                    'hidden_uuids' => ['00000000-0000-0000-0000-000000000202'],
-                ],
-            ]);
+            ->andReturn([$visibleDoctorUuid]);
         $this->app->instance(BookingSiteDoctorsService::class, $siteDoctorsService);
 
         Http::fake([
-            'https://adminzrenie.ru/api/v1/cities/10/doctors-by-date*' => function ($request) use ($visibleDoctorUuid) {
-                $date = $request->data()['date'] ?? null;
-
-                if ($date === '2026-04-10') {
-                    return Http::response([
-                        'data' => [
-                            [
-                                'id' => 'entry-visible',
-                                'doctor_id' => 2001,
-                                'clinic_id' => 2,
-                                'clinic_name' => 'Клиника 2',
-                                'branch_id' => 501,
-                                'branch_external_id' => 'branch-1',
-                                'branch_name' => 'Филиал из API',
-                                'branch_address' => 'Адрес из API',
-                                'date' => '2026-04-10',
-                                'external_id' => $visibleDoctorUuid,
-                                'available_slots' => 3,
-                                'first_available_time' => '09:00',
-                            ],
-                            [
-                                'id' => 'entry-hidden',
-                                'doctor_id' => 2002,
-                                'clinic_id' => 2,
-                                'clinic_name' => 'Клиника 2',
-                                'branch_id' => 501,
-                                'branch_external_id' => 'branch-1',
-                                'branch_name' => 'Филиал из API',
-                                'branch_address' => 'Адрес из API',
-                                'date' => '2026-04-10',
-                                'external_id' => '00000000-0000-0000-0000-000000000202',
-                                'available_slots' => 5,
-                                'first_available_time' => '08:30',
-                            ],
-                        ],
-                    ]);
-                }
-
+            'https://adminzrenie.ru/api/v1/cities/10/doctors-by-date/calendar*' => function ($request) use ($visibleDoctorUuid) {
+                $this->assertSame($visibleDoctorUuid, data_get($request->data(), 'doctor_uuids'));
                 return Http::response([
                     'data' => [
                         [
-                            'id' => 'entry-unknown',
-                            'doctor_id' => 2003,
-                            'clinic_id' => 2,
-                            'clinic_name' => 'Клиника 2',
-                            'branch_id' => 501,
-                            'branch_external_id' => 'branch-1',
-                            'branch_name' => 'Филиал из API',
-                            'branch_address' => 'Адрес из API',
+                            'date' => '2026-04-10',
+                            'total_slots' => 3,
+                            'available_slots' => 3,
+                            'available_doctors' => 1,
+                            'first_available_time' => '09:00',
+                        ],
+                        [
                             'date' => '2026-04-11',
-                            'external_id' => '00000000-0000-0000-0000-000000000299',
-                            'available_slots' => 4,
-                            'first_available_time' => '12:00',
+                            'total_slots' => 0,
+                            'available_slots' => 0,
+                            'available_doctors' => 0,
+                            'first_available_time' => null,
                         ],
                     ],
                 ]);

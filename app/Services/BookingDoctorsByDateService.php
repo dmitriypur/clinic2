@@ -73,54 +73,53 @@ class BookingDoctorsByDateService
             $branchId
         ): array {
             $dates = $this->buildDateRange($dateFrom, $dateTo);
+            $visibleDoctorUuids = $this->bookingSiteDoctorsService->getVisibleUuidsForCity($siteCity);
 
-            $payloads = $this->bookingWidgetApiService->getDoctorsByDateBatch(
+            if ($visibleDoctorUuids === []) {
+                return ['data' => $this->buildEmptyCalendarItems($dates)];
+            }
+
+            $payload = $this->bookingWidgetApiService->getDoctorsByDateCalendarAvailability(
                 $bookingCityId,
-                $dates,
+                $dateFrom,
+                $dateTo,
                 $birthDate,
+                $visibleDoctorUuids,
                 $clinicId,
                 $branchId
             );
 
-            $allEntries = collect($dates)
-                ->map(function (string $date) use ($payloads, $siteCity): array {
-                    $entries = $this->bookingWidgetApiService->extractList($payloads[$date] ?? []);
-                    return $entries;
-                })
-                ->flatten(1)
-                ->values()
-                ->all();
-
-            $siteDoctorsByUuid = $this->buildSiteDoctorsMap($allEntries);
-
             $items = collect($dates)
-                ->map(function (string $date) use ($payloads, $siteCity, $siteDoctorsByUuid): array {
-                    $entries = $this->enrichDoctorEntries(
-                        $this->bookingWidgetApiService->extractList($payloads[$date] ?? []),
-                        $siteCity,
-                        $siteDoctorsByUuid
-                    );
-                    $availableEntries = collect($entries)
-                        ->filter(fn (array $entry): bool => (int) ($entry['available_slots'] ?? 0) > 0)
-                        ->values();
-
-                    return [
+                ->mapWithKeys(fn (string $date): array => [
+                    $date => [
                         'date' => $date,
-                        'total_slots' => $availableEntries->sum(fn (array $entry): int => (int) ($entry['available_slots'] ?? 0)),
-                        'available_slots' => $availableEntries->sum(fn (array $entry): int => (int) ($entry['available_slots'] ?? 0)),
-                        'available_doctors' => $availableEntries->count(),
-                        'first_available_time' => $availableEntries
-                            ->pluck('first_available_time')
-                            ->filter()
-                            ->sort()
-                            ->values()
-                            ->first(),
-                    ];
-                })
-                ->values()
-                ->all();
+                        'total_slots' => 0,
+                        'available_slots' => 0,
+                        'available_doctors' => 0,
+                        'first_available_time' => null,
+                    ],
+                ]);
 
-            return ['data' => $items];
+            foreach ($this->bookingWidgetApiService->extractList($payload) as $item) {
+                if (! is_array($item) || blank($item['date'] ?? null)) {
+                    continue;
+                }
+
+                $date = (string) $item['date'];
+                if (! $items->has($date)) {
+                    continue;
+                }
+
+                $items[$date] = [
+                    'date' => $date,
+                    'total_slots' => (int) data_get($item, 'total_slots', 0),
+                    'available_slots' => (int) data_get($item, 'available_slots', 0),
+                    'available_doctors' => (int) data_get($item, 'available_doctors', 0),
+                    'first_available_time' => data_get($item, 'first_available_time'),
+                ];
+            }
+
+            return ['data' => $items->values()->all()];
         });
     }
 
@@ -263,6 +262,20 @@ class BookingDoctorsByDateService
         }
 
         return $dates;
+    }
+
+    private function buildEmptyCalendarItems(array $dates): array
+    {
+        return collect($dates)
+            ->map(fn (string $date): array => [
+                'date' => $date,
+                'total_slots' => 0,
+                'available_slots' => 0,
+                'available_doctors' => 0,
+                'first_available_time' => null,
+            ])
+            ->values()
+            ->all();
     }
 
     private function makeCacheKey(

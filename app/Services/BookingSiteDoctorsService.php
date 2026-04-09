@@ -10,6 +10,31 @@ class BookingSiteDoctorsService
 {
     private const CACHE_TTL_SECONDS = 60;
 
+    public function getVisibleUuidsForCity(?\App\Models\City $city): array
+    {
+        $cacheKey = 'booking-site-doctors:visible-uuids:' . ($city?->id ?? 'global');
+
+        return Cache::remember($cacheKey, now()->addSeconds(self::CACHE_TTL_SECONDS), function () use ($city): array {
+            $query = Doctor::withoutGlobalScopes()
+                ->publiclyVisible()
+                ->select('uuid');
+
+            if ($city) {
+                $query->where(function ($builder) use ($city) {
+                    $builder->whereHas('cities', fn ($cityQuery) => $cityQuery->where('cities.id', $city->id))
+                        ->orDoesntHave('cities');
+                });
+            }
+
+            return $query->pluck('uuid')
+                ->map(fn ($uuid) => Str::lower(trim((string) $uuid)))
+                ->filter(fn (string $uuid) => Str::isUuid($uuid))
+                ->unique()
+                ->values()
+                ->all();
+        });
+    }
+
     public function normalizeUuids(array $uuids): array
     {
         return collect($uuids)

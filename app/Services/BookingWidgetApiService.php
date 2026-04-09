@@ -47,6 +47,32 @@ class BookingWidgetApiService
         ], static fn ($value) => filled($value)));
     }
 
+    public function getDoctorsByDateCalendarAvailability(
+        int $cityId,
+        string $dateFrom,
+        string $dateTo,
+        ?string $birthDate = null,
+        array $doctorUuids = [],
+        ?int $clinicId = null,
+        ?int $branchId = null,
+    ): array {
+        $normalizedDoctorUuids = collect($doctorUuids)
+            ->map(fn ($uuid) => trim((string) $uuid))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
+        return $this->get("/cities/{$cityId}/doctors-by-date/calendar", array_filter([
+            'date_from' => $dateFrom,
+            'date_to' => $dateTo,
+            'birth_date' => $birthDate,
+            'doctor_uuids' => $normalizedDoctorUuids !== [] ? implode(',', $normalizedDoctorUuids) : null,
+            'clinic_id' => $clinicId,
+            'branch_id' => $branchId,
+        ], static fn ($value) => filled($value)));
+    }
+
     public function getDoctorsByDateBatch(
         int $cityId,
         array $dates,
