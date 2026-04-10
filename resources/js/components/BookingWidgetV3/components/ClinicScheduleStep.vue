@@ -110,14 +110,11 @@
           v-show="showDoctorsPane"
           class="clinic-schedule-step__doctor-pane p-4 md:p-6 md:pr-4"
         >
-          <div v-if="!hasDoctors && !loadingDoctors" class="flex h-full items-center">
-            <div class="w-full rounded-[16px] border border-surface-subdued bg-[#F6F7F9] px-5 py-6 text-center">
-              <p class="text-base font-semibold leading-[1.3] text-interactive">
+          <div v-if="!hasDoctors && !loadingDoctors" class="hidden md:flex h-full items-center">
+            <div class="w-full px-5 py-6 text-center">
+              <p class="text-base font-semibold text-interactive">
                 {{ emptyDoctorsMessage }}
               </p>
-              <div class="mx-auto mt-6 flex w-full max-w-[444px] flex-col gap-4">
-                <SecondaryButton @click="$emit('back')">Назад</SecondaryButton>
-              </div>
             </div>
           </div>
 
@@ -137,11 +134,11 @@
               Специалисты
             </div>
 
-            <div class="relative mt-6 md:mt-2 md:px-0 min-h-[300px]">
-              <div class="absolute inset-x-0 top-0 z-10 h-10 bg-gradient-to-t from-transparent via-white/30 to-white md:via-[#EBF0F3]/30 md:to-[#EBF0F3] pointer-events-none"></div>
+            <div class="relative mt-6 md:mt-3 md:px-0 min-h-[300px]">
+              
               <div
                 ref="doctorList"
-                class="clinic-schedule-step__doctor-list h-full max-h-64 max-h-[400px] md:max-h-[465px] space-y-3 overflow-y-auto md:pr-2"
+                class="clinic-schedule-step__doctor-list h-full max-h-64 max-h-[400px] md:max-h-[465px] space-y-3 overflow-y-auto md:pr-2 pb-7"
                 @scroll="handleDoctorListScroll"
               >
                 <button
@@ -312,7 +309,7 @@ export default {
     },
     emptyDoctorsMessage: {
       type: String,
-      default: "Для указанной даты рождения подходящих специалистов не найдено",
+      default: "По этому запросу специалисты не найдены",
     },
     flowMode: {
       type: String,
@@ -808,11 +805,18 @@ export default {
   font-weight: 600 !important;
 }
 
-.vc-highlights.vc-day-layer + .clinic-schedule-step .booking-calendar .vc-day-content.booking-calendar-day-has-slots {
+.clinic-schedule-step .booking-calendar .vc-highlights.vc-day-layer + .vc-day-content.booking-calendar-day-has-slots {
   color: #ffffff !important;
 }
 
 .clinic-schedule-step .booking-calendar .is-today .vc-day-content.booking-calendar-day-has-slots {
+  color: #ffffff !important;
+}
+
+.clinic-schedule-step .booking-calendar .is-today .vc-day-content.vc-focusable.vc-content.booking-calendar-day-has-slots{
+  color: #f5841f !important;
+}
+.clinic-schedule-step .booking-calendar .is-today .vc-highlights.vc-day-layer + .vc-day-content.vc-focusable.vc-content.booking-calendar-day-has-slots{
   color: #ffffff !important;
 }
 

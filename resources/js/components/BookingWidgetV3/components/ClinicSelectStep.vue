@@ -4,7 +4,7 @@
       Выберите адрес
     </StepHeader>
 
-    <div class="mt-6 h-[206px] overflow-y-auto pr-1 md:min-w-[444px]">
+    <div class="mt-6 h-[320px] overflow-y-auto pr-1 md:min-w-[444px]">
       <button
         v-for="branch in branches"
         :key="branch.id"

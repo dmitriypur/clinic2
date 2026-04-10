@@ -636,4 +636,11 @@ export default {
 .doctor-schedule-step .booking-calendar .vc-highlights + .vc-day-content{
   color: #ffffff !important;
 }
+
+.clinic-schedule-step .booking-calendar .is-today .vc-day-content.vc-focusable.vc-content.booking-calendar-day-has-slots{
+  color: #f5841f !important;
+}
+.clinic-schedule-step .booking-calendar .is-today .vc-highlights.vc-day-layer + .vc-day-content.vc-focusable.vc-content.booking-calendar-day-has-slots{
+  color: #ffffff !important;
+}
 </style>

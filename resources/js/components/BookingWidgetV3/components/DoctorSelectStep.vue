@@ -16,7 +16,9 @@
       </span>
     </div>
 
-    <div class="mt-6 h-[300px] md:h-[380px] overflow-y-auto pr-1 md:w-[520px]">
+    <div class="relative">
+      
+    <div class="relative mt-6 h-[300px] md:h-[380px] overflow-y-auto pr-1 md:w-[520px]">
       <div
         v-if="!loading && !filteredDoctors.length"
         class="rounded-[12px] border border-surface-subdued bg-[#F6F7F9] px-4 py-4 text-sm font-medium text-interactive"
@@ -74,7 +76,8 @@
         
       </div>
     </div>
-
+    <div class="absolute inset-x-0 bottom-0 z-10 h-10 bg-gradient-to-t from-white via-white/70 to-transparent pointer-events-none"></div>
+    </div>
     <div v-if="loading" class="mt-4 text-sm text-[#1F3462]">Загрузка...</div>
 
     <div class="mt-6 flex flex-col md:flex-row-reverse gap-4">

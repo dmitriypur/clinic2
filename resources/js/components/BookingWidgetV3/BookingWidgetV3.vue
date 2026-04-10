@@ -491,6 +491,24 @@ export default {
         ? "Расписание на эту дату ещё не доступно"
         : "Данный врач не принимает в выбранный день";
     },
+    mergeLastAvailableDate(currentValue, nextValue) {
+      const currentIsValid =
+        currentValue instanceof Date && !Number.isNaN(currentValue.getTime());
+      const nextIsValid =
+        nextValue instanceof Date && !Number.isNaN(nextValue.getTime());
+
+      if (!currentIsValid) {
+        return nextIsValid ? nextValue : null;
+      }
+
+      if (!nextIsValid) {
+        return currentValue;
+      }
+
+      return nextValue.getTime() > currentValue.getTime()
+        ? nextValue
+        : currentValue;
+    },
     getDoctorApiId(doctor) {
       return doctor?.doctor_id ?? doctor?.id ?? null;
     },
@@ -1885,7 +1903,10 @@ export default {
             return new Date(year, month - 1, day);
           })
           .filter((value) => value instanceof Date && !Number.isNaN(value.getTime()));
-        this.dateFlowLastAvailableDate = cached.lastAvailableDate || null;
+        this.dateFlowLastAvailableDate = this.mergeLastAvailableDate(
+          this.dateFlowLastAvailableDate,
+          cached.lastAvailableDate || null
+        );
         return;
       }
 
@@ -1919,14 +1940,16 @@ export default {
           .filter((value) => value instanceof Date && !Number.isNaN(value.getTime()));
 
         this.dateFlowHighlightedDates = dates;
-        this.dateFlowLastAvailableDate = this.extractLastAvailableDate(items);
+        this.dateFlowLastAvailableDate = this.mergeLastAvailableDate(
+          this.dateFlowLastAvailableDate,
+          this.extractLastAvailableDate(items)
+        );
         this.setCacheEntry(this.dateFlowCalendarCacheByQuery, cacheKey, {
           items,
-          lastAvailableDate: this.dateFlowLastAvailableDate,
+          lastAvailableDate: this.extractLastAvailableDate(items),
         });
       } catch (e) {
         this.dateFlowHighlightedDates = [];
-        this.dateFlowLastAvailableDate = null;
       }
     },
     formatDateForApi(date) {
