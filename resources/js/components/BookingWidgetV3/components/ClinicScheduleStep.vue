@@ -164,7 +164,7 @@
                         v-if="doctorAvatar(doctor)"
                         :src="doctorAvatar(doctor)"
                         :alt="doctorName(doctor)"
-                        class="h-full w-full object-cover"
+                        class="h-full w-full object-contain object-top"
                         loading="lazy"
                       />
                     </div>

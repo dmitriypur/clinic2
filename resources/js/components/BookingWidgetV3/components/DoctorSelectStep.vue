@@ -43,7 +43,7 @@
               v-if="doctor.avatar_url"
               :src="doctor.avatar_url"
               :alt="doctor.name || 'Фото врача'"
-              class="h-full w-full object-cover"
+              class="h-full w-full object-contain object-top"
               loading="lazy"
             />
           </div>

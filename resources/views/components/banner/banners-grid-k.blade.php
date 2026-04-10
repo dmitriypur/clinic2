@@ -20,6 +20,10 @@
                         <div class="px-6 md:p-0 absolute left-0 w-full md:w-auto bottom-6 md:bottom-[10%] md:left-[7%] lg:bottom-[12%]">
                             <a href="{{ city_url($block->images[0]['url']) }}" class="block text-center py-4 btn-blue-gradient font-semibold text-white rounded w-full rounded-lg md:px-14 text-sm">Записаться на прием</a>
                         </div>
+                    @else
+                        <div class="px-6 md:p-0 absolute left-0 w-full md:w-auto bottom-6 md:bottom-[10%] md:left-[7%] lg:bottom-[12%]">
+                            <button @click="showCallbackModal(null, 'otpravka-formy')" class="block text-center py-4 btn-blue-gradient font-semibold text-white rounded w-full rounded-lg md:px-14 text-sm">Записаться на прием</button>
+                        </div>
                     @endif
                 </div>
                 <div class="swiper-slide md:col-span-5 row-span-1 relative rounded-xl lg:rounded-20 overflow-hidden">
@@ -39,6 +43,10 @@
                         <div class="px-4 md:p-0 absolute w-full md:w-auto left-0 bottom-6 md:left-[6%] md:bottom-[20%]">
                             <a href="{{ city_url($block->images[1]['url']) }}" class="block text-center py-4 md:py-3.5 px-12 btn-blue-gradient font-semibold text-white rounded-lg w-full text-sm">Записаться на прием</a>
                         </div>
+                    @else
+                        <div class="px-4 md:p-0 absolute w-full md:w-auto left-0 bottom-6 md:left-[6%] md:bottom-[20%]">
+                            <button @click="showCallbackModal(null, 'otpravka-formy')" class="block text-center py-4 md:py-3.5 px-12 btn-blue-gradient font-semibold text-white rounded-lg w-full text-sm">Записаться на прием</button>
+                        </div>
                     @endif
                 </div>
                 <div class="swiper-slide md:col-span-5 row-span-1 relative rounded-xl lg:rounded-20 overflow-hidden">
@@ -57,6 +65,10 @@
                     @if($block->images[2]['url'])
                         <div class="px-4 md:p-0 absolute w-full md:w-auto left-0 bottom-6 md:left-[6%] md:bottom-[20%]">
                             <a href="{{ city_url($block->images[1]['url']) }}" class="block text-center py-4 md:py-3.5 px-12 btn-blue-gradient font-semibold text-white rounded-lg w-full text-sm">Записаться на прием</a>
+                        </div>
+                    @else
+                        <div class="px-4 md:p-0 absolute w-full md:w-auto left-0 bottom-6 md:left-[6%] md:bottom-[20%]">
+                            <button @click="showCallbackModal(null, 'otpravka-formy')" class="block text-center py-4 md:py-3.5 px-12 btn-blue-gradient font-semibold text-white rounded-lg w-full text-sm">Записаться на прием</button>
                         </div>
                     @endif
                 </div>
