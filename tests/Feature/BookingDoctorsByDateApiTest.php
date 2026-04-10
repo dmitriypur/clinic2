@@ -165,6 +165,63 @@ class BookingDoctorsByDateApiTest extends TestCase
         $response->assertJsonPath('data.1.first_available_time', null);
     }
 
+    public function test_booking_doctor_branches_availability_endpoint_enriches_branch_cards_for_explicit_site_city(): void
+    {
+        $city = $this->createCity(
+            name: 'Москва',
+            slug: 'moskva',
+            branches: [[
+                'name' => 'Москва ВДНХ',
+                'external_id' => 'branch-1',
+                'address' => 'Москва, адрес из админки',
+                'metro' => 'ВДНХ',
+            ]]
+        );
+
+        Http::fake([
+            'https://adminzrenie.ru/api/v1/doctors/1001/branches-availability*' => function ($request) {
+                $this->assertSame('2026-04-10', data_get($request->data(), 'date'));
+                $this->assertSame(2, data_get($request->data(), 'clinic_id'));
+                $this->assertSame(10, data_get($request->data(), 'city_id'));
+
+                return Http::response([
+                    'data' => [[
+                        'id' => 501,
+                        'clinic_id' => 2,
+                        'city_id' => 10,
+                        'name' => 'Филиал из API',
+                        'address' => 'Адрес из API',
+                        'phone' => '+79990000000',
+                        'external_id' => 'branch-1',
+                        'integration_mode' => 'local',
+                        'clinic_name' => 'Клиника 2',
+                        'available_slots' => 3,
+                        'first_available_time' => '09:00',
+                        'has_available_slots' => true,
+                    ]],
+                    'meta' => [
+                        'default_branch_id' => 501,
+                    ],
+                ]);
+            },
+        ]);
+
+        $response = $this->getJson(
+            '/api/booking/doctors/1001/branches-availability?site_city_id=' . $city->id
+            . '&date=2026-04-10&clinic_id=2&city_id=10'
+        );
+
+        $response->assertOk();
+        $response->assertJsonPath('data.0.id', 501);
+        $response->assertJsonPath('data.0.address', 'Москва, адрес из админки');
+        $response->assertJsonPath('data.0.metro', 'ВДНХ');
+        $response->assertJsonPath('data.0.city', 'Москва');
+        $response->assertJsonPath('data.0.external_id', 'branch-1');
+        $response->assertJsonPath('data.0.available_slots', 3);
+        $response->assertJsonPath('data.0.first_available_time', '09:00');
+        $response->assertJsonPath('meta.default_branch_id', 501);
+    }
+
     private function createCity(string $name = 'Москва', string $slug = 'moskva', array $branches = []): City
     {
         return City::query()->create([

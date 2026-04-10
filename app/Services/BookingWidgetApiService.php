@@ -177,6 +177,19 @@ class BookingWidgetApiService
         ], static fn ($value) => filled($value)));
     }
 
+    public function getDoctorBranchesAvailability(
+        int $doctorId,
+        string $date,
+        ?int $clinicId = null,
+        ?int $cityId = null,
+    ): array {
+        return $this->get("/doctors/{$doctorId}/branches-availability", array_filter([
+            'date' => $date,
+            'clinic_id' => $clinicId,
+            'city_id' => $cityId,
+        ], static fn ($value) => filled($value)));
+    }
+
     public function getClinicBranchesBatch(array $clinicIds, ?int $cityId = null): array
     {
         $clinicIds = collect($clinicIds)

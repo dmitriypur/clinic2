@@ -58,7 +58,7 @@
               Время
             </div>
 
-            <div class="mx-auto mt-4 w-full max-w-[444px] min-h-[92px] md:min-h-[60px]">
+            <div class="mx-auto mt-4 w-full max-w-[444px] min-h-[92px]">
               <div
                 v-if="loading"
                 class="grid grid-cols-4 md:grid-cols-5 gap-1"
@@ -140,13 +140,13 @@
             <div class="relative mt-4 md:mt-2 px-4 md:px-0">
               <div
                 v-if="loadingBranches"
-                class="doctor-schedule-step__branches-scroll max-h-64 min-h-[272px] space-y-2 overflow-y-auto pr-3"
+                class="doctor-schedule-step__branches-scroll h-full max-h-64 md:max-h-[250px] space-y-4 overflow-y-auto pr-3"
                 aria-hidden="true"
               >
                 <div
                   v-for="n in branchSkeletonCount"
                   :key="`doctor-branch-skeleton-${n}`"
-                  class="h-[64px] w-full rounded-[12px] border-2 border-surface-subdued bg-surface-subdued animate-pulse"
+                  class="h-[24px] w-full rounded-xl bg-white animate-pulse"
                 ></div>
               </div>
 
@@ -342,7 +342,7 @@ export default {
       return this.doctor?.extra.price || null;
     },
     branchSkeletonCount() {
-      return 4;
+      return 3;
     },
     skeletonSlotsCount() {
       return 10;

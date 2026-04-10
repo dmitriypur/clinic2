@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\DoctorController;
+use App\Http\Controllers\Api\BookingDoctorBranchesAvailabilityController;
 use App\Http\Controllers\Api\BookingClinicBranchesController;
 use App\Http\Controllers\Api\BookingCityDoctorsByDateCalendarController;
 use App\Http\Controllers\Api\BookingCityDoctorsByDateController;
@@ -18,6 +19,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('review-filter', App\Http\Controllers\Api\ReviewController::class);
 Route::get('doctors/{doctor:ulid}', DoctorController::class);
 Route::get('booking/doctors', BookingDoctorsController::class);
+Route::get('booking/doctors/{doctor}/branches-availability', BookingDoctorBranchesAvailabilityController::class);
 Route::get('booking/cities/{city}/doctors-by-date', BookingCityDoctorsByDateController::class);
 Route::get('booking/cities/{city}/doctors-by-date/calendar', BookingCityDoctorsByDateCalendarController::class);
 Route::get('booking/clinics/{clinic}/branches', BookingClinicBranchesController::class);

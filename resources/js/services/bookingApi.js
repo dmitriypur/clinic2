@@ -239,6 +239,29 @@ class BookingApiService {
   }
 
   /**
+   * Получить филиалы выбранного врача с доступностью на дату, обогащённые локальными данными сайта
+   * GET /api/booking/doctors/{doctor_id}/branches-availability
+   */
+  async getDoctorBranchesAvailability(doctorId, date, clinicId = null, cityId = null) {
+    try {
+      const response = await axios.get(
+        `/api/booking/doctors/${doctorId}/branches-availability`,
+        {
+          params: this.getBookingProxyParams({
+            date,
+            clinic_id: clinicId || undefined,
+            city_id: cityId || undefined,
+          }),
+        }
+      );
+
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
    * Получить врачей клиники
    * GET /api/v1/clinics/{clinic_id}/doctors
    */

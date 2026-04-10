@@ -895,57 +895,47 @@ export default {
       }
     },
     async loadDoctorFlowBranches(clinicId) {
-      if (!clinicId) return;
+      if (!clinicId || !this.selectedDoctor || !this.selectedDate) {
+        this.doctorFlowBranches = [];
+        this.selectedBranch = null;
+        this.slots = [];
+        this.selectedSlot = null;
+        return;
+      }
       this.loadingDoctorFlowBranches = true;
       try {
-        const response = await bookingApi.getClinicBranches(
+        const response = await bookingApi.getDoctorBranchesAvailability(
+          this.getDoctorApiId(this.selectedDoctor),
+          this.formatDateForApi(this.selectedDate),
           clinicId,
           this.currentCityId
         );
-        const branches = response.data || response || [];
-        if (!this.selectedDoctor) {
-          this.doctorFlowBranches = branches.map((branch) => ({
-            ...branch,
-            enabled: true,
-          }));
-          return;
-        }
+        const branches = Array.isArray(response?.data)
+          ? response.data
+          : Array.isArray(response)
+          ? response
+          : [];
+        const defaultBranchId = response?.meta?.default_branch_id ?? null;
+        const normalizedBranches = branches.map((branch) => ({
+          ...branch,
+          enabled: true,
+        }));
 
-        const checkedBranches = await Promise.all(
-          branches.map(async (branch) => {
-            try {
-              const doctorResponse = await bookingApi.getClinicDoctors(
-                clinicId,
-                this.patientBirthDateIso || null,
-                branch.id
-              );
-              const doctors = doctorResponse.data || doctorResponse || [];
-              const hasDoctor = doctors.some(
-                (doctor) => doctor.id === this.selectedDoctor.id
-              );
-              return { ...branch, enabled: hasDoctor };
-            } catch (e) {
-              return { ...branch, enabled: false };
-            }
-          })
+        this.doctorFlowBranches = normalizedBranches;
+        await this.selectDoctorFlowBranchByDate(
+          clinicId,
+          normalizedBranches,
+          defaultBranchId
         );
-
-        const sorted = checkedBranches.sort((a, b) => {
-          const aEnabled = a.enabled !== false;
-          const bEnabled = b.enabled !== false;
-          if (aEnabled === bEnabled) {
-            return 0;
-          }
-          return aEnabled ? -1 : 1;
-        });
-
-        this.doctorFlowBranches = sorted;
-        await this.selectDoctorFlowBranchByDate(clinicId, sorted);
       } finally {
         this.loadingDoctorFlowBranches = false;
       }
     },
-    async selectDoctorFlowBranchByDate(clinicId, branches = this.doctorFlowBranches) {
+    async selectDoctorFlowBranchByDate(
+      clinicId,
+      branches = this.doctorFlowBranches,
+      preferredBranchId = null
+    ) {
       if (!clinicId || !this.selectedDoctor || !this.selectedDate) {
         this.selectedBranch = null;
         this.slots = [];
@@ -964,63 +954,19 @@ export default {
         return;
       }
 
-      this.loadingSlots = true;
-      try {
-        const currentDate =
-          this.selectedDate instanceof Date
-            ? this.selectedDate
-            : new Date(this.selectedDate || Date.now());
-        const dateStr = this.formatDateForApi(currentDate);
+      const currentBranchId = this.selectedBranch?.id;
+      const nextBranch =
+        enabledBranches.find(
+          (branch) => Number(branch.id) === Number(currentBranchId)
+        ) ||
+        enabledBranches.find(
+          (branch) => Number(branch.id) === Number(preferredBranchId)
+        ) ||
+        enabledBranches.find((branch) => branch.has_available_slots === true) ||
+        enabledBranches[0];
 
-        const branchSlotEntries = await Promise.all(
-          enabledBranches.map(async (branch) => {
-            try {
-              const slots = await this.getDoctorSlotsWithCache({
-                doctorId: this.selectedDoctor.id,
-                clinicId,
-                branchId: branch.id,
-                dateStr,
-              });
-              return [String(branch.id), slots];
-            } catch (e) {
-              return [String(branch.id), []];
-            }
-          })
-        );
-
-        const branchSlotsMap = Object.fromEntries(branchSlotEntries);
-        const branchesWithAvailableSlots = enabledBranches.filter((branch) => {
-          const slots = branchSlotsMap[String(branch.id)] || [];
-          return Array.isArray(slots) && slots.some((slot) => this.isSlotAvailable(slot));
-        });
-
-        if (!branchesWithAvailableSlots.length) {
-          const currentBranchId = this.selectedBranch?.id;
-          const fallbackBranch =
-            enabledBranches.find(
-              (branch) => Number(branch.id) === Number(currentBranchId)
-            ) || enabledBranches[0] || null;
-
-          this.selectedBranch = fallbackBranch;
-          this.slots = fallbackBranch
-            ? branchSlotsMap[String(fallbackBranch.id)] || []
-            : [];
-          this.selectedSlot = null;
-          return;
-        }
-
-        const currentBranchId = this.selectedBranch?.id;
-        const nextBranch =
-          branchesWithAvailableSlots.find(
-            (branch) => Number(branch.id) === Number(currentBranchId)
-          ) || branchesWithAvailableSlots[0];
-
-        this.selectedBranch = nextBranch;
-        this.slots = branchSlotsMap[String(nextBranch.id)] || [];
-        this.selectedSlot = null;
-      } finally {
-        this.loadingSlots = false;
-      }
+      this.selectedBranch = nextBranch;
+      await this.loadSlots({ autoSelectFirstAvailable: true });
     },
     async loadSlots(options = {}) {
       if (!this.selectedDoctor || !this.selectedDate) return;
@@ -1433,7 +1379,7 @@ export default {
       this.selectedDoctor = doctor;
       if (this.currentStep === "doctor-schedule" && this.selectedClinic?.id) {
         await this.loadDoctorFlowBranches(this.selectedClinic.id);
-        await this.updateDoctorFlowHighlightedDates();
+        void this.updateDoctorFlowHighlightedDates();
       }
       if (this.currentStep === "clinic-schedule") {
         await this.loadSlots();
@@ -1470,8 +1416,7 @@ export default {
       }
       if (this.currentStep === "doctor-schedule") {
         await this.loadDoctorFlowBranches(clinic.id);
-        await this.loadSlots();
-        await this.updateDoctorFlowHighlightedDates();
+        void this.updateDoctorFlowHighlightedDates();
       }
     },
     async handleBranchSelect(branch) {
@@ -1523,15 +1468,11 @@ export default {
       this.selectedDate = date;
       if (this.currentStep === "doctor-schedule") {
         if (this.selectedClinic?.id) {
-          if (this.selectedBranch?.id) {
-            await this.loadSlots();
-          } else {
-            await this.selectDoctorFlowBranchByDate(this.selectedClinic.id);
-          }
+          await this.loadDoctorFlowBranches(this.selectedClinic.id);
         } else {
           await this.loadSlots();
         }
-        await this.updateDoctorFlowHighlightedDates();
+        void this.updateDoctorFlowHighlightedDates();
         return;
       }
       if (this.currentStep === "clinic-schedule") {
@@ -1601,16 +1542,18 @@ export default {
         }
 
         const clinicId = this.selectedClinic?.id || null;
+        this.currentStep = "doctor-schedule";
+
         if (clinicId) {
           await this.loadDoctorFlowBranches(clinicId);
         } else {
           this.doctorFlowBranches = [];
+          this.selectedBranch = null;
           this.slots = [];
           this.selectedSlot = null;
         }
 
-        this.currentStep = "doctor-schedule";
-        await this.updateDoctorFlowHighlightedDates();
+        void this.updateDoctorFlowHighlightedDates();
       });
     },
     async goToClinicSchedule() {
