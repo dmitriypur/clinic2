@@ -772,6 +772,9 @@ new Vue({
           slidesPerView: 1,
           loop: true,
           spaceBetween: 20,
+          autoplay: {
+            delay: 3000,
+          },
           navigation: {
             nextEl: ".banner-grid-swiper-next",
             prevEl: ".banner-grid-swiper-prev",

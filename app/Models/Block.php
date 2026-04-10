@@ -156,6 +156,20 @@ class Block extends Model implements HasMedia, Sortable
         ]);
     }
 
+    public function getImageAltText(string $title): string
+    {
+        $settings = app(SeoSettings::class);
+
+        return Str::of($settings->image_alt_template)->replace('{h1}', $title)->value();
+    }
+
+    public function getImageTitleText(string $title): string
+    {
+        $settings = app(SeoSettings::class);
+
+        return Str::of($settings->image_title_template)->replace('{h1}', $title)->value();
+    }
+
     public function getImageUrl(string $collection): string
     {
         return $this->getFirstMediaUrl($collection);
