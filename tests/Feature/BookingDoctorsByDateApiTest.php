@@ -114,6 +114,7 @@ class BookingDoctorsByDateApiTest extends TestCase
                 'external_id' => 'branch-1',
                 'address' => 'Москва, адрес из админки',
                 'metro' => 'ВДНХ',
+                'price' => '1500',
             ]]
         );
 
@@ -175,6 +176,7 @@ class BookingDoctorsByDateApiTest extends TestCase
                 'external_id' => 'branch-1',
                 'address' => 'Москва, адрес из админки',
                 'metro' => 'ВДНХ',
+                'price' => '1500',
             ]]
         );
 
@@ -217,9 +219,57 @@ class BookingDoctorsByDateApiTest extends TestCase
         $response->assertJsonPath('data.0.metro', 'ВДНХ');
         $response->assertJsonPath('data.0.city', 'Москва');
         $response->assertJsonPath('data.0.external_id', 'branch-1');
+        $response->assertJsonPath('data.0.price', '1500');
         $response->assertJsonPath('data.0.available_slots', 3);
         $response->assertJsonPath('data.0.first_available_time', '09:00');
         $response->assertJsonPath('meta.default_branch_id', 501);
+    }
+
+    public function test_booking_doctor_branches_availability_endpoint_can_match_branch_by_phone_for_price_override(): void
+    {
+        $city = $this->createCity(
+            name: 'Москва',
+            slug: 'moskva',
+            branches: [[
+                'name' => 'Москва ВДНХ',
+                'address' => 'Москва, адрес из админки',
+                'metro' => 'ВДНХ',
+                'phone' => '+7 (999) 000-00-00',
+                'price' => '1000',
+            ]]
+        );
+
+        Http::fake([
+            'https://adminzrenie.ru/api/v1/doctors/1001/branches-availability*' => Http::response([
+                'data' => [[
+                    'id' => 501,
+                    'clinic_id' => 2,
+                    'city_id' => 10,
+                    'name' => 'Совсем другое название из API',
+                    'address' => 'Совсем другой адрес из API',
+                    'phone' => '79990000000',
+                    'external_id' => 'unknown-branch',
+                    'integration_mode' => 'local',
+                    'clinic_name' => 'Клиника 2',
+                    'available_slots' => 3,
+                    'first_available_time' => '09:00',
+                    'has_available_slots' => true,
+                ]],
+                'meta' => [
+                    'default_branch_id' => 501,
+                ],
+            ]),
+        ]);
+
+        $response = $this->getJson(
+            '/api/booking/doctors/1001/branches-availability?site_city_id=' . $city->id
+            . '&date=2026-04-10&clinic_id=2&city_id=10'
+        );
+
+        $response->assertOk();
+        $response->assertJsonPath('data.0.price', '1000');
+        $response->assertJsonPath('data.0.metro', 'ВДНХ');
+        $response->assertJsonPath('data.0.address', 'Москва, адрес из админки');
     }
 
     private function createCity(string $name = 'Москва', string $slug = 'moskva', array $branches = []): City

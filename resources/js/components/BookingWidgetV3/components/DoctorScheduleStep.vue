@@ -209,6 +209,7 @@
 <script>
 import { eventBus } from "@/eventBus";
 import { getDoctorReceivesDisplay } from "@/utilities/doctorAge";
+import { getDoctorDisplayPrice } from "@/utilities/doctorPrice";
 import { addMonthsSafe } from "../utils/dateUtils";
 import { getBranchAddressLine, getBranchMetro } from "../utils/branchUtils";
 import {
@@ -234,6 +235,10 @@ export default {
     branches: {
       type: Array,
       default: () => [],
+    },
+    selectedBranch: {
+      type: Object,
+      default: null,
     },
     selectedBranchId: {
       type: [String, Number],
@@ -339,7 +344,7 @@ export default {
       return this.doctor?.id || null;
     },
     doctorPrice() {
-      return this.doctor?.extra.price || null;
+      return getDoctorDisplayPrice(this.doctor, this.selectedBranch);
     },
     branchSkeletonCount() {
       return 3;

@@ -64,6 +64,7 @@
           :doctor="selectedDoctor"
           :clinic="selectedClinic"
           :branches="doctorFlowBranches"
+          :selectedBranch="selectedBranch"
           :selectedBranchId="selectedBranch?.id"
           :selectedDate="selectedDate"
           :highlightedDates="doctorFlowHighlightedDates"

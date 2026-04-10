@@ -58,7 +58,7 @@
               Стаж: {{ doctor.seniority || doctor.extra?.seniority || "—" }}, {{ doctorReceivesDisplay(doctor) }}
             </div>
             <div class="flex md:items-center justify-between md:justify-start md:gap-3 mt-1">
-              <p v-if="doctor.extra.price" class="text-xl font-semibold leading-normal">{{ doctor.extra?.price }} ₽</p>
+              <p v-if="doctorDisplayPrice(doctor)" class="text-xl font-semibold leading-normal">{{ doctorDisplayPrice(doctor) }} ₽</p>
               <button
                   v-if="doctorVideoUrl(doctor)"
                   type="button"
@@ -92,6 +92,7 @@
 <script>
 import { eventBus } from "@/eventBus";
 import { getDoctorReceivesDisplay } from "@/utilities/doctorAge";
+import { getDoctorDisplayPrice } from "@/utilities/doctorPrice";
 
 const StepHeader = () => import("./shared/StepHeader.vue");
 const PrimaryButton = () => import("./shared/PrimaryButton.vue");
@@ -131,6 +132,9 @@ export default {
   methods: {
     doctorReceivesDisplay(doctor) {
       return getDoctorReceivesDisplay(doctor) || "—";
+    },
+    doctorDisplayPrice(doctor) {
+      return getDoctorDisplayPrice(doctor);
     },
     doctorVideoUrl(doctor) {
       return doctor?.video_url || doctor?.actual_video_url || doctor?.video || null;

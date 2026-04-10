@@ -193,6 +193,7 @@ class BookingWidgetSortingTest extends TestCase
                 'external_id' => 'branch-1',
                 'address' => 'Москва, адрес из админки',
                 'metro' => 'ВДНХ',
+                'price' => '1500',
             ]]
         );
 
@@ -232,6 +233,7 @@ class BookingWidgetSortingTest extends TestCase
         $moscowResponse->assertOk();
         $moscowResponse->assertJsonPath('data.0.address', 'Москва, адрес из админки');
         $moscowResponse->assertJsonPath('data.0.metro', 'ВДНХ');
+        $moscowResponse->assertJsonPath('data.0.price', '1500');
         $moscowResponse->assertJsonPath('data.0.city', 'Москва');
         $moscowResponse->assertJsonPath('data.1.address', 'Адрес 2 из API');
         $moscowResponse->assertJsonPath('data.1.metro', 'Метро 2 из API');

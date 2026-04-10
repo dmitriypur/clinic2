@@ -236,6 +236,7 @@
 
 <script>
 import { eventBus } from "@/eventBus";
+import { getDoctorDisplayPrice } from "@/utilities/doctorPrice";
 import { addMonthsSafe } from "../utils/dateUtils";
 import { getBranchMetro } from "../utils/branchUtils";
 import {
@@ -447,7 +448,7 @@ export default {
       return doctor?.speciality || doctor?.specialization || "Специалист";
     },
     doctorPrice(doctor) {
-      return doctor?.extra?.price || null;
+      return getDoctorDisplayPrice(doctor, this.doctorBranch(doctor));
     },
     doctorHasVideo(doctor) {
       return Boolean(doctor?.video_url);
