@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Route;
+use Illuminate\Support\Facades\Cookie;
 use Tests\TestCase;
 
 class SetCityMiddlewareTest extends TestCase
@@ -111,6 +112,8 @@ class SetCityMiddlewareTest extends TestCase
     /** @test */
     public function force_city_query_allows_switching_doctor_page_back_to_default_city(): void
     {
+        Cookie::unqueue('manual_city_override');
+
         $defaultCity = new City();
         $defaultCity->slug = 'moscow';
         $defaultCity->is_default = true;
@@ -140,6 +143,7 @@ class SetCityMiddlewareTest extends TestCase
         $this->assertInstanceOf(RedirectResponse::class, $response);
         $this->assertSame(url('/doctors/ivanov'), $response->getTargetUrl());
         $this->assertSame(302, $response->getStatusCode());
+        $this->assertSame('moscow', Cookie::queued('manual_city_override')->getValue());
     }
 
     /** @test */
@@ -234,6 +238,65 @@ class SetCityMiddlewareTest extends TestCase
         $this->assertInstanceOf(RedirectResponse::class, $response);
         $this->assertSame(url('/kirov/doctors/ivanov'), $response->getTargetUrl());
         $this->assertSame('moscow', $session->get('detected_city')->slug);
+    }
+
+    /** @test */
+    public function manual_city_override_suppresses_geo_mismatch_popup_for_same_selected_city(): void
+    {
+        $selectedCity = new City();
+        $selectedCity->id = 1;
+        $selectedCity->slug = 'moscow';
+        $selectedCity->is_default = true;
+
+        $detectedCity = new City();
+        $detectedCity->id = 2;
+        $detectedCity->slug = 'kirov';
+        $detectedCity->is_default = false;
+
+        $cityService = $this->createMock(CityService::class);
+        $cityService->expects($this->any())
+            ->method('isGlobalPath')
+            ->with('doctors/ivanov')
+            ->willReturn(false);
+        $cityService->expects($this->exactly(2))
+            ->method('getCityBySlug')
+            ->with('moscow')
+            ->willReturn($selectedCity);
+        $cityService->expects($this->once())
+            ->method('getDefaultCity')
+            ->willReturn($selectedCity);
+        $cityService->expects($this->once())
+            ->method('setCurrentCity')
+            ->with($selectedCity);
+        $cityService->expects($this->once())
+            ->method('getCurrentCity')
+            ->willReturn($selectedCity);
+        $cityService->expects($this->once())
+            ->method('getActiveCities')
+            ->willReturn(new EloquentCollection([$selectedCity, $detectedCity]));
+
+        $geoIpService = $this->createMock(GeoIpService::class);
+        $geoIpService->expects($this->never())
+            ->method('getCityByIp');
+
+        $middleware = new SetCityMiddleware($cityService, $geoIpService);
+        $request = Request::create('/doctors/ivanov', 'GET');
+        $request->cookies->set('selected_city', 'moscow');
+        $request->cookies->set('manual_city_override', 'moscow');
+
+        $session = app('session.store');
+        $session->flush();
+        $session->start();
+        $request->setLaravelSession($session);
+
+        $route = new Route('GET', '/doctors/{handle}', ['uses' => fn() => response('ok')]);
+        $route->name('doctor.show');
+        $request->setRouteResolver(static fn() => $route->bind($request));
+
+        $response = $middleware->handle($request, static fn() => response('ok'));
+
+        $this->assertSame('ok', $response->getContent());
+        $this->assertNull($session->get('detected_city'));
     }
 
     /** @test */

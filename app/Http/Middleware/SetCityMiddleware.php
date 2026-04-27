@@ -16,6 +16,7 @@ class SetCityMiddleware
 {
     private const CITY_COOKIE_LIFETIME_MINUTES = 60 * 24 * 365;
     private const SELECTED_CITY_COOKIE = 'selected_city';
+    private const MANUAL_CITY_OVERRIDE_COOKIE = 'manual_city_override';
     private const REMEMBERED_CITY_REDIRECT_ROUTE_NAMES = [
         'review.index',
         'doctor.show',
@@ -103,6 +104,7 @@ class SetCityMiddleware
         }
 
         $this->rememberCity($forcedCity);
+        $this->rememberManualCityOverride($forcedCity);
         $this->forgetDetectedCity($request);
         $this->markMismatchCheckAsSkipped($request);
 
@@ -311,6 +313,12 @@ class SetCityMiddleware
             return;
         }
 
+        if ($this->hasManualCityOverrideForRememberedCity($request, $rememberedCity)) {
+            $this->forgetDetectedCity($request);
+
+            return;
+        }
+
         $detectedCity = $this->detectGeoCity($request);
 
         if (!$detectedCity || $detectedCity->id === $rememberedCity->id) {
@@ -337,6 +345,22 @@ class SetCityMiddleware
     {
         Cookie::queue('city_confirmed', 'true', self::CITY_COOKIE_LIFETIME_MINUTES);
         Cookie::queue(self::SELECTED_CITY_COOKIE, $city->slug, self::CITY_COOKIE_LIFETIME_MINUTES);
+    }
+
+    private function rememberManualCityOverride(City $city): void
+    {
+        Cookie::queue(self::MANUAL_CITY_OVERRIDE_COOKIE, $city->slug, self::CITY_COOKIE_LIFETIME_MINUTES);
+    }
+
+    private function hasManualCityOverrideForRememberedCity(Request $request, City $rememberedCity): bool
+    {
+        $selectedCitySlug = $request->cookie(self::SELECTED_CITY_COOKIE);
+        $manualOverrideSlug = $request->cookie(self::MANUAL_CITY_OVERRIDE_COOKIE);
+
+        return $selectedCitySlug
+            && $manualOverrideSlug
+            && $selectedCitySlug === $manualOverrideSlug
+            && $rememberedCity->slug === $manualOverrideSlug;
     }
 
     private function forgetDetectedCity(Request $request): void
