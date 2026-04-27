@@ -4,6 +4,7 @@ namespace App\Livewire\Admin;
 
 use App\Models\City;
 use App\Services\UtmTrackerService;
+use Filament\Facades\Filament;
 use Filament\Notifications\Notification;
 use Livewire\Component;
 use Throwable;
@@ -20,6 +21,8 @@ class UtmTrackerEditor extends Component
 
     public function mount(?City $record = null, ?int $cityId = null): void
     {
+        $this->authorizeAccess();
+
         $this->record = $record;
         $this->cityId = $cityId ?? $record?->id;
         $this->reloadState();
@@ -82,6 +85,8 @@ class UtmTrackerEditor extends Component
 
     private function reloadState(): void
     {
+        $this->authorizeAccess();
+
         $city = $this->getCity();
         $service = app(UtmTrackerService::class);
 
@@ -91,6 +96,8 @@ class UtmTrackerEditor extends Component
 
     private function runStateAction(callable $callback, string $successTitle): void
     {
+        $this->authorizeAccess();
+
         $city = $this->getCity();
         $service = app(UtmTrackerService::class);
 
@@ -126,6 +133,11 @@ class UtmTrackerEditor extends Component
         }
 
         return City::query()->findOrFail($this->cityId);
+    }
+
+    private function authorizeAccess(): void
+    {
+        abort_unless(Filament::auth()->user()?->can('page_UtmTrackerSettings') ?? false, 403);
     }
 
     private function resolveTrackingBaseUrl(City $city): string

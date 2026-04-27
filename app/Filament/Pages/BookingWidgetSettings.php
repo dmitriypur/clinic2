@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Models\City;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
@@ -11,6 +12,7 @@ use Filament\Pages\Page;
 
 class BookingWidgetSettings extends Page implements HasForms
 {
+    use HasPageShield;
     use InteractsWithForms;
 
     protected static ?string $navigationIcon = 'heroicon-o-adjustments-horizontal';
