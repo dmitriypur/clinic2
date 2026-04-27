@@ -2,10 +2,23 @@
     <div class="bg-surface rounded-2xl w-full mx-auto overflow-hidden md:overflow-visible">
         <div class="w-full flex flex-col md:grid grid-cols-12 gap-x-6 accessibility:block bg-gradient-to-tr from-[#65B3EB] via-white via-50% to-white md:bg-none">
             <div class="block order-1 md:order-0 col-span-5 relative flex accessibility:hidden md:bg-gradient-to-r from-[#65B3EB] to-white rounded-l-2xl">
-                <img src="{{ asset('images/korgy-lupa.webp') }}" alt="Иллюстрация папки с медицинскими документами" width="400" height="280" class="w-full max-w-[542px] md:absolute left-0 bottom-0">
+                <picture>
+                    <source srcset="{{ asset('images/blocks/licenses-m.webp') }}" type="image/webp" media="(max-width: 767px)">
+                    <source srcset="{{ asset('images/blocks/licenses-m.png') }}" type="image/png" media="(max-width: 767px)">
+                    <source srcset="{{ asset('images/blocks/licenses.webp') }}" type="image/webp">
+                    <img
+                        src="{{ asset('images/blocks/licenses.png') }}"
+                        alt="Иллюстрация папки с медицинскими документами"
+                        width="735"
+                        height="508"
+                        class="w-full max-w-[480px] md:absolute left-8 bottom-0"
+                        loading="lazy"
+                        decoding="async"
+                    >
+                </picture>
             </div>
             <div class="md:col-span-7 px-3 py-6 md:py-20 order-0 md:order-1">
-                <div class="px-4 md:px-0 lg:pr-20 xl:pr-40">
+                <div class="px-4 md:px-0 lg:pr-20 xl:pr-20">
                     <h2 class="font-semibold text-[28px] md:text-[34px] text-heading">
                         {{ $block->title }}
                     </h2>

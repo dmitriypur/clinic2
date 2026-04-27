@@ -5,6 +5,7 @@ import vue from "@vitejs/plugin-vue2";
 export default defineConfig({
   base: "",
   build: {
+    reportCompressedSize: false,
     rollupOptions: {
       output: {
         manualChunks: {

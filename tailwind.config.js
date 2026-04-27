@@ -4,10 +4,9 @@ const plugin = require('tailwindcss/plugin');
 module.exports = {
   content: [
     "./resources/**/*.blade.php",
-    "./app//View/**/*.php",
+    "./app/View/**/*.php",
     "./resources/**/*.js",
     "./resources/**/*.vue",
-    "./resources/**/*.js",
   ],
   safelist: [
     "swiper-pagination-bullet",

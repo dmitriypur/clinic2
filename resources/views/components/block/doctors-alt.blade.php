@@ -26,7 +26,7 @@
             class="lg:block lg:absolute left-0 right-0 xl:-left-12 xl:-right-12 lg:top-1/2 lg:-translate-y-1/2 mt-4 lg:mt-0 z-10">
             <div class="[&_>_.swiper-button-disabled]:opacity-0 flex justify-center gap-10 lg:justify-between">
                 <div
-                    class="doctors-swiper-prev cursor-pointer hover:text-action-primary bg-surface lg:bg-transparent [&_svg]:h-3.5 lg:[&_svg]:h-auto flex items-center justify-center w-8 h-8 lg:w-auto lg:h-auto rounded-full lg:p-4 -ml-2">
+                    class="doctors-swiper-prev cursor-pointer hover:text-action-primary bg-surface lg:bg-transparent [&_svg]:h-3.5 lg:[&_svg]:h-auto flex items-center justify-center w-8 h-8 lg:w-auto lg:h-auto rounded-full lg:p-4 ml-2 lg:-ml-2">
                     <x-icon-angle-left class="stroke-current fill-none w-5 h-9"/>
                 </div>
 
@@ -35,7 +35,7 @@
                         class="block doctors-alt-swiper-pagination text-center [&_>_.swiper-pagination-bullet]:bg-transparent [&_>_.swiper-pagination-bullet]:opacity-100 [&_>_.swiper-pagination-bullet]:border-2 [&_>_.swiper-pagination-bullet]:border-icon-subdued [&_>_.swiper-pagination-bullet-active.swiper-pagination-bullet]:bg-action-primary [&_>_.swiper-pagination-bullet-active.swiper-pagination-bullet]:border-action-primary [&_>_.swiper-pagination-bullet:hover]:bg-icon-subdued [&_>_.swiper-pagination-bullet-active.swiper-pagination-bullet:hover]:border-icon-subdued"></div>
                 </div>
                 <div
-                    class="doctors-swiper-next cursor-pointer hover:text-action-primary bg-surface lg:bg-transparent [&_svg]:h-3.5 lg:[&_svg]:h-auto flex items-center justify-center w-8 h-8 lg:w-auto lg:h-auto rounded-full lg:p-4 -mr-2">
+                    class="doctors-swiper-next cursor-pointer hover:text-action-primary bg-surface lg:bg-transparent [&_svg]:h-3.5 lg:[&_svg]:h-auto flex items-center justify-center w-8 h-8 lg:w-auto lg:h-auto rounded-full lg:p-4 mr-2 lg:-mr-2">
                     <x-icon-angle-right class="stroke-current fill-none w-5 h-9"/>
                 </div>
             </div>

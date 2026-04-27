@@ -8,6 +8,7 @@ $repository = "dmitriypur/clinic2";
 $baseDir = "/home/forge/zrenie.clinic";
 $releasesDir = "{$baseDir}/releases";
 $currentDir = "{$baseDir}/current";
+$npmCacheDir = "{$baseDir}/.npm-cache";
 $newReleaseName = date('Ymd-His');
 $newReleaseDir = "{$releasesDir}/{$newReleaseName}";
 $user = get_current_user();
@@ -80,7 +81,8 @@ php8.1 $(which composer) install --prefer-dist --no-dev --no-progress --no-inter
 {{ logMessage("📦  Running NPM...") }}
 cd {{ $newReleaseDir }}
 [ -f package-lock.json ] || { echo "package-lock.json отсутствует — прерываю деплой"; exit 1; }
-npm ci
+mkdir -p {{ $npmCacheDir }}
+NPM_CONFIG_UPDATE_NOTIFIER=false npm ci --prefer-offline --no-audit --no-fund --cache {{ $npmCacheDir }}
 @endtask
 
 @task('generateAssets', ['on' => 'remote'])
