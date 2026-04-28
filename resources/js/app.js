@@ -20,6 +20,7 @@ import {
   ImageLazy,
   CitySwitcher,
   InfiniteDoctorsList,
+  StickyTags,
 } from "./components";
 
 const CallbackForm = () => import("./components/CallbackForm/CallbackForm.vue");
@@ -91,6 +92,7 @@ new Vue({
     CitySwitcher,
     CityConfirmationModal,
     InfiniteDoctorsList,
+    StickyTags,
   },
 
   data: {

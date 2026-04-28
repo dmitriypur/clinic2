@@ -8,17 +8,30 @@
 @endif
 
 @isset($block->payload['tags'])
-    <div class="overflow-x-auto -mr-4 -ml-4 pl-4 md:mx-0 md:pl-0 mb-6 lg:mb-8 no-scrollbar">
-        <div class="w-max md:w-full mx-auto bg-white p-4 rounded-full">
-            <ul class="flex justify-between items-center overflow-hidden md:overflow-visible w-max md:w-full rounded-full md:rounded-none border-2 border-body-gray md:border-0">
-                @foreach($block->payload['tags'] as $tag)
-                    <li class="shrink-0 flex-auto text-center {{ $loop->first ? '[&_a]:text-white [&_a]:md:text-tags [&_a]:bg-action-primary [&_a]:md:bg-transparent [&_a]:md:border-b-action-primary' : '' }}">
-                        <a href="{{Clinic::relativeUrl(url()->current() . $tag['link'])}}"
-                        class="block w-full h-full min-w-[150px] py-2 px-4 md:p-2 border-r-2 md:border-r-0 md:border-b-2 border-body-gray font-bold text-tags hover:bg-action-primary hover:md:bg-white hover:text-white md:hover:border-action-primary md:hover:text-action-primary"
-                        >{{ $tag['title'] }}</a>
-                    </li>
-                @endforeach
-            </ul>
+    <div is="sticky-tags" inline-template>
+        <div ref="placeholder" :style="placeholderStyle">
+            <div
+                ref="bar"
+                :class="{ 'fixed z-30 bg-transparent pb-6': fixed }"
+                :style="barStyle"
+                class="overflow-x-auto -mr-4 -ml-4 pl-4 md:mx-0 md:pl-0 mb-6 lg:mb-8 no-scrollbar"
+            >
+                <div class="w-max md:w-full mx-auto bg-white p-4 rounded-full transition-shadow" :class="{ 'shadow-lg': fixed }">
+                    <ul class="flex justify-between items-center overflow-hidden w-max md:w-full rounded-full border-2 border-body-gray">
+                        @foreach($block->payload['tags'] as $tag)
+                            @php($tagHash = parse_url($tag['link'], PHP_URL_FRAGMENT) ?: ltrim($tag['link'], '#'))
+                            <li
+                                class="shrink-0 flex-auto text-center"
+                                :class="{ '[&_a]:text-white [&_a]:bg-action-primary': isActiveTag(@js($tagHash)) }"
+                            >
+                                <a href="{{Clinic::relativeUrl(url()->current() . $tag['link'])}}"
+                                class="block w-full h-full min-w-[150px] py-2 px-4 border-r-2 border-body-gray font-bold text-tags md:hover:bg-action-primary hover:text-white"
+                                >{{ $tag['title'] }}</a>
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
+            </div>
         </div>
     </div>
 @endisset
