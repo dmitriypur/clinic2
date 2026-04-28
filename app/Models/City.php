@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property bool $active
  * @property array $contacts
  * @property array $seo_cases
+ * @property array $details_items
  */
 class City extends Model
 {
@@ -40,6 +41,7 @@ class City extends Model
         'special_schedule_title',
         'header_scripts',
         'body_scripts',
+        'details',
     ];
 
     protected $casts = [
@@ -48,6 +50,7 @@ class City extends Model
         'seo_cases' => 'json',
         'social_links' => 'json',
         'branches' => 'json',
+        'details' => 'json',
         'utm_phones' => 'json',
         'show_special_schedule' => 'boolean',
         'header_scripts' => 'json',
@@ -132,5 +135,39 @@ class City extends Model
     public function utmCampaigns(): HasMany
     {
         return $this->hasMany(CityUtmCampaign::class);
+    }
+
+    public function getDetailsItemsAttribute(): array
+    {
+        $fields = [
+            'fullname' => 'Полное наименование организации',
+            'director' => 'Директор',
+            'legal_address' => 'Юридический адрес',
+            'postal_address' => 'Почтовый адрес',
+            'ogrn' => 'ОГРН',
+            'inn' => 'ИНН/КПП',
+        ];
+
+        return collect($this->details ?? [])
+            ->filter(fn ($detail) => is_array($detail))
+            ->map(function (array $detail) use ($fields) {
+                $rows = collect($fields)
+                    ->map(fn (string $label, string $field) => [
+                        'label' => $label,
+                        'value' => $detail[$field] ?? null,
+                    ])
+                    ->filter(fn (array $row) => filled($row['value']))
+                    ->values()
+                    ->toArray();
+
+                return [
+                    'name' => $detail['name'] ?? null,
+                    'rows' => $rows,
+                    'columns' => array_chunk($rows, (int) ceil(count($rows) / 2)),
+                ];
+            })
+            ->filter(fn (array $detail) => filled($detail['name']) || count($detail['rows']) > 0)
+            ->values()
+            ->toArray();
     }
 }

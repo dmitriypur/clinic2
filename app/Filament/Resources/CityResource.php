@@ -120,6 +120,31 @@ class CityResource extends Resource
                             ->itemLabel(fn (array $state): ?string => $state['name'] ?? null),
                     ]),
 
+                Section::make('Реквизиты')
+                    ->schema([
+                        Repeater::make('details')
+                            ->label('Реквизиты города')
+                            ->schema([
+                                TextInput::make('name')
+                                    ->label('Название организации'),
+                                TextInput::make('fullname')
+                                    ->label('Полное наименование организации'),
+                                TextInput::make('director')
+                                    ->label('Директор'),
+                                TextInput::make('legal_address')
+                                    ->label('Юридический адрес'),
+                                TextInput::make('postal_address')
+                                    ->label('Почтовый адрес'),
+                                TextInput::make('ogrn')
+                                    ->label('ОГРН'),
+                                TextInput::make('inn')
+                                    ->label('ИНН/КПП'),
+                            ])
+                            ->columns(2)
+                            ->collapsed()
+                            ->itemLabel(fn (array $state): ?string => $state['name'] ?? null),
+                    ]),
+
                 Section::make('Соцсети')
                     ->schema([
                         TextInput::make('social_links.vk')->label('VK'),

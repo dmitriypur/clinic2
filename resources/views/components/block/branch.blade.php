@@ -13,65 +13,63 @@
         </div>
     @endif
 
-    <div class="grid gap-4 md:gap-6 md:grid-cols-2">
-        @foreach($branches as $index => $branch)
-            <article class="bg-white rounded-20 p-5 md:p-8">
-                <div class="space-y-4">
-                    <h3 class="font-semibold text-xl md:text-2xl text-heading">
-                        {{ $branch['name'] ?? 'Филиал ' . ($index + 1) }}
-                    </h3>
+    @if(!empty($branches))
+        <div class="flex flex-wrap justify-center gap-6">
+            @foreach($branches as $index => $branch)
+                <article class="bg-white rounded-20 p-5 md:p-8 w-full max-w-[400px]">
+                    <div class="space-y-4">
+                        <h3 class="font-semibold text-xl md:text-2xl text-heading">
+                            {{ !empty($branch['address']) ? $branch['address'] : $branch['name'] }}
+                        </h3>
 
-                    <div class="space-y-3 text-sm md:text-base">
-                        @if(!empty($branch['address']))
-                            <div>
-                                <div class="text-interactive/60">Адрес</div>
-                                <div class="mt-1">{{ $branch['address'] }}</div>
-                            </div>
-                        @endif
+                        <div class="space-y-3 text-sm md:text-base">
 
-                        @if(!empty($branch['metro']))
-                            <div>
-                                <div class="text-interactive/60">Метро</div>
-                                <div class="mt-1">{{ $branch['metro'] }}</div>
-                            </div>
-                        @endif
+                            @if(!empty($branch['metro']))
+                                <div class="flex items-center gap-2">
+                                    <img src="{{ asset('images/metro.png') }}" alt="Иконка метро">
+                                    <p>{{ $branch['metro'] }}</p>
+                                </div>
+                            @endif
 
-                        @if(!empty($branch['schedule']))
-                            <div>
-                                <div class="text-interactive/60">Режим работы</div>
-                                <div class="mt-1">{{ $branch['schedule'] }}</div>
-                            </div>
-                        @endif
+                            <hr class="bg-transparent border border-dashed">
 
-                        @if(!empty($branch['phone']))
-                            <div>
-                                <div class="text-interactive/60">Телефон</div>
-                                <a href="tel:{{ preg_replace('/[^0-9+]/', '', $branch['phone']) }}"
-                                   class="mt-1 inline-block text-action-primary hover:underline">
-                                    {{ $branch['phone'] }}
-                                </a>
-                            </div>
-                        @endif
+                            @if(!empty($branch['schedule']))
+                                <div>
+                                    <div class="font-semibold">Режим работы</div>
+                                    <div class="mt-1">{{ $branch['schedule'] }}</div>
+                                </div>
+                            @endif
 
-                        @if(!empty($branch['email']))
-                            <div>
-                                <div class="text-interactive/60">Email</div>
-                                <a href="mailto:{{ $branch['email'] }}"
-                                   class="mt-1 inline-block text-action-primary hover:underline">
-                                    {{ $branch['email'] }}
-                                </a>
-                            </div>
-                        @endif
+                            <hr class="bg-transparent border border-dashed">
 
-                        @if(!empty($branch['postal_code']))
-                            <div>
-                                <div class="text-interactive/60">Индекс</div>
-                                <div class="mt-1">{{ $branch['postal_code'] }}</div>
-                            </div>
-                        @endif
+                            @if(!empty($branch['phone']))
+                                <div>
+                                    <div class="font-semibold">Телефон</div>
+                                    <a href="tel:{{ preg_replace('/[^0-9+]/', '', $branch['phone']) }}"
+                                    class="mt-1 inline-block text-action-primary hover:underline">
+                                        {{ $branch['phone'] }}
+                                    </a>
+                                </div>
+                            @endif
+
+                            <hr class="bg-transparent border border-dashed">
+
+                            @if(!empty($branch['email']))
+                                <div>
+                                    <div class="font-semibold">Email</div>
+                                    <a href="mailto:{{ $branch['email'] }}"
+                                    class="mt-1 inline-block text-action-primary hover:underline">
+                                        {{ $branch['email'] }}
+                                    </a>
+                                </div>
+                            @endif
+
+                            <x-button-dark-border class="w-full mt-4">Записаться на приём</x-button-dark-border>
+                            
+                        </div>
                     </div>
-                </div>
-            </article>
-        @endforeach
-    </div>
+                </article>
+            @endforeach
+        </div>
+    @endif
 </div>

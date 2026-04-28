@@ -289,6 +289,10 @@
             <x-block.details :block="$block"/>
             @break
 
+        @case(\App\Enums\BlockType::DETAILS_ALT)
+            <x-block.details-alt :block="$block"/>
+            @break
+
         @case(\App\Enums\BlockType::UNIVERSAL_TEXT_BLOCK)
             <x-block.universal-block :block="$block"/>
             @break

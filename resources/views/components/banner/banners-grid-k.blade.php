@@ -18,13 +18,18 @@
                             class="w-full h-full"
                         >
                     </picture>
+                    
                     @if($block->images[0]['url'])
-                        <div class="px-6 md:p-0 absolute left-0 w-full md:w-auto bottom-6 md:bottom-[10%] md:left-[7%] lg:bottom-[12%]">
-                            <a href="{{ city_url($block->images[0]['url']) }}" class="block text-center py-4 btn-blue-gradient font-semibold text-white rounded w-full rounded-lg md:px-14 text-sm">Записаться на прием</a>
+                        <div class="px-6 md:p-0 absolute left-0 w-full md:w-auto bottom-6 md:bottom-[12%] md:left-[7%] lg:bottom-[15%]">
+                            <a href="{{ city_url($block->images[0]['url']) }}" class="block text-center btn-blue-gradient font-semibold text-white rounded-lg w-full md:rounded-xl py-4 lg:py-5 md:px-10 lg:px-20 text-sm md:text-base md:min-w-[330px]">{{ blank(data_get($block->images, '0.title')) 
+    ? 'Записаться на прием' 
+    : data_get($block->images, '0.title') }}</a>
                         </div>
                     @else
-                        <div class="px-6 md:p-0 absolute left-0 w-full md:w-auto bottom-6 md:bottom-[10%] md:left-[7%] lg:bottom-[12%]">
-                            <button @click="showCallbackModal(null, 'otpravka-formy')" class="block text-center py-4 btn-blue-gradient font-semibold text-white rounded w-full rounded-lg md:px-14 text-sm">Записаться на прием</button>
+                        <div class="px-6 md:p-0 absolute left-0 w-full md:w-auto bottom-6 md:bottom-[12%] md:left-[7%] lg:bottom-[15%]">
+                            <button @click="showCallbackModal(null, 'otpravka-formy')" class="block text-center py-4 btn-blue-gradient font-semibold text-white rounded w-full rounded-lg md:px-14 text-sm md:min-w-[330px]">{{ blank(data_get($block->images, '0.title')) 
+    ? 'Записаться на прием' 
+    : data_get($block->images, '0.title') }}</button>
                         </div>
                     @endif
                 </div>
@@ -45,11 +50,15 @@
                     </picture>
                     @if($block->images[1]['url'])
                         <div class="px-4 md:p-0 absolute w-full md:w-auto left-0 bottom-6 md:left-[6%] md:bottom-[20%]">
-                            <a href="{{ city_url($block->images[1]['url']) }}" class="block text-center py-4 md:py-3.5 px-12 btn-blue-gradient font-semibold text-white rounded-lg w-full text-sm">Записаться на прием</a>
+                            <a href="{{ city_url($block->images[1]['url']) }}" class="block text-center py-4 md:py-3.5 px-12 btn-blue-gradient font-semibold text-white rounded-lg w-full text-sm md:min-w-[250px]">{{ blank(data_get($block->images, '0.title')) 
+    ? 'Записаться на прием' 
+    : data_get($block->images, '1.title') }}</a>
                         </div>
                     @else
                         <div class="px-4 md:p-0 absolute w-full md:w-auto left-0 bottom-6 md:left-[6%] md:bottom-[20%]">
-                            <button @click="showCallbackModal(null, 'otpravka-formy')" class="block text-center py-4 md:py-3.5 px-12 btn-blue-gradient font-semibold text-white rounded-lg w-full text-sm">Записаться на прием</button>
+                            <button @click="showCallbackModal(null, 'otpravka-formy')" class="block text-center py-4 md:py-3.5 px-12 btn-blue-gradient font-semibold text-white rounded-lg w-full text-sm md:min-w-[250px]">{{ blank(data_get($block->images, '0.title')) 
+    ? 'Записаться на прием' 
+    : data_get($block->images, '1.title') }}</button>
                         </div>
                     @endif
                 </div>
@@ -70,11 +79,15 @@
                     </picture>
                     @if($block->images[2]['url'])
                         <div class="px-4 md:p-0 absolute w-full md:w-auto left-0 bottom-6 md:left-[6%] md:bottom-[20%]">
-                            <a href="{{ city_url($block->images[1]['url']) }}" class="block text-center py-4 md:py-3.5 px-12 btn-blue-gradient font-semibold text-white rounded-lg w-full text-sm">Записаться на прием</a>
+                            <a href="{{ city_url($block->images[1]['url']) }}" class="block text-center py-4 md:py-3.5 px-6 btn-blue-gradient font-semibold text-white rounded-lg w-full text-sm md:min-w-[250px]">{{ blank(data_get($block->images, '0.title')) 
+    ? 'Записаться на прием' 
+    : data_get($block->images, '2.title') }}</a>
                         </div>
                     @else
                         <div class="px-4 md:p-0 absolute w-full md:w-auto left-0 bottom-6 md:left-[6%] md:bottom-[20%]">
-                            <button @click="showCallbackModal(null, 'otpravka-formy')" class="block text-center py-4 md:py-3.5 px-12 btn-blue-gradient font-semibold text-white rounded-lg w-full text-sm">Записаться на прием</button>
+                            <button @click="showCallbackModal(null, 'otpravka-formy')" class="block text-center py-4 md:py-3.5 px-6 btn-blue-gradient font-semibold text-white rounded-lg w-full text-sm md:min-w-[250px]">{{ blank(data_get($block->images, '0.title')) 
+    ? 'Записаться на прием' 
+    : data_get($block->images, '2.title') }}</button>
                         </div>
                     @endif
                 </div>

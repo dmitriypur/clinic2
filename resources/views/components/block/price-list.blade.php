@@ -15,30 +15,30 @@
 @if(count($priceListItems))
     <div class="container">
         <div class="mb-4 lg:mb-8">
-            <div class="rounded-3xl bg-white px-3.5 py-6 text-center  lg:px-11 lg:py-8 lg:text-left">
+            <div class="rounded-3xl bg-white px-3.5 py-6 text-center text-heading lg:px-12 lg:py-8 lg:text-left">
                 @foreach($priceListItems as $price)
                     <div @class([
                         'flex flex-col items-center justify-center gap-2 lg:flex-row lg:gap-4',
-                        'mb-6 border-b border-dashed border-interactive/40 pb-6 lg:mb-0 lg:border-b-0 lg:pb-0' => !$loop->last,
+                        'mb-6 border-b border-dotted border-interactive/40 pb-6 lg:mb-0 lg:border-b-0 lg:pb-0' => !$loop->last,
                         'lg:mt-6' => !$loop->first,
                     ])>
                         <div class="w-full lg:w-auto lg:shrink-0 lg:whitespace-nowrap">
-                            <p class="text-xl font-semibold">
+                            <p class="text-xl font-semibold leading-6">
                                 {{ $price['title'] }}
                             </p>
 
                             @if($price['description'])
-                                <p class="mt-1 text-base font-normal">
+                                <p class="mt-1 text-base font-normal leading-5">
                                     {{ $price['description'] }}
                                 </p>
                             @endif
                         </div>
 
-                        <div class="hidden min-w-0 flex-1 border-t border-dashed border-interactive/30 lg:block"></div>
+                        <div class="hidden min-w-0 flex-1 border-t border-dotted border-interactive/30 lg:block"></div>
 
-                        <div class="flex w-full items-center justify-center gap-2 whitespace-nowrap text-xl font-semibold lg:w-auto lg:shrink-0 lg:justify-end">
+                        <div class="flex w-full items-center justify-center gap-2 whitespace-nowrap text-xl font-semibold leading-6 lg:w-auto lg:shrink-0 lg:justify-end">
                             @if($price['old_price'])
-                                <s class="/50 lg:/40 text-gray-400">
+                                <s class="text-heading/50 lg:text-heading/40">
                                     {{ $price['old_price'] }} ₽
                                 </s>
                             @endif
