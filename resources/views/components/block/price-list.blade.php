@@ -10,45 +10,50 @@
     </div>
 @endif
 
-@if(count($block->prices))
-    <div class="md:container">
-        <div class="mb-4 md:mb-8">
-            @foreach($block->prices as $price)
-                <div class="flex justify-between items-center bg-[#F5F8F9] mb-4 md:rounded-2xl overflow-hidden">
-                    <div class="bg-white flex-1 flex gap-3 md:gap-7 items-center py-6 px-3 md:px-7 min-h-28">
-                        @if(($price['price2'] ?? 0) > 0)
-                            <div class="md:hidden">
-                                <img src="{{ asset('images/percent.webp') }}" alt="Знак процента — иллюстрация скидки, акции" width="40" height="40" class="min-w-10 w-10">
-                            </div>
-                            <div class="hidden md:flex items-center justify-center min-w-6 h-6 md:min-w-8 md:h-8 bg-body-gray rounded-md">
-                                <x-icon-arrow-short></x-icon-arrow-short>
-                            </div>
-                        @else
-                            <div class="flex items-center justify-center min-w-6 h-6 md:min-w-8 md:h-8 bg-body-gray rounded-md">
-                                <x-icon-arrow-short></x-icon-arrow-short>
-                            </div>
-                        @endif
-                        <p class="text-sm lg:text-2xl">{!! $block->elementToSpanWrap($price['item']) !!}</p>
-                    </div>
-                    <div class="flex flex-col md:flex-row items-center justify-center md:gap-4 text-center font-medium text-xl md:text-3xl w-20 md:w-[273px]">
-                        {!! ($price['price2'] ?? 0) > 0 ? '<s class="text-sm md:text-2xl text-interactive/20">' . $price['price2'] . '</s>' : '' !!}
-                        
-                        @if($price['price_from'] ?? false)
-                            <span class="text-sm mr-1">от</span>
-                        @endif
-                        <div class="flex items-end gap-1">
-                            {{ $price['price1'] }}
-                            <span class="text-sm md:text-2xl">₽</span>
+@php($priceListItems = $block->price_list_items)
+
+@if(count($priceListItems))
+    <div class="container">
+        <div class="mb-4 lg:mb-8">
+            <div class="rounded-3xl bg-white px-3.5 py-6 text-center  lg:px-11 lg:py-8 lg:text-left">
+                @foreach($priceListItems as $price)
+                    <div @class([
+                        'flex flex-col items-center justify-center gap-2 lg:flex-row lg:gap-4',
+                        'mb-6 border-b border-dashed border-interactive/40 pb-6 lg:mb-0 lg:border-b-0 lg:pb-0' => !$loop->last,
+                        'lg:mt-6' => !$loop->first,
+                    ])>
+                        <div class="w-full lg:w-auto lg:shrink-0 lg:whitespace-nowrap">
+                            <p class="text-xl font-semibold">
+                                {{ $price['title'] }}
+                            </p>
+
+                            @if($price['description'])
+                                <p class="mt-1 text-base font-normal">
+                                    {{ $price['description'] }}
+                                </p>
+                            @endif
                         </div>
-                        
-                        @if(($price['price2'] ?? 0) > 0)
-                            <div class="hidden md:block">
-                                <img src="{{ asset('images/percent.webp') }}" alt="Знак процента — иллюстрация скидки, акции" width="48" height="48" class="w-12">
-                            </div>
-                        @endif
+
+                        <div class="hidden min-w-0 flex-1 border-t border-dashed border-interactive/30 lg:block"></div>
+
+                        <div class="flex w-full items-center justify-center gap-2 whitespace-nowrap text-xl font-semibold lg:w-auto lg:shrink-0 lg:justify-end">
+                            @if($price['old_price'])
+                                <s class="/50 lg:/40 text-gray-400">
+                                    {{ $price['old_price'] }} ₽
+                                </s>
+                            @endif
+
+                            <span>
+                                @if($price['price_from'])
+                                    от&nbsp;
+                                @endif
+
+                                {{ $price['price'] }} ₽
+                            </span>
+                        </div>
                     </div>
-                </div>
-            @endforeach
+                @endforeach
+            </div>
         </div>
     </div>
 @endif

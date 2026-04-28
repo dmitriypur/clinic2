@@ -37,6 +37,7 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
  * @property array $images
  * @property array $settings
  * @property array $payload
+ * @property array $price_list_items
  * @property bool $title_hidden
  */
 class Block extends Model implements HasMedia, Sortable
@@ -258,6 +259,40 @@ class Block extends Model implements HasMedia, Sortable
                 'price_from' => $priceModel->price_from,
             ];
         })->filter()->values()->toArray();
+    }
+
+    public function getPriceListItemsAttribute(): array
+    {
+        return collect($this->prices ?? [])
+            ->map(function (array $price) {
+                [$title, $description] = $this->splitPriceListItem($price['item'] ?? '');
+
+                return [
+                    'title' => $title,
+                    'description' => $description,
+                    'price' => $price['price1'] ?? null,
+                    'old_price' => ($price['price2'] ?? 0) > 0 ? $price['price2'] : null,
+                    'price_from' => (bool) ($price['price_from'] ?? false),
+                ];
+            })
+            ->filter(fn (array $price) => filled($price['title']) && filled($price['price']))
+            ->values()
+            ->toArray();
+    }
+
+    private function splitPriceListItem(string $item): array
+    {
+        $item = trim($item);
+
+        if (preg_match('/^(.*?)\s*(<br\s*\/?>|\R)\s*(.+)$/iu', $item, $matches)) {
+            return [trim(strip_tags($matches[1])), trim(strip_tags($matches[3]))];
+        }
+
+        if (preg_match('/^(.+?)\s*(\([^()]+\))$/u', $item, $matches)) {
+            return [trim(strip_tags($matches[1])), trim(strip_tags($matches[2]))];
+        }
+
+        return [trim(strip_tags($item)), null];
     }
 
     public function getFullPriceListAttribute(): Collection|null
