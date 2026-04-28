@@ -7,7 +7,7 @@
     <div class="mt-6 relative">
       <input
         type="text"
-        class="w-full rounded-lg text-sm border-none px-6 py-4 bg-surface-subdued outline-icon-subdued"
+        class="w-full rounded-lg text-sm border-none px-6 py-4 bg-surface-subdued outline-outline-primary focus:outline-action-primary focus:bg-white"
         placeholder="Поиск врача"
         v-model="query"
       />

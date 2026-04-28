@@ -11,8 +11,8 @@
           type="text"
           inputmode="numeric"
           autocomplete="bday"
-          class="h-[60px] w-full rounded-[12px] border border-transparent bg-surface-subdued px-6 text-base text-interactive outline-none transition-colors placeholder:text-[#B2BAC6] focus:border-action-primary"
-          :class="error ? 'border border-[#E04F4F]' : ''"
+          class="h-[60px] w-full rounded-[12px] border px-6 text-base text-interactive outline-none transition-colors placeholder:text-[#B2BAC6] focus:border-action-primary focus:bg-white"
+          :class="error ? 'border border-[#E04F4F] focus:bg-white' : 'border-transparent bg-surface-subdued'"
           placeholder="ДД.ММ.ГГГГ"
           @keyup.enter="handleNext"
         />

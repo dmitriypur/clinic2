@@ -8,8 +8,8 @@
       <div>
         <input
           v-model="form.last_name"
-          class="w-full rounded-lg text-sm px-6 py-4 bg-surface-subdued outline-icon-subdued"
-          :class="errors.last_name || errors.full_name ? 'border border-[#E04F4F]' : ''"
+          class="w-full rounded-lg text-sm px-6 py-4 focus:outline-action-primary focus:bg-white"
+          :class="errors.last_name || errors.full_name ? 'border border-[#E04F4F]' : 'bg-surface-subdued'"
           placeholder="Фамилия"
         />
         <p v-if="errors.last_name || errors.full_name" class="mt-1 text-xs text-[#E04F4F]">
@@ -20,8 +20,8 @@
       <div>
         <input
           v-model="form.first_name"
-          class="w-full rounded-lg text-sm px-6 py-4 bg-surface-subdued outline-icon-subdued"
-          :class="errors.first_name || errors.full_name ? 'border border-[#E04F4F]' : ''"
+          class="w-full rounded-lg text-sm px-6 py-4 focus:outline-action-primary focus:bg-white"
+          :class="errors.first_name || errors.full_name ? 'border border-[#E04F4F] bg-white' : 'bg-surface-subdued'"
           placeholder="Имя"
         />
         <p v-if="errors.first_name" class="mt-1 text-xs text-[#E04F4F]">
@@ -32,7 +32,7 @@
       <div>
         <input
           v-model="form.middle_name"
-          class="w-full rounded-lg text-sm px-6 py-4 bg-surface-subdued outline-icon-subdued"
+          class="w-full rounded-lg text-sm px-6 py-4 bg-surface-subdued focus:outline-action-primary focus:bg-white"
           placeholder="Отчество (необязательно)"
         />
       </div>
@@ -43,8 +43,8 @@
             v-model="form.phone"
             v-mask="'+7 (###) ###-##-##'"
             type="tel"
-            class="w-full rounded-lg text-sm px-6 py-4 bg-surface-subdued outline-icon-subdued"
-            :class="errors.phone ? 'border border-[#E04F4F]' : ''"
+            class="w-full rounded-lg text-sm px-6 py-4 focus:outline-action-primary focus:bg-white"
+            :class="errors.phone ? 'border border-[#E04F4F] bg-white' : 'border border-transparent bg-surface-subdued'"
             placeholder="+7 (___) ___-__-__"
           />
           <p v-if="errors.phone" class="mt-1 text-xs text-[#E04F4F]">
@@ -57,8 +57,8 @@
             type="date"
             :max="maxBirthDate"
             disabled
-            class="w-full rounded-lg text-sm px-6 py-4 bg-surface-subdued text-interactive/70 outline-icon-subdued cursor-not-allowed"
-            :class="errors.birth_date ? 'border border-[#E04F4F]' : ''"
+            class="w-full rounded-lg text-sm px-6 py-4 bg-surface-subdued text-interactive/70 focus:outline-action-primary cursor-not-allowed"
+            :class="errors.birth_date ? 'border border-[#E04F4F]' : 'border border-transparent'"
             placeholder="Дата рождения"
           />
           <p v-if="errors.birth_date" class="mt-1 text-xs text-[#E04F4F]">
