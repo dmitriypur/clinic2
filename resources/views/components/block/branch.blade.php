@@ -26,7 +26,7 @@
 
                             @if(!empty($branch['metro']))
                                 <div class="flex items-center gap-2">
-                                    <img src="{{ asset('images/metro.png') }}" alt="Иконка метро">
+                                    <img src="{{ asset('images/metro2.webp') }}" alt="Иконка метро" width="16" height="16">
                                     <p>{{ $branch['metro'] }}</p>
                                 </div>
                             @endif
@@ -38,9 +38,9 @@
                                     <div class="font-semibold">Режим работы</div>
                                     <div class="mt-1">{{ $branch['schedule'] }}</div>
                                 </div>
+                                <hr class="bg-transparent border border-dashed">
                             @endif
-
-                            <hr class="bg-transparent border border-dashed">
+                            
 
                             @if(!empty($branch['phone']))
                                 <div>
@@ -50,9 +50,9 @@
                                         {{ $branch['phone'] }}
                                     </a>
                                 </div>
+                                <hr class="bg-transparent border border-dashed">
                             @endif
-
-                            <hr class="bg-transparent border border-dashed">
+                            
 
                             @if(!empty($branch['email']))
                                 <div>
@@ -64,7 +64,11 @@
                                 </div>
                             @endif
 
-                            <x-button-dark-border class="w-full mt-4">Записаться на приём</x-button-dark-border>
+                            <x-button-dark-border
+                                @click="showCallbackModal(null, 'otpravka-formy')"
+                                class="w-full mt-4">
+                                Записаться на приём
+                            </x-button-dark-border>
                             
                         </div>
                     </div>
