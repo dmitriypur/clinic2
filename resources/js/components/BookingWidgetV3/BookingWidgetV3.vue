@@ -440,6 +440,23 @@ export default {
     },
   },
   methods: {
+    getUtmParameters() {
+      const params = new URLSearchParams(window.location.search);
+      const configuredUtm =
+        window.config?.utm && typeof window.config.utm === "object"
+          ? window.config.utm
+          : {};
+
+      return ["utm_source", "utm_medium", "utm_campaign"].reduce((utm, key) => {
+        const value = params.get(key) || configuredUtm[key];
+
+        if (value) {
+          utm[key] = value;
+        }
+
+        return utm;
+      }, {});
+    },
     shouldPrepareInitialStep() {
       if (!this.open || this.currentStep !== "start") {
         return false;
@@ -1714,9 +1731,15 @@ export default {
           promo_code: formData.promo_code || null,
           comment: formData.comment || null,
           appointment_source: "site",
+          ...this.getUtmParameters(),
         };
 
         await bookingApi.createApplication(applicationData);
+
+        if (this.callbackFormTarget && typeof ym === "function") {
+          ym(94302729, "reachGoal", this.callbackFormTarget);
+        }
+
         this.currentStep = "success";
       } catch (error) {
         if (error.status === 422 && error.errors) {

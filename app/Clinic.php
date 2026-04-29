@@ -140,12 +140,22 @@ class Clinic
             }
         }
 
+        $utmParameters = [];
+        foreach (['utm_source', 'utm_medium', 'utm_campaign'] as $key) {
+            $value = request()->query($key, request()->hasSession() ? request()->session()->get($key) : null);
+
+            if (filled($value)) {
+                $utmParameters[$key] = $value;
+            }
+        }
+
         return [
             'csrfToken' => csrf_token(),
             'env' => config('app.env'),
             'baseUrl' => url('/'),
             'cityConfirmed' => (bool) (request()->cookie('city_confirmed') || request()->cookie('selected_city')),
             'state' => resolve(InitialFrontendState::class)->forUser(Auth::user()),
+            'utm' => $utmParameters,
             'detectedCity' => $detectedCity,
             'cities' => $preparedCities,
             'booking' => [
