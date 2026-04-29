@@ -160,8 +160,8 @@ export default {
       this.form
         .post(`/api/callback${window.location.search}`)
         .then(() => {
-          if (this.target) {
-            ym(94302729, 'reachGoal', this.target)
+          if (typeof ym === 'function') {
+            ym(94302729, 'reachGoal', 'otpravka-formy')
           }
 
           this.showSuccessMessage = true

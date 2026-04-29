@@ -1742,8 +1742,8 @@ export default {
 
         await bookingApi.createApplication(applicationData);
 
-        if (this.callbackFormTarget && typeof ym === "function") {
-          ym(94302729, "reachGoal", this.callbackFormTarget);
+        if (typeof ym === "function") {
+          ym(94302729, "reachGoal", "bloki-otpravka-formy");
         }
 
         this.currentStep = "success";
