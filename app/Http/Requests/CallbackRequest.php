@@ -11,6 +11,8 @@ use Illuminate\Foundation\Http\FormRequest;
  * @property ?string $utm_source
  * @property ?string $utm_medium
  * @property ?string $utm_campaign
+ * @property ?string $utm_content
+ * @property ?string $utm_term
  */
 class CallbackRequest extends FormRequest
 {

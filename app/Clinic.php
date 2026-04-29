@@ -141,7 +141,13 @@ class Clinic
         }
 
         $utmParameters = [];
-        foreach (['utm_source', 'utm_medium', 'utm_campaign'] as $key) {
+        foreach ([
+            'utm_source',
+            'utm_medium',
+            'utm_campaign',
+            'utm_content',
+            'utm_term',
+        ] as $key) {
             $value = request()->query($key, request()->hasSession() ? request()->session()->get($key) : null);
 
             if (filled($value)) {

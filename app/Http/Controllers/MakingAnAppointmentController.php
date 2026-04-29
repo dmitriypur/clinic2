@@ -34,6 +34,8 @@ class MakingAnAppointmentController extends Controller
             'utm_source' => data_get($request, 'utm_source', Session::get('utm_source')),
             'utm_medium' => data_get($request, 'utm_medium', Session::get('utm_medium')),
             'utm_campaign' => data_get($request, 'utm_campaign', Session::get('utm_campaign')),
+            'utm_content' => data_get($request, 'utm_content', Session::get('utm_content')),
+            'utm_term' => data_get($request, 'utm_term', Session::get('utm_term')),
         ]);
 
         return now()->parse($request->date)->format('Y-m-d') . ' ' . $request->time . ':00';
