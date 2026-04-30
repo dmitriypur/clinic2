@@ -272,6 +272,10 @@ export default {
       type: Boolean,
       default: false,
     },
+    patientBirthDate: {
+      type: String,
+      default: "",
+    },
     stepChipText: {
       type: String,
       default: "Шаг №3",
@@ -344,7 +348,11 @@ export default {
       return this.doctor?.id || null;
     },
     doctorPrice() {
-      return getDoctorDisplayPrice(this.doctor, this.selectedBranch);
+      return getDoctorDisplayPrice(
+        this.doctor,
+        this.selectedBranch,
+        this.patientBirthDate
+      );
     },
     branchSkeletonCount() {
       return 3;

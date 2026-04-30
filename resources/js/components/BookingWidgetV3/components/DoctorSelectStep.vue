@@ -115,6 +115,10 @@ export default {
       type: Boolean,
       default: false,
     },
+    patientBirthDate: {
+      type: String,
+      default: "",
+    },
     stepChipText: {
       type: String,
       default: "Шаг №2",
@@ -134,7 +138,7 @@ export default {
       return getDoctorReceivesDisplay(doctor) || "—";
     },
     doctorDisplayPrice(doctor) {
-      return getDoctorDisplayPrice(doctor);
+      return getDoctorDisplayPrice(doctor, null, this.patientBirthDate);
     },
     doctorVideoUrl(doctor) {
       return doctor?.video_url || doctor?.actual_video_url || doctor?.video || null;

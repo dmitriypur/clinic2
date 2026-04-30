@@ -304,6 +304,10 @@ export default {
       type: Boolean,
       default: false,
     },
+    patientBirthDate: {
+      type: String,
+      default: "",
+    },
     stepChipText: {
       type: String,
       default: "Шаг №3",
@@ -448,7 +452,11 @@ export default {
       return doctor?.speciality || doctor?.specialization || "Специалист";
     },
     doctorPrice(doctor) {
-      return getDoctorDisplayPrice(doctor, this.doctorBranch(doctor));
+      return getDoctorDisplayPrice(
+        doctor,
+        this.doctorBranch(doctor),
+        this.patientBirthDate
+      );
     },
     doctorHasVideo(doctor) {
       return Boolean(doctor?.video_url);

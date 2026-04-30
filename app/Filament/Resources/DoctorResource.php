@@ -177,9 +177,12 @@ class DoctorResource extends Resource
                             ),
 
                         Forms\Components\TextInput::make('extra.rating')
+                            ->columnSpanFull()
                             ->label('Текст рейтига'),
                         Forms\Components\TextInput::make('extra.price')
-                            ->label('Стоимость приема'),
+                            ->label('Взрослый прием цена'),
+                        Forms\Components\TextInput::make('extra.price_child')
+                            ->label('Детский прием цена'),
                     ]),
 
 
