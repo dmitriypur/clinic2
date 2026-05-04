@@ -43,7 +43,11 @@
     </div>
     <div class="mt-auto relative z-10 flex justify-between gap-2">
         <x-button-primary
-            @click="showCallbackModal(null, 'otpravka-formy', { bookingStartMode: 'doctor' })"
+            type="button"
+            data-appointment-entry="doctor"
+            data-doctor-id="{{ $doctor->uuid }}"
+            data-skip-birth-date="true"
+            data-doctor-callback-target="otpravka-formy"
             class="w-1/2 font-bold py-2 md:px-0">
             Записаться
         </x-button-primary>

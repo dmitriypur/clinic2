@@ -1,4 +1,5 @@
 import { eventBus } from "../../eventBus";
+import { buildBookingLaunchContextFromElement } from "../../utilities/bookingLaunchContext";
 
 export default {
   props: {
@@ -152,12 +153,13 @@ export default {
       }
 
       event.preventDefault();
-      const bookingStartMode = String(
-        callbackTrigger.dataset.bookingStartMode || ""
-      )
+      const launchContext = buildBookingLaunchContextFromElement(callbackTrigger);
+      const bookingStartMode = String(callbackTrigger.dataset.bookingStartMode || "")
         .trim()
         .toLowerCase();
-      const options = bookingStartMode
+      const options = launchContext
+        ? { launchContext }
+        : bookingStartMode
         ? { bookingStartMode }
         : null;
 

@@ -56,9 +56,9 @@
             v-model="form.birth_date"
             type="date"
             :max="maxBirthDate"
-            disabled
-            class="w-full rounded-lg text-sm px-6 py-4 bg-surface-subdued text-interactive/70 focus:outline-action-primary cursor-not-allowed"
-            :class="errors.birth_date ? 'border border-[#E04F4F]' : 'border border-transparent'"
+            :disabled="birthDateReadonly"
+            class="w-full rounded-lg text-sm px-6 py-4 focus:outline-action-primary"
+            :class="birthDateInputClasses"
             placeholder="Дата рождения"
           />
           <p v-if="errors.birth_date" class="mt-1 text-xs text-[#E04F4F]">
@@ -131,6 +131,10 @@ export default {
       type: String,
       default: "",
     },
+    birthDateReadonly: {
+      type: Boolean,
+      default: true,
+    },
     stepChipText: {
       type: String,
       default: "Шаг №4",
@@ -157,6 +161,14 @@ export default {
   computed: {
     maxBirthDate() {
       return formatDateForInput(new Date());
+    },
+    birthDateInputClasses() {
+      return [
+        this.errors.birth_date ? "border border-[#E04F4F]" : "border border-transparent",
+        this.birthDateReadonly
+          ? "bg-surface-subdued text-interactive/70 cursor-not-allowed"
+          : "bg-surface-subdued focus:bg-white",
+      ];
     },
     formattedAppointment() {
       if (!this.selectedDate || !this.selectedSlot?.time) {

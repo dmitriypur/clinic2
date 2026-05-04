@@ -65,7 +65,10 @@
                             @endif
 
                             <x-button-dark-border
-                                @click="showCallbackModal(null, 'otpravka-formy')"
+                                type="button"
+                                data-appointment-entry="clinic"
+                                data-branch-id="{{ data_get($branch, 'external_id') }}"
+                                data-doctor-callback-target="otpravka-formy"
                                 class="w-full mt-4">
                                 Записаться на приём
                             </x-button-dark-border>

@@ -13,6 +13,75 @@ class BookingDoctorsByDateApiTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_booking_doctor_launch_endpoint_returns_one_enriched_doctor(): void
+    {
+        $city = $this->createCity(name: 'Москва', slug: 'moskva');
+        $visibleDoctorUuid = '00000000-0000-0000-0000-000000000301';
+
+        $siteDoctorsService = Mockery::mock(BookingSiteDoctorsService::class);
+        $siteDoctorsService->shouldReceive('getPayloadByUuids')
+            ->once()
+            ->with([$visibleDoctorUuid])
+            ->andReturn([
+                'data' => [[
+                    'uuid' => $visibleDoctorUuid,
+                    'ulid' => '01HXDOCTORULID',
+                    'full_name' => 'Петров Петр',
+                    'speciality' => 'Офтальмолог',
+                    'job_title' => 'Врач-офтальмолог',
+                    'avatar_url' => '/storage/doctor.jpg',
+                    'avatar_image' => null,
+                    'video_url' => null,
+                    'excerpt' => null,
+                    'receives_display' => 'Ведет прием с 3 лет',
+                    'age_min_months' => 36,
+                    'age_max_months' => 204,
+                    'receives_text' => null,
+                    'extra' => [
+                        'price' => '2000',
+                    ],
+                ]],
+                'meta' => [
+                    'hidden_uuids' => [],
+                ],
+            ]);
+        $this->app->instance(BookingSiteDoctorsService::class, $siteDoctorsService);
+
+        Http::fake([
+            'https://adminzrenie.ru/api/v1/cities/10/doctors*' => Http::response([
+                'data' => [
+                    [
+                        'id' => 1001,
+                        'external_id' => $visibleDoctorUuid,
+                        'name' => 'Петр из API',
+                        'speciality' => 'Специальность из API',
+                    ],
+                    [
+                        'id' => 1002,
+                        'external_id' => '00000000-0000-0000-0000-000000000302',
+                        'name' => 'Другой врач',
+                    ],
+                ],
+            ]),
+        ]);
+
+        $response = $this->getJson(
+            '/api/booking/doctors/' . $visibleDoctorUuid . '/launch?site_city_id=' . $city->id
+            . '&booking_city_id=10'
+        );
+
+        $response->assertOk();
+        $response->assertJsonPath('data.id', 1001);
+        $response->assertJsonPath('data.external_id', $visibleDoctorUuid);
+        $response->assertJsonPath('data.local_uuid', $visibleDoctorUuid);
+        $response->assertJsonPath('data.ulid', '01HXDOCTORULID');
+        $response->assertJsonPath('data.name', 'Петров Петр');
+        $response->assertJsonPath('data.speciality', 'Офтальмолог');
+        $response->assertJsonPath('data.age_min_months', 36);
+        $response->assertJsonPath('data.age_max_months', 204);
+        $response->assertJsonPath('data.extra.price', '2000');
+    }
+
     public function test_booking_doctors_by_date_endpoint_enriches_cards_for_explicit_site_city(): void
     {
         $moscow = $this->createCity(
