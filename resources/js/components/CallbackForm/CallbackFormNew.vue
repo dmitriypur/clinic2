@@ -109,6 +109,7 @@
 <script>
 import { Form } from '../../utilities/form'
 import { getCurrentCityName } from '../../utilities/currentCity'
+import { getUtmParameters } from '../../utilities/utmParameters'
 
 export default {
   props: {
@@ -151,6 +152,7 @@ export default {
         phone: this.phone,
         city: getCurrentCityName(),
         privacy: false,
+        ...getUtmParameters(),
       }),
     }
   },

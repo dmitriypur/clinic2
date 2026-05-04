@@ -56,6 +56,7 @@
 import { Form } from '../../utilities/form'
 import { classNames } from '../../utilities/css.js'
 import { getCurrentCityName } from '../../utilities/currentCity'
+import { getUtmParameters } from '../../utilities/utmParameters'
 
 const TextField = () => import('../TextField')
 
@@ -97,6 +98,7 @@ export default {
         phone: this.phone,
         city: getCurrentCityName(),
         privacy: false,
+        ...getUtmParameters(),
       }),
     }
   },

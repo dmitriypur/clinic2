@@ -127,6 +127,7 @@
 import phoneInput from '../../mixins/phoneInput'
 import { classNames } from '../../utilities/css'
 import { Form } from '../../utilities/form'
+import { getUtmParameters } from '../../utilities/utmParameters'
 
 const Modal = () => import('../Modal')
 export default {
@@ -160,6 +161,7 @@ export default {
         name: this.name,
         phone: this.phone,
         privacy: false,
+        ...getUtmParameters(),
       }),
     }
   },
