@@ -352,6 +352,34 @@ class BookingApiService {
   }
 
   /**
+   * Получить один обогащённый payload врача для прямого запуска виджета
+   * GET /api/booking/doctors/{uuid}/launch?booking_city_id=&site_city_id=&birth_date=
+   */
+  async getDoctorLaunchPayload(doctorUuid, bookingCityId, birthDate = null) {
+    try {
+      const normalizedUuid = String(doctorUuid || "").trim().toLowerCase();
+
+      if (!normalizedUuid || !bookingCityId) {
+        return { data: null };
+      }
+
+      const response = await axios.get(
+        `/api/booking/doctors/${encodeURIComponent(normalizedUuid)}/launch`,
+        {
+          params: this.getBookingProxyParams({
+            booking_city_id: bookingCityId,
+            birth_date: birthDate || undefined,
+          }),
+        }
+      );
+
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
    * Получить информацию о враче
    * GET /api/v1/doctors/{doctor_id}
    */

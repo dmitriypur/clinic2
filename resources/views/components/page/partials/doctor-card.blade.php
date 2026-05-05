@@ -78,7 +78,9 @@
                 <x-button-primary
                     onclick="ym(94302729,'reachGoal','shapka-forma-open')"
                     type="button"
-                    data-booking-start-mode="doctor"
+                    data-appointment-entry="doctor"
+                    data-doctor-id="{{ $doctor->uuid }}"
+                    data-skip-birth-date="true"
                     data-doctor-callback-target="otpravka-formy">
                     Записаться на прием
                 </x-button-primary>
@@ -89,7 +91,9 @@
         <x-button-primary
             onclick="ym(94302729,'reachGoal','shapka-forma-open')"
             type="button"
-            data-booking-start-mode="doctor"
+            data-appointment-entry="doctor"
+            data-doctor-id="{{ $doctor->uuid }}"
+            data-skip-birth-date="true"
             data-doctor-callback-target="otpravka-formy"
             class="w-full">
             Записаться на прием

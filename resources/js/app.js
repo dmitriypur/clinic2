@@ -46,6 +46,11 @@ const OnlineAppointmentForm = () =>
   import("./components/OnlineAppointmentForm/OnlineAppointmentForm.vue");
 
 import { eventBus } from "./eventBus";
+import {
+  BOOKING_LAUNCH_SELECTOR,
+  buildBookingLaunchContextFromElement,
+  normalizeBookingLaunchContext,
+} from "./utilities/bookingLaunchContext";
 import VueObserveVisibility from "vue-observe-visibility";
 import VueLazyload from "vue-lazyload";
 
@@ -112,6 +117,7 @@ new Vue({
     bookingWidgetV3Active: false,
     bookingWidgetV3Target: null,
     bookingWidgetV3Mode: null,
+    bookingWidgetV3LaunchContext: null,
     currentCityId: null,
     showToTopButton: false,
   },
@@ -165,6 +171,7 @@ new Vue({
     this.mountLightbox();
     this.refreshLightboxListener = () => this.mountLightbox();
     window.addEventListener("refresh-lightbox", this.refreshLightboxListener);
+    document.addEventListener("click", this.handleBookingLaunchContextClick);
 
     const links = [...document.links].filter(
       (link) => link.href.includes(this.baseUrl) && link.href.includes("#")
@@ -199,6 +206,7 @@ new Vue({
     if (this.refreshLightboxListener) {
       window.removeEventListener("refresh-lightbox", this.refreshLightboxListener);
     }
+    document.removeEventListener("click", this.handleBookingLaunchContextClick);
 
     const links = [...document.links].filter(
       (link) => link.href.includes(this.baseUrl) && link.href.includes("#")
@@ -282,9 +290,7 @@ new Vue({
     },
 
     normalizeBookingWidgetStartMode(options = null) {
-      const mode = String(options?.bookingStartMode || "")
-        .trim()
-        .toLowerCase();
+      const mode = normalizeBookingLaunchContext(options)?.entry || null;
 
       if (mode === "doctor" || mode === "clinic") {
         return mode;
@@ -293,10 +299,41 @@ new Vue({
       return null;
     },
 
+    handleBookingLaunchContextClick(event) {
+      if (event.defaultPrevented) {
+        return;
+      }
+
+      const trigger = event.target?.closest?.(BOOKING_LAUNCH_SELECTOR);
+      if (!trigger) {
+        return;
+      }
+
+      const launchContext = buildBookingLaunchContextFromElement(trigger);
+      if (!launchContext) {
+        return;
+      }
+
+      event.preventDefault();
+      this.showCallbackModal(
+        null,
+        trigger.dataset.doctorCallbackTarget ||
+          trigger.dataset.callbackTarget ||
+          trigger.dataset.appointmentTarget ||
+          "otpravka-formy",
+        { launchContext }
+      );
+    },
+
     openBookingWidgetV3(target = null, options = null) {
+      const launchContext = normalizeBookingLaunchContext(
+        options?.launchContext || options
+      );
       this.callbackModalActive = false;
       this.bookingWidgetV3Target = target;
-      this.bookingWidgetV3Mode = this.normalizeBookingWidgetStartMode(options);
+      this.bookingWidgetV3LaunchContext = launchContext;
+      this.bookingWidgetV3Mode =
+        launchContext?.entry || this.normalizeBookingWidgetStartMode(options);
       this.bookingWidgetV3Active = true;
     },
 
@@ -314,6 +351,7 @@ new Vue({
       this.bookingWidgetV3Active = false;
       this.bookingWidgetV3Target = null;
       this.bookingWidgetV3Mode = null;
+      this.bookingWidgetV3LaunchContext = null;
       this.callbackModalActive = true;
     },
 
@@ -326,6 +364,7 @@ new Vue({
       this.bookingWidgetV3Active = false;
       this.bookingWidgetV3Target = null;
       this.bookingWidgetV3Mode = null;
+      this.bookingWidgetV3LaunchContext = null;
     },
 
     closeCallbackModal() {
@@ -346,6 +385,7 @@ new Vue({
       this.bookingWidgetV3Active = false;
       this.bookingWidgetV3Target = null;
       this.bookingWidgetV3Mode = null;
+      this.bookingWidgetV3LaunchContext = null;
     },
 
     showLoginModal() {

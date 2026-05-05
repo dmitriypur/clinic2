@@ -61,6 +61,8 @@ class MenuService
                 if ($doctor) {
                     $item['data']['doctor'] = [
                         'id' => $doctor->id,
+                        'uuid' => $doctor->uuid,
+                        'ulid' => $doctor->ulid,
                         'name' => $doctor->name,
                         'surname' => $doctor->surname,
                         'speciality' => $doctor->speciality,

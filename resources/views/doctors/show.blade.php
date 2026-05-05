@@ -179,7 +179,12 @@
                         </div>
 
                         <div>
-                            <x-button-primary @click="showCallbackModal(null, 'otpravka-formy', { bookingStartMode: 'doctor' })"
+                            <x-button-primary
+                                type="button"
+                                data-appointment-entry="doctor"
+                                data-doctor-id="{{ $doctor->uuid }}"
+                                data-skip-birth-date="true"
+                                data-doctor-callback-target="otpravka-formy"
                                 onclick="ym(94302729,'reachGoal','shapka-forma-open')"
                                 class="w-full md:w-auto">Записаться
                                 на прием

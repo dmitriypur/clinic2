@@ -109,6 +109,7 @@
         <booking-widget-v3
             :open="bookingWidgetV3Active"
             :mode="bookingWidgetV3Mode"
+            :launch-context="bookingWidgetV3LaunchContext"
             :callback-target="bookingWidgetV3Target"
             @close="closeBookingWidgetV3"
         ></booking-widget-v3>

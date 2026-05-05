@@ -8,12 +8,12 @@
   >
     <div class="relative h-auto">
       <div
-        v-if="isPreparingInitialStep"
+        v-if="showInitialPreparationLoader"
         class="flex min-h-[260px] items-center justify-center bg-white"
       >
         <div class="flex flex-col items-center gap-3 text-interactive">
           <span class="h-8 w-8 animate-spin rounded-full border-2 border-surface-subdued border-t-action-primary"></span>
-          <p class="text-sm font-semibold">Подбираем доступные варианты...</p>
+          <p class="text-sm font-semibold">{{ initialPreparationMessage }}</p>
         </div>
       </div>
 
@@ -142,6 +142,7 @@
           :selectedSlot="selectedSlot"
           :isSubmitting="isSubmitting"
           :initialBirthDate="patientBirthDateIso"
+          :birthDateReadonly="!isBirthDateEditableInForm"
           :stepChipText="formStepChipText"
           ref="patientForm"
           @close="handleClose"
@@ -171,12 +172,12 @@
       </template>
 
       <div
-        v-if="transitionLoading"
+        v-if="transitionLoading && !skipTransitionOverlay"
         class="absolute inset-0 z-30 flex min-h-[260px] items-center justify-center bg-white/85 backdrop-blur-[1px]"
       >
         <div class="flex flex-col items-center gap-3 text-interactive">
           <span class="h-8 w-8 animate-spin rounded-full border-2 border-surface-subdued border-t-action-primary"></span>
-          <p class="text-sm font-semibold">Подбираем доступные варианты...</p>
+          <p class="text-sm font-semibold">{{ transitionLoadingMessage }}</p>
         </div>
       </div>
     </div>
@@ -200,6 +201,7 @@ import {
   getClinicDoctorSortOrders,
   getDoctorSelectSortOrders,
 } from "../../services/bookingOrdering";
+import { normalizeBookingLaunchContext } from "../../utilities/bookingLaunchContext";
 
 const BookingWidgetModal = () => import("./components/BookingWidgetModal.vue");
 const StartStep = () => import("./components/StartStep.vue");
@@ -234,6 +236,10 @@ export default {
     mode: {
       type: String,
       default: null, // 'doctor' | 'clinic'
+    },
+    launchContext: {
+      type: Object,
+      default: null,
     },
     callbackTarget: {
       type: String,
@@ -272,6 +278,7 @@ export default {
       clinicsCacheByCity: {},
       cityBranchesCacheByCity: {},
       doctorsCacheByCity: {},
+      doctorLaunchCacheByQuery: {},
       dateFlowDoctorsCacheByQuery: {},
       dateFlowCalendarCacheByQuery: {},
       siteDoctorsCacheByUuids: {},
@@ -399,8 +406,44 @@ export default {
 
       return "Шаг №5";
     },
+    effectiveLaunchContext() {
+      return (
+        normalizeBookingLaunchContext(this.launchContext) ||
+        normalizeBookingLaunchContext({ bookingStartMode: this.mode })
+      );
+    },
+    initialPreparationMessage() {
+      return this.isSkipBirthDateLaunchContext
+        ? "Загрузка данных доктора..."
+        : "Подбираем доступные варианты...";
+    },
+    transitionLoadingMessage() {
+      return this.selectedMode === "doctor" && this.selectedDoctor
+        ? "Загрузка данных доктора..."
+        : "Подбираем доступные варианты...";
+    },
+    showInitialPreparationLoader() {
+      return (
+        this.isPreparingInitialStep ||
+        (this.currentStep === "start" && this.isForcedModeEntry)
+      );
+    },
+    skipTransitionOverlay() {
+      return this.isSkipBirthDateLaunchContext;
+    },
+    isSkipBirthDateLaunchContext() {
+      return Boolean(
+        this.effectiveLaunchContext?.entry === "doctor" &&
+          this.effectiveLaunchContext?.doctorId &&
+          this.effectiveLaunchContext?.skipBirthDate
+      );
+    },
+    isBirthDateEditableInForm() {
+      return this.isSkipBirthDateLaunchContext;
+    },
     isForcedModeEntry() {
-      return this.mode === "doctor" || this.mode === "clinic";
+      return this.effectiveLaunchContext?.entry === "doctor" ||
+        this.effectiveLaunchContext?.entry === "clinic";
     },
     showBirthDateBackButton() {
       return !this.isForcedModeEntry;
@@ -418,7 +461,7 @@ export default {
 
           try {
             await this.initCities();
-            await this.applyInitialMode();
+            await this.applyLaunchContext();
           } finally {
             this.isPreparingInitialStep = false;
           }
@@ -435,7 +478,28 @@ export default {
       }
 
       try {
-        await this.applyInitialMode();
+        await this.applyLaunchContext();
+      } finally {
+        if (shouldPrepare) {
+          this.isPreparingInitialStep = false;
+        }
+      }
+    },
+    async launchContext() {
+      if (!this.open) {
+        return;
+      }
+
+      this.resetState();
+
+      const shouldPrepare = this.shouldPrepareInitialStep();
+      if (shouldPrepare) {
+        this.isPreparingInitialStep = true;
+      }
+
+      try {
+        await this.initCities();
+        await this.applyLaunchContext();
       } finally {
         if (shouldPrepare) {
           this.isPreparingInitialStep = false;
@@ -472,7 +536,8 @@ export default {
         return false;
       }
 
-      return this.mode === "doctor" || this.mode === "clinic";
+      return this.effectiveLaunchContext?.entry === "doctor" ||
+        this.effectiveLaunchContext?.entry === "clinic";
     },
     getCacheEntry(cache, key, ttlMs) {
       const cached = cache[key];
@@ -541,6 +606,49 @@ export default {
     getDoctorApiId(doctor) {
       return doctor?.doctor_id ?? doctor?.id ?? null;
     },
+    idsMatch(left, right) {
+      if (left === null || left === undefined || right === null || right === undefined) {
+        return false;
+      }
+
+      return String(left).trim() === String(right).trim();
+    },
+    findDoctorByLaunchId(doctors = [], doctorId = null) {
+      if (!doctorId) {
+        return null;
+      }
+
+      return (doctors || []).find((doctor) => {
+        const candidates = [
+          doctor?.id,
+          doctor?.doctor_id,
+          doctor?.ulid,
+          doctor?.local_id,
+          doctor?.site_id,
+          doctor?.local_uuid,
+          doctor?.uuid,
+          doctor?.external_id,
+        ];
+
+        return candidates.some((value) => this.idsMatch(value, doctorId));
+      }) || null;
+    },
+    findBranchByLaunchId(branches = [], branchId = null) {
+      if (!branchId) {
+        return null;
+      }
+
+      return (branches || []).find((branch) => {
+        const candidates = [
+          branch?.id,
+          branch?.branch_id,
+          branch?.external_id,
+          branch?.uuid,
+        ];
+
+        return candidates.some((value) => this.idsMatch(value, branchId));
+      }) || null;
+    },
     getDoctorSelectionKey(doctor) {
       return doctor?.entry_key || doctor?.id || null;
     },
@@ -600,29 +708,48 @@ export default {
         this.transitionLoading = false;
       }
     },
-    async applyInitialMode() {
+    async applyLaunchContext() {
       if (!this.open || this.currentStep !== "start") {
         return;
       }
 
-      if (this.mode === "doctor") {
-        this.selectedMode = "doctor";
-        this.currentStep = "birth-date";
+      const context = this.effectiveLaunchContext;
+
+      if (!context?.entry) {
         return;
       }
 
-      if (this.mode === "clinic") {
-        this.selectedMode = "clinic";
-        this.currentStep = "birth-date";
+      this.selectedMode = context.entry;
+
+      if (context.entry === "doctor" && context.skipBirthDate && context.doctorId) {
+        await this.openDoctorFlow({
+          doctorId: context.doctorId,
+          skipBirthDate: true,
+          openSchedule: true,
+        });
+        return;
       }
+
+      this.currentStep = "birth-date";
     },
-    async openClinicFlowWithAutoBranchSkip() {
+    async openClinicFlowWithAutoBranchSkip(options = {}) {
       if (!this.patientBirthDateIso) {
         this.currentStep = "birth-date";
         return;
       }
 
       await this.loadCityBranches();
+
+      const preselectedBranch = this.findBranchByLaunchId(
+        this.cityBranches,
+        options.branchId
+      );
+
+      if (preselectedBranch) {
+        await this.handleBranchSelect(preselectedBranch);
+        await this.goToClinicSchedule();
+        return;
+      }
 
       if (this.cityBranches.length > 1) {
         this.currentStep = "clinic-select";
@@ -637,15 +764,54 @@ export default {
       }
       await this.goToClinicSchedule();
     },
-    async openDoctorFlow() {
-      if (!this.patientBirthDateIso) {
+    async openDoctorFlow(options = {}) {
+      const allowWithoutBirthDate =
+        options.skipBirthDate === true && Boolean(options.doctorId);
+
+      if (!this.patientBirthDateIso && !allowWithoutBirthDate) {
         this.currentStep = "birth-date";
-        return;
+        return false;
       }
 
       await this.initCities();
-      this.currentStep = "doctor-select";
+      if (options.openSchedule === true && options.doctorId) {
+        const launchDoctor = await this.loadDoctorByLaunchId(options.doctorId);
+
+        if (launchDoctor) {
+          this.doctors = [launchDoctor];
+          await this.handleDoctorSelect(launchDoctor);
+          await this.goToDoctorSchedule({ renderImmediately: true });
+          return true;
+        }
+      }
+
+      if (options.openSchedule !== true) {
+        this.currentStep = "doctor-select";
+      }
       await this.loadDoctorsByCity();
+
+      const preselectedDoctor = this.findDoctorByLaunchId(
+        this.doctors,
+        options.doctorId
+      );
+
+      if (preselectedDoctor) {
+        await this.handleDoctorSelect(preselectedDoctor);
+
+        if (options.openSchedule === true) {
+          await this.goToDoctorSchedule({ renderImmediately: true });
+        }
+
+        return true;
+      }
+
+      if (options.openSchedule === true) {
+        this.currentStep = "birth-date";
+        return false;
+      }
+
+      this.currentStep = "doctor-select";
+      return true;
     },
     async openDateFlow() {
       if (!this.patientBirthDateIso) {
@@ -792,6 +958,46 @@ export default {
         };
       } finally {
         this.loadingDoctors = false;
+      }
+    },
+    async loadDoctorByLaunchId(doctorId) {
+      await this.initCities();
+
+      if (!doctorId || !this.currentCityId) {
+        return null;
+      }
+
+      const cacheKey = [
+        this.currentCityId,
+        this.patientBirthDateIso || "all",
+        String(doctorId).trim().toLowerCase(),
+      ].join(":");
+      const cached = this.getCacheEntry(
+        this.doctorLaunchCacheByQuery,
+        cacheKey,
+        this.doctorsCacheTtlMs
+      );
+
+      if (cached) {
+        return cached;
+      }
+
+      try {
+        const response = await bookingApi.getDoctorLaunchPayload(
+          doctorId,
+          this.currentCityId,
+          this.patientBirthDateIso || null
+        );
+        const doctor = response?.data || null;
+
+        if (!doctor) {
+          return null;
+        }
+
+        this.setCacheEntry(this.doctorLaunchCacheByQuery, cacheKey, doctor);
+        return doctor;
+      } catch (e) {
+        return null;
       }
     },
     async loadDoctorsByClinic(clinicId, branchId = null) {
@@ -1463,17 +1669,22 @@ export default {
       this.patientBirthDateDisplay = display;
       this.patientBirthDateIso = iso;
       this.resetFlowSelections();
+      const context = this.effectiveLaunchContext;
 
       if (this.selectedMode === "doctor") {
         await this.withTransitionLoader(async () => {
-          await this.openDoctorFlow();
+          await this.openDoctorFlow({
+            doctorId: context?.entry === "doctor" ? context.doctorId : null,
+          });
         });
         return;
       }
 
       if (this.selectedMode === "clinic") {
         await this.withTransitionLoader(async () => {
-          await this.openClinicFlowWithAutoBranchSkip();
+          await this.openClinicFlowWithAutoBranchSkip({
+            branchId: context?.entry === "clinic" ? context.branchId : null,
+          });
         });
         return;
       }
@@ -1651,8 +1862,8 @@ export default {
 
       this.currentStep = "clinic-select";
     },
-    async goToDoctorSchedule() {
-      await this.withTransitionLoader(async () => {
+    async goToDoctorSchedule(options = {}) {
+      const prepareSchedule = async () => {
         if (!this.clinics.length) {
           await this.loadClinics();
         }
@@ -1675,7 +1886,25 @@ export default {
         }
 
         void this.updateDoctorFlowHighlightedDates();
-      });
+      };
+
+      if (options.renderImmediately === true) {
+        this.currentStep = "doctor-schedule";
+        this.loadingDoctorFlowBranches = true;
+        this.loadingSlots = true;
+
+        void prepareSchedule().catch(() => {
+          this.doctorFlowBranches = [];
+          this.selectedBranch = null;
+          this.slots = [];
+          this.selectedSlot = null;
+          this.loadingDoctorFlowBranches = false;
+          this.loadingSlots = false;
+        });
+        return;
+      }
+
+      await this.withTransitionLoader(prepareSchedule);
     },
     async goToClinicSchedule() {
       this.currentStep = "clinic-schedule";

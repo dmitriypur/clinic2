@@ -182,7 +182,11 @@
                         </div>
 
                         <x-button-primary
-                            @click="showCallbackModal(null, 'otpravka-formy', { bookingStartMode: 'doctor' })"
+                            type="button"
+                            data-appointment-entry="doctor"
+                            data-doctor-id="{{ $doctor->uuid }}"
+                            data-skip-birth-date="true"
+                            data-doctor-callback-target="otpravka-formy"
                             onclick="ym(94302729,'reachGoal','shapka-forma-open')"
                             class="w-full text-lg md:hidden">
                             Записаться на приём
@@ -211,7 +215,11 @@
                         @endif
 
                         <x-button-primary
-                            @click="showCallbackModal(null, 'otpravka-formy', { bookingStartMode: 'doctor' })"
+                            type="button"
+                            data-appointment-entry="doctor"
+                            data-doctor-id="{{ $doctor->uuid }}"
+                            data-skip-birth-date="true"
+                            data-doctor-callback-target="otpravka-formy"
                             onclick="ym(94302729,'reachGoal','shapka-forma-open')"
                             class="w-full lg:max-w-56">
                             Записаться на приём
