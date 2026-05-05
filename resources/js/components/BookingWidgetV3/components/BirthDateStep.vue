@@ -15,6 +15,7 @@
           :class="error ? 'border border-[#E04F4F] focus:bg-white' : 'border-transparent bg-surface-subdued'"
           placeholder="ДД.ММ.ГГГГ"
           @keyup.enter="handleNext"
+          @input="handleInput"
         />
         <p v-if="error" class="mt-2 text-xs text-[#E04F4F]">
           {{ error }}
@@ -106,6 +107,20 @@ export default {
       this.$emit("next", {
         display: this.form.birthDate.trim(),
         iso: birthDateDisplayToIso(this.form.birthDate),
+      });
+    },
+    handleInput(event) {
+      const value = String(event?.target?.value || this.form.birthDate).trim();
+      const validationMessage = validateBirthDateDisplay(value);
+
+      if (validationMessage) {
+        this.$emit("valid-change", null);
+        return;
+      }
+
+      this.$emit("valid-change", {
+        display: value,
+        iso: birthDateDisplayToIso(value),
       });
     },
   },

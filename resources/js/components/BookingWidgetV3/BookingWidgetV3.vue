@@ -32,6 +32,7 @@
           :showBackButton="showBirthDateBackButton"
           :backDisabled="birthDateBackDisabled"
           @back="goToStart"
+          @valid-change="handleBirthDateValidChange"
           @next="handleBirthDateSubmit"
         />
 
@@ -150,6 +151,12 @@
           @submit="handleFormSubmit"
         />
 
+        <DoctorAgeBlockedStep
+          v-else-if="currentStep === 'doctor-age-blocked'"
+          :message="doctorAgeBlockedMessage"
+          @choose-other="goToDoctorSelectFromAgeBlocked"
+        />
+
         <CallbackFormNew
           v-else-if="currentStep === 'leave-request'"
           button-content="Отправить"
@@ -172,7 +179,7 @@
       </template>
 
       <div
-        v-if="transitionLoading && !skipTransitionOverlay"
+        v-if="transitionLoading"
         class="absolute inset-0 z-30 flex min-h-[260px] items-center justify-center bg-white/85 backdrop-blur-[1px]"
       >
         <div class="flex flex-col items-center gap-3 text-interactive">
@@ -198,6 +205,25 @@ import {
   getDoctorAgeRange,
 } from "../../utilities/doctorAge";
 import {
+  buildDoctorAgeBlockedMessage as buildDoctorAgeBlockedMessageHelper,
+  isDoctorAllowedForBirthDate as isDoctorAllowedForBirthDateHelper,
+} from "./utils/doctorAgeBlocker";
+import {
+  buildCompositeCacheKey,
+  getTimestampedCacheEntry,
+  setTimestampedCacheEntry,
+} from "./utils/cacheUtils";
+import {
+  getFirstAvailableSlot,
+  sortResolvedByFirstAvailable,
+  buildDoctorShiftMap,
+  pickClinicFlowSelectedEntry,
+} from "./utils/selectionUtils";
+import {
+  isSlotAvailable as isSlotAvailableHelper,
+  slotComparableValue as slotComparableValueHelper,
+} from "./utils/slotUtils";
+import {
   getClinicDoctorSortOrders,
   getDoctorSelectSortOrders,
 } from "../../services/bookingOrdering";
@@ -211,6 +237,8 @@ const ClinicSelectStep = () => import("./components/ClinicSelectStep.vue");
 const DoctorScheduleStep = () => import("./components/DoctorScheduleStep.vue");
 const ClinicScheduleStep = () => import("./components/ClinicScheduleStep.vue");
 const PatientFormStep = () => import("./components/PatientFormStep.vue");
+const DoctorAgeBlockedStep = () =>
+  import("./components/DoctorAgeBlockedStep.vue");
 const CallbackFormNew = () => import("../CallbackForm/CallbackFormNew.vue");
 const SuccessStep = () => import("./components/SuccessStep.vue");
 
@@ -225,6 +253,7 @@ export default {
     DoctorScheduleStep,
     ClinicScheduleStep,
     PatientFormStep,
+    DoctorAgeBlockedStep,
     CallbackFormNew,
     SuccessStep,
   },
@@ -279,6 +308,7 @@ export default {
       cityBranchesCacheByCity: {},
       doctorsCacheByCity: {},
       doctorLaunchCacheByQuery: {},
+      doctorFlowBranchesAvailabilityCacheByQuery: {},
       dateFlowDoctorsCacheByQuery: {},
       dateFlowCalendarCacheByQuery: {},
       siteDoctorsCacheByUuids: {},
@@ -296,6 +326,9 @@ export default {
       doctorFlowBranchesLoadedOnce: false,
       isSubmitting: false,
       formSourceStep: null,
+      ageBlockedDoctor: null,
+      directDoctorLaunchPreload: null,
+      directDoctorScheduleWarmup: null,
       isPreparingInitialStep: false,
       transitionLoading: false,
     };
@@ -413,33 +446,34 @@ export default {
       );
     },
     initialPreparationMessage() {
-      return this.isSkipBirthDateLaunchContext
+      return this.isDirectDoctorLaunchContext
         ? "Загрузка данных доктора..."
         : "Подбираем доступные варианты...";
     },
     transitionLoadingMessage() {
-      return this.selectedMode === "doctor" && this.selectedDoctor
+      return this.selectedMode === "doctor"
         ? "Загрузка данных доктора..."
         : "Подбираем доступные варианты...";
     },
     showInitialPreparationLoader() {
       return (
         this.isPreparingInitialStep ||
-        (this.currentStep === "start" && this.isForcedModeEntry)
+        (this.currentStep === "start" &&
+          this.isForcedModeEntry &&
+          !this.isDirectDoctorLaunchContext)
       );
     },
-    skipTransitionOverlay() {
-      return this.isSkipBirthDateLaunchContext;
+    doctorAgeBlockedMessage() {
+      return this.buildDoctorAgeBlockedMessage(this.ageBlockedDoctor);
     },
-    isSkipBirthDateLaunchContext() {
+    isDirectDoctorLaunchContext() {
       return Boolean(
         this.effectiveLaunchContext?.entry === "doctor" &&
-          this.effectiveLaunchContext?.doctorId &&
-          this.effectiveLaunchContext?.skipBirthDate
+          this.effectiveLaunchContext?.doctorId
       );
     },
     isBirthDateEditableInForm() {
-      return this.isSkipBirthDateLaunchContext;
+      return false;
     },
     isForcedModeEntry() {
       return this.effectiveLaunchContext?.entry === "doctor" ||
@@ -456,6 +490,12 @@ export default {
     open: {
       async handler(val) {
         if (val) {
+          if (this.isDirectDoctorLaunchContext) {
+            await this.applyLaunchContext();
+            this.preloadDirectDoctorLaunch();
+            return;
+          }
+
           const shouldPrepare = this.shouldPrepareInitialStep();
           this.isPreparingInitialStep = shouldPrepare;
 
@@ -491,6 +531,12 @@ export default {
       }
 
       this.resetState();
+
+      if (this.isDirectDoctorLaunchContext) {
+        await this.applyLaunchContext();
+        this.preloadDirectDoctorLaunch();
+        return;
+      }
 
       const shouldPrepare = this.shouldPrepareInitialStep();
       if (shouldPrepare) {
@@ -536,27 +582,17 @@ export default {
         return false;
       }
 
-      return this.effectiveLaunchContext?.entry === "doctor" ||
-        this.effectiveLaunchContext?.entry === "clinic";
+      return (
+        this.effectiveLaunchContext?.entry === "clinic" ||
+        (this.effectiveLaunchContext?.entry === "doctor" &&
+          !this.isDirectDoctorLaunchContext)
+      );
     },
     getCacheEntry(cache, key, ttlMs) {
-      const cached = cache[key];
-      if (!cached) {
-        return null;
-      }
-
-      if (Date.now() - cached.ts > ttlMs) {
-        delete cache[key];
-        return null;
-      }
-
-      return cached.data;
+      return getTimestampedCacheEntry(cache, key, ttlMs)?.data || null;
     },
     setCacheEntry(cache, key, data) {
-      cache[key] = {
-        ts: Date.now(),
-        data,
-      };
+      setTimestampedCacheEntry(cache, key, { data });
     },
     getEmptySlotsMessage(lastAvailableDate) {
       if (
@@ -673,9 +709,9 @@ export default {
 
       return dates[dates.length - 1] || null;
     },
-    async withTransitionLoader(task) {
-      const showDelayMs = 100;
-      const minVisibleMs = 100;
+    async withTransitionLoader(task, options = {}) {
+      const showDelayMs = options.showDelayMs ?? 100;
+      const minVisibleMs = options.minVisibleMs ?? 100;
 
       let showTimer = null;
       let shownAt = 0;
@@ -708,6 +744,143 @@ export default {
         this.transitionLoading = false;
       }
     },
+    normalizeLaunchId(id) {
+      return String(id || "").trim().toLowerCase();
+    },
+    preloadDirectDoctorLaunch() {
+      const context = this.effectiveLaunchContext;
+      if (context?.entry !== "doctor" || !context.doctorId) {
+        return null;
+      }
+
+      const doctorId = this.normalizeLaunchId(context.doctorId);
+      if (
+        this.directDoctorLaunchPreload?.doctorId === doctorId &&
+        this.directDoctorLaunchPreload?.promise
+      ) {
+        return this.directDoctorLaunchPreload.promise;
+      }
+
+      const promise = this.loadDoctorByLaunchId(context.doctorId, {
+        ignoreBirthDate: true,
+      });
+
+      this.directDoctorLaunchPreload = {
+        doctorId,
+        promise,
+      };
+
+      return promise;
+    },
+    async getDirectDoctorLaunchPayload(doctorId) {
+      const normalizedDoctorId = this.normalizeLaunchId(doctorId);
+      const preload = this.directDoctorLaunchPreload;
+
+      if (
+        preload?.doctorId === normalizedDoctorId &&
+        preload?.promise
+      ) {
+        return preload.promise;
+      }
+
+      return this.loadDoctorByLaunchId(doctorId, {
+        ignoreBirthDate: true,
+      });
+    },
+    getDirectDoctorScheduleWarmupKey(doctorId, birthDateIso) {
+      return [
+        this.normalizeLaunchId(doctorId),
+        String(birthDateIso || ""),
+        this.formatDateForApi(this.selectedDate),
+      ].join("|");
+    },
+    preloadDirectDoctorSchedule(payload) {
+      const context = this.effectiveLaunchContext;
+      if (
+        context?.entry !== "doctor" ||
+        !context.doctorId ||
+        !payload?.iso
+      ) {
+        return null;
+      }
+
+      const key = this.getDirectDoctorScheduleWarmupKey(
+        context.doctorId,
+        payload.iso
+      );
+
+      if (
+        this.directDoctorScheduleWarmup?.key === key &&
+        this.directDoctorScheduleWarmup?.promise
+      ) {
+        return this.directDoctorScheduleWarmup.promise;
+      }
+
+      const promise = this.warmDirectDoctorScheduleCaches({
+        doctorId: context.doctorId,
+        birthDateIso: payload.iso,
+      });
+
+      this.directDoctorScheduleWarmup = {
+        key,
+        promise,
+      };
+
+      return promise;
+    },
+    async warmDirectDoctorScheduleCaches({ doctorId, birthDateIso }) {
+      await this.initCities();
+
+      const launchDoctor = await this.getDirectDoctorLaunchPayload(doctorId);
+      if (
+        !launchDoctor ||
+        !this.isDoctorAllowedForBirthDate(launchDoctor, birthDateIso)
+      ) {
+        return;
+      }
+
+      if (!this.clinics.length) {
+        await this.loadClinics();
+      }
+
+      const enabledClinic = this.clinics.find(
+        (clinic) => clinic.enabled !== false
+      );
+      const clinicId = enabledClinic?.id || null;
+      const doctorApiId = this.getDoctorApiId(launchDoctor);
+      const dateStr = this.formatDateForApi(this.selectedDate);
+
+      if (!clinicId || !doctorApiId || !this.currentCityId) {
+        return;
+      }
+
+      const { branches, defaultBranchId } =
+        await this.getDoctorFlowBranchesAvailabilityWithCache({
+          doctorId: doctorApiId,
+          dateStr,
+          clinicId,
+          cityId: this.currentCityId,
+        });
+      const normalizedBranches = branches.map((branch) => ({
+        ...branch,
+        enabled: true,
+      }));
+      const warmupBranch = this.getWarmupDoctorFlowBranch(
+        normalizedBranches,
+        defaultBranchId
+      );
+
+      if (!warmupBranch?.id) {
+        return;
+      }
+
+      await this.getDoctorSlotsWithCache({
+        doctorId: doctorApiId,
+        clinicId,
+        branchId: warmupBranch.id,
+        dateStr,
+      });
+    },
     async applyLaunchContext() {
       if (!this.open || this.currentStep !== "start") {
         return;
@@ -720,15 +893,6 @@ export default {
       }
 
       this.selectedMode = context.entry;
-
-      if (context.entry === "doctor" && context.skipBirthDate && context.doctorId) {
-        await this.openDoctorFlow({
-          doctorId: context.doctorId,
-          skipBirthDate: true,
-          openSchedule: true,
-        });
-        return;
-      }
 
       this.currentStep = "birth-date";
     },
@@ -765,19 +929,24 @@ export default {
       await this.goToClinicSchedule();
     },
     async openDoctorFlow(options = {}) {
-      const allowWithoutBirthDate =
-        options.skipBirthDate === true && Boolean(options.doctorId);
-
-      if (!this.patientBirthDateIso && !allowWithoutBirthDate) {
+      if (!this.patientBirthDateIso) {
         this.currentStep = "birth-date";
         return false;
       }
 
       await this.initCities();
       if (options.openSchedule === true && options.doctorId) {
-        const launchDoctor = await this.loadDoctorByLaunchId(options.doctorId);
+        const launchDoctor = await this.getDirectDoctorLaunchPayload(
+          options.doctorId
+        );
 
         if (launchDoctor) {
+          if (!this.isDoctorAllowedForBirthDate(launchDoctor)) {
+            this.ageBlockedDoctor = launchDoctor;
+            this.currentStep = "doctor-age-blocked";
+            return false;
+          }
+
           this.doctors = [launchDoctor];
           await this.handleDoctorSelect(launchDoctor);
           await this.goToDoctorSchedule({ renderImmediately: true });
@@ -960,16 +1129,19 @@ export default {
         this.loadingDoctors = false;
       }
     },
-    async loadDoctorByLaunchId(doctorId) {
+    async loadDoctorByLaunchId(doctorId, options = {}) {
       await this.initCities();
 
       if (!doctorId || !this.currentCityId) {
         return null;
       }
 
+      const birthDate = options.ignoreBirthDate === true
+        ? null
+        : this.patientBirthDateIso || null;
       const cacheKey = [
         this.currentCityId,
-        this.patientBirthDateIso || "all",
+        birthDate || "all",
         String(doctorId).trim().toLowerCase(),
       ].join(":");
       const cached = this.getCacheEntry(
@@ -986,7 +1158,7 @@ export default {
         const response = await bookingApi.getDoctorLaunchPayload(
           doctorId,
           this.currentCityId,
-          this.patientBirthDateIso || null
+          birthDate
         );
         const doctor = response?.data || null;
 
@@ -1196,6 +1368,28 @@ export default {
 
       return currentBranch || preferredBranch || enabledBranches[0];
     },
+    getWarmupDoctorFlowBranch(branches = [], preferredBranchId = null) {
+      const enabledBranches = (branches || []).filter(
+        (branch) => branch.enabled !== false
+      );
+
+      if (!enabledBranches.length) {
+        return null;
+      }
+
+      const preferredBranch = enabledBranches.find(
+        (branch) => Number(branch.id) === Number(preferredBranchId)
+      );
+      const firstAvailableBranch = enabledBranches.find(
+        (branch) => branch.has_available_slots === true
+      );
+
+      if (preferredBranch?.has_available_slots === true) {
+        return preferredBranch;
+      }
+
+      return firstAvailableBranch || preferredBranch || enabledBranches[0];
+    },
     async loadDoctorFlowBranches(clinicId, options = {}) {
       if (!clinicId || !this.selectedDoctor || !this.selectedDate) {
         this.doctorFlowBranches = [];
@@ -1213,18 +1407,13 @@ export default {
 
       this.loadingDoctorFlowBranches = !keepVisibleBranches;
       try {
-        const response = await bookingApi.getDoctorBranchesAvailability(
-          this.getDoctorApiId(this.selectedDoctor),
-          this.formatDateForApi(this.selectedDate),
-          clinicId,
-          this.currentCityId
-        );
-        const branches = Array.isArray(response?.data)
-          ? response.data
-          : Array.isArray(response)
-          ? response
-          : [];
-        const defaultBranchId = response?.meta?.default_branch_id ?? null;
+        const { branches, defaultBranchId } =
+          await this.getDoctorFlowBranchesAvailabilityWithCache({
+            doctorId: this.getDoctorApiId(this.selectedDoctor),
+            dateStr: this.formatDateForApi(this.selectedDate),
+            clinicId,
+            cityId: this.currentCityId,
+          });
         const normalizedBranches = branches.map((branch) => ({
           ...branch,
           enabled: true,
@@ -1308,39 +1497,97 @@ export default {
       }
     },
     findFirstAvailableSlot(slots = []) {
-      return (slots || [])
-        .filter((slot) => this.isSlotAvailable(slot))
-        .sort(
-          (a, b) => this.slotComparableValue(a) - this.slotComparableValue(b)
-        )[0] || null;
+      return getFirstAvailableSlot(
+        slots,
+        this.isSlotAvailable,
+        this.slotComparableValue
+      );
     },
     getSlotsCacheKey({ doctorId, clinicId = null, branchId = null, dateStr }) {
-      return [
-        String(doctorId ?? "none"),
-        String(clinicId ?? "none"),
-        String(branchId ?? "none"),
-        String(dateStr ?? "none"),
-      ].join("|");
+      return buildCompositeCacheKey([doctorId, clinicId, branchId, dateStr]);
+    },
+    getDoctorFlowBranchesAvailabilityCacheKey({
+      doctorId,
+      dateStr,
+      clinicId,
+      cityId,
+    }) {
+      return buildCompositeCacheKey([doctorId, dateStr, clinicId, cityId]);
+    },
+    getDoctorFlowBranchesAvailabilityFromCache(key) {
+      return (
+        getTimestampedCacheEntry(
+          this.doctorFlowBranchesAvailabilityCacheByQuery,
+          key,
+          30 * 1000
+        )?.payload || null
+      );
+    },
+    setDoctorFlowBranchesAvailabilityToCache(key, payload) {
+      setTimestampedCacheEntry(
+        this.doctorFlowBranchesAvailabilityCacheByQuery,
+        key,
+        { payload }
+      );
+    },
+    normalizeDoctorFlowBranchesAvailabilityResponse(response) {
+      const branches = Array.isArray(response?.data)
+        ? response.data
+        : Array.isArray(response)
+        ? response
+        : [];
+
+      return {
+        branches,
+        defaultBranchId: response?.meta?.default_branch_id ?? null,
+      };
+    },
+    async getDoctorFlowBranchesAvailabilityWithCache({
+      doctorId,
+      dateStr,
+      clinicId,
+      cityId,
+    }) {
+      if (!doctorId || !dateStr || !clinicId || !cityId) {
+        return {
+          branches: [],
+          defaultBranchId: null,
+        };
+      }
+
+      const key = this.getDoctorFlowBranchesAvailabilityCacheKey({
+        doctorId,
+        dateStr,
+        clinicId,
+        cityId,
+      });
+      const cachedPayload = this.getDoctorFlowBranchesAvailabilityFromCache(key);
+      if (cachedPayload) {
+        return cachedPayload;
+      }
+
+      const response = await bookingApi.getDoctorBranchesAvailability(
+        doctorId,
+        dateStr,
+        clinicId,
+        cityId
+      );
+      const payload =
+        this.normalizeDoctorFlowBranchesAvailabilityResponse(response);
+      this.setDoctorFlowBranchesAvailabilityToCache(key, payload);
+
+      return payload;
     },
     getSlotsFromCache(key) {
-      const cached = this.slotsCacheByQuery[key];
-      if (!cached) {
-        return null;
-      }
-
-      const ttlMs = 30 * 1000;
-      if (Date.now() - cached.ts > ttlMs) {
-        delete this.slotsCacheByQuery[key];
-        return null;
-      }
-
-      return cached.slots;
+      return (
+        getTimestampedCacheEntry(this.slotsCacheByQuery, key, 30 * 1000)
+          ?.slots || null
+      );
     },
     setSlotsToCache(key, slots) {
-      this.slotsCacheByQuery[key] = {
-        ts: Date.now(),
+      setTimestampedCacheEntry(this.slotsCacheByQuery, key, {
         slots: Array.isArray(slots) ? slots : [],
-      };
+      });
     },
     async getDoctorSlotsWithCache({
       doctorId,
@@ -1374,76 +1621,10 @@ export default {
       return slots;
     },
     isSlotAvailable(slot) {
-      if (!slot) return false;
-
-      const isTrue = (value) =>
-        value === true ||
-        value === 1 ||
-        value === "1" ||
-        String(value).toLowerCase() === "true";
-
-      const parseStatus = (value) => String(value || "").toLowerCase();
-
-      const hasIsAvailable = Object.prototype.hasOwnProperty.call(
-        slot,
-        "is_available"
-      );
-      const hasFree = Object.prototype.hasOwnProperty.call(slot, "free");
-      const hasIsOccupied = Object.prototype.hasOwnProperty.call(
-        slot,
-        "is_occupied"
-      );
-      const hasIsPast = Object.prototype.hasOwnProperty.call(slot, "is_past");
-
-      const status = parseStatus(slot.status);
-
-      const availabilitySignals = [];
-      if (hasIsAvailable) {
-        availabilitySignals.push(isTrue(slot.is_available));
-      }
-      if (hasFree) {
-        availabilitySignals.push(isTrue(slot.free));
-      }
-      if (status) {
-        if (["free", "available", "open"].includes(status)) {
-          availabilitySignals.push(true);
-        }
-        if (
-          ["occupied", "booked", "busy", "closed", "disabled"].includes(status)
-        ) {
-          availabilitySignals.push(false);
-        }
-      }
-
-      const available = availabilitySignals.length
-        ? availabilitySignals.some(Boolean)
-        : true;
-
-      const occupied = hasIsOccupied
-        ? isTrue(slot.is_occupied)
-        : status
-        ? ["occupied", "booked", "busy"].includes(status)
-        : false;
-
-      const past = hasIsPast
-        ? isTrue(slot.is_past)
-        : slot.datetime
-        ? new Date(slot.datetime).getTime() < Date.now()
-        : false;
-
-      return available && !occupied && !past;
+      return isSlotAvailableHelper(slot);
     },
     slotComparableValue(slot) {
-      if (!slot) return Number.MAX_SAFE_INTEGER;
-      if (slot.datetime) {
-        const ts = new Date(slot.datetime).getTime();
-        if (!Number.isNaN(ts)) return ts;
-      }
-      if (slot.time) {
-        const [h, m] = String(slot.time).split(":").map(Number);
-        if (!Number.isNaN(h) && !Number.isNaN(m)) return h * 60 + m;
-      }
-      return Number.MAX_SAFE_INTEGER;
+      return slotComparableValueHelper(slot);
     },
     async setDefaultDoctorForClinicFlow(options = {}) {
       const keepSelectedDoctor = options.keepSelectedDoctor === true;
@@ -1475,12 +1656,7 @@ export default {
                 branchId: this.selectedBranch.id,
                 dateStr,
               });
-              const firstAvailable = slots
-                .filter((slot) => this.isSlotAvailable(slot))
-                .sort(
-                  (a, b) =>
-                    this.slotComparableValue(a) - this.slotComparableValue(b)
-                )[0];
+              const firstAvailable = this.findFirstAvailableSlot(slots);
 
               return {
                 doctor,
@@ -1493,41 +1669,20 @@ export default {
           })
         );
 
-        const withAvailable = resolved
-          .filter((item) => item.firstAvailable)
-          .sort(
-            (a, b) =>
-              this.slotComparableValue(a.firstAvailable) -
-              this.slotComparableValue(b.firstAvailable)
-          );
+        const withAvailable = sortResolvedByFirstAvailable(
+          resolved,
+          this.slotComparableValue
+        );
 
-        this.clinicDoctorShiftMap = resolved.reduce((acc, item) => {
-          const doctorId = item?.doctor?.id;
-          if (doctorId != null) {
-            acc[String(doctorId)] =
-              Array.isArray(item.slots) && item.slots.length > 0;
-          }
-          return acc;
-        }, {});
+        this.clinicDoctorShiftMap = buildDoctorShiftMap(resolved);
 
-        let selectedEntry = null;
-
-        if (keepSelectedDoctor && this.selectedDoctor?.id != null) {
-          selectedEntry =
-            resolved.find(
-              (item) => item?.doctor?.id === this.selectedDoctor.id
-            ) || null;
-        }
-
-        if (!selectedEntry && this.clinicDoctors[0]?.id != null) {
-          const firstDoctorId = this.clinicDoctors[0].id;
-          selectedEntry =
-            resolved.find((item) => item?.doctor?.id === firstDoctorId) || null;
-        }
-
-        if (!selectedEntry) {
-          selectedEntry = withAvailable[0] || resolved[0] || null;
-        }
+        const selectedEntry = pickClinicFlowSelectedEntry({
+          resolved,
+          withAvailable,
+          keepSelectedDoctor,
+          selectedDoctorId: this.selectedDoctor?.id ?? null,
+          firstDoctorId: this.clinicDoctors[0]?.id ?? null,
+        });
 
         if (!selectedEntry) {
           this.selectedDoctor = null;
@@ -1637,6 +1792,12 @@ export default {
         return !isBelowMinimum && !isAboveMaximum;
       });
     },
+    isDoctorAllowedForBirthDate(doctor, birthDateIso = this.patientBirthDateIso) {
+      return isDoctorAllowedForBirthDateHelper(doctor, birthDateIso);
+    },
+    buildDoctorAgeBlockedMessage(doctor) {
+      return buildDoctorAgeBlockedMessageHelper(doctor);
+    },
     resetFlowSelections() {
       this.selectedDoctor = null;
       this.selectedClinic = null;
@@ -1659,6 +1820,22 @@ export default {
       this.dateFlowLastAvailableDate = null;
       this.loadingDateFlowDoctors = false;
       this.formSourceStep = null;
+      this.ageBlockedDoctor = null;
+    },
+    handleBirthDateValidChange(payload) {
+      if (
+        !this.isDirectDoctorLaunchContext ||
+        this.selectedMode !== "doctor" ||
+        this.currentStep !== "birth-date"
+      ) {
+        return;
+      }
+
+      this.preloadDirectDoctorLaunch();
+
+      if (payload?.iso) {
+        void this.preloadDirectDoctorSchedule(payload);
+      }
     },
     async handleBirthDateSubmit({ display, iso }) {
       const validationMessage = validateBirthDateDisplay(display);
@@ -1668,17 +1845,40 @@ export default {
 
       this.patientBirthDateDisplay = display;
       this.patientBirthDateIso = iso;
-      this.resetFlowSelections();
       const context = this.effectiveLaunchContext;
+      const isDirectDoctorSubmit =
+        this.selectedMode === "doctor" &&
+        context?.entry === "doctor" &&
+        Boolean(context.doctorId);
 
       if (this.selectedMode === "doctor") {
-        await this.withTransitionLoader(async () => {
+        const warmupPromise = isDirectDoctorSubmit
+          ? this.preloadDirectDoctorSchedule({ display, iso })
+          : null;
+
+        this.resetFlowSelections();
+
+        const openDoctor = async () => {
+          if (warmupPromise && !isDirectDoctorSubmit) {
+            await warmupPromise.catch(() => null);
+          }
+
           await this.openDoctorFlow({
             doctorId: context?.entry === "doctor" ? context.doctorId : null,
+            openSchedule: context?.entry === "doctor" && Boolean(context.doctorId),
           });
-        });
+        };
+
+        if (isDirectDoctorSubmit) {
+          void warmupPromise?.catch(() => null);
+          await openDoctor();
+        } else {
+          await this.withTransitionLoader(openDoctor);
+        }
         return;
       }
+
+      this.resetFlowSelections();
 
       if (this.selectedMode === "clinic") {
         await this.withTransitionLoader(async () => {
@@ -1843,6 +2043,11 @@ export default {
         return;
       }
 
+      await this.openDoctorFlow();
+    },
+    async goToDoctorSelectFromAgeBlocked() {
+      this.ageBlockedDoctor = null;
+      this.selectedDoctor = null;
       await this.openDoctorFlow();
     },
     async goToClinicSelect() {
@@ -2024,6 +2229,9 @@ export default {
       this.loadingDateFlowDoctors = false;
       this.isSubmitting = false;
       this.formSourceStep = null;
+      this.ageBlockedDoctor = null;
+      this.directDoctorLaunchPreload = null;
+      this.directDoctorScheduleWarmup = null;
       this.isPreparingInitialStep = false;
       this.transitionLoading = false;
     },

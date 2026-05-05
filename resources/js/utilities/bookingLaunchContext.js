@@ -18,16 +18,6 @@ function normalizeEntry(value) {
     : null;
 }
 
-function normalizeBoolean(value) {
-  if (value === true) {
-    return true;
-  }
-
-  const normalized = normalizeString(value)?.toLowerCase();
-
-  return normalized === "true" || normalized === "1" || normalized === "yes";
-}
-
 export function normalizeBookingLaunchContext(input = null) {
   if (!input || typeof input !== "object") {
     return null;
@@ -65,7 +55,6 @@ export function normalizeBookingLaunchContext(input = null) {
     entry,
     doctorId: entry === "doctor" ? doctorId : null,
     branchId: entry === "clinic" ? branchId : null,
-    skipBirthDate: entry === "doctor" && normalizeBoolean(input.skipBirthDate),
   };
 }
 
@@ -78,6 +67,5 @@ export function buildBookingLaunchContextFromElement(element) {
     appointmentEntry: element.dataset.appointmentEntry,
     doctorId: element.dataset.doctorId,
     branchId: element.dataset.branchId || element.dataset.clinicId,
-    skipBirthDate: element.dataset.skipBirthDate,
   });
 }

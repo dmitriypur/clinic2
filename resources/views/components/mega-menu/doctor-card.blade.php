@@ -83,7 +83,6 @@
             type="button"
             data-appointment-entry="doctor"
             data-doctor-id="{{ data_get($doctor, 'uuid') }}"
-            data-skip-birth-date="true"
             data-doctor-callback-target="otpravka-formy"
             class="w-full font-bold mt-7 py-3.5 text-lg md:px-0">
             Записаться на приём

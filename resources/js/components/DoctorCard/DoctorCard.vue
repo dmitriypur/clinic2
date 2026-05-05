@@ -125,7 +125,6 @@
           type="button"
           data-appointment-entry="doctor"
           :data-doctor-id="doctor.uuid || doctor.local_uuid || doctor.ulid || doctor.id"
-          data-skip-birth-date="true"
           data-doctor-callback-target="otpravka-formy"
           class="w-full py-3 px-6 btn-gradient font-semibold text-white rounded-xl font-bold mt-7 py-3.5 text-lg md:px-0 blue-gradient text-white rounded-lg">
           Записаться на приём
