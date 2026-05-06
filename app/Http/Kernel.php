@@ -67,6 +67,7 @@ class Kernel extends HttpKernel
         'password.confirm' => \Illuminate\Auth\Middleware\RequirePassword::class,
         'services.integration.city' => \App\Http\Middleware\SetServicesIntegrationCity::class,
         'services.integration' => \App\Http\Middleware\EnsureServicesIntegrationToken::class,
+        'vk.mini_app' => \App\Http\Middleware\EnsureVkMiniAppRequest::class,
         'signed' => \App\Http\Middleware\ValidateSignature::class,
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,

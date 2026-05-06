@@ -40,7 +40,12 @@ Route::domain('form.' . parse_url(config('app.url'), PHP_URL_HOST))->group(funct
 
 Route::get('robots.txt', RobotsTxtController::class);
 Route::get('city-detection', CityDetectionController::class)->name('city.detection');
-Route::view('/vk-mini-app/appointment', 'vk-mini-app.appointment')
+Route::get('/vk-mini-app/appointment', function () {
+    return response()
+        ->view('vk-mini-app.appointment')
+        ->header('X-Robots-Tag', 'noindex, nofollow, noarchive, nosnippet');
+})
+    ->middleware('vk.mini_app')
     ->name('vk-mini-app.appointment');
 
 Route::post('login', [LoginController::class, 'login'])->name('login');
