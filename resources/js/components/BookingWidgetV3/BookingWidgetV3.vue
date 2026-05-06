@@ -3,6 +3,9 @@
     :open="open"
     :zIndexOverride="49"
     :layoutMode="widgetLayoutMode"
+    :showBackdrop="mode !== 'vk'"
+    :showCloseButton="mode !== 'vk'"
+    :flat="mode === 'vk'"
     closeButtonHiddenOnMobile
     @close="handleClose"
   >
@@ -143,6 +146,7 @@
           :selectedSlot="selectedSlot"
           :isSubmitting="isSubmitting"
           :initialBirthDate="patientBirthDateIso"
+          :initialPatientData="initialPatientData"
           :birthDateReadonly="!isBirthDateEditableInForm"
           :stepChipText="formStepChipText"
           ref="patientForm"
@@ -267,6 +271,10 @@ export default {
       default: null, // 'doctor' | 'clinic'
     },
     launchContext: {
+      type: Object,
+      default: null,
+    },
+    initialPatientData: {
       type: Object,
       default: null,
     },

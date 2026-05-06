@@ -11,7 +11,7 @@
     <div class="hidden md:block h-px w-full bg-surface-subdued"></div>
 
     <div class="md:bg-surface-subdued">
-      <div class="grid grid-cols-1 items-stretch lg:grid-cols-[460px_460px] lg:justify-between">
+      <div class="grid grid-cols-1 items-stretch md:grid-cols-2 lg:grid-cols-[460px_460px] md:justify-between">
         <div v-show="showCalendarPane" class="p-4 pb-6 md:p-8 md:pb-10 bg-white">
           <div>
             <div class="flex items-center justify-center gap-4">

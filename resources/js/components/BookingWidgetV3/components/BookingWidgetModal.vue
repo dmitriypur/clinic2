@@ -12,9 +12,11 @@
       <Dialog
         v-if="open"
         :zIndexOverride="zIndexOverride"
+        :flat="flat"
         @close="onClose"
       >
         <CloseButton
+          v-if="showCloseButton"
           :hiddenOnMobile="closeButtonHiddenOnMobile"
           @click="onClose"
         />
@@ -29,7 +31,7 @@
       </Dialog>
     </transition>
 
-    <Backdrop v-if="open" @handleClick="onClose" />
+    <Backdrop v-if="open && showBackdrop" @handleClick="onClose" />
   </div>
 </template>
 
@@ -52,6 +54,18 @@ export default {
   props: {
     open: Boolean,
     closeButtonHiddenOnMobile: Boolean,
+    showCloseButton: {
+      type: Boolean,
+      default: true,
+    },
+    showBackdrop: {
+      type: Boolean,
+      default: true,
+    },
+    flat: {
+      type: Boolean,
+      default: false,
+    },
     zIndexOverride: Number,
     layoutMode: {
       type: String,

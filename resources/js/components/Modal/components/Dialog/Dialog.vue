@@ -38,13 +38,15 @@ export default {
     small: Boolean,
     fix: Boolean,
     limitHeight: Boolean,
+    flat: Boolean,
     zIndexOverride: Number,
   },
 
   computed: {
     className() {
       return classNames(
-        "bg-surface pointer-events-auto relative rounded-xl md:rounded-3xl inset-x-0 bottom-0 flex flex-col w-full max-h-[95vh] shadow-lg md:max-w-max mx-auto",
+        "bg-surface pointer-events-auto relative inset-x-0 bottom-0 flex flex-col w-full max-h-[95vh] md:max-w-max mx-auto",
+        this.flat ? "rounded-none shadow-none" : "rounded-xl md:rounded-3xl shadow-lg",
         !this.limitHeight && "h-full"
       );
     },

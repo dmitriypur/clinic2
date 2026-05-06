@@ -40,6 +40,8 @@ Route::domain('form.' . parse_url(config('app.url'), PHP_URL_HOST))->group(funct
 
 Route::get('robots.txt', RobotsTxtController::class);
 Route::get('city-detection', CityDetectionController::class)->name('city.detection');
+Route::view('/vk-mini-app/appointment', 'vk-mini-app.appointment')
+    ->name('vk-mini-app.appointment');
 
 Route::post('login', [LoginController::class, 'login'])->name('login');
 Route::post('logout', [LoginController::class, 'logout'])->name('logout');

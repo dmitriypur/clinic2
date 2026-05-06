@@ -20,6 +20,7 @@ export default defineConfig({
       input: [
         "resources/css/app.css",
         "resources/js/app.js",
+        "resources/js/vk-mini-app-appointment.js",
         "node_modules/glightbox/dist/css/glightbox.css",
       ],
       refresh: true,

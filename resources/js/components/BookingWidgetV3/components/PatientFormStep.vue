@@ -131,6 +131,10 @@ export default {
       type: String,
       default: "",
     },
+    initialPatientData: {
+      type: Object,
+      default: null,
+    },
     birthDateReadonly: {
       type: Boolean,
       default: true,
@@ -183,6 +187,31 @@ export default {
     },
   },
   methods: {
+    applyInitialPatientData(data) {
+      if (!data || typeof data !== "object") {
+        return;
+      }
+
+      const nextLastName = String(data.last_name || "").trim();
+      if (!String(this.form.last_name || "").trim() && nextLastName) {
+        this.form.last_name = nextLastName;
+      }
+
+      const nextFirstName = String(data.first_name || "").trim();
+      if (!String(this.form.first_name || "").trim() && nextFirstName) {
+        this.form.first_name = nextFirstName;
+      }
+
+      const nextMiddleName = String(data.middle_name || "").trim();
+      if (!String(this.form.middle_name || "").trim() && nextMiddleName) {
+        this.form.middle_name = nextMiddleName;
+      }
+
+      const nextPhone = String(data.phone_number || "").trim();
+      if (!String(this.form.phone || "").trim() && nextPhone) {
+        this.form.phone = nextPhone;
+      }
+    },
     handleSubmit() {
       this.errors = {};
       this.generalError = null;
@@ -250,6 +279,13 @@ export default {
   watch: {
     initialBirthDate(value) {
       this.form.birth_date = value || "";
+    },
+    initialPatientData: {
+      handler(value) {
+        this.applyInitialPatientData(value);
+      },
+      immediate: true,
+      deep: true,
     },
   },
 };
