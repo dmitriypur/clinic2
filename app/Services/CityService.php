@@ -13,6 +13,7 @@ class CityService
         'tags',
         'search',
         'live-search',
+        'vk-mini-app',
     ];
 
     private ?City $currentCity = null;
