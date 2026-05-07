@@ -64,6 +64,14 @@ class ManageGeneralSettings extends SettingsPage
                                         ->helperText('Переключает, что открывается через showCallbackModal(): старая форма или новый виджет.'),
                                 ]),
 
+                                Forms\Components\Section::make('VK Mini App')->schema([
+                                    TextInput::make('vk_mini_app_secret')
+                                        ->label('VK Mini App Secret')
+                                        ->password()
+                                        ->revealable()
+                                        ->helperText('Секретный ключ VK Mini App для проверки подписи launch-параметров. Не выводится во frontend.'),
+                                ]),
+
                                 Forms\Components\Section::make('Продвижение сайта')->schema([
                                     TextInput::make('promotion_company')->label('Название компании'),
                                     TextInput::make('promotion_company_url')->label('Ссылка'),

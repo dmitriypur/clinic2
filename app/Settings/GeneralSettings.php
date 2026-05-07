@@ -13,6 +13,8 @@ class GeneralSettings extends Settings
 
     public string $booking_form_variant;
 
+    public ?string $vk_mini_app_secret;
+
     public ?string $favicon;
 
     public array $licenses;

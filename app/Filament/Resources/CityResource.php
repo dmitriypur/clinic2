@@ -152,6 +152,10 @@ class CityResource extends Resource
                         TextInput::make('social_links.youtube')->label('YouTube'),
                         TextInput::make('social_links.rutube')->label('RuTube'),
                         TextInput::make('social_links.vk_video')->label('VK Видео'),
+                        TextInput::make('social_links.vk_mini_app_group_id')
+                            ->label('VK Mini App Group ID')
+                            ->numeric()
+                            ->helperText('Числовой ID сообщества VK, из которого mini app должен показывать этот город.'),
                     ])->columns(2),
 
                 Section::make('Режим работы в праздники')
