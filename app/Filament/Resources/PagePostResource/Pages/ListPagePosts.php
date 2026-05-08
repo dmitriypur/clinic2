@@ -2,16 +2,17 @@
 
 namespace App\Filament\Resources\PagePostResource\Pages;
 
+use App\Filament\Resources\ArticleImportResource;
 use App\Filament\Resources\PagePostResource;
+use App\Jobs\ImportArticle;
+use App\Models\ArticleImport;
 use App\Models\Category;
 use App\Models\Doctor;
-use App\Services\ArticleImport\ArticleImportException;
-use App\Services\ArticleImport\ArticleImportService;
 use Filament\Actions;
 use Filament\Forms;
+use Filament\Forms\Get;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ListRecords;
-use Throwable;
 
 class ListPagePosts extends ListRecords
 {
@@ -30,9 +31,11 @@ class ListPagePosts extends ListRecords
                     Forms\Components\TextInput::make('document_url')
                         ->label('Ссылка на Google Docs')
                         ->url()
+                        ->required(fn(Get $get): bool => blank(trim((string) $get('source'))))
                         ->placeholder('https://docs.google.com/document/d/...'),
                     Forms\Components\Textarea::make('source')
                         ->label('Резервный импорт из текста')
+                        ->required(fn(Get $get): bool => blank(trim((string) $get('document_url'))))
                         ->rows(18)
                         ->helperText("Если ссылка недоступна, можно вставить структурированный текст: # Заголовок, затем блоки через ##, FAQ через ## FAQ и вопросы через ###.")
                         ->placeholder("# Заголовок статьи\nТема: Близорукость\nТеги: близорукость, лечение\n\n## Первый блок\nТекст блока\n\n## FAQ\n### Вопрос?\nОтвет"),
@@ -65,42 +68,22 @@ class ListPagePosts extends ListRecords
                         ->default(false),
                 ])
                 ->action(function (array $data): void {
-                    try {
-                        $result = app(ArticleImportService::class)->import($data);
-                    } catch (ArticleImportException $exception) {
-                        report($exception);
+                    $articleImport = ArticleImport::query()->create([
+                        'staff_id' => auth()->id(),
+                        'status' => ArticleImport::STATUS_QUEUED,
+                        'document_url' => trim((string) ($data['document_url'] ?? '')) ?: null,
+                        'payload' => $data,
+                    ]);
 
-                        Notification::make()
-                            ->title('Импорт не выполнен')
-                            ->body($exception->userMessage())
-                            ->danger()
-                            ->persistent()
-                            ->send();
+                    ImportArticle::dispatch($articleImport->id);
 
-                        return;
-                    } catch (Throwable $exception) {
-                        report($exception);
-
-                        Notification::make()
-                            ->title('Импорт не выполнен')
-                            ->body("Этап: импорт статьи\nПричина: {$exception->getMessage()}\nПодробности записаны в лог.")
-                            ->danger()
-                            ->persistent()
-                            ->send();
-
-                        return;
-                    }
-
-                    $notification = Notification::make()
-                        ->title('Статья импортирована')
-                        ->body($result->hasWarnings()
-                            ? "Создан черновик статьи, но есть предупреждения:\n" . implode("\n", $result->warnings)
-                            : 'Создан черновик статьи. Сейчас откроется страница редактирования.');
-
-                    ($result->hasWarnings() ? $notification->warning() : $notification->success())
+                    Notification::make()
+                        ->title('Импорт поставлен в очередь')
+                        ->body('Статус можно смотреть в разделе "Импорты статей". Когда задача завершится, статья появится в списке записей.')
+                        ->success()
                         ->send();
 
-                    $this->redirect(PagePostResource::getUrl('edit', ['record' => $result->page]));
+                    $this->redirect(ArticleImportResource::getUrl('index'));
                 }),
         ];
     }
