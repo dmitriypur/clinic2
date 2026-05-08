@@ -1,6 +1,7 @@
 <template>
   <BookingWidgetModal
     :open="open"
+    :mode="mode"
     :zIndexOverride="49"
     :layoutMode="widgetLayoutMode"
     :showBackdrop="mode !== 'vk'"

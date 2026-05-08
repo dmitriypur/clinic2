@@ -21,7 +21,9 @@
           @click="onClose"
         />
 
-        <div class="flex grow overflow-x-hidden md:rounded-t-lg min-w-full md:min-w-[500px] md:min-h-[300px]">
+        <div 
+        class="flex grow md:rounded-t-lg min-w-full md:min-w-[500px] md:min-h-[300px]"
+        :class="[ mode === 'vk' ? '' : 'overflow-x-hidden' ]">
           <Scrollable shadow class="w-full">
             <section :class="bodyClassName">
               <slot />
@@ -52,6 +54,10 @@ export default {
     Scrollable,
   },
   props: {
+    mode: {
+      type: String,
+      default: 'site',
+    },
     open: Boolean,
     closeButtonHiddenOnMobile: Boolean,
     showCloseButton: {

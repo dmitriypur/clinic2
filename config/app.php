@@ -213,4 +213,6 @@ return [
         // 'ExampleClass' => App\Example\ExampleClass::class,
     ])->toArray(),
 
+    'vk_mini_app_dev_bypass' => env('VK_MINI_APP_DEV_BYPASS', false),
+
 ];

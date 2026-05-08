@@ -21,6 +21,10 @@ class EnsureVkMiniAppRequest
 
     public function handle(Request $request, Closure $next): Response
     {
+        if ((bool) config('app.vk_mini_app_dev_bypass', false)) {
+            return $next($request);
+        }
+        
         if (! $request->has(['vk_platform', 'vk_app_id', 'sign'])) {
             $this->logRejectedRequest($request, 'missing_required_signed_launch_params', [
                 'missing' => collect(['vk_platform', 'vk_app_id', 'sign'])
