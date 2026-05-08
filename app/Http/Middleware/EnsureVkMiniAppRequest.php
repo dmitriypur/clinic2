@@ -42,15 +42,12 @@ class EnsureVkMiniAppRequest
             abort(404);
         }
 
-        if (! $request->filled('vk_group_id')) {
-            $this->logRejectedRequest($request, 'missing_vk_group_id');
-
-            abort(404);
-        }
-
-        $city = $this->resolveCityByVkGroupId((string) $request->query('vk_group_id'));
+        $cityResolution = $this->resolveCity($request);
+        $city = $cityResolution['city'];
         if (! $city) {
-            $this->logRejectedRequest($request, 'city_not_found_for_vk_group_id', [
+            $this->logRejectedRequest($request, 'city_not_found', [
+                'requested_city' => $request->query('city'),
+                'city_source' => $cityResolution['source'],
                 'configured_vk_group_ids' => $this->configuredVkGroupIds(),
             ]);
 
@@ -61,7 +58,7 @@ class EnsureVkMiniAppRequest
         View::share('currentCity', $city);
         View::share('cities', $this->cityService->getActiveCities());
 
-        $this->logAcceptedRequest($request, $city);
+        $this->logAcceptedRequest($request, $city, $cityResolution['source']);
 
         try {
             return $next($request);
@@ -124,6 +121,27 @@ class EnsureVkMiniAppRequest
             });
     }
 
+    private function resolveCity(Request $request): array
+    {
+        if ($request->filled('vk_group_id')) {
+            $city = $this->resolveCityByVkGroupId((string) $request->query('vk_group_id'));
+
+            if ($city) {
+                return ['city' => $city, 'source' => 'vk_group_id'];
+            }
+        }
+
+        if ($request->filled('city')) {
+            $city = $this->cityService->getCityBySlug((string) $request->query('city'));
+
+            if ($city) {
+                return ['city' => $city, 'source' => 'city_query'];
+            }
+        }
+
+        return ['city' => $this->cityService->getDefaultCity(), 'source' => 'default_city'];
+    }
+
     private function base64UrlEncode(string $value): string
     {
         return rtrim(strtr(base64_encode($value), '+/', '-_'), '=');
@@ -150,21 +168,27 @@ class EnsureVkMiniAppRequest
             'vk_app_id' => $request->query('vk_app_id'),
             'vk_group_id' => $request->query('vk_group_id'),
             'vk_platform' => $request->query('vk_platform'),
+            'city' => $request->query('city'),
             'query_keys' => array_keys($request->query()),
             'sign_present' => $request->query->has('sign'),
             'sign_length' => strlen((string) $request->query('sign', '')),
             'vk_launch_params' => $this->vkLaunchParamsForLog($request),
+            'utm_params' => $this->utmParamsForLog($request),
         ], $context));
     }
 
-    private function logAcceptedRequest(Request $request, City $city): void
+    private function logAcceptedRequest(Request $request, City $city, string $citySource): void
     {
         Log::info('VK Mini App appointment request accepted', [
             'path' => $request->path(),
+            'city_source' => $citySource,
             'city_id' => $city->id,
             'city_slug' => $city->slug,
             'city_name' => $city->name,
+            'requested_city' => $request->query('city'),
+            'vk_group_id' => $request->query('vk_group_id'),
             'vk_launch_params' => $this->vkLaunchParamsForLog($request),
+            'utm_params' => $this->utmParamsForLog($request),
         ]);
     }
 
@@ -175,11 +199,14 @@ class EnsureVkMiniAppRequest
             'city_id' => $city->id,
             'city_slug' => $city->slug,
             'city_name' => $city->name,
+            'requested_city' => $request->query('city'),
+            'vk_group_id' => $request->query('vk_group_id'),
             'exception_class' => get_class($exception),
             'exception_message' => $exception->getMessage(),
             'exception_file' => $exception->getFile(),
             'exception_line' => $exception->getLine(),
             'vk_launch_params' => $this->vkLaunchParamsForLog($request),
+            'utm_params' => $this->utmParamsForLog($request),
         ]);
     }
 
@@ -199,6 +226,20 @@ class EnsureVkMiniAppRequest
 
                 return [$key => is_scalar($value) || $value === null ? $value : '[non-scalar]'];
             })
+            ->all();
+    }
+
+    private function utmParamsForLog(Request $request): array
+    {
+        return collect([
+            'utm_source',
+            'utm_medium',
+            'utm_campaign',
+            'utm_content',
+            'utm_term',
+        ])
+            ->filter(fn (string $key): bool => $request->query->has($key))
+            ->mapWithKeys(fn (string $key): array => [$key => $request->query($key)])
             ->all();
     }
 

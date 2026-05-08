@@ -10,6 +10,48 @@ Vue.use(VCalendar, {
   locale: "ru-RU",
 });
 
+const FORWARDED_HASH_KEYS = [
+  "city",
+  "utm_source",
+  "utm_medium",
+  "utm_campaign",
+  "utm_content",
+  "utm_term",
+];
+
+function getHashParams() {
+  const hash = window.location.hash.replace(/^#/, "");
+
+  if (!hash) {
+    return new URLSearchParams();
+  }
+
+  return new URLSearchParams(hash);
+}
+
+function forwardHashParamsToQuery() {
+  const hashParams = getHashParams();
+  const url = new URL(window.location.href);
+  let changed = false;
+
+  FORWARDED_HASH_KEYS.forEach((key) => {
+    const value = hashParams.get(key);
+
+    if (!value || url.searchParams.has(key)) {
+      return;
+    }
+
+    url.searchParams.set(key, value);
+    changed = true;
+  });
+
+  if (changed) {
+    window.location.replace(url.toString());
+  }
+
+  return changed;
+}
+
 function normalizePhone(value) {
   const digits = String(value || "").replace(/\D/g, "");
   if (!digits) {
@@ -65,6 +107,7 @@ async function fetchVkInitialPatientData() {
   return initialPatientData;
 }
 
+if (!forwardHashParamsToQuery()) {
 new Vue({
   data() {
     return {
@@ -84,3 +127,4 @@ new Vue({
     });
   },
 }).$mount("#vk-appointment-app");
+}
