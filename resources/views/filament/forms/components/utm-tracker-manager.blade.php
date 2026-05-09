@@ -10,7 +10,9 @@
         isPersisting: false,
         trackingBaseUrl: @js($trackingBaseUrl),
         copiedTrackingKey: null,
+        copiedPhoneContext: null,
         copyResetTimer: null,
+        phoneCopyResetTimer: null,
         selectedTrackingKeys: [],
         trackingSearch: '',
         archiveSearch: '',
@@ -84,23 +86,31 @@
                 name: row?.name ?? '',
                 default_phone_key: row?.default_phone_key ?? '',
                 open_booking_widget: !! row?.open_booking_widget,
+                is_organic: !! row?.is_organic,
             }))
         },
         normalizeCampaigns(rows) {
             return (Array.isArray(rows) ? rows : []).map((row) => {
-                const type = ['source', 'medium'].includes(row?.type)
-                    ? row.type
-                    : ((row?.medium ?? '') ? 'medium' : 'source')
+                const campaign = row?.campaign ?? ''
+                const medium = row?.medium ?? ''
+                const type = row?.type === 'source'
+                    ? 'source'
+                    : (campaign ? 'campaign' : (medium || ['medium', 'campaign'].includes(row?.type) ? 'medium' : 'source'))
 
                 return {
                     key: row?.key ?? this.makeKey('campaign'),
                     id: row?.id ?? null,
                     type,
                     source_key: row?.source_key ?? '',
-                    medium: type === 'medium' ? (row?.medium ?? '') : '',
-                    medium_name: type === 'medium' ? (row?.medium_name ?? '') : '',
+                    medium: ['medium', 'campaign'].includes(type) ? medium : '',
+                    medium_name: ['medium', 'campaign'].includes(type) ? (row?.medium_name ?? '') : '',
+                    campaign: ['medium', 'campaign'].includes(type) ? campaign : '',
+                    campaign_name: ['medium', 'campaign'].includes(type) ? (row?.campaign_name ?? '') : '',
                     phone_key: row?.phone_key ?? '',
                     open_booking_widget: !! row?.open_booking_widget,
+                    is_organic: !! row?.is_organic,
+                    is_organic_overridden: !! row?.is_organic_overridden,
+                    effective_is_organic: !! row?.effective_is_organic,
                     created_at: row?.created_at ?? '',
                     started_at: row?.started_at ?? '',
                     stopped_at: row?.stopped_at ?? '',
@@ -187,14 +197,34 @@
                 return this.sourceRow(row.source_key)?.name || '—'
             }
 
+            if (row.type === 'campaign') {
+                return row.campaign_name || '—'
+            }
+
             return row.medium_name || '—'
         },
         campaignSourceValue(row) {
             return this.sourceRow(row.source_key)?.source || ''
         },
-        buildUrl(sourceValue = '', mediumValue = '', shouldOpenWidget = false) {
+        campaignSourceIsOrganic(row) {
+            return !! this.sourceRow(row.source_key)?.is_organic
+        },
+        campaignEffectiveIsOrganic(row) {
+            return row?.is_organic_overridden ? !! row?.is_organic : this.campaignSourceIsOrganic(row)
+        },
+        setCampaignOrganic(row, value) {
+            const nextValue = !! value
+            const sourceValue = this.campaignSourceIsOrganic(row)
+
+            row.is_organic = nextValue === sourceValue ? false : nextValue
+            row.is_organic_overridden = nextValue !== sourceValue
+            row.effective_is_organic = nextValue
+            this.syncState()
+        },
+        buildUrl(sourceValue = '', mediumValue = '', campaignValue = '', shouldOpenWidget = false) {
             const source = String(sourceValue || '').trim()
             const medium = String(mediumValue || '').trim()
+            const campaign = String(campaignValue || '').trim()
 
             if (! source) {
                 return this.trackingBaseUrl
@@ -208,6 +238,10 @@
                 url.searchParams.set('utm_medium', medium)
             }
 
+            if (campaign) {
+                url.searchParams.set('utm_campaign', campaign)
+            }
+
             if (shouldOpenWidget) {
                 url.hash = 'appointment-form'
             }
@@ -217,7 +251,8 @@
         trackingLinkValue(campaignRow) {
             return this.buildUrl(
                 this.campaignSourceValue(campaignRow),
-                campaignRow.type === 'medium' ? campaignRow.medium : '',
+                ['medium', 'campaign'].includes(campaignRow.type) ? campaignRow.medium : '',
+                campaignRow.type === 'campaign' ? campaignRow.campaign : '',
                 campaignRow.open_booking_widget,
             )
         },
@@ -280,6 +315,28 @@
         isTrackingLinkCopied(campaignRow) {
             return this.copiedTrackingKey === campaignRow.key
         },
+        async copySelectedPhone(phoneKey, contextKey) {
+            const copied = await this.copyText(this.phoneLabel(phoneKey))
+
+            if (! copied) {
+                return
+            }
+
+            this.copiedPhoneContext = contextKey
+
+            if (this.phoneCopyResetTimer) {
+                clearTimeout(this.phoneCopyResetTimer)
+            }
+
+            this.phoneCopyResetTimer = setTimeout(() => {
+                if (this.copiedPhoneContext === contextKey) {
+                    this.copiedPhoneContext = null
+                }
+            }, 1500)
+        },
+        isPhoneCopied(contextKey) {
+            return this.copiedPhoneContext === contextKey
+        },
         campaignCreatedAt(row) {
             return String(row?.created_at || row?.started_at || '').trim()
         },
@@ -290,6 +347,7 @@
             return [
                 this.sourceLabel(row?.source_key),
                 row?.medium || '',
+                row?.campaign || '',
                 this.campaignName(row),
                 this.phoneLabel(row?.phone_key),
                 this.trackingLinkValue(row),
@@ -457,6 +515,7 @@
                 name: '',
                 default_phone_key: '',
                 open_booking_widget: false,
+                is_organic: false,
             })
 
             this.activeTab = 'sources'
@@ -493,8 +552,13 @@
                         source_key: sourceKey,
                         medium: '',
                         medium_name: '',
+                        campaign: '',
+                        campaign_name: '',
                         phone_key: defaultPhoneKey,
                         open_booking_widget: !! sourceRow.open_booking_widget,
+                        is_organic: false,
+                        is_organic_overridden: false,
+                        effective_is_organic: !! sourceRow.is_organic,
                         created_at: this.currentDateTimeValue(),
                         started_at: this.currentDateTimeValue(),
                         stopped_at: '',
@@ -514,6 +578,7 @@
                             return {
                                 ...row,
                                 phone_key: defaultPhoneKey,
+                                effective_is_organic: row.is_organic_overridden ? !! row.is_organic : !! sourceRow.is_organic,
                             }
                         }
 
@@ -528,7 +593,7 @@
         },
         dropConflictingSourceCampaignPhones(campaignRows) {
             const mediumPhoneKeys = campaignRows
-                .filter((row) => row.type === 'medium' && row.phone_key)
+                .filter((row) => ['medium', 'campaign'].includes(row.type) && row.phone_key)
                 .map((row) => row.phone_key)
 
             if (mediumPhoneKeys.length === 0) {
@@ -554,8 +619,13 @@
                 source_key: this.state.sources[0]?.key ?? '',
                 medium: '',
                 medium_name: '',
+                campaign: '',
+                campaign_name: '',
                 phone_key: '',
                 open_booking_widget: false,
+                is_organic: false,
+                is_organic_overridden: false,
+                effective_is_organic: false,
                 created_at: this.currentDateTimeValue(),
                 started_at: this.currentDateTimeValue(),
                 stopped_at: '',
@@ -628,6 +698,10 @@
         activeCampaignUsageLabel(row) {
             if (row.type === 'source') {
                 return this.sourceLabel(row.source_key)
+            }
+
+            if (row.type === 'campaign') {
+                return `${this.sourceLabel(row.source_key)} / ${row.medium || '—'} / ${row.campaign || '—'}`
             }
 
             return `${this.sourceLabel(row.source_key)} / ${row.medium || '—'}`
@@ -734,6 +808,10 @@
                     return `Архив: ${this.sourceLabel(archivedCampaign.source_key)}`
                 }
 
+                if (archivedCampaign.type === 'campaign') {
+                    return `Архив: ${this.sourceLabel(archivedCampaign.source_key)} / ${archivedCampaign.medium || '—'} / ${archivedCampaign.campaign || '—'}`
+                }
+
                 return `Архив: ${this.sourceLabel(archivedCampaign.source_key)} / ${archivedCampaign.medium || '—'}`
             }
 
@@ -762,7 +840,7 @@
                 x-bind:class="activeTab === 'tracking' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700 dark:bg-white/5 dark:text-gray-200'"
                 x-on:click="activeTab = 'tracking'"
             >
-                Основной
+                Кампании
             </button>
 
             <button
@@ -847,7 +925,7 @@
                             type="text"
                             class="block w-full rounded-md border-gray-300 px-2 py-1.5 text-xs shadow-none focus:border-primary-500 focus:ring-primary-500 dark:border-white/10 dark:bg-transparent dark:text-white"
                             x-model="trackingSearch"
-                            placeholder="Source, medium, телефон, название"
+                            placeholder="Source, medium, campaign, телефон, название"
                         />
                     </label>
 
@@ -904,11 +982,25 @@
                 </div>
             </div>
 
-            <div class="overflow-x-auto">
-                <table class="w-full min-w-[1160px] table-fixed border-collapse text-sm">
+            <div class="max-w-full overflow-x-auto">
+                <table class="table-fixed text-sm" style="min-width: 1740px; width: 1740px; border-collapse: separate; border-spacing: 12px 8px;">
+                    <colgroup>
+                        <col style="width: 48px;">
+                        <col style="width: 200px;">
+                        <col style="width: 170px;">
+                        <col style="width: 190px;">
+                        <col style="width: 90px;">
+                        <col style="width: 105px;">
+                        <col style="width: 200px;">
+                        <col style="width: 200px;">
+                        <col style="width: 200px;">
+                        <col style="width: 135px;">
+                        <col style="width: 92px;">
+                        <col style="width: 110px;">
+                    </colgroup>
                     <thead>
                         <tr class="border-b border-gray-200 dark:border-white/10">
-                            <th class="w-[4%] py-2 pr-2 text-left font-medium text-gray-500 dark:text-gray-400">
+                            <th class="py-2 pr-3 text-left font-medium text-gray-500 dark:text-gray-400">
                                 <input
                                     type="checkbox"
                                     class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-white/10 dark:bg-transparent"
@@ -919,7 +1011,7 @@
                                     x-on:change="toggleAllTrackingSelection()"
                                 />
                             </th>
-                            <th class="w-[12%] py-2 pr-2 text-left font-medium text-gray-500 dark:text-gray-400">
+                            <th class="py-2 pr-3 text-left font-medium text-gray-500 dark:text-gray-400">
                                 <button type="button" class="inline-flex items-center gap-1" x-on:click="toggleCampaignSort('tracking', 'source')">
                                     <span>Source</span>
                                     <span class="inline-flex h-3 w-3 items-center justify-center">
@@ -930,11 +1022,13 @@
                                     </span>
                                 </button>
                             </th>
-                            <th class="w-[7%] py-2 pr-2 text-left font-medium text-gray-500 dark:text-gray-400">Medium</th>
-                            <th class="w-[6%] py-2 pr-2 text-center font-medium text-gray-500 dark:text-gray-400">Виджет</th>
-                            <th class="w-[14%] py-2 pr-2 text-left font-medium text-gray-500 dark:text-gray-400">Ссылка</th>
-                            <th class="w-[9%] py-2 pr-2 text-left font-medium text-gray-500 dark:text-gray-400">Название</th>
-                            <th class="w-[13%] py-2 pr-2 text-left font-medium text-gray-500 dark:text-gray-400">
+                            <th class="py-2 pr-3 text-left font-medium text-gray-500 dark:text-gray-400">Medium</th>
+                            <th class="py-2 pr-3 text-left font-medium text-gray-500 dark:text-gray-400">Campaign</th>
+                            <th class="py-2 pr-3 text-center font-medium text-gray-500 dark:text-gray-400">Виджет</th>
+                            <th class="py-2 pr-3 text-center font-medium text-gray-500 dark:text-gray-400">Органика</th>
+                            <th class="py-2 pr-3 text-left font-medium text-gray-500 dark:text-gray-400">Ссылка</th>
+                            <th class="py-2 pr-3 text-left font-medium text-gray-500 dark:text-gray-400">Название</th>
+                            <th class="py-2 pr-3 text-left font-medium text-gray-500 dark:text-gray-400">
                                 <button type="button" class="inline-flex items-center gap-1" x-on:click="toggleCampaignSort('tracking', 'phone')">
                                     <span>Телефон</span>
                                     <span class="inline-flex h-3 w-3 items-center justify-center">
@@ -945,7 +1039,7 @@
                                     </span>
                                 </button>
                             </th>
-                            <th class="w-[8%] py-2 pr-2 text-left font-medium text-gray-500 dark:text-gray-400">
+                            <th class="py-2 pr-3 text-left font-medium text-gray-500 dark:text-gray-400">
                                 <button type="button" class="inline-flex items-center gap-1" x-on:click="toggleCampaignSort('tracking', 'started_at')">
                                     <span>Запуск</span>
                                     <span class="inline-flex h-3 w-3 items-center justify-center">
@@ -956,7 +1050,7 @@
                                     </span>
                                 </button>
                             </th>
-                            <th class="w-[4%] py-2 pr-2 text-left font-medium text-gray-500 dark:text-gray-400">
+                            <th class="py-2 pr-3 text-left font-medium text-gray-500 dark:text-gray-400">
                                 <button type="button" class="inline-flex items-center gap-1" x-on:click="toggleCampaignSort('tracking', 'status')">
                                     <span>Статус</span>
                                     <span class="inline-flex h-3 w-3 items-center justify-center">
@@ -974,7 +1068,7 @@
                     <tbody>
                         <template x-if="campaignRowsForView('tracking').length === 0">
                             <tr>
-                                <td colspan="10" class="py-6 text-center text-sm text-gray-500 dark:text-gray-400">
+                                <td colspan="12" class="py-6 text-center text-sm text-gray-500 dark:text-gray-400">
                                     Ничего не найдено по текущим фильтрам.
                                 </td>
                             </tr>
@@ -985,7 +1079,7 @@
                                 class="border-b border-gray-200 dark:border-white/10"
                                 x-bind:class="isDuplicateCampaignPhone(campaignRow) ? 'bg-rose-50 dark:bg-rose-500/10' : ''"
                             >
-                                <td class="py-2 pr-2 align-top">
+                                <td class="py-2 pr-3 align-top">
                                     <input
                                         type="checkbox"
                                         class="mt-2 h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-white/10 dark:bg-transparent"
@@ -995,7 +1089,7 @@
                                     />
                                 </td>
 
-                                <td class="py-2 pr-2 align-top">
+                                <td class="py-2 pr-3 align-top">
                                     <select
                                         class="block w-full rounded-md border-gray-300 px-2 py-1.5 text-xs shadow-none focus:border-primary-500 focus:ring-primary-500 dark:border-white/10 dark:bg-transparent dark:text-white"
                                         x-model="campaignRow.source_key"
@@ -1013,7 +1107,7 @@
                                     </select>
                                 </td>
 
-                                <td class="py-2 pr-2 align-top">
+                                <td class="py-2 pr-3 align-top">
                                     <template x-if="campaignRow.type === 'source'">
                                         <div
                                             class="rounded-md border border-transparent px-2 py-1 text-xs text-gray-400 dark:text-gray-500"
@@ -1021,7 +1115,7 @@
                                         >—</div>
                                     </template>
 
-                                    <template x-if="campaignRow.type === 'medium'">
+                                    <template x-if="['medium', 'campaign'].includes(campaignRow.type)">
                                         <input
                                             type="text"
                                             class="block w-full rounded-md border-gray-300 px-2 py-1.5 text-xs shadow-none focus:border-primary-500 focus:ring-primary-500 dark:border-white/10 dark:bg-transparent dark:text-white"
@@ -1033,7 +1127,27 @@
                                     </template>
                                 </td>
 
-                                <td class="py-2 pr-2 align-top text-center">
+                                <td class="py-2 pr-3 align-top">
+                                    <template x-if="campaignRow.type === 'source'">
+                                        <div
+                                            class="rounded-md border border-transparent px-2 py-1 text-xs text-gray-400 dark:text-gray-500"
+                                            style="color:var(--utm-text-muted) !important;"
+                                        >—</div>
+                                    </template>
+
+                                    <template x-if="campaignRow.type !== 'source'">
+                                        <input
+                                            type="text"
+                                            class="block w-full rounded-md border-gray-300 px-2 py-1.5 text-xs shadow-none focus:border-primary-500 focus:ring-primary-500 dark:border-white/10 dark:bg-transparent dark:text-white"
+                                            x-model="campaignRow.campaign"
+                                            x-bind:disabled="isPersisting"
+                                            x-on:input.debounce.300ms="syncState()"
+                                            placeholder="test"
+                                        />
+                                    </template>
+                                </td>
+
+                                <td class="py-2 pr-3 align-top text-center">
                                     <label class="inline-flex h-8 items-center justify-center">
                                         <input
                                             type="checkbox"
@@ -1045,7 +1159,19 @@
                                     </label>
                                 </td>
 
-                                <td class="py-2 pr-2 align-top">
+                                <td class="py-2 pr-3 align-top text-center">
+                                    <label class="inline-flex h-8 items-center justify-center" title="Органический источник">
+                                        <input
+                                            type="checkbox"
+                                            class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-white/10 dark:bg-transparent"
+                                            x-bind:checked="campaignEffectiveIsOrganic(campaignRow)"
+                                            x-bind:disabled="isPersisting"
+                                            x-on:change="setCampaignOrganic(campaignRow, $event.target.checked)"
+                                        />
+                                    </label>
+                                </td>
+
+                                <td class="py-2 pr-3 align-top">
                                     <div class="space-y-1">
                                         <div class="relative group">
                                             <input
@@ -1079,7 +1205,7 @@
                                     </div>
                                 </td>
 
-                                <td class="py-2 pr-2 align-top">
+                                <td class="py-2 pr-3 align-top">
                                     <template x-if="campaignRow.type === 'source'">
                                         <div
                                             class="rounded-md border border-transparent px-2 py-1 text-xs text-gray-900 dark:text-white"
@@ -1098,27 +1224,58 @@
                                             placeholder="Google CPC"
                                         />
                                     </template>
+
+                                    <template x-if="campaignRow.type === 'campaign'">
+                                        <input
+                                            type="text"
+                                            class="block w-full rounded-md border-gray-300 px-2 py-1.5 text-xs shadow-none focus:border-primary-500 focus:ring-primary-500 dark:border-white/10 dark:bg-transparent dark:text-white"
+                                            x-model="campaignRow.campaign_name"
+                                            x-bind:disabled="isPersisting"
+                                            x-on:input.debounce.300ms="syncState()"
+                                            placeholder="Campaign test"
+                                        />
+                                    </template>
                                 </td>
 
-                                <td class="py-2 pr-2 align-top">
-                                    <select
-                                        class="block w-full rounded-md border-gray-300 px-2 py-1.5 text-xs shadow-none focus:border-primary-500 focus:ring-primary-500 dark:border-white/10 dark:bg-transparent dark:text-white"
-                                        x-bind:class="isDuplicateCampaignPhone(campaignRow) ? 'border-rose-500 bg-rose-50 text-rose-700 ring-1 ring-rose-400 focus:border-rose-500 focus:ring-rose-500 dark:border-rose-500/70 dark:bg-rose-500/10 dark:text-rose-200 dark:ring-rose-500/40' : ''"
-                                        x-bind:style="isDuplicateCampaignPhone(campaignRow) ? 'border-color:#dc2626 !important; color:#b91c1c !important; background-color:#fef2f2 !important; box-shadow:0 0 0 1px #dc2626 inset !important;' : ''"
-                                        x-model="campaignRow.phone_key"
-                                        x-bind:disabled="isPersisting"
-                                        x-on:change="syncState()"
-                                    >
-                                        <option value="">Без телефона</option>
-                                        <template x-for="phoneRow in state.phones" :key="phoneRow.key">
-                                            <option
-                                                x-bind:disabled="isPhoneOptionDisabled(phoneRow.key, campaignRow)"
-                                                x-bind:selected="campaignRow.phone_key === phoneRow.key"
-                                                x-bind:value="phoneRow.key"
-                                                x-text="phoneOptionLabel(phoneRow.key, campaignRow)"
-                                            ></option>
-                                        </template>
-                                    </select>
+                                <td class="py-2 pr-3 align-top">
+                                    <div class="flex items-start gap-2">
+                                        <select
+                                            class="block min-w-0 flex-1 rounded-md border-gray-300 px-2 py-1.5 text-xs shadow-none focus:border-primary-500 focus:ring-primary-500 dark:border-white/10 dark:bg-transparent dark:text-white"
+                                            x-bind:class="isDuplicateCampaignPhone(campaignRow) ? 'border-rose-500 bg-rose-50 text-rose-700 ring-1 ring-rose-400 focus:border-rose-500 focus:ring-rose-500 dark:border-rose-500/70 dark:bg-rose-500/10 dark:text-rose-200 dark:ring-rose-500/40' : ''"
+                                            x-bind:style="isDuplicateCampaignPhone(campaignRow) ? 'border-color:#dc2626 !important; color:#b91c1c !important; background-color:#fef2f2 !important; box-shadow:0 0 0 1px #dc2626 inset !important;' : ''"
+                                            x-model="campaignRow.phone_key"
+                                            x-bind:disabled="isPersisting"
+                                            x-on:change="syncState()"
+                                        >
+                                            <option value="">Без телефона</option>
+                                            <template x-for="phoneRow in state.phones" :key="phoneRow.key">
+                                                <option
+                                                    x-bind:disabled="isPhoneOptionDisabled(phoneRow.key, campaignRow)"
+                                                    x-bind:selected="campaignRow.phone_key === phoneRow.key"
+                                                    x-bind:value="phoneRow.key"
+                                                    x-text="phoneOptionLabel(phoneRow.key, campaignRow)"
+                                                ></option>
+                                            </template>
+                                        </select>
+
+                                        <button
+                                            type="button"
+                                            class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-gray-200 text-gray-600 transition hover:bg-gray-50 dark:border-white/10 dark:text-gray-300 dark:hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-40"
+                                            x-bind:class="isPhoneCopied(`campaign-${campaignRow.key}`) ? 'border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-200' : ''"
+                                            x-bind:disabled="isPersisting || ! campaignRow.phone_key"
+                                            x-bind:title="isPhoneCopied(`campaign-${campaignRow.key}`) ? 'Скопировано' : 'Скопировать телефон'"
+                                            x-bind:aria-label="isPhoneCopied(`campaign-${campaignRow.key}`) ? 'Скопировано' : 'Скопировать телефон'"
+                                            x-on:click="copySelectedPhone(campaignRow.phone_key, `campaign-${campaignRow.key}`)"
+                                        >
+                                            <svg x-show="! isPhoneCopied(`campaign-${campaignRow.key}`)" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                <path d="M7 3.5A2.5 2.5 0 0 1 9.5 1h5A2.5 2.5 0 0 1 17 3.5v8A2.5 2.5 0 0 1 14.5 14h-5A2.5 2.5 0 0 1 7 11.5v-8Z" />
+                                                <path d="M4.5 6A2.5 2.5 0 0 0 2 8.5v8A2.5 2.5 0 0 0 4.5 19h5a2.5 2.5 0 0 0 2.45-2H4.5a.5.5 0 0 1-.5-.5v-8a.5.5 0 0 1 .5-.5V6Z" />
+                                            </svg>
+                                            <svg x-show="isPhoneCopied(`campaign-${campaignRow.key}`)" x-cloak class="h-4 w-4" viewBox="0 0 20 20" fill="#16a34a" aria-hidden="true">
+                                                <path fill-rule="evenodd" d="M16.704 5.29a1 1 0 0 1 .006 1.414l-8 8a1 1 0 0 1-1.415 0l-4-4a1 1 0 1 1 1.414-1.415l3.293 3.294 7.294-7.293a1 1 0 0 1 1.408 0Z" clip-rule="evenodd" />
+                                            </svg>
+                                        </button>
+                                    </div>
 
                                     <p
                                         x-show="isDuplicateCampaignPhone(campaignRow)"
@@ -1131,12 +1288,12 @@
                                 </td>
 
                                 <td
-                                    class="py-2 pr-2 align-top text-xs text-gray-700 dark:text-gray-100"
+                                    class="py-2 pr-3 align-top text-xs text-gray-700 dark:text-gray-100"
                                     style="color:var(--utm-text-strong) !important;"
                                     x-text="formatDateTime(campaignRow.started_at)"
                                 ></td>
 
-                                <td class="py-2 pr-2 align-top">
+                                <td class="py-2 pr-3 align-top">
                                     <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-200" title="активна">
                                         <svg class="h-4 w-4" viewBox="0 0 20 20" fill="#16a34a" aria-hidden="true">
                                             <path
@@ -1197,7 +1354,7 @@
                             type="text"
                             class="block w-full rounded-md border-gray-300 px-2 py-1.5 text-xs shadow-none focus:border-primary-500 focus:ring-primary-500 dark:border-white/10 dark:bg-transparent dark:text-white"
                             x-model="archiveSearch"
-                            placeholder="Source, medium, телефон, название"
+                            placeholder="Source, medium, campaign, телефон, название"
                         />
                     </label>
 
@@ -1254,11 +1411,25 @@
                 </div>
             </div>
 
-            <div class="overflow-x-auto">
-                <table class="w-full table-fixed border-collapse text-sm">
+            <div class="max-w-full overflow-x-auto">
+                <table class="table-fixed text-sm" style="min-width: 1827px; width: 1827px; border-collapse: separate; border-spacing: 12px 8px;">
+                    <colgroup>
+                        <col style="width: 200px;">
+                        <col style="width: 170px;">
+                        <col style="width: 190px;">
+                        <col style="width: 90px;">
+                        <col style="width: 105px;">
+                        <col style="width: 200px;">
+                        <col style="width: 200px;">
+                        <col style="width: 200px;">
+                        <col style="width: 135px;">
+                        <col style="width: 135px;">
+                        <col style="width: 92px;">
+                        <col style="width: 110px;">
+                    </colgroup>
                     <thead>
                         <tr class="border-b border-gray-200 dark:border-white/10">
-                            <th class="w-[15%] py-2 pr-3 text-left font-medium text-gray-500 dark:text-gray-400">
+                            <th class="py-2 pr-3 text-left font-medium text-gray-500 dark:text-gray-400">
                                 <button type="button" class="inline-flex items-center gap-1" x-on:click="toggleCampaignSort('archive', 'source')">
                                     <span>Source</span>
                                     <span class="inline-flex h-3 w-3 items-center justify-center">
@@ -1269,11 +1440,13 @@
                                     </span>
                                 </button>
                             </th>
-                            <th class="w-[10%] py-2 pr-3 text-left font-medium text-gray-500 dark:text-gray-400">Medium</th>
-                            <th class="w-[6%] py-2 pr-3 text-center font-medium text-gray-500 dark:text-gray-400">Виджет</th>
-                            <th class="w-[18%] py-2 pr-3 text-left font-medium text-gray-500 dark:text-gray-400">Ссылка</th>
-                            <th class="w-[12%] py-2 pr-3 text-left font-medium text-gray-500 dark:text-gray-400">Название</th>
-                            <th class="w-[12%] py-2 pr-3 text-left font-medium text-gray-500 dark:text-gray-400">
+                            <th class="py-2 pr-3 text-left font-medium text-gray-500 dark:text-gray-400">Medium</th>
+                            <th class="py-2 pr-3 text-left font-medium text-gray-500 dark:text-gray-400">Campaign</th>
+                            <th class="py-2 pr-3 text-center font-medium text-gray-500 dark:text-gray-400">Виджет</th>
+                            <th class="py-2 pr-3 text-center font-medium text-gray-500 dark:text-gray-400">Органика</th>
+                            <th class="py-2 pr-3 text-left font-medium text-gray-500 dark:text-gray-400">Ссылка</th>
+                            <th class="py-2 pr-3 text-left font-medium text-gray-500 dark:text-gray-400">Название</th>
+                            <th class="py-2 pr-3 text-left font-medium text-gray-500 dark:text-gray-400">
                                 <button type="button" class="inline-flex items-center gap-1" x-on:click="toggleCampaignSort('archive', 'phone')">
                                     <span>Телефон</span>
                                     <span class="inline-flex h-3 w-3 items-center justify-center">
@@ -1284,7 +1457,7 @@
                                     </span>
                                 </button>
                             </th>
-                            <th class="w-[10%] py-2 pr-3 text-left font-medium text-gray-500 dark:text-gray-400">
+                            <th class="py-2 pr-3 text-left font-medium text-gray-500 dark:text-gray-400">
                                 <button type="button" class="inline-flex items-center gap-1" x-on:click="toggleCampaignSort('archive', 'started_at')">
                                     <span>Запуск</span>
                                     <span class="inline-flex h-3 w-3 items-center justify-center">
@@ -1295,8 +1468,8 @@
                                     </span>
                                 </button>
                             </th>
-                            <th class="w-[10%] py-2 pr-3 text-left font-medium text-gray-500 dark:text-gray-400">Остановка</th>
-                            <th class="w-[4%] py-2 pr-3 text-left font-medium text-gray-500 dark:text-gray-400">
+                            <th class="py-2 pr-3 text-left font-medium text-gray-500 dark:text-gray-400">Остановка</th>
+                            <th class="py-2 pr-3 text-left font-medium text-gray-500 dark:text-gray-400">
                                 <button type="button" class="inline-flex items-center gap-1" x-on:click="toggleCampaignSort('archive', 'status')">
                                     <span>Статус</span>
                                     <span class="inline-flex h-3 w-3 items-center justify-center">
@@ -1314,7 +1487,7 @@
                     <tbody>
                         <template x-if="campaignRowsForView('archive').length === 0">
                             <tr>
-                                <td colspan="10" class="py-6 text-center text-sm text-gray-500 dark:text-gray-400">
+                                <td colspan="12" class="py-6 text-center text-sm text-gray-500 dark:text-gray-400">
                                     Ничего не найдено по текущим фильтрам.
                                 </td>
                             </tr>
@@ -1330,7 +1503,12 @@
                                 <td
                                     class="py-2 pr-3 align-top text-xs text-gray-700 dark:text-gray-100"
                                     style="color:var(--utm-text-strong) !important;"
-                                    x-text="campaignRow.type === 'medium' ? (campaignRow.medium || '—') : '—'"
+                                    x-text="['medium', 'campaign'].includes(campaignRow.type) ? (campaignRow.medium || '—') : '—'"
+                                ></td>
+                                <td
+                                    class="py-2 pr-3 align-top text-xs text-gray-700 dark:text-gray-100"
+                                    style="color:var(--utm-text-strong) !important;"
+                                    x-text="campaignRow.type === 'campaign' ? (campaignRow.campaign || '—') : '—'"
                                 ></td>
 
                                 <td class="py-2 pr-3 align-top text-center">
@@ -1338,6 +1516,14 @@
                                         class="inline-flex h-8 items-center justify-center text-xs text-gray-700 dark:text-gray-100"
                                         style="color:var(--utm-text-strong) !important;"
                                         x-text="campaignRow.open_booking_widget ? 'Да' : 'Нет'"
+                                    ></span>
+                                </td>
+
+                                <td class="py-2 pr-3 align-top text-center">
+                                    <span
+                                        class="inline-flex h-8 items-center justify-center text-xs text-gray-700 dark:text-gray-100"
+                                        style="color:var(--utm-text-strong) !important;"
+                                        x-text="campaignEffectiveIsOrganic(campaignRow) ? 'Да' : 'Нет'"
                                     ></span>
                                 </td>
 
@@ -1468,8 +1654,9 @@
                 <table class="w-full table-fixed border-collapse text-sm">
                     <thead>
                         <tr class="border-b border-gray-200 dark:border-white/10">
-                            <th class="w-[24%] py-2 pr-3 text-left font-medium text-gray-500 dark:text-gray-400">Source</th>
-                            <th class="w-[28%] py-2 pr-3 text-left font-medium text-gray-500 dark:text-gray-400">Название</th>
+                            <th class="w-[22%] py-2 pr-3 text-left font-medium text-gray-500 dark:text-gray-400">Source</th>
+                            <th class="w-[24%] py-2 pr-3 text-left font-medium text-gray-500 dark:text-gray-400">Название</th>
+                            <th class="w-[16%] py-2 pr-3 text-center font-medium text-gray-500 dark:text-gray-400">Органический источник</th>
                             <th class="py-2 pr-3 text-left font-medium text-gray-500 dark:text-gray-400">Дефолтный телефон</th>
                             <th class="w-24 py-2 text-right font-medium text-gray-500 dark:text-gray-400">Действия</th>
                         </tr>
@@ -1478,7 +1665,7 @@
                     <tbody>
                         <template x-if="state.sources.length === 0">
                             <tr>
-                                <td colspan="4" class="py-6 text-center text-sm text-gray-500 dark:text-gray-400">
+                                <td colspan="5" class="py-6 text-center text-sm text-gray-500 dark:text-gray-400">
                                     Пока нет ни одного source.
                                 </td>
                             </tr>
@@ -1508,23 +1695,55 @@
                                     />
                                 </td>
 
+                                <td class="py-2 pr-3 align-top text-center">
+                                    <label class="inline-flex h-8 items-center justify-center">
+                                        <input
+                                            type="checkbox"
+                                            class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-white/10 dark:bg-transparent"
+                                            x-model="sourceRow.is_organic"
+                                            x-bind:disabled="isPersisting"
+                                            x-on:change="syncState()"
+                                        />
+                                    </label>
+                                </td>
+
                                 <td class="py-2 pr-3 align-top">
-                                    <select
-                                        class="block w-full rounded-md border-gray-300 px-2 py-1 text-xs shadow-none focus:border-primary-500 focus:ring-primary-500 dark:border-white/10 dark:bg-transparent dark:text-white"
-                                        x-model="sourceRow.default_phone_key"
-                                        x-bind:disabled="isPersisting"
-                                        x-on:change="syncState()"
-                                    >
-                                        <option value="">Без дефолтного телефона</option>
-                                        <template x-for="phoneRow in state.phones" :key="phoneRow.key">
-                                            <option
-                                                x-bind:disabled="isSourcePhoneOptionDisabled(phoneRow.key, sourceRow)"
-                                                x-bind:selected="sourceRow.default_phone_key === phoneRow.key"
-                                                x-bind:value="phoneRow.key"
-                                                x-text="sourcePhoneOptionLabel(phoneRow.key, sourceRow)"
-                                            ></option>
-                                        </template>
-                                    </select>
+                                    <div class="flex items-start gap-2">
+                                        <select
+                                            class="block min-w-0 flex-1 rounded-md border-gray-300 px-2 py-1 text-xs shadow-none focus:border-primary-500 focus:ring-primary-500 dark:border-white/10 dark:bg-transparent dark:text-white"
+                                            x-model="sourceRow.default_phone_key"
+                                            x-bind:disabled="isPersisting"
+                                            x-on:change="syncState()"
+                                        >
+                                            <option value="">Без дефолтного телефона</option>
+                                            <template x-for="phoneRow in state.phones" :key="phoneRow.key">
+                                                <option
+                                                    x-bind:disabled="isSourcePhoneOptionDisabled(phoneRow.key, sourceRow)"
+                                                    x-bind:selected="sourceRow.default_phone_key === phoneRow.key"
+                                                    x-bind:value="phoneRow.key"
+                                                    x-text="sourcePhoneOptionLabel(phoneRow.key, sourceRow)"
+                                                ></option>
+                                            </template>
+                                        </select>
+
+                                        <button
+                                            type="button"
+                                            class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-gray-200 text-gray-600 transition hover:bg-gray-50 dark:border-white/10 dark:text-gray-300 dark:hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-40"
+                                            x-bind:class="isPhoneCopied(`source-${sourceRow.key}`) ? 'border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-200' : ''"
+                                            x-bind:disabled="isPersisting || ! sourceRow.default_phone_key"
+                                            x-bind:title="isPhoneCopied(`source-${sourceRow.key}`) ? 'Скопировано' : 'Скопировать телефон'"
+                                            x-bind:aria-label="isPhoneCopied(`source-${sourceRow.key}`) ? 'Скопировано' : 'Скопировать телефон'"
+                                            x-on:click="copySelectedPhone(sourceRow.default_phone_key, `source-${sourceRow.key}`)"
+                                        >
+                                            <svg x-show="! isPhoneCopied(`source-${sourceRow.key}`)" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                <path d="M7 3.5A2.5 2.5 0 0 1 9.5 1h5A2.5 2.5 0 0 1 17 3.5v8A2.5 2.5 0 0 1 14.5 14h-5A2.5 2.5 0 0 1 7 11.5v-8Z" />
+                                                <path d="M4.5 6A2.5 2.5 0 0 0 2 8.5v8A2.5 2.5 0 0 0 4.5 19h5a2.5 2.5 0 0 0 2.45-2H4.5a.5.5 0 0 1-.5-.5v-8a.5.5 0 0 1 .5-.5V6Z" />
+                                            </svg>
+                                            <svg x-show="isPhoneCopied(`source-${sourceRow.key}`)" x-cloak class="h-4 w-4" viewBox="0 0 20 20" fill="#16a34a" aria-hidden="true">
+                                                <path fill-rule="evenodd" d="M16.704 5.29a1 1 0 0 1 .006 1.414l-8 8a1 1 0 0 1-1.415 0l-4-4a1 1 0 1 1 1.414-1.415l3.293 3.294 7.294-7.293a1 1 0 0 1 1.408 0Z" clip-rule="evenodd" />
+                                            </svg>
+                                        </button>
+                                    </div>
                                 </td>
 
                                 <td class="py-2 text-right align-top">

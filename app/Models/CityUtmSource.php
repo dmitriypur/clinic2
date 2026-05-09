@@ -17,10 +17,12 @@ class CityUtmSource extends Model
         'name',
         'default_phone_id',
         'open_booking_widget',
+        'is_organic',
     ];
 
     protected $casts = [
         'open_booking_widget' => 'boolean',
+        'is_organic' => 'boolean',
     ];
 
     public function city(): BelongsTo

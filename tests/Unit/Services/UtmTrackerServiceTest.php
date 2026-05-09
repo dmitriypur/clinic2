@@ -99,6 +99,93 @@ class UtmTrackerServiceTest extends TestCase
     }
 
     /** @test */
+    public function it_keeps_active_campaign_rules_nested_under_medium_in_legacy_city_json(): void
+    {
+        $city = City::query()->create([
+            'name' => 'Киров',
+            'slug' => 'kirov',
+            'active' => true,
+        ]);
+
+        app(UtmTrackerService::class)->sync($city, [
+            'phones' => [
+                ['key' => 'phone-source', 'phone' => '+7 000 000-00-01'],
+                ['key' => 'phone-medium', 'phone' => '+7 000 000-00-02'],
+                ['key' => 'phone-campaign', 'phone' => '+7 000 000-00-03'],
+                ['key' => 'phone-archive', 'phone' => '+7 000 000-00-04'],
+            ],
+            'sources' => [
+                [
+                    'key' => 'source-vk',
+                    'source' => 'vk',
+                    'name' => 'VK',
+                    'default_phone_key' => 'phone-source',
+                ],
+            ],
+            'campaigns' => [
+                [
+                    'key' => 'campaign-source',
+                    'type' => 'source',
+                    'source_key' => 'source-vk',
+                    'phone_key' => 'phone-source',
+                    'started_at' => now()->subDay()->format('Y-m-d H:i:s'),
+                ],
+                [
+                    'key' => 'campaign-medium',
+                    'type' => 'medium',
+                    'source_key' => 'source-vk',
+                    'medium' => 'banner',
+                    'medium_name' => 'Banner',
+                    'phone_key' => 'phone-medium',
+                    'started_at' => now()->subHours(3)->format('Y-m-d H:i:s'),
+                ],
+                [
+                    'key' => 'campaign-campaign',
+                    'type' => 'medium',
+                    'source_key' => 'source-vk',
+                    'medium' => 'banner',
+                    'medium_name' => 'Banner',
+                    'campaign' => 'test',
+                    'campaign_name' => 'Test campaign',
+                    'phone_key' => 'phone-campaign',
+                    'started_at' => now()->subHours(2)->format('Y-m-d H:i:s'),
+                ],
+            ],
+            'archived_campaigns' => [
+                [
+                    'key' => 'campaign-archive',
+                    'type' => 'campaign',
+                    'source_key' => 'source-vk',
+                    'medium' => 'banner',
+                    'campaign' => 'old',
+                    'phone_key' => 'phone-archive',
+                    'started_at' => now()->subDays(5)->format('Y-m-d H:i:s'),
+                    'stopped_at' => now()->subDay()->format('Y-m-d H:i:s'),
+                    'archived_at' => now()->subDay()->format('Y-m-d H:i:s'),
+                ],
+            ],
+        ]);
+
+        $legacyRules = $city->fresh()->utm_phones;
+
+        $this->assertDatabaseHas('city_utm_campaigns', [
+            'city_id' => $city->id,
+            'medium' => 'banner',
+            'campaign' => 'test',
+            'campaign_name' => 'Test campaign',
+        ]);
+        $this->assertSame('vk', data_get($legacyRules, '0.source'));
+        $this->assertSame('banner', data_get($legacyRules, '0.medium.0.name'));
+        $this->assertSame('+7 000 000-00-02', data_get($legacyRules, '0.medium.0.phone'));
+        $this->assertSame([
+            [
+                'name' => 'test',
+                'phone' => '+7 000 000-00-03',
+            ],
+        ], data_get($legacyRules, '0.medium.0.campaign'));
+    }
+
+    /** @test */
     public function it_backfills_campaigns_from_existing_sources_and_mediums_via_migration(): void
     {
         Schema::dropIfExists('city_utm_campaigns');
@@ -701,6 +788,7 @@ class UtmTrackerServiceTest extends TestCase
                     'name' => 'Solo',
                     'default_phone_key' => 'phone-source',
                     'open_booking_widget' => true,
+                    'is_organic' => true,
                 ],
                 [
                     'key' => 'source-google',
@@ -726,6 +814,8 @@ class UtmTrackerServiceTest extends TestCase
                     'medium_name' => 'Google CPC',
                     'phone_key' => 'phone-medium',
                     'open_booking_widget' => true,
+                    'is_organic' => true,
+                    'is_organic_overridden' => true,
                     'started_at' => now()->format('Y-m-d H:i:s'),
                 ],
             ],
@@ -737,8 +827,75 @@ class UtmTrackerServiceTest extends TestCase
         $this->assertCount(3, $editorState['campaigns']);
         $this->assertTrue((bool) collect($editorState['campaigns'])->firstWhere('type', 'source')['open_booking_widget']);
         $this->assertTrue((bool) collect($editorState['campaigns'])->firstWhere('type', 'medium')['open_booking_widget']);
+        $this->assertTrue((bool) collect($editorState['sources'])->firstWhere('source', 'solo')['is_organic']);
+        $this->assertTrue((bool) collect($editorState['campaigns'])->firstWhere('type', 'medium')['is_organic']);
+        $this->assertTrue((bool) collect($editorState['campaigns'])->firstWhere('type', 'medium')['is_organic_overridden']);
+        $this->assertTrue((bool) collect($editorState['campaigns'])->firstWhere('type', 'medium')['effective_is_organic']);
         $this->assertNull(data_get($city->fresh()->utm_phones, '0.open_booking_widget'));
         $this->assertNull(data_get($city->fresh()->utm_phones, '0.medium.0.open_booking_widget'));
+        $this->assertNull(data_get($city->fresh()->utm_phones, '0.is_organic'));
+        $this->assertNull(data_get($city->fresh()->utm_phones, '0.medium.0.is_organic'));
+    }
+
+    /** @test */
+    public function it_inherits_organic_flag_from_source_until_campaign_overrides_it(): void
+    {
+        $city = City::query()->create([
+            'name' => 'Казань',
+            'slug' => 'kazan',
+            'active' => true,
+        ]);
+
+        $service = app(UtmTrackerService::class);
+
+        $service->sync($city, [
+            'phones' => [
+                ['key' => 'phone-source', 'phone' => '+7 000 000-00-01'],
+                ['key' => 'phone-medium', 'phone' => '+7 000 000-00-02'],
+            ],
+            'sources' => [
+                [
+                    'key' => 'source-yandex',
+                    'source' => 'yandex',
+                    'name' => 'Яндекс.Директ',
+                    'default_phone_key' => 'phone-source',
+                    'is_organic' => true,
+                ],
+            ],
+            'campaigns' => [
+                [
+                    'key' => 'campaign-medium',
+                    'type' => 'medium',
+                    'source_key' => 'source-yandex',
+                    'medium' => 'cpc',
+                    'phone_key' => 'phone-medium',
+                    'started_at' => now()->format('Y-m-d H:i:s'),
+                ],
+            ],
+            'archived_campaigns' => [],
+        ]);
+
+        $editorState = $service->getEditorState($city->fresh());
+        $mediumRow = collect($editorState['campaigns'])->firstWhere('type', 'medium');
+
+        $this->assertFalse((bool) $mediumRow['is_organic_overridden']);
+        $this->assertFalse((bool) $mediumRow['is_organic']);
+        $this->assertTrue((bool) $mediumRow['effective_is_organic']);
+
+        $mediumRow['is_organic'] = false;
+        $mediumRow['is_organic_overridden'] = true;
+        $editorState['campaigns'] = collect($editorState['campaigns'])
+            ->map(fn (array $row): array => $row['key'] === $mediumRow['key'] ? $mediumRow : $row)
+            ->all();
+
+        $service->sync($city->fresh(), $editorState);
+        $editorState = $service->getEditorState($city->fresh());
+        $mediumRow = collect($editorState['campaigns'])->firstWhere('type', 'medium');
+
+        $this->assertTrue((bool) $mediumRow['is_organic_overridden']);
+        $this->assertFalse((bool) $mediumRow['is_organic']);
+        $this->assertFalse((bool) $mediumRow['effective_is_organic']);
+        $this->assertTrue((bool) collect($editorState['sources'])->firstWhere('source', 'yandex')['is_organic']);
     }
 
     /** @test */

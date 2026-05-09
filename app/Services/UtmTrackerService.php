@@ -78,6 +78,7 @@ class UtmTrackerService
                     'name' => $source->name,
                     'default_phone_key' => $source->default_phone_id ? $this->phoneKey($source->default_phone_id) : null,
                     'open_booking_widget' => (bool) $source->open_booking_widget,
+                    'is_organic' => (bool) $source->is_organic,
                 ])
                 ->all(),
             'campaigns' => $this->mapCampaignStateRows(
@@ -263,12 +264,29 @@ class UtmTrackerService
                     'phone' => $sourceOnly?->phone?->phone,
                     'medium' => $campaigns
                         ->filter(fn (CityUtmCampaign $campaign): bool => filled($campaign->medium))
-                        ->sortBy('medium', SORT_NATURAL | SORT_FLAG_CASE)
+                        ->groupBy('medium')
+                        ->map(function (Collection $mediumCampaigns, string $medium) use ($campaigns): array {
+                            /** @var CityUtmCampaign|null $campaign */
+                            $campaign = $mediumCampaigns->first(fn (CityUtmCampaign $row): bool => ! filled($row->campaign));
+
+                            $campaignRows = $campaigns
+                                ->filter(fn (CityUtmCampaign $campaignRule): bool => $campaignRule->medium === $medium && filled($campaignRule->campaign))
+                                ->sortBy('campaign', SORT_NATURAL | SORT_FLAG_CASE)
+                                ->values()
+                                ->map(fn (CityUtmCampaign $campaignRule): array => [
+                                    'name' => $campaignRule->campaign,
+                                    'phone' => $campaignRule->phone?->phone,
+                                ])
+                                ->all();
+
+                            return array_filter([
+                                'name' => $medium,
+                                'phone' => $campaign?->phone?->phone,
+                                'campaign' => $campaignRows,
+                            ], fn (mixed $value, string $key): bool => $key !== 'campaign' || $value !== [], ARRAY_FILTER_USE_BOTH);
+                        })
+                        ->sortBy('name', SORT_NATURAL | SORT_FLAG_CASE)
                         ->values()
-                        ->map(fn (CityUtmCampaign $campaign): array => [
-                            'name' => $campaign->medium,
-                            'phone' => $campaign->phone?->phone,
-                        ])
                         ->all(),
                 ];
             })
@@ -284,12 +302,17 @@ class UtmTrackerService
             ->map(fn (CityUtmCampaign $campaign): array => [
                 'key' => $this->campaignKey($campaign->id),
                 'id' => $campaign->id,
-                'type' => filled($campaign->medium) ? 'medium' : 'source',
+                'type' => filled($campaign->campaign) ? 'campaign' : (filled($campaign->medium) ? 'medium' : 'source'),
                 'source_key' => $this->sourceKey($campaign->source_id),
                 'medium' => $campaign->medium,
                 'medium_name' => $campaign->medium_name,
+                'campaign' => $campaign->campaign,
+                'campaign_name' => $campaign->campaign_name,
                 'phone_key' => $campaign->phone_id ? $this->phoneKey($campaign->phone_id) : null,
                 'open_booking_widget' => (bool) $campaign->open_booking_widget,
+                'is_organic' => (bool) $campaign->is_organic,
+                'is_organic_overridden' => (bool) $campaign->is_organic_overridden,
+                'effective_is_organic' => $this->effectiveCampaignOrganic($campaign),
                 'created_at' => $campaign->created_at?->format('Y-m-d H:i:s'),
                 'started_at' => $campaign->started_at?->format('Y-m-d H:i:s'),
                 'stopped_at' => $campaign->stopped_at?->format('Y-m-d H:i:s'),
@@ -325,9 +348,10 @@ class UtmTrackerService
                     'key' => $this->sourceKey($source->id),
                     'id' => $source->id,
                     'source' => $source->source,
-                    'name' => $source->name,
-                    'default_phone_key' => $source->default_phone_id ? $this->phoneKey($source->default_phone_id) : null,
-                    'open_booking_widget' => (bool) $source->open_booking_widget,
+                'name' => $source->name,
+                'default_phone_key' => $source->default_phone_id ? $this->phoneKey($source->default_phone_id) : null,
+                'open_booking_widget' => (bool) $source->open_booking_widget,
+                'is_organic' => (bool) $source->is_organic,
                 ])
                 ->all(),
             'campaigns' => [],
@@ -346,8 +370,13 @@ class UtmTrackerService
                 'source_key' => $this->sourceKey($source->id),
                 'medium' => null,
                 'medium_name' => null,
+                'campaign' => null,
+                'campaign_name' => null,
                 'phone_key' => $source->default_phone_id ? $this->phoneKey($source->default_phone_id) : null,
                 'open_booking_widget' => (bool) $source->open_booking_widget,
+                'is_organic' => false,
+                'is_organic_overridden' => false,
+                'effective_is_organic' => (bool) $source->is_organic,
                 'created_at' => $source->created_at?->format('Y-m-d H:i:s') ?? now()->format('Y-m-d H:i:s'),
                 'started_at' => $source->created_at?->format('Y-m-d H:i:s') ?? now()->format('Y-m-d H:i:s'),
                 'stopped_at' => null,
@@ -367,8 +396,13 @@ class UtmTrackerService
                 'source_key' => $this->sourceKey($medium->source_id),
                 'medium' => $medium->medium,
                 'medium_name' => $medium->medium_name,
+                'campaign' => null,
+                'campaign_name' => null,
                 'phone_key' => $medium->phone_id ? $this->phoneKey($medium->phone_id) : null,
                 'open_booking_widget' => (bool) $medium->open_booking_widget,
+                'is_organic' => false,
+                'is_organic_overridden' => false,
+                'effective_is_organic' => false,
                 'created_at' => $medium->created_at?->format('Y-m-d H:i:s') ?? now()->format('Y-m-d H:i:s'),
                 'started_at' => ($medium->start_date?->startOfDay() ?? $medium->created_at ?? now())->format('Y-m-d H:i:s'),
                 'stopped_at' => $isArchived ? $stoppedAt?->format('Y-m-d H:i:s') : null,
@@ -419,6 +453,7 @@ class UtmTrackerService
                 'name' => '',
                 'default_phone_key' => $defaultPhoneKey,
                 'open_booking_widget' => false,
+                'is_organic' => false,
             ];
 
             if ($defaultPhoneKey) {
@@ -429,8 +464,13 @@ class UtmTrackerService
                     'source_key' => $sourceKey,
                     'medium' => null,
                     'medium_name' => null,
+                    'campaign' => null,
+                    'campaign_name' => null,
                     'phone_key' => $defaultPhoneKey,
                     'open_booking_widget' => false,
+                    'is_organic' => false,
+                    'is_organic_overridden' => false,
+                    'effective_is_organic' => false,
                     'created_at' => now()->format('Y-m-d H:i:s'),
                     'started_at' => now()->format('Y-m-d H:i:s'),
                     'stopped_at' => null,
@@ -459,14 +499,54 @@ class UtmTrackerService
                     'source_key' => $sourceKey,
                     'medium' => $mediumValue,
                     'medium_name' => '',
+                    'campaign' => null,
+                    'campaign_name' => null,
                     'phone_key' => $phoneKey,
                     'open_booking_widget' => false,
+                    'is_organic' => false,
+                    'is_organic_overridden' => false,
+                    'effective_is_organic' => false,
                     'created_at' => now()->format('Y-m-d H:i:s'),
                     'started_at' => now()->format('Y-m-d H:i:s'),
                     'stopped_at' => null,
                     'archived_at' => null,
                     'restarted_from_id' => null,
                 ];
+
+                foreach ((array) data_get($legacyMedium, 'campaign', []) as $legacyCampaign) {
+                    $campaignValue = trim((string) data_get($legacyCampaign, 'name', ''));
+
+                    if ($campaignValue === '') {
+                        continue;
+                    }
+
+                    $campaignPhoneKey = $this->legacyPhoneKey(
+                        trim((string) data_get($legacyCampaign, 'phone', '')),
+                        $phones,
+                        $phonesByNumber,
+                    );
+
+                    $campaigns[] = [
+                        'key' => 'campaign-campaign-legacy-' . md5($sourceValue . '::' . $mediumValue . '::' . $campaignValue),
+                        'id' => null,
+                        'type' => 'campaign',
+                        'source_key' => $sourceKey,
+                        'medium' => $mediumValue,
+                        'medium_name' => '',
+                        'campaign' => $campaignValue,
+                        'campaign_name' => '',
+                        'phone_key' => $campaignPhoneKey,
+                        'open_booking_widget' => false,
+                        'is_organic' => false,
+                        'is_organic_overridden' => false,
+                        'effective_is_organic' => false,
+                        'created_at' => now()->format('Y-m-d H:i:s'),
+                        'started_at' => now()->format('Y-m-d H:i:s'),
+                        'stopped_at' => null,
+                        'archived_at' => null,
+                        'restarted_from_id' => null,
+                    ];
+                }
             }
         }
 
@@ -525,6 +605,7 @@ class UtmTrackerService
                 ? ($phoneKeyToId[$row['default_phone_key']] ?? null)
                 : null;
             $model->open_booking_widget = (bool) $row['open_booking_widget'];
+            $model->is_organic = (bool) $row['is_organic'];
             $model->save();
 
             $keyToId[$row['key']] = $model->id;
@@ -598,10 +679,14 @@ class UtmTrackerService
         }
 
         $model->source_id = $sourceId;
-        $model->medium = $row['type'] === 'medium' ? $row['medium'] : null;
-        $model->medium_name = $row['type'] === 'medium' ? ($row['medium_name'] ?: null) : null;
+        $model->medium = in_array($row['type'], ['medium', 'campaign'], true) ? $row['medium'] : null;
+        $model->medium_name = in_array($row['type'], ['medium', 'campaign'], true) ? ($row['medium_name'] ?: null) : null;
+        $model->campaign = $row['type'] === 'campaign' ? $row['campaign'] : null;
+        $model->campaign_name = $row['type'] === 'campaign' ? ($row['campaign_name'] ?: null) : null;
         $model->phone_id = $row['phone_key'] ? ($phoneKeyToId[$row['phone_key']] ?? null) : null;
         $model->open_booking_widget = (bool) $row['open_booking_widget'];
+        $model->is_organic_overridden = (bool) $row['is_organic_overridden'];
+        $model->is_organic = $model->is_organic_overridden ? (bool) $row['is_organic'] : false;
         $parsedStartedAt = $this->parseEditorDateTime(
             $row['started_at'],
             'У одной из кампаний указана некорректная дата запуска.',
@@ -733,7 +818,7 @@ class UtmTrackerService
                 ->isNotEmpty()
         ) {
             throw ValidationException::withMessages([
-                'data.utm_tracker' => 'Активная UTM-кампания не должна повторяться по source и medium.',
+                'data.utm_tracker' => 'Активная UTM-кампания не должна повторяться по source, medium и campaign.',
             ]);
         }
     }
@@ -757,9 +842,15 @@ class UtmTrackerService
                 ]);
             }
 
-            if ($row['type'] === 'medium' && ! filled($row['medium'])) {
+            if (in_array($row['type'], ['medium', 'campaign'], true) && ! filled($row['medium'])) {
                 throw ValidationException::withMessages([
                     'data.utm_tracker' => 'У одной из medium-кампаний не указан utm_medium.',
+                ]);
+            }
+
+            if ($row['type'] === 'campaign' && ! filled($row['campaign'])) {
+                throw ValidationException::withMessages([
+                    'data.utm_tracker' => 'У одной из campaign-кампаний не указан utm_campaign.',
                 ]);
             }
 
@@ -812,6 +903,7 @@ class UtmTrackerService
                     'name' => trim((string) data_get($row, 'name', '')),
                     'default_phone_key' => data_get($row, 'default_phone_key') ? (string) data_get($row, 'default_phone_key') : null,
                     'open_booking_widget' => (bool) data_get($row, 'open_booking_widget', false),
+                    'is_organic' => (bool) data_get($row, 'is_organic', false),
                 ])
                 ->filter(fn (array $row): bool => filled($row['source']))
                 ->values()
@@ -826,19 +918,26 @@ class UtmTrackerService
         return collect($rows)
             ->map(function (mixed $row): array {
                 $type = data_get($row, 'type');
-                $type = in_array($type, ['source', 'medium'], true)
-                    ? $type
-                    : (filled(trim((string) data_get($row, 'medium', ''))) ? 'medium' : 'source');
+                $medium = trim((string) data_get($row, 'medium', ''));
+                $campaign = trim((string) data_get($row, 'campaign', ''));
+                $type = $type === 'source'
+                    ? 'source'
+                    : (filled($campaign) ? 'campaign' : (filled($medium) || in_array($type, ['medium', 'campaign'], true) ? 'medium' : 'source'));
 
                 return $this->normalizeCampaignRowChronology([
                     'key' => (string) (data_get($row, 'key') ?: 'campaign-' . Str::uuid()),
                     'id' => data_get($row, 'id') ? (int) data_get($row, 'id') : null,
                     'type' => $type,
                     'source_key' => data_get($row, 'source_key') ? (string) data_get($row, 'source_key') : null,
-                    'medium' => $type === 'medium' ? trim((string) data_get($row, 'medium', '')) : null,
-                    'medium_name' => $type === 'medium' ? trim((string) data_get($row, 'medium_name', '')) : null,
+                    'medium' => in_array($type, ['medium', 'campaign'], true) ? $medium : null,
+                    'medium_name' => in_array($type, ['medium', 'campaign'], true) ? trim((string) data_get($row, 'medium_name', '')) : null,
+                    'campaign' => $type === 'campaign' ? $campaign : null,
+                    'campaign_name' => $type === 'campaign' ? trim((string) data_get($row, 'campaign_name', '')) : null,
                     'phone_key' => data_get($row, 'phone_key') ? (string) data_get($row, 'phone_key') : null,
                     'open_booking_widget' => (bool) data_get($row, 'open_booking_widget', false),
+                    'is_organic' => (bool) data_get($row, 'is_organic', false),
+                    'is_organic_overridden' => (bool) data_get($row, 'is_organic_overridden', false),
+                    'effective_is_organic' => (bool) data_get($row, 'effective_is_organic', false),
                     'created_at' => $this->normalizeDateTime(data_get($row, 'created_at')),
                     'started_at' => $this->normalizeDateTime(data_get($row, 'started_at')),
                     'stopped_at' => $this->normalizeDateTime(data_get($row, 'stopped_at')),
@@ -846,7 +945,7 @@ class UtmTrackerService
                     'restarted_from_id' => data_get($row, 'restarted_from_id') ? (int) data_get($row, 'restarted_from_id') : null,
                 ]);
             })
-            ->filter(fn (array $row): bool => filled($row['source_key']) || filled($row['medium']) || filled($row['phone_key']))
+            ->filter(fn (array $row): bool => filled($row['source_key']) || filled($row['medium']) || filled($row['campaign']) || filled($row['phone_key']))
             ->values()
             ->all();
     }
@@ -977,7 +1076,11 @@ class UtmTrackerService
             return $row['source_key'] . '::__source__';
         }
 
-        return $row['source_key'] . '::' . $row['medium'];
+        if ($row['type'] === 'medium') {
+            return $row['source_key'] . '::' . $row['medium'] . '::__medium__';
+        }
+
+        return $row['source_key'] . '::' . $row['medium'] . '::' . $row['campaign'];
     }
 
     private function activeCampaigns(City $city): Collection
@@ -992,6 +1095,15 @@ class UtmTrackerService
             ->filter(fn (CityUtmCampaign $campaign): bool => $campaign->archived_at !== null);
     }
 
+    private function effectiveCampaignOrganic(CityUtmCampaign $campaign): bool
+    {
+        if ($campaign->is_organic_overridden) {
+            return (bool) $campaign->is_organic;
+        }
+
+        return (bool) $campaign->source?->is_organic;
+    }
+
     private function isTransitionMediumActive(CityUtmMedium $medium): bool
     {
         if (! $medium->end_date) {
@@ -1004,19 +1116,21 @@ class UtmTrackerService
     private function campaignSortValue(CityUtmCampaign $campaign): string
     {
         $source = strtolower($campaign->source?->source ?? '');
-        $type = filled($campaign->medium) ? '1' : '0';
+        $type = filled($campaign->campaign) ? '2' : (filled($campaign->medium) ? '1' : '0');
         $medium = strtolower($campaign->medium ?? '');
+        $campaignValue = strtolower($campaign->campaign ?? '');
 
-        return $source . '::' . $type . '::' . $medium;
+        return $source . '::' . $type . '::' . $medium . '::' . $campaignValue;
     }
 
     private function campaignStateSortValue(array $row, Collection $sourcesByKey): string
     {
         $source = strtolower((string) data_get($sourcesByKey->get($row['source_key']), 'source', ''));
-        $type = ($row['type'] ?? 'source') === 'medium' ? '1' : '0';
+        $type = ($row['type'] ?? 'source') === 'campaign' ? '2' : ((($row['type'] ?? 'source') === 'medium') ? '1' : '0');
         $medium = strtolower((string) ($row['medium'] ?? ''));
+        $campaign = strtolower((string) ($row['campaign'] ?? ''));
 
-        return $source . '::' . $type . '::' . $medium;
+        return $source . '::' . $type . '::' . $medium . '::' . $campaign;
     }
 
     private function synchronizeSourceOnlyCampaignRows(array $state): array
@@ -1049,6 +1163,9 @@ class UtmTrackerService
                     'medium_name' => null,
                     'phone_key' => $defaultPhoneKey,
                     'open_booking_widget' => (bool) ($sourceRow['open_booking_widget'] ?? false),
+                    'is_organic' => false,
+                    'is_organic_overridden' => false,
+                    'effective_is_organic' => (bool) ($sourceRow['is_organic'] ?? false),
                     'created_at' => now()->format('Y-m-d H:i:s'),
                     'started_at' => now()->format('Y-m-d H:i:s'),
                     'stopped_at' => null,
@@ -1067,6 +1184,9 @@ class UtmTrackerService
                     if (($row['type'] ?? 'source') === 'source' && ($row['source_key'] ?? null) === $sourceKey) {
                         $row['phone_key'] = $defaultPhoneKey;
                         $row['open_booking_widget'] = (bool) ($row['open_booking_widget'] ?? $sourceRow['open_booking_widget'] ?? false);
+                        $row['effective_is_organic'] = ($row['is_organic_overridden'] ?? false)
+                            ? (bool) ($row['is_organic'] ?? false)
+                            : (bool) ($sourceRow['is_organic'] ?? false);
                     }
 
                     return $row;
@@ -1093,7 +1213,7 @@ class UtmTrackerService
     private function dropConflictingSourceCampaignPhones(array $state): array
     {
         $mediumPhoneKeys = collect(data_get($state, 'campaigns', []))
-            ->filter(fn (array $row): bool => ($row['type'] ?? 'source') === 'medium')
+            ->filter(fn (array $row): bool => in_array($row['type'] ?? 'source', ['medium', 'campaign'], true))
             ->pluck('phone_key')
             ->filter()
             ->unique()

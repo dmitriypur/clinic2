@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\BookingClinicBranchesController;
 use App\Http\Controllers\Api\BookingCityDoctorsByDateCalendarController;
 use App\Http\Controllers\Api\BookingCityDoctorsByDateController;
 use App\Http\Controllers\Api\Integrations\ServiceIntegrationController;
+use App\Http\Controllers\Api\Integrations\UtmTrackerIntegrationController;
 use App\Http\Controllers\Api\BookingDoctorsController;
 use App\Http\Controllers\Auth\VerificationCodeController;
 use App\Http\Controllers\CallbackController;
@@ -34,6 +35,8 @@ Route::post('/send-verification-code', VerificationCodeController::class);
 
 Route::put('user', [UserController::class, 'update']);
 Route::put('user/reset-password', UserPasswordController::class);
+
+Route::get('integrations/utm-tracker', UtmTrackerIntegrationController::class);
 
 Route::prefix('integrations/services')
     ->middleware(['services.integration', 'services.integration.city'])

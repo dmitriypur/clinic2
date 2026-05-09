@@ -15,8 +15,12 @@ class CityUtmCampaign extends Model
         'source_id',
         'medium',
         'medium_name',
+        'campaign',
+        'campaign_name',
         'phone_id',
         'open_booking_widget',
+        'is_organic',
+        'is_organic_overridden',
         'started_at',
         'stopped_at',
         'archived_at',
@@ -25,6 +29,8 @@ class CityUtmCampaign extends Model
 
     protected $casts = [
         'open_booking_widget' => 'boolean',
+        'is_organic' => 'boolean',
+        'is_organic_overridden' => 'boolean',
         'started_at' => 'immutable_datetime',
         'stopped_at' => 'immutable_datetime',
         'archived_at' => 'immutable_datetime',

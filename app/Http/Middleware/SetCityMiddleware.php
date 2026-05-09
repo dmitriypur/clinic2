@@ -146,6 +146,7 @@ class SetCityMiddleware
             $activeCities,
             (string) $request->query('utm_source'),
             $request->query('utm_medium'),
+            $request->query('utm_campaign'),
         );
 
         if (! $matchedCity) {
@@ -204,10 +205,11 @@ class SetCityMiddleware
         ));
     }
 
-    private function resolveCityByUtm(\Illuminate\Database\Eloquent\Collection $activeCities, string $utmSource, ?string $utmMedium): ?City
+    private function resolveCityByUtm(\Illuminate\Database\Eloquent\Collection $activeCities, string $utmSource, ?string $utmMedium, ?string $utmCampaign): ?City
     {
         $utmSource = strtolower(trim($utmSource));
         $utmMedium = strtolower(trim((string) $utmMedium));
+        $utmCampaign = strtolower(trim((string) $utmCampaign));
 
         if ($utmSource === '') {
             return null;
@@ -218,7 +220,7 @@ class SetCityMiddleware
         $hasScoreTie = false;
 
         foreach ($activeCities as $city) {
-            $score = $this->matchCityUtmScore($city, $utmSource, $utmMedium);
+            $score = $this->matchCityUtmScore($city, $utmSource, $utmMedium, $utmCampaign);
 
             if ($score === 0) {
                 continue;
@@ -244,7 +246,7 @@ class SetCityMiddleware
         return $matchedCity;
     }
 
-    private function matchCityUtmScore(City $city, string $utmSource, string $utmMedium): int
+    private function matchCityUtmScore(City $city, string $utmSource, string $utmMedium, string $utmCampaign): int
     {
         foreach (($city->utm_phones ?? []) as $rule) {
             if (strtolower((string) ($rule['source'] ?? '')) !== $utmSource) {
@@ -254,6 +256,14 @@ class SetCityMiddleware
             if ($utmMedium !== '') {
                 foreach (($rule['medium'] ?? []) as $mediumRule) {
                     if (strtolower((string) ($mediumRule['name'] ?? '')) === $utmMedium) {
+                        if ($utmCampaign !== '') {
+                            foreach (($mediumRule['campaign'] ?? []) as $campaignRule) {
+                                if (strtolower((string) ($campaignRule['name'] ?? '')) === $utmCampaign) {
+                                    return 3;
+                                }
+                            }
+                        }
+
                         return 2;
                     }
                 }

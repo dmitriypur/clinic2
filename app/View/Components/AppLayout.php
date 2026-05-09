@@ -80,28 +80,46 @@ class AppLayout extends Component
         // Логика UTM
         $utmSource = Session::get('utm_source');
         $utmMedium = Session::get('utm_medium');
+        $utmCampaign = Session::get('utm_campaign');
         $hasQueryUtmSource = request()->query->has('utm_source');
         $hasQueryUtmMedium = request()->query->has('utm_medium');
+        $hasQueryUtmCampaign = request()->query->has('utm_campaign');
 
         if ($hasQueryUtmSource) {
             $utmSource = request()->query('utm_source');
             Session::put('utm_source', $utmSource);
 
-            // Если source пришёл явно без medium, предыдущий medium из сессии
+            // Если source пришёл явно без medium/campaign, предыдущие значения из сессии
             // не должен продолжать влиять на подмену телефона.
             if (! $hasQueryUtmMedium) {
                 $utmMedium = null;
                 Session::forget('utm_medium');
+            }
+
+            if (! $hasQueryUtmCampaign) {
+                $utmCampaign = null;
+                Session::forget('utm_campaign');
             }
         }
 
         if ($hasQueryUtmMedium) {
             $utmMedium = request()->query('utm_medium');
             Session::put('utm_medium', $utmMedium);
+
+            if (! $hasQueryUtmCampaign) {
+                $utmCampaign = null;
+                Session::forget('utm_campaign');
+            }
+        }
+
+        if ($hasQueryUtmCampaign) {
+            $utmCampaign = request()->query('utm_campaign');
+            Session::put('utm_campaign', $utmCampaign);
         }
 
         $utmSource = strtolower($utmSource ?? '');
         $utmMedium = strtolower($utmMedium ?? '');
+        $utmCampaign = strtolower($utmCampaign ?? '');
 
         // Применяем правила подмены из города
         if ($city && !empty($city->utm_phones) && $utmSource) {
@@ -110,11 +128,23 @@ class AppLayout extends Component
                 if (strtolower($rule['source'] ?? '') === $utmSource) {
                     $foundPhone = null;
 
-                    // Если есть medium в URL и правила для medium, ищем точное совпадение
+                    // Если есть medium/campaign в URL, ищем самое точное совпадение.
                     if ($utmMedium && !empty($rule['medium']) && is_array($rule['medium'])) {
                         foreach ($rule['medium'] as $mediumRule) {
                             if (strtolower($mediumRule['name'] ?? '') === $utmMedium) {
-                                $foundPhone = $mediumRule['phone'] ?? null;
+                                if ($utmCampaign && !empty($mediumRule['campaign']) && is_array($mediumRule['campaign'])) {
+                                    foreach ($mediumRule['campaign'] as $campaignRule) {
+                                        if (strtolower($campaignRule['name'] ?? '') === $utmCampaign) {
+                                            $foundPhone = $campaignRule['phone'] ?? null;
+                                            break;
+                                        }
+                                    }
+                                }
+
+                                if (! $foundPhone) {
+                                    $foundPhone = $mediumRule['phone'] ?? null;
+                                }
+
                                 break;
                             }
                         }
