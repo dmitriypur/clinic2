@@ -1,0 +1,42 @@
+@import '../../../../vendor/filament/filament/resources/css/theme.css';
+
+@config 'tailwind.config.js';
+
+.utm-tracker-grid {
+    display: grid;
+    align-items: center;
+    column-gap: 12px;
+    min-height: 52px;
+}
+
+.utm-tracker-grid--active {
+    grid-template-columns: 44px 190px 170px 200px 70px 70px 200px 120px 190px;
+}
+
+.utm-tracker-grid--archive {
+    grid-template-columns: 44px 190px 170px 200px 70px 200px 120px 120px 190px;
+}
+
+.utm-tracker-cell {
+    min-width: 0;
+}
+
+.utm-tracker-check {
+    justify-self: center;
+}
+
+.utm-tracker-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    min-width: 0;
+}
+
+.utm-tracker-action-link {
+    white-space: nowrap;
+}
+
+.utm-tracker-actions button {
+    flex-shrink: 0;
+}
