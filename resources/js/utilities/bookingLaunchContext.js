@@ -13,9 +13,35 @@ function normalizeString(value) {
 function normalizeEntry(value) {
   const normalized = normalizeString(value)?.toLowerCase() || null;
 
-  return normalized === "doctor" || normalized === "clinic"
-    ? normalized
-    : null;
+  if (normalized === "doctor" || normalized === "clinic") {
+    return normalized;
+  }
+
+  return normalized === "branch" ? "clinic" : null;
+}
+
+function normalizeSearchParams(input) {
+  if (input instanceof URLSearchParams) {
+    return input;
+  }
+
+  if (typeof input === "string") {
+    return new URLSearchParams(input.startsWith("?") ? input.slice(1) : input);
+  }
+
+  return new URLSearchParams();
+}
+
+function firstSearchParam(params, names = []) {
+  for (const name of names) {
+    const value = normalizeString(params.get(name));
+
+    if (value) {
+      return value;
+    }
+  }
+
+  return null;
 }
 
 export function normalizeBookingLaunchContext(input = null) {
@@ -67,5 +93,50 @@ export function buildBookingLaunchContextFromElement(element) {
     appointmentEntry: element.dataset.appointmentEntry,
     doctorId: element.dataset.doctorId,
     branchId: element.dataset.branchId || element.dataset.clinicId,
+  });
+}
+
+export function buildBookingLaunchContextFromSearchParams(input = "") {
+  const params = normalizeSearchParams(input);
+  const explicitEntry = firstSearchParam(params, [
+    "appointment",
+    "appointment_entry",
+    "booking_entry",
+    "booking_mode",
+  ]);
+  const prefixedDoctorId = firstSearchParam(params, [
+    "booking_doctor",
+    "booking_doctor_id",
+  ]);
+  const prefixedBranchId = firstSearchParam(params, [
+    "booking_branch",
+    "booking_branch_id",
+    "booking_clinic",
+    "booking_clinic_id",
+  ]);
+  const entry =
+    normalizeEntry(explicitEntry) ||
+    (prefixedDoctorId ? "doctor" : null) ||
+    (prefixedBranchId ? "clinic" : null);
+
+  if (!entry) {
+    return null;
+  }
+
+  const doctorId =
+    prefixedDoctorId ||
+    (entry === "doctor"
+      ? firstSearchParam(params, ["doctor_id", "doctor", "doctor_uuid"])
+      : null);
+  const branchId =
+    prefixedBranchId ||
+    (entry === "clinic"
+      ? firstSearchParam(params, ["branch_id", "branch", "clinic_id", "clinic"])
+      : null);
+
+  return normalizeBookingLaunchContext({
+    entry,
+    doctorId,
+    branchId,
   });
 }

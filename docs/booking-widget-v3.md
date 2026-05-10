@@ -100,6 +100,32 @@ EventBus:
 
 - `eventBus.$emit("showCallbackModal", phone, target, options)` также проходит через root `showCallbackModal()`.
 
+4. Прямая ссылка с GET-параметрами:
+
+`autoOpenBookingWidgetV3FromUrl()` читает URL query string через `buildBookingLaunchContextFromSearchParams()`. Если в ссылке есть валидный booking launch context, виджет откроется автоматически без необходимости добавлять `#appointment-form`.
+
+Рекомендуемые форматы:
+
+```text
+/?appointment=doctor&doctor_id=<uuid-врача>
+/?appointment=clinic&branch_id=<external_id-филиала>
+```
+
+Короткие форматы:
+
+```text
+/?booking_doctor=<uuid-врача>
+/?booking_branch=<external_id-филиала>
+```
+
+Совместимые aliases:
+
+- entry: `appointment`, `appointment_entry`, `booking_entry`, `booking_mode`; значения `doctor`, `clinic`, `branch`, где `branch` нормализуется в `clinic`;
+- doctor id: `doctor_id`, `doctor`, `doctor_uuid`, `booking_doctor`, `booking_doctor_id`;
+- branch id: `branch_id`, `branch`, `clinic_id`, `clinic`, `booking_branch`, `booking_branch_id`, `booking_clinic`, `booking_clinic_id`.
+
+Безопасное правило: bare `doctor_id` или `branch_id` сами по себе не открывают виджет. Для них нужен явный `appointment=doctor|clinic`. Автооткрытие без `appointment` разрешено только для prefixed параметров `booking_doctor*` и `booking_branch*`.
+
 ## Launch context
 
 Launch context нормализуется в `resources/js/utilities/bookingLaunchContext.js`.
@@ -119,6 +145,12 @@ Selector:
   branchId: string | null
 }
 ```
+
+Источники launch context:
+
+- HTML data-атрибуты через `buildBookingLaunchContextFromElement()`;
+- GET-параметры через `buildBookingLaunchContextFromSearchParams()`;
+- прямой JS-вызов `openBookingWidgetV3(target, options)`.
 
 Правила:
 

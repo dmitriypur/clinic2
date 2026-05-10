@@ -49,6 +49,7 @@ import { eventBus } from "./eventBus";
 import {
   BOOKING_LAUNCH_SELECTOR,
   buildBookingLaunchContextFromElement,
+  buildBookingLaunchContextFromSearchParams,
   normalizeBookingLaunchContext,
 } from "./utilities/bookingLaunchContext";
 import VueObserveVisibility from "vue-observe-visibility";
@@ -228,14 +229,21 @@ new Vue({
 
   methods: {
     autoOpenBookingWidgetV3FromUrl() {
+      const launchContext = buildBookingLaunchContextFromSearchParams(
+        window.location.search
+      );
       const shouldOpenBookingWidget =
-        window.location.hash.trim().toLowerCase() === "#appointment-form";
+        window.location.hash.trim().toLowerCase() === "#appointment-form" ||
+        Boolean(launchContext);
 
       if (!shouldOpenBookingWidget) {
         return;
       }
 
-      this.openBookingWidgetV3();
+      this.openBookingWidgetV3(
+        null,
+        launchContext ? { launchContext } : null
+      );
     },
 
     toTop() {
