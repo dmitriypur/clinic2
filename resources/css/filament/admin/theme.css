@@ -10,11 +10,11 @@
 }
 
 .utm-tracker-grid--active {
-    grid-template-columns: 44px 190px 170px 200px 70px 70px 200px 120px 190px;
+    grid-template-columns: 44px 170px 190px 200px 70px 70px 64px 120px 150px;
 }
 
 .utm-tracker-grid--archive {
-    grid-template-columns: 44px 190px 170px 200px 70px 200px 120px 120px 190px;
+    grid-template-columns: 44px 190px 170px 200px 70px 64px 120px 120px 190px;
 }
 
 .utm-tracker-cell {

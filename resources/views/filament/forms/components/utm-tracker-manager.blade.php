@@ -84,6 +84,7 @@
                 key: row?.key ?? this.makeKey('phone'),
                 id: row?.id ?? null,
                 phone: row?.phone ?? '',
+                is_active: ! [false, 0, '0'].includes(row?.is_active),
             }))
         },
         normalizeSources(rows) {
@@ -257,6 +258,10 @@
             return url.toString()
         },
         trackingLinkValue(campaignRow) {
+            if (! campaignRow) {
+                return ''
+            }
+
             return this.buildUrl(
                 this.campaignSourceValue(campaignRow),
                 ['medium', 'campaign'].includes(campaignRow.type) ? campaignRow.medium : '',
@@ -302,6 +307,10 @@
             return copied
         },
         async copyTrackingLink(campaignRow) {
+            if (! campaignRow) {
+                return
+            }
+
             const copied = await this.copyText(this.trackingLinkValue(campaignRow))
 
             if (! copied) {
@@ -321,7 +330,7 @@
             }, 1500)
         },
         isTrackingLinkCopied(campaignRow) {
-            return this.copiedTrackingKey === campaignRow.key
+            return !! campaignRow && this.copiedTrackingKey === campaignRow.key
         },
         async copySelectedPhone(phoneKey, contextKey) {
             const copied = await this.copyText(this.phoneLabel(phoneKey))
@@ -423,8 +432,36 @@
                     return 0
                 }
 
-                return (leftValue > rightValue ? 1 : -1) * multiplier
-            })
+            return (leftValue > rightValue ? 1 : -1) * multiplier
+        })
+        },
+        sourceMatchesTrackingFilters(sourceRow) {
+            const filters = this.trackingFilters
+            const search = String(this.trackingSearch || '').trim().toLowerCase()
+            const phoneKey = sourceRow?.default_phone_key || ''
+
+            if (filters.source_key && sourceRow?.key !== filters.source_key) {
+                return false
+            }
+
+            if (filters.phone_key && phoneKey !== filters.phone_key) {
+                return false
+            }
+
+            if (filters.status || filters.started_date) {
+                return false
+            }
+
+            if (! search) {
+                return true
+            }
+
+            return [
+                sourceRow?.source || '',
+                sourceRow?.name || '',
+                this.phoneLabel(phoneKey),
+                this.trackingLinkValue(this.sourceFallbackRow(sourceRow)),
+            ].join(' ').toLowerCase().includes(search)
         },
         campaignRowsForView(mode = 'tracking') {
             const rows = mode === 'archive' ? this.state.archived_campaigns : this.state.campaigns
@@ -436,6 +473,20 @@
         },
         treeForView(mode = 'tracking') {
             const sourceMap = new Map()
+
+            if (mode === 'tracking') {
+                this.state.sources
+                    .filter((sourceRow) => this.sourceMatchesTrackingFilters(sourceRow))
+                    .forEach((sourceRow) => {
+                        sourceMap.set(sourceRow.key, {
+                            key: sourceRow.key,
+                            source: sourceRow,
+                            sourceRule: null,
+                            mediums: new Map(),
+                            looseCampaigns: [],
+                        })
+                    })
+            }
 
             this.campaignRowsForView(mode).forEach((row) => {
                 const sourceKey = row.source_key || '__empty_source__'
@@ -493,8 +544,7 @@
             return Array.from(sourceMap.values())
                 .map((sourceNode) => {
                     if (mode === 'tracking' && sourceNode.sourceRule) {
-                        sourceNode.source.phone_key = sourceNode.sourceRule.phone_key || sourceNode.source.default_phone_key || ''
-                        sourceNode.source.default_phone_key = sourceNode.source.phone_key
+                        sourceNode.source.phone_key = sourceNode.source.default_phone_key || ''
                         sourceNode.source.open_booking_widget = !! sourceNode.sourceRule.open_booking_widget
                     } else {
                         sourceNode.source.phone_key = sourceNode.source.default_phone_key || ''
@@ -591,8 +641,22 @@
             })
 
             if (! value) {
-                this.state.campaigns = this.state.campaigns.filter((row) => ! (row.type === 'source' && row.source_key === sourceKey))
-                sourceNode.sourceRule = null
+                this.state.campaigns = this.state.campaigns.map((row) => {
+                    if (row.type !== 'source' || row.source_key !== sourceKey) {
+                        return row
+                    }
+
+                    return {
+                        ...row,
+                        phone_key: '',
+                        open_booking_widget: !! sourceNode.source.open_booking_widget,
+                    }
+                })
+
+                if (sourceNode.sourceRule) {
+                    sourceNode.sourceRule.phone_key = ''
+                }
+
                 this.syncState()
 
                 return
@@ -609,6 +673,29 @@
                     open_booking_widget: !! sourceNode.source.open_booking_widget,
                 }
             })
+
+            if (! this.state.campaigns.some((row) => row.type === 'source' && row.source_key === sourceKey)) {
+                this.state.campaigns.unshift({
+                    key: this.makeKey('campaign'),
+                    id: null,
+                    type: 'source',
+                    source_key: sourceKey,
+                    medium: '',
+                    medium_name: '',
+                    campaign: '',
+                    campaign_name: '',
+                    phone_key: value,
+                    open_booking_widget: !! sourceNode.source.open_booking_widget,
+                    is_organic: false,
+                    is_organic_overridden: false,
+                    effective_is_organic: !! sourceNode.source.is_organic,
+                    created_at: this.currentDateTimeValue(),
+                    started_at: this.currentDateTimeValue(),
+                    stopped_at: '',
+                    archived_at: '',
+                    restarted_from_id: null,
+                })
+            }
 
             if (sourceNode.sourceRule) {
                 sourceNode.sourceRule.phone_key = value
@@ -684,6 +771,7 @@
                 key: this.makeKey('phone'),
                 id: null,
                 phone: '',
+                is_active: true,
             })
 
             this.activeTab = 'phones'
@@ -950,11 +1038,16 @@
                 return false
             }
 
-            return this.isPhoneBusyInActiveCampaigns(phoneKey, { type: 'campaign', key: campaignRow?.key })
+            return this.isPhoneInactive(phoneKey)
+                || this.isPhoneBusyInActiveCampaigns(phoneKey, { type: 'campaign', key: campaignRow?.key })
                 || this.isPhoneUsedBySourceTemplateForCampaign(phoneKey, campaignRow)
         },
         phoneOptionLabel(phoneKey, campaignRow) {
             const phone = this.phoneLabel(phoneKey)
+
+            if (campaignRow?.phone_key !== phoneKey && this.isPhoneInactive(phoneKey)) {
+                return `${phone} (неактивен)`
+            }
 
             return this.isPhoneOptionDisabled(phoneKey, campaignRow) ? `${phone} (занят)` : phone
         },
@@ -963,12 +1056,26 @@
                 return false
             }
 
-            return this.isPhoneBusyInActiveCampaigns(phoneKey) || this.isPhoneUsedByOtherSourceTemplate(phoneKey, sourceRow)
+            return this.isPhoneInactive(phoneKey)
+                || this.isPhoneBusyInActiveCampaigns(phoneKey)
+                || this.isPhoneUsedByOtherSourceTemplate(phoneKey, sourceRow)
         },
         sourcePhoneOptionLabel(phoneKey, sourceRow) {
             const phone = this.phoneLabel(phoneKey)
 
+            if (sourceRow?.default_phone_key !== phoneKey && this.isPhoneInactive(phoneKey)) {
+                return `${phone} (неактивен)`
+            }
+
             return this.isSourcePhoneOptionDisabled(phoneKey, sourceRow) ? `${phone} (занят)` : phone
+        },
+        isPhoneInactive(phoneKey) {
+            return ! this.isPhoneActive(phoneKey)
+        },
+        isPhoneActive(phoneKey) {
+            const phone = this.state.phones.find((row) => row.key === phoneKey)
+
+            return phone ? ! [false, 0, '0'].includes(phone.is_active) : true
         },
         isPhoneUsedByOtherSourceTemplate(phoneKey, sourceRow = null) {
             if (! phoneKey) {
@@ -1006,7 +1113,6 @@
 
             return this.state.sources.some((row) => row.default_phone_key === phoneKey)
                 || this.state.campaigns.some((row) => row.phone_key === phoneKey)
-                || this.state.archived_campaigns.some((row) => row.phone_key === phoneKey)
         },
         isPhoneBusyForDisplay(phoneKey) {
             return this.state.campaigns.some((row) => row.phone_key === phoneKey)
@@ -1183,11 +1289,11 @@
                 </template>
 
                 <div class="overflow-x-auto rounded-lg border border-gray-200 bg-white dark:border-white/10 dark:bg-white/5">
-                    <div style="min-width: 1524px;">
+                    <div style="min-width: 1180px;">
                         <div class="utm-tracker-grid utm-tracker-grid--active border-b border-gray-200 bg-gray-50 px-3 py-2 text-[11px] font-medium uppercase text-gray-500 dark:border-white/10 dark:bg-white/5 dark:text-gray-400">
                             <span></span>
-                            <span>UTM</span>
                             <span>Название</span>
+                            <span>UTM</span>
                             <span>Телефон</span>
                             <span>Виджет</span>
                             <span>Органика</span>
@@ -1199,35 +1305,31 @@
                         <template x-for="sourceNode in treeForView('tracking')" :key="`tracking-source-${sourceNode.key}`">
                             <div>
                                 <div class="utm-tracker-grid utm-tracker-grid--active border-b border-gray-100 px-3 py-2 dark:border-white/10">
-                                    <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 text-gray-600 transition hover:bg-gray-50 dark:border-white/10 dark:text-gray-300 dark:hover:bg-white/5" x-on:click="toggleSource('tracking', sourceNode.key)" x-bind:title="isSourceExpanded('tracking', sourceNode.key) ? 'Свернуть source' : 'Раскрыть source'">
+                                    <button x-show="sourceNode.mediums.length > 0" type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 text-gray-600 transition hover:bg-gray-50 dark:border-white/10 dark:text-gray-300 dark:hover:bg-white/5" x-on:click="toggleSource('tracking', sourceNode.key)" x-bind:title="isSourceExpanded('tracking', sourceNode.key) ? 'Свернуть source' : 'Раскрыть source'">
                                         <svg class="h-4 w-4 transition" x-bind:class="isSourceExpanded('tracking', sourceNode.key) ? 'rotate-90' : ''" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M7.22 4.22a.75.75 0 0 1 1.06 0l5.25 5.25a.75.75 0 0 1 0 1.06l-5.25 5.25a.75.75 0 1 1-1.06-1.06L11.94 10 7.22 5.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" /></svg>
                                     </button>
+                                    <span x-show="sourceNode.mediums.length === 0" class="h-8 w-8"></span>
+
+                                    <div class="utm-tracker-cell truncate text-xs text-gray-700 dark:text-gray-200" x-text="sourceNode.source?.name || '—'"></div>
 
                                     <div class="utm-tracker-cell">
                                         <div class="truncate text-sm font-semibold text-gray-900 dark:text-white" x-text="sourceNode.source?.source || 'Без source'"></div>
                                         <div class="text-[11px] text-gray-500 dark:text-gray-400" x-text="`${sourceNode.mediums.length} medium`"></div>
                                     </div>
 
-                                    <div class="utm-tracker-cell truncate text-xs text-gray-700 dark:text-gray-200" x-text="sourceNode.source?.name || '—'"></div>
-
                                     <div class="flex items-center gap-2">
-                                        <select class="block min-w-0 flex-1 rounded-md border-gray-300 px-2 py-1.5 text-xs shadow-none focus:border-primary-500 focus:ring-primary-500 dark:border-white/10 dark:bg-transparent dark:text-white" x-model="sourceNode.source.phone_key" x-bind:disabled="isPersisting || ! sourceNode.source" x-on:change="setSourcePhone(sourceNode, sourceNode.source.phone_key)">
-                                            <option value="">Без телефона</option>
-                                            <template x-for="phoneRow in state.phones" :key="phoneRow.key">
-                                                <option x-bind:disabled="isSourcePhoneOptionDisabled(phoneRow.key, sourceNode.source)" x-bind:selected="sourceNode.source.phone_key === phoneRow.key" x-bind:value="phoneRow.key" x-text="sourcePhoneOptionLabel(phoneRow.key, sourceNode.source)"></option>
-                                            </template>
-                                        </select>
-                                        <button type="button" class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-gray-200 text-gray-600 transition hover:bg-gray-50 dark:border-white/10 dark:text-gray-300 dark:hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-40" x-bind:class="isPhoneCopied(`tree-source-${sourceNode.key}`) ? 'border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-200' : ''" x-bind:disabled="isPersisting || ! sourceNode.source?.phone_key" x-on:click="copySelectedPhone(sourceNode.source.phone_key, `tree-source-${sourceNode.key}`)" title="Скопировать телефон" aria-label="Скопировать телефон"><svg x-show="! isPhoneCopied(`tree-source-${sourceNode.key}`)" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M7 3.5A2.5 2.5 0 0 1 9.5 1h5A2.5 2.5 0 0 1 17 3.5v8A2.5 2.5 0 0 1 14.5 14h-5A2.5 2.5 0 0 1 7 11.5v-8Z" /><path d="M4.5 6A2.5 2.5 0 0 0 2 8.5v8A2.5 2.5 0 0 0 4.5 19h5a2.5 2.5 0 0 0 2.45-2H4.5a.5.5 0 0 1-.5-.5v-8a.5.5 0 0 1 .5-.5V6Z" /></svg><svg x-show="isPhoneCopied(`tree-source-${sourceNode.key}`)" x-cloak class="h-4 w-4" viewBox="0 0 20 20" fill="#16a34a" aria-hidden="true"><path fill-rule="evenodd" d="M16.704 5.29a1 1 0 0 1 .006 1.414l-8 8a1 1 0 0 1-1.415 0l-4-4a1 1 0 1 1 1.414-1.415l3.293 3.294 7.294-7.293a1 1 0 0 1 1.408 0Z" clip-rule="evenodd" /></svg></button>
+                                        <div class="utm-tracker-cell truncate text-xs text-gray-800 dark:text-gray-100" x-text="sourceNode.source?.default_phone_key ? phoneLabel(sourceNode.source.default_phone_key) : 'Без телефона'"></div>
+                                        <button type="button" class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-gray-200 text-gray-600 transition hover:bg-gray-50 dark:border-white/10 dark:text-gray-300 dark:hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-40" x-bind:class="isPhoneCopied(`tree-source-${sourceNode.key}`) ? 'border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-200' : ''" x-bind:disabled="isPersisting || ! sourceNode.source?.default_phone_key" x-on:click="copySelectedPhone(sourceNode.source.default_phone_key, `tree-source-${sourceNode.key}`)" title="Скопировать телефон" aria-label="Скопировать телефон"><svg x-show="! isPhoneCopied(`tree-source-${sourceNode.key}`)" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M7 3.5A2.5 2.5 0 0 1 9.5 1h5A2.5 2.5 0 0 1 17 3.5v8A2.5 2.5 0 0 1 14.5 14h-5A2.5 2.5 0 0 1 7 11.5v-8Z" /><path d="M4.5 6A2.5 2.5 0 0 0 2 8.5v8A2.5 2.5 0 0 0 4.5 19h5a2.5 2.5 0 0 0 2.45-2H4.5a.5.5 0 0 1-.5-.5v-8a.5.5 0 0 1 .5-.5V6Z" /></svg><svg x-show="isPhoneCopied(`tree-source-${sourceNode.key}`)" x-cloak class="h-4 w-4" viewBox="0 0 20 20" fill="#16a34a" aria-hidden="true"><path fill-rule="evenodd" d="M16.704 5.29a1 1 0 0 1 .006 1.414l-8 8a1 1 0 0 1-1.415 0l-4-4a1 1 0 1 1 1.414-1.415l3.293 3.294 7.294-7.293a1 1 0 0 1 1.408 0Z" clip-rule="evenodd" /></svg></button>
                                     </div>
 
-                                    <input type="checkbox" class="utm-tracker-check h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-white/10 dark:bg-transparent" x-model="sourceNode.source.open_booking_widget" x-bind:disabled="isPersisting || ! sourceNode.source" x-on:change="if (sourceNode.sourceRule) sourceNode.sourceRule.open_booking_widget = sourceNode.source.open_booking_widget; syncState()" />
-                                    <input type="checkbox" class="utm-tracker-check h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-white/10 dark:bg-transparent" x-model="sourceNode.source.is_organic" x-bind:disabled="isPersisting || ! sourceNode.source" x-on:change="syncState()" />
-                                    <input type="text" readonly class="block w-full cursor-copy rounded-md border-gray-300 bg-gray-50 px-2 py-1.5 text-xs shadow-none transition dark:border-white/10 dark:bg-white/5 dark:text-white" x-bind:value="trackingLinkValue(sourceFallbackRow(sourceNode.source))" x-bind:class="isTrackingLinkCopied(sourceFallbackRow(sourceNode.source)) ? 'border-emerald-400 bg-emerald-50 text-emerald-700 ring-1 ring-emerald-300 dark:border-emerald-500/60 dark:bg-emerald-500/10 dark:text-emerald-200 dark:ring-emerald-500/30' : ''" x-on:click="copyTrackingLink(sourceFallbackRow(sourceNode.source))" />
+                                    <input type="checkbox" class="utm-tracker-check h-4 w-4 rounded border-gray-400 text-primary-600 focus:ring-primary-500 dark:border-white/30 dark:bg-transparent" x-model="sourceNode.source.open_booking_widget" x-bind:disabled="isPersisting || ! sourceNode.source" x-on:change="if (sourceNode.sourceRule) sourceNode.sourceRule.open_booking_widget = sourceNode.source.open_booking_widget; syncState()" />
+                                    <input type="checkbox" class="utm-tracker-check h-4 w-4 rounded border-gray-400 text-primary-600 focus:ring-primary-500 dark:border-white/30 dark:bg-transparent" x-model="sourceNode.source.is_organic" x-bind:disabled="isPersisting || ! sourceNode.source" x-on:change="syncState()" />
+                                    <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 text-gray-600 transition hover:bg-gray-50 dark:border-white/10 dark:text-gray-300 dark:hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-40" x-bind:class="isTrackingLinkCopied(sourceFallbackRow(sourceNode.source)) ? 'border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-200' : ''" x-on:click="copyTrackingLink(sourceFallbackRow(sourceNode.source))" x-bind:title="isTrackingLinkCopied(sourceFallbackRow(sourceNode.source)) ? 'Скопировано' : 'Скопировать ссылку'" aria-label="Скопировать ссылку"><svg x-show="! isTrackingLinkCopied(sourceFallbackRow(sourceNode.source))" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M12.586 4.586a2 2 0 0 1 2.828 2.828l-3 3a2 2 0 0 1-2.828 0 .75.75 0 0 0-1.06 1.06 3.5 3.5 0 0 0 4.95 0l3-3a3.5 3.5 0 0 0-4.95-4.95l-1.5 1.5a.75.75 0 0 0 1.06 1.061l1.5-1.5Zm-5.172 10.828a2 2 0 0 1-2.828-2.828l3-3a2 2 0 0 1 2.828 0 .75.75 0 1 0 1.06-1.06 3.5 3.5 0 0 0-4.95 0l-3 3a3.5 3.5 0 0 0 4.95 4.95l1.5-1.5a.75.75 0 1 0-1.06-1.061l-1.5 1.5Z" clip-rule="evenodd" /></svg><svg x-show="isTrackingLinkCopied(sourceFallbackRow(sourceNode.source))" x-cloak class="h-4 w-4" viewBox="0 0 20 20" fill="#16a34a" aria-hidden="true"><path fill-rule="evenodd" d="M16.704 5.29a1 1 0 0 1 .006 1.414l-8 8a1 1 0 0 1-1.415 0l-4-4a1 1 0 1 1 1.414-1.415l3.293 3.294 7.294-7.293a1 1 0 0 1 1.408 0Z" clip-rule="evenodd" /></svg></button>
                                     <span class="text-xs text-gray-700 dark:text-gray-100" x-text="formatDateTime(sourceNode.sourceRule?.started_at)"></span>
 
                                     <div class="utm-tracker-actions">
                                         <button type="button" class="utm-tracker-action-link text-xs font-medium text-primary-600 hover:underline dark:text-primary-400 disabled:cursor-not-allowed disabled:opacity-60" x-bind:disabled="isPersisting || ! sourceNode.source" x-on:click="addMediumForSource(sourceNode.key)">+ medium</button>
-                                        <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 text-gray-600 transition hover:bg-gray-50 dark:border-white/10 dark:text-gray-300 dark:hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-60" x-bind:class="sourceNode.sourceRule ? '' : 'invisible'" x-bind:disabled="isPersisting || ! sourceNode.sourceRule" x-on:click="sourceNode.sourceRule && requestStopCampaign(sourceNode.sourceRule.key)" title="Остановить" aria-label="Остановить"><svg class="h-4 w-4" viewBox="0 0 20 20" fill="#374151" aria-hidden="true"><path d="M6 6.75A.75.75 0 0 1 6.75 6h6.5a.75.75 0 0 1 .75.75v6.5a.75.75 0 0 1-.75.75h-6.5A.75.75 0 0 1 6 13.25v-6.5Z" /></svg></button>
+                                        <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-400 text-gray-600 transition hover:bg-gray-50 dark:border-white/30 dark:text-gray-300 dark:hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-60" x-bind:class="sourceNode.sourceRule ? '' : 'invisible'" x-bind:disabled="isPersisting || ! sourceNode.sourceRule" x-on:click="sourceNode.sourceRule && requestStopCampaign(sourceNode.sourceRule.key)" title="Остановить" aria-label="Остановить"><svg class="h-4 w-4" viewBox="0 0 20 20" fill="#5f6c82" aria-hidden="true"><path d="M6 6.75A.75.75 0 0 1 6.75 6h6.5a.75.75 0 0 1 .75.75v6.5a.75.75 0 0 1-.75.75h-6.5A.75.75 0 0 1 6 13.25v-6.5Z" /></svg></button>
                                     </div>
                                 </div>
 
@@ -1235,11 +1337,12 @@
                                     <template x-for="mediumNode in sourceNode.mediums" :key="`tracking-medium-${sourceNode.key}-${mediumNode.key}`">
                                         <div>
                                             <div class="utm-tracker-grid utm-tracker-grid--active border-b border-gray-100 bg-gray-50/70 px-3 py-2 dark:border-white/10 dark:bg-white/[0.03]">
-                                                <button type="button" class="ml-4 inline-flex h-7 w-7 items-center justify-center rounded-md border border-gray-200 text-gray-600 transition hover:bg-white dark:border-white/10 dark:text-gray-300 dark:hover:bg-white/5" x-on:click="toggleMedium('tracking', sourceNode.key, mediumNode.medium)" x-bind:title="isMediumExpanded('tracking', sourceNode.key, mediumNode.medium) ? 'Свернуть medium' : 'Раскрыть medium'"><svg class="h-4 w-4 transition" x-bind:class="isMediumExpanded('tracking', sourceNode.key, mediumNode.medium) ? 'rotate-90' : ''" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M7.22 4.22a.75.75 0 0 1 1.06 0l5.25 5.25a.75.75 0 0 1 0 1.06l-5.25 5.25a.75.75 0 1 1-1.06-1.06L11.94 10 7.22 5.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" /></svg></button>
-                                                <input x-show="mediumNode.mediumRow" type="text" class="block w-full rounded-md border-gray-300 px-2 py-1.5 text-xs shadow-none focus:border-primary-500 focus:ring-primary-500 dark:border-white/10 dark:bg-transparent dark:text-white" x-model="mediumNode.mediumRow.medium" x-bind:disabled="isPersisting" x-on:input.debounce.300ms="syncState()" placeholder="utm_medium" />
-                                                <span x-show="! mediumNode.mediumRow" class="truncate text-xs text-gray-800 dark:text-gray-100" x-text="mediumNode.medium || '—'"></span>
+                                                <button x-show="mediumNode.campaigns.length > 0" type="button" class="ml-4 inline-flex h-7 w-7 items-center justify-center rounded-md border border-gray-200 text-gray-600 transition hover:bg-white dark:border-white/10 dark:text-gray-300 dark:hover:bg-white/5" x-on:click="toggleMedium('tracking', sourceNode.key, mediumNode.medium)" x-bind:title="isMediumExpanded('tracking', sourceNode.key, mediumNode.medium) ? 'Свернуть medium' : 'Раскрыть medium'"><svg class="h-4 w-4 transition" x-bind:class="isMediumExpanded('tracking', sourceNode.key, mediumNode.medium) ? 'rotate-90' : ''" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M7.22 4.22a.75.75 0 0 1 1.06 0l5.25 5.25a.75.75 0 0 1 0 1.06l-5.25 5.25a.75.75 0 1 1-1.06-1.06L11.94 10 7.22 5.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" /></svg></button>
+                                                <span x-show="mediumNode.campaigns.length === 0" class="ml-4 h-7 w-7"></span>
                                                 <input x-show="mediumNode.mediumRow" type="text" class="block w-full rounded-md border-gray-300 px-2 py-1.5 text-xs shadow-none focus:border-primary-500 focus:ring-primary-500 dark:border-white/10 dark:bg-transparent dark:text-white" x-model="mediumNode.mediumRow.medium_name" x-bind:disabled="isPersisting" x-on:input.debounce.300ms="syncState()" placeholder="Название" />
                                                 <span x-show="! mediumNode.mediumRow" class="text-xs text-gray-400">—</span>
+                                                <input x-show="mediumNode.mediumRow" type="text" class="block w-full rounded-md border-gray-300 px-2 py-1.5 text-xs shadow-none focus:border-primary-500 focus:ring-primary-500 dark:border-white/10 dark:bg-transparent dark:text-white" x-model="mediumNode.mediumRow.medium" x-bind:disabled="isPersisting" x-on:input.debounce.300ms="syncState()" placeholder="utm_medium" />
+                                                <span x-show="! mediumNode.mediumRow" class="truncate text-xs text-gray-800 dark:text-gray-100" x-text="mediumNode.medium || '—'"></span>
 
                                                 <div class="flex items-center gap-2">
                                                     <select x-show="mediumNode.mediumRow" class="block min-w-0 flex-1 rounded-md border-gray-300 px-2 py-1.5 text-xs shadow-none focus:border-primary-500 focus:ring-primary-500 dark:border-white/10 dark:bg-transparent dark:text-white" x-bind:class="isDuplicateCampaignPhone(mediumNode.mediumRow) ? 'border-rose-500 bg-rose-50 text-rose-700 ring-1 ring-rose-400 focus:border-rose-500 focus:ring-rose-500 dark:border-rose-500/70 dark:bg-rose-500/10 dark:text-rose-200 dark:ring-rose-500/40' : ''" x-model="mediumNode.mediumRow.phone_key" x-bind:disabled="isPersisting" x-on:change="syncState()"><option value="">Без телефона</option><template x-for="phoneRow in state.phones" :key="phoneRow.key"><option x-bind:disabled="isPhoneOptionDisabled(phoneRow.key, mediumNode.mediumRow)" x-bind:selected="mediumNode.mediumRow.phone_key === phoneRow.key" x-bind:value="phoneRow.key" x-text="phoneOptionLabel(phoneRow.key, mediumNode.mediumRow)"></option></template></select>
@@ -1249,14 +1352,13 @@
 
                                                 <input x-show="mediumNode.mediumRow" type="checkbox" class="utm-tracker-check h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-white/10 dark:bg-transparent" x-model="mediumNode.mediumRow.open_booking_widget" x-bind:disabled="isPersisting" x-on:change="syncState()" />
                                                 <input x-show="mediumNode.mediumRow" type="checkbox" class="utm-tracker-check h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-white/10 dark:bg-transparent" x-bind:checked="campaignEffectiveIsOrganic(mediumNode.mediumRow)" x-bind:disabled="isPersisting" x-on:change="setCampaignOrganic(mediumNode.mediumRow, $event.target.checked)" />
-                                                <input x-show="mediumNode.mediumRow" type="text" readonly class="block w-full cursor-copy rounded-md border-gray-300 bg-white px-2 py-1.5 text-xs shadow-none transition dark:border-white/10 dark:bg-white/5 dark:text-white" x-bind:value="trackingLinkValue(mediumNode.mediumRow)" x-bind:class="isTrackingLinkCopied(mediumNode.mediumRow) ? 'border-emerald-400 bg-emerald-50 text-emerald-700 ring-1 ring-emerald-300 dark:border-emerald-500/60 dark:bg-emerald-500/10 dark:text-emerald-200 dark:ring-emerald-500/30' : ''" x-on:click="copyTrackingLink(mediumNode.mediumRow)" />
+                                                <button x-show="mediumNode.mediumRow" type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 text-gray-600 transition hover:bg-white dark:border-white/10 dark:text-gray-300 dark:hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40" x-bind:class="isTrackingLinkCopied(mediumNode.mediumRow) ? 'border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-200' : ''" x-on:click="copyTrackingLink(mediumNode.mediumRow)" x-bind:title="isTrackingLinkCopied(mediumNode.mediumRow) ? 'Скопировано' : 'Скопировать ссылку'" aria-label="Скопировать ссылку"><svg x-show="! isTrackingLinkCopied(mediumNode.mediumRow)" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M12.586 4.586a2 2 0 0 1 2.828 2.828l-3 3a2 2 0 0 1-2.828 0 .75.75 0 0 0-1.06 1.06 3.5 3.5 0 0 0 4.95 0l3-3a3.5 3.5 0 0 0-4.95-4.95l-1.5 1.5a.75.75 0 0 0 1.06 1.061l1.5-1.5Zm-5.172 10.828a2 2 0 0 1-2.828-2.828l3-3a2 2 0 0 1 2.828 0 .75.75 0 1 0 1.06-1.06 3.5 3.5 0 0 0-4.95 0l-3 3a3.5 3.5 0 0 0 4.95 4.95l1.5-1.5a.75.75 0 1 0-1.06-1.061l-1.5 1.5Z" clip-rule="evenodd" /></svg><svg x-show="isTrackingLinkCopied(mediumNode.mediumRow)" x-cloak class="h-4 w-4" viewBox="0 0 20 20" fill="#16a34a" aria-hidden="true"><path fill-rule="evenodd" d="M16.704 5.29a1 1 0 0 1 .006 1.414l-8 8a1 1 0 0 1-1.415 0l-4-4a1 1 0 1 1 1.414-1.415l3.293 3.294 7.294-7.293a1 1 0 0 1 1.408 0Z" clip-rule="evenodd" /></svg></button>
                                                 <span x-show="! mediumNode.mediumRow" class="text-xs text-gray-400">—</span>
                                                 <span class="text-xs text-gray-700 dark:text-gray-100" x-text="formatDateTime(mediumNode.mediumRow?.started_at)"></span>
 
                                                 <div class="utm-tracker-actions">
                                                     <button type="button" class="utm-tracker-action-link text-xs font-medium text-primary-600 hover:underline dark:text-primary-400 disabled:cursor-not-allowed disabled:opacity-60" x-bind:disabled="isPersisting || ! mediumNode.medium" x-on:click="addCampaignForMedium(sourceNode.key, mediumNode.medium)">+ campaign</button>
                                                     <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 text-gray-600 transition hover:bg-white dark:border-white/10 dark:text-gray-300 dark:hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60" x-bind:class="mediumNode.mediumRow ? '' : 'invisible'" x-bind:disabled="isPersisting || ! mediumNode.mediumRow" x-on:click="mediumNode.mediumRow && requestStopCampaign(mediumNode.mediumRow.key)" title="Остановить" aria-label="Остановить"><svg class="h-4 w-4" viewBox="0 0 20 20" fill="#374151" aria-hidden="true"><path d="M6 6.75A.75.75 0 0 1 6.75 6h6.5a.75.75 0 0 1 .75.75v6.5a.75.75 0 0 1-.75.75h-6.5A.75.75 0 0 1 6 13.25v-6.5Z" /></svg></button>
-                                                    <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-rose-200 text-rose-600 transition hover:bg-rose-50 dark:border-rose-500/20 dark:text-rose-300 dark:hover:bg-rose-500/10 disabled:cursor-not-allowed disabled:opacity-60" x-bind:class="mediumNode.mediumRow ? '' : 'invisible'" x-bind:disabled="isPersisting || ! mediumNode.mediumRow" x-on:click="mediumNode.mediumRow && requestDeleteCampaign(mediumNode.mediumRow.key)" title="Удалить в архив" aria-label="Удалить в архив"><svg class="h-4 w-4" viewBox="0 0 20 20" fill="#dc2626" aria-hidden="true"><path fill-rule="evenodd" d="M8.75 2.5a1.75 1.75 0 0 0-1.75 1.75V5H4.75a.75.75 0 0 0 0 1.5h.443l.663 8.61A2.25 2.25 0 0 0 8.102 17.5h3.796a2.25 2.25 0 0 0 2.244-2.39l.663-8.61h.445a.75.75 0 0 0 0-1.5H13V4.25A1.75 1.75 0 0 0 11.25 2.5h-2.5ZM11.5 5V4.25a.25.25 0 0 0-.25-.25h-2.5a.25.25 0 0 0-.25.25V5h3Zm-2 3.25a.75.75 0 0 1 1.5 0v5a.75.75 0 0 1-1.5 0v-5Zm-2.5.75a.75.75 0 0 1 1.5 0v4.25a.75.75 0 0 1-1.5 0V9Zm5-.75a.75.75 0 0 1 .75.75v4.25a.75.75 0 0 1-1.5 0V9a.75.75 0 0 1 .75-.75Z" clip-rule="evenodd" /></svg></button>
                                                 </div>
                                             </div>
 
@@ -1264,14 +1366,14 @@
                                                 <template x-for="campaignRow in mediumNode.campaigns" :key="campaignRow.key">
                                                     <div class="utm-tracker-grid utm-tracker-grid--active border-b border-gray-100 px-3 py-2 dark:border-white/10" x-bind:class="isDuplicateCampaignPhone(campaignRow) ? 'bg-rose-50 dark:bg-rose-500/10' : 'bg-white dark:bg-gray-900'">
                                                         <span></span>
-                                                        <input type="text" class="block w-full rounded-md border-gray-300 px-2 py-1.5 text-xs shadow-none focus:border-primary-500 focus:ring-primary-500 dark:border-white/10 dark:bg-transparent dark:text-white" x-model="campaignRow.campaign" x-bind:disabled="isPersisting" x-on:input.debounce.300ms="syncState()" placeholder="utm_campaign" />
                                                         <input type="text" class="block w-full rounded-md border-gray-300 px-2 py-1.5 text-xs shadow-none focus:border-primary-500 focus:ring-primary-500 dark:border-white/10 dark:bg-transparent dark:text-white" x-model="campaignRow.campaign_name" x-bind:disabled="isPersisting" x-on:input.debounce.300ms="syncState()" placeholder="Название" />
+                                                        <input type="text" class="block w-full rounded-md border-gray-300 px-2 py-1.5 text-xs shadow-none focus:border-primary-500 focus:ring-primary-500 dark:border-white/10 dark:bg-transparent dark:text-white" x-model="campaignRow.campaign" x-bind:disabled="isPersisting" x-on:input.debounce.300ms="syncState()" placeholder="utm_campaign" />
                                                         <div class="flex items-center gap-2"><select class="block min-w-0 flex-1 rounded-md border-gray-300 px-2 py-1.5 text-xs shadow-none focus:border-primary-500 focus:ring-primary-500 dark:border-white/10 dark:bg-transparent dark:text-white" x-bind:class="isDuplicateCampaignPhone(campaignRow) ? 'border-rose-500 bg-rose-50 text-rose-700 ring-1 ring-rose-400 focus:border-rose-500 focus:ring-rose-500 dark:border-rose-500/70 dark:bg-rose-500/10 dark:text-rose-200 dark:ring-rose-500/40' : ''" x-model="campaignRow.phone_key" x-bind:disabled="isPersisting" x-on:change="syncState()"><option value="">Без телефона</option><template x-for="phoneRow in state.phones" :key="phoneRow.key"><option x-bind:disabled="isPhoneOptionDisabled(phoneRow.key, campaignRow)" x-bind:selected="campaignRow.phone_key === phoneRow.key" x-bind:value="phoneRow.key" x-text="phoneOptionLabel(phoneRow.key, campaignRow)"></option></template></select><button type="button" class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-gray-200 text-gray-600 transition hover:bg-gray-50 dark:border-white/10 dark:text-gray-300 dark:hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-40" x-bind:class="isPhoneCopied(`tree-${campaignRow.key}`) ? 'border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-200' : ''" x-bind:disabled="isPersisting || ! campaignRow.phone_key" x-on:click="copySelectedPhone(campaignRow.phone_key, `tree-${campaignRow.key}`)" title="Скопировать телефон" aria-label="Скопировать телефон"><svg x-show="! isPhoneCopied(`tree-${campaignRow.key}`)" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M7 3.5A2.5 2.5 0 0 1 9.5 1h5A2.5 2.5 0 0 1 17 3.5v8A2.5 2.5 0 0 1 14.5 14h-5A2.5 2.5 0 0 1 7 11.5v-8Z" /><path d="M4.5 6A2.5 2.5 0 0 0 2 8.5v8A2.5 2.5 0 0 0 4.5 19h5a2.5 2.5 0 0 0 2.45-2H4.5a.5.5 0 0 1-.5-.5v-8a.5.5 0 0 1 .5-.5V6Z" /></svg><svg x-show="isPhoneCopied(`tree-${campaignRow.key}`)" x-cloak class="h-4 w-4" viewBox="0 0 20 20" fill="#16a34a" aria-hidden="true"><path fill-rule="evenodd" d="M16.704 5.29a1 1 0 0 1 .006 1.414l-8 8a1 1 0 0 1-1.415 0l-4-4a1 1 0 1 1 1.414-1.415l3.293 3.294 7.294-7.293a1 1 0 0 1 1.408 0Z" clip-rule="evenodd" /></svg></button></div>
                                                         <input type="checkbox" class="utm-tracker-check h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-white/10 dark:bg-transparent" x-model="campaignRow.open_booking_widget" x-bind:disabled="isPersisting" x-on:change="syncState()" />
                                                         <span class="text-xs text-gray-400">—</span>
-                                                        <input type="text" readonly class="block w-full cursor-copy rounded-md border-gray-300 bg-gray-50 px-2 py-1.5 text-xs shadow-none transition dark:border-white/10 dark:bg-white/5 dark:text-white" x-bind:value="trackingLinkValue(campaignRow)" x-bind:class="isTrackingLinkCopied(campaignRow) ? 'border-emerald-400 bg-emerald-50 text-emerald-700 ring-1 ring-emerald-300 dark:border-emerald-500/60 dark:bg-emerald-500/10 dark:text-emerald-200 dark:ring-emerald-500/30' : ''" x-on:click="copyTrackingLink(campaignRow)" />
+                                                        <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 text-gray-600 transition hover:bg-gray-50 dark:border-white/10 dark:text-gray-300 dark:hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-40" x-bind:class="isTrackingLinkCopied(campaignRow) ? 'border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-200' : ''" x-on:click="copyTrackingLink(campaignRow)" x-bind:title="isTrackingLinkCopied(campaignRow) ? 'Скопировано' : 'Скопировать ссылку'" aria-label="Скопировать ссылку"><svg x-show="! isTrackingLinkCopied(campaignRow)" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M12.586 4.586a2 2 0 0 1 2.828 2.828l-3 3a2 2 0 0 1-2.828 0 .75.75 0 0 0-1.06 1.06 3.5 3.5 0 0 0 4.95 0l3-3a3.5 3.5 0 0 0-4.95-4.95l-1.5 1.5a.75.75 0 0 0 1.06 1.061l1.5-1.5Zm-5.172 10.828a2 2 0 0 1-2.828-2.828l3-3a2 2 0 0 1 2.828 0 .75.75 0 1 0 1.06-1.06 3.5 3.5 0 0 0-4.95 0l-3 3a3.5 3.5 0 0 0 4.95 4.95l1.5-1.5a.75.75 0 1 0-1.06-1.061l-1.5 1.5Z" clip-rule="evenodd" /></svg><svg x-show="isTrackingLinkCopied(campaignRow)" x-cloak class="h-4 w-4" viewBox="0 0 20 20" fill="#16a34a" aria-hidden="true"><path fill-rule="evenodd" d="M16.704 5.29a1 1 0 0 1 .006 1.414l-8 8a1 1 0 0 1-1.415 0l-4-4a1 1 0 1 1 1.414-1.415l3.293 3.294 7.294-7.293a1 1 0 0 1 1.408 0Z" clip-rule="evenodd" /></svg></button>
                                                         <span class="text-xs text-gray-700 dark:text-gray-100" x-text="formatDateTime(campaignRow.started_at)"></span>
-                                                        <div class="utm-tracker-actions"><button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 text-gray-600 transition hover:bg-gray-50 dark:border-white/10 dark:text-gray-300 dark:hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-60" x-bind:disabled="isPersisting" x-on:click="requestStopCampaign(campaignRow.key)" title="Остановить" aria-label="Остановить"><svg class="h-4 w-4" viewBox="0 0 20 20" fill="#374151" aria-hidden="true"><path d="M6 6.75A.75.75 0 0 1 6.75 6h6.5a.75.75 0 0 1 .75.75v6.5a.75.75 0 0 1-.75.75h-6.5A.75.75 0 0 1 6 13.25v-6.5Z" /></svg></button><button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-rose-200 text-rose-600 transition hover:bg-rose-50 dark:border-rose-500/20 dark:text-rose-300 dark:hover:bg-rose-500/10 disabled:cursor-not-allowed disabled:opacity-60" x-bind:disabled="isPersisting" x-on:click="requestDeleteCampaign(campaignRow.key)" title="Удалить в архив" aria-label="Удалить в архив"><svg class="h-4 w-4" viewBox="0 0 20 20" fill="#dc2626" aria-hidden="true"><path fill-rule="evenodd" d="M8.75 2.5a1.75 1.75 0 0 0-1.75 1.75V5H4.75a.75.75 0 0 0 0 1.5h.443l.663 8.61A2.25 2.25 0 0 0 8.102 17.5h3.796a2.25 2.25 0 0 0 2.244-2.39l.663-8.61h.445a.75.75 0 0 0 0-1.5H13V4.25A1.75 1.75 0 0 0 11.25 2.5h-2.5ZM11.5 5V4.25a.25.25 0 0 0-.25-.25h-2.5a.25.25 0 0 0-.25.25V5h3Zm-2 3.25a.75.75 0 0 1 1.5 0v5a.75.75 0 0 1-1.5 0v-5Zm-2.5.75a.75.75 0 0 1 1.5 0v4.25a.75.75 0 0 1-1.5 0V9Zm5-.75a.75.75 0 0 1 .75.75v4.25a.75.75 0 0 1-1.5 0V9a.75.75 0 0 1 .75-.75Z" clip-rule="evenodd" /></svg></button></div>
+                                                        <div class="utm-tracker-actions"><button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 text-gray-600 transition hover:bg-gray-50 dark:border-white/10 dark:text-gray-300 dark:hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-60" x-bind:disabled="isPersisting" x-on:click="requestStopCampaign(campaignRow.key)" title="Остановить" aria-label="Остановить"><svg class="h-4 w-4" viewBox="0 0 20 20" fill="#374151" aria-hidden="true"><path d="M6 6.75A.75.75 0 0 1 6.75 6h6.5a.75.75 0 0 1 .75.75v6.5a.75.75 0 0 1-.75.75h-6.5A.75.75 0 0 1 6 13.25v-6.5Z" /></svg></button></div>
                                                     </div>
                                                 </template>
                                             </div>
@@ -1359,7 +1461,7 @@
                 </template>
 
                 <div class="overflow-x-auto rounded-lg border border-gray-200 bg-white dark:border-white/10 dark:bg-white/5">
-                    <div style="min-width: 1420px;">
+                    <div style="min-width: 1280px;">
                         <div class="utm-tracker-grid utm-tracker-grid--archive border-b border-gray-200 bg-gray-50 px-3 py-2 text-[11px] font-medium uppercase text-gray-500 dark:border-white/10 dark:bg-white/5 dark:text-gray-400">
                             <span></span>
                             <span>UTM</span>
@@ -1375,12 +1477,13 @@
                         <template x-for="sourceNode in treeForView('archive')" :key="`archive-source-${sourceNode.key}`">
                             <div>
                                 <div class="utm-tracker-grid utm-tracker-grid--archive border-b border-gray-100 px-3 py-2 dark:border-white/10">
-                                    <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 text-gray-600 transition hover:bg-gray-50 dark:border-white/10 dark:text-gray-300 dark:hover:bg-white/5" x-on:click="toggleSource('archive', sourceNode.key)" x-bind:title="isSourceExpanded('archive', sourceNode.key) ? 'Свернуть source' : 'Раскрыть source'"><svg class="h-4 w-4 transition" x-bind:class="isSourceExpanded('archive', sourceNode.key) ? 'rotate-90' : ''" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M7.22 4.22a.75.75 0 0 1 1.06 0l5.25 5.25a.75.75 0 0 1 0 1.06l-5.25 5.25a.75.75 0 1 1-1.06-1.06L11.94 10 7.22 5.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" /></svg></button>
+                                    <button x-show="sourceNode.mediums.length > 0" type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 text-gray-600 transition hover:bg-gray-50 dark:border-white/10 dark:text-gray-300 dark:hover:bg-white/5" x-on:click="toggleSource('archive', sourceNode.key)" x-bind:title="isSourceExpanded('archive', sourceNode.key) ? 'Свернуть source' : 'Раскрыть source'"><svg class="h-4 w-4 transition" x-bind:class="isSourceExpanded('archive', sourceNode.key) ? 'rotate-90' : ''" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M7.22 4.22a.75.75 0 0 1 1.06 0l5.25 5.25a.75.75 0 0 1 0 1.06l-5.25 5.25a.75.75 0 1 1-1.06-1.06L11.94 10 7.22 5.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" /></svg></button>
+                                    <span x-show="sourceNode.mediums.length === 0" class="h-8 w-8"></span>
                                     <div class="min-w-0"><div class="truncate text-sm font-semibold text-gray-900 dark:text-white" x-text="sourceNode.source?.source || 'Без source'"></div><div class="text-[11px] text-gray-500 dark:text-gray-400" x-text="`${sourceNode.mediums.length + (sourceNode.sourceRule ? 1 : 0)} архив`"></div></div>
                                     <span class="truncate text-xs text-gray-700 dark:text-gray-200" x-text="sourceNode.source?.name || '—'"></span>
                                     <span class="truncate text-xs text-gray-800 dark:text-gray-100" x-text="sourceNode.sourceRule ? phoneLabel(sourceNode.sourceRule.phone_key) : '—'"></span>
                                     <span class="text-xs text-gray-800 dark:text-gray-100" x-text="sourceNode.sourceRule ? (sourceNode.sourceRule.open_booking_widget ? 'Да' : 'Нет') : '—'"></span>
-                                    <input x-show="sourceNode.sourceRule" type="text" readonly class="block w-full cursor-copy rounded-md border-gray-300 bg-gray-50 px-2 py-1.5 text-xs shadow-none transition dark:border-white/10 dark:bg-white/5 dark:text-white" x-bind:value="trackingLinkValue(sourceNode.sourceRule)" x-bind:class="isTrackingLinkCopied(sourceNode.sourceRule) ? 'border-emerald-400 bg-emerald-50 text-emerald-700 ring-1 ring-emerald-300 dark:border-emerald-500/60 dark:bg-emerald-500/10 dark:text-emerald-200 dark:ring-emerald-500/30' : ''" x-on:click="copyTrackingLink(sourceNode.sourceRule)" />
+                                    <button x-show="sourceNode.sourceRule" type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 text-gray-600 transition hover:bg-gray-50 dark:border-white/10 dark:text-gray-300 dark:hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-40" x-bind:class="isTrackingLinkCopied(sourceNode.sourceRule) ? 'border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-200' : ''" x-on:click="copyTrackingLink(sourceNode.sourceRule)" x-bind:title="isTrackingLinkCopied(sourceNode.sourceRule) ? 'Скопировано' : 'Скопировать ссылку'" aria-label="Скопировать ссылку"><svg x-show="! isTrackingLinkCopied(sourceNode.sourceRule)" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M12.586 4.586a2 2 0 0 1 2.828 2.828l-3 3a2 2 0 0 1-2.828 0 .75.75 0 0 0-1.06 1.06 3.5 3.5 0 0 0 4.95 0l3-3a3.5 3.5 0 0 0-4.95-4.95l-1.5 1.5a.75.75 0 0 0 1.06 1.061l1.5-1.5Zm-5.172 10.828a2 2 0 0 1-2.828-2.828l3-3a2 2 0 0 1 2.828 0 .75.75 0 1 0 1.06-1.06 3.5 3.5 0 0 0-4.95 0l-3 3a3.5 3.5 0 0 0 4.95 4.95l1.5-1.5a.75.75 0 1 0-1.06-1.061l-1.5 1.5Z" clip-rule="evenodd" /></svg><svg x-show="isTrackingLinkCopied(sourceNode.sourceRule)" x-cloak class="h-4 w-4" viewBox="0 0 20 20" fill="#16a34a" aria-hidden="true"><path fill-rule="evenodd" d="M16.704 5.29a1 1 0 0 1 .006 1.414l-8 8a1 1 0 0 1-1.415 0l-4-4a1 1 0 1 1 1.414-1.415l3.293 3.294 7.294-7.293a1 1 0 0 1 1.408 0Z" clip-rule="evenodd" /></svg></button>
                                     <span x-show="! sourceNode.sourceRule" class="text-xs text-gray-400">—</span>
                                     <span class="text-xs text-gray-700 dark:text-gray-100" x-text="formatDateTime(sourceNode.sourceRule?.started_at)"></span>
                                     <span class="text-xs text-gray-700 dark:text-gray-100" x-text="formatDateTime(sourceNode.sourceRule?.stopped_at || sourceNode.sourceRule?.archived_at)"></span>
@@ -1394,12 +1497,13 @@
                                     <template x-for="mediumNode in sourceNode.mediums" :key="`archive-medium-${sourceNode.key}-${mediumNode.key}`">
                                         <div>
                                             <div class="utm-tracker-grid utm-tracker-grid--archive border-b border-gray-100 bg-gray-50/70 px-3 py-2 dark:border-white/10 dark:bg-white/[0.03]">
-                                                <button type="button" class="ml-4 inline-flex h-7 w-7 items-center justify-center rounded-md border border-gray-200 text-gray-600 transition hover:bg-white dark:border-white/10 dark:text-gray-300 dark:hover:bg-white/5" x-on:click="toggleMedium('archive', sourceNode.key, mediumNode.medium)" x-bind:title="isMediumExpanded('archive', sourceNode.key, mediumNode.medium) ? 'Свернуть medium' : 'Раскрыть medium'"><svg class="h-4 w-4 transition" x-bind:class="isMediumExpanded('archive', sourceNode.key, mediumNode.medium) ? 'rotate-90' : ''" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M7.22 4.22a.75.75 0 0 1 1.06 0l5.25 5.25a.75.75 0 0 1 0 1.06l-5.25 5.25a.75.75 0 1 1-1.06-1.06L11.94 10 7.22 5.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" /></svg></button>
+                                                <button x-show="mediumNode.campaigns.length > 0" type="button" class="ml-4 inline-flex h-7 w-7 items-center justify-center rounded-md border border-gray-200 text-gray-600 transition hover:bg-white dark:border-white/10 dark:text-gray-300 dark:hover:bg-white/5" x-on:click="toggleMedium('archive', sourceNode.key, mediumNode.medium)" x-bind:title="isMediumExpanded('archive', sourceNode.key, mediumNode.medium) ? 'Свернуть medium' : 'Раскрыть medium'"><svg class="h-4 w-4 transition" x-bind:class="isMediumExpanded('archive', sourceNode.key, mediumNode.medium) ? 'rotate-90' : ''" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M7.22 4.22a.75.75 0 0 1 1.06 0l5.25 5.25a.75.75 0 0 1 0 1.06l-5.25 5.25a.75.75 0 1 1-1.06-1.06L11.94 10 7.22 5.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" /></svg></button>
+                                                <span x-show="mediumNode.campaigns.length === 0" class="ml-4 h-7 w-7"></span>
                                                 <span class="truncate text-xs font-medium text-gray-900 dark:text-white" x-text="mediumNode.medium || '—'"></span>
                                                 <span class="truncate text-xs text-gray-700 dark:text-gray-200" x-text="mediumNode.mediumRow ? campaignName(mediumNode.mediumRow) : '—'"></span>
                                                 <span class="truncate text-xs text-gray-800 dark:text-gray-100" x-text="mediumNode.mediumRow ? phoneLabel(mediumNode.mediumRow.phone_key) : '—'"></span>
                                                 <span class="text-xs text-gray-800 dark:text-gray-100" x-text="mediumNode.mediumRow ? (mediumNode.mediumRow.open_booking_widget ? 'Да' : 'Нет') : '—'"></span>
-                                                <input x-show="mediumNode.mediumRow" type="text" readonly class="block w-full cursor-copy rounded-md border-gray-300 bg-white px-2 py-1.5 text-xs shadow-none transition dark:border-white/10 dark:bg-white/5 dark:text-white" x-bind:value="trackingLinkValue(mediumNode.mediumRow)" x-bind:class="isTrackingLinkCopied(mediumNode.mediumRow) ? 'border-emerald-400 bg-emerald-50 text-emerald-700 ring-1 ring-emerald-300 dark:border-emerald-500/60 dark:bg-emerald-500/10 dark:text-emerald-200 dark:ring-emerald-500/30' : ''" x-on:click="copyTrackingLink(mediumNode.mediumRow)" />
+                                                <button x-show="mediumNode.mediumRow" type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 text-gray-600 transition hover:bg-white dark:border-white/10 dark:text-gray-300 dark:hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40" x-bind:class="isTrackingLinkCopied(mediumNode.mediumRow) ? 'border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-200' : ''" x-on:click="copyTrackingLink(mediumNode.mediumRow)" x-bind:title="isTrackingLinkCopied(mediumNode.mediumRow) ? 'Скопировано' : 'Скопировать ссылку'" aria-label="Скопировать ссылку"><svg x-show="! isTrackingLinkCopied(mediumNode.mediumRow)" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M12.586 4.586a2 2 0 0 1 2.828 2.828l-3 3a2 2 0 0 1-2.828 0 .75.75 0 0 0-1.06 1.06 3.5 3.5 0 0 0 4.95 0l3-3a3.5 3.5 0 0 0-4.95-4.95l-1.5 1.5a.75.75 0 0 0 1.06 1.061l1.5-1.5Zm-5.172 10.828a2 2 0 0 1-2.828-2.828l3-3a2 2 0 0 1 2.828 0 .75.75 0 1 0 1.06-1.06 3.5 3.5 0 0 0-4.95 0l-3 3a3.5 3.5 0 0 0 4.95 4.95l1.5-1.5a.75.75 0 1 0-1.06-1.061l-1.5 1.5Z" clip-rule="evenodd" /></svg><svg x-show="isTrackingLinkCopied(mediumNode.mediumRow)" x-cloak class="h-4 w-4" viewBox="0 0 20 20" fill="#16a34a" aria-hidden="true"><path fill-rule="evenodd" d="M16.704 5.29a1 1 0 0 1 .006 1.414l-8 8a1 1 0 0 1-1.415 0l-4-4a1 1 0 1 1 1.414-1.415l3.293 3.294 7.294-7.293a1 1 0 0 1 1.408 0Z" clip-rule="evenodd" /></svg></button>
                                                 <span x-show="! mediumNode.mediumRow" class="text-xs text-gray-400">—</span>
                                                 <span class="text-xs text-gray-700 dark:text-gray-100" x-text="formatDateTime(mediumNode.mediumRow?.started_at)"></span>
                                                 <span class="text-xs text-gray-700 dark:text-gray-100" x-text="formatDateTime(mediumNode.mediumRow?.stopped_at || mediumNode.mediumRow?.archived_at)"></span>
@@ -1417,7 +1521,7 @@
                                                         <span class="truncate text-xs text-gray-700 dark:text-gray-200" x-text="campaignName(campaignRow)"></span>
                                                         <span class="truncate text-xs text-gray-800 dark:text-gray-100" x-text="phoneLabel(campaignRow.phone_key)"></span>
                                                         <span class="text-xs text-gray-800 dark:text-gray-100" x-text="campaignRow.open_booking_widget ? 'Да' : 'Нет'"></span>
-                                                        <input type="text" readonly class="block w-full cursor-copy rounded-md border-gray-300 bg-gray-50 px-2 py-1.5 text-xs shadow-none transition dark:border-white/10 dark:bg-white/5 dark:text-white" x-bind:value="trackingLinkValue(campaignRow)" x-bind:class="isTrackingLinkCopied(campaignRow) ? 'border-emerald-400 bg-emerald-50 text-emerald-700 ring-1 ring-emerald-300 dark:border-emerald-500/60 dark:bg-emerald-500/10 dark:text-emerald-200 dark:ring-emerald-500/30' : ''" x-on:click="copyTrackingLink(campaignRow)" />
+                                                        <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 text-gray-600 transition hover:bg-gray-50 dark:border-white/10 dark:text-gray-300 dark:hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-40" x-bind:class="isTrackingLinkCopied(campaignRow) ? 'border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-200' : ''" x-on:click="copyTrackingLink(campaignRow)" x-bind:title="isTrackingLinkCopied(campaignRow) ? 'Скопировано' : 'Скопировать ссылку'" aria-label="Скопировать ссылку"><svg x-show="! isTrackingLinkCopied(campaignRow)" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M12.586 4.586a2 2 0 0 1 2.828 2.828l-3 3a2 2 0 0 1-2.828 0 .75.75 0 0 0-1.06 1.06 3.5 3.5 0 0 0 4.95 0l3-3a3.5 3.5 0 0 0-4.95-4.95l-1.5 1.5a.75.75 0 0 0 1.06 1.061l1.5-1.5Zm-5.172 10.828a2 2 0 0 1-2.828-2.828l3-3a2 2 0 0 1 2.828 0 .75.75 0 1 0 1.06-1.06 3.5 3.5 0 0 0-4.95 0l-3 3a3.5 3.5 0 0 0 4.95 4.95l1.5-1.5a.75.75 0 1 0-1.06-1.061l-1.5 1.5Z" clip-rule="evenodd" /></svg><svg x-show="isTrackingLinkCopied(campaignRow)" x-cloak class="h-4 w-4" viewBox="0 0 20 20" fill="#16a34a" aria-hidden="true"><path fill-rule="evenodd" d="M16.704 5.29a1 1 0 0 1 .006 1.414l-8 8a1 1 0 0 1-1.415 0l-4-4a1 1 0 1 1 1.414-1.415l3.293 3.294 7.294-7.293a1 1 0 0 1 1.408 0Z" clip-rule="evenodd" /></svg></button>
                                                         <span class="text-xs text-gray-700 dark:text-gray-100" x-text="formatDateTime(campaignRow.started_at)"></span>
                                                         <span class="text-xs text-gray-700 dark:text-gray-100" x-text="formatDateTime(campaignRow.stopped_at || campaignRow.archived_at)"></span>
                                                         <div class="utm-tracker-actions">
@@ -1586,7 +1690,8 @@
                 <table class="w-full table-fixed border-collapse text-sm">
                     <thead>
                         <tr class="border-b border-gray-200 dark:border-white/10">
-                            <th class="w-[42%] py-2 pr-3 text-left font-medium text-gray-500 dark:text-gray-400">Телефон</th>
+                            <th class="w-[36%] py-2 pr-3 text-left font-medium text-gray-500 dark:text-gray-400">Телефон</th>
+                            <th class="w-[12%] py-2 pr-3 text-left font-medium text-gray-500 dark:text-gray-400">Активен</th>
                             <th class="w-[16%] py-2 pr-3 text-left font-medium text-gray-500 dark:text-gray-400">Статус</th>
                             <th class="py-2 pr-3 text-left font-medium text-gray-500 dark:text-gray-400">Использование</th>
                             <th class="w-24 py-2 text-right font-medium text-gray-500 dark:text-gray-400">Действия</th>
@@ -1596,7 +1701,7 @@
                     <tbody>
                         <template x-if="state.phones.length === 0">
                             <tr>
-                                <td colspan="4" class="py-6 text-center text-sm text-gray-500 dark:text-gray-400">
+                                <td colspan="5" class="py-6 text-center text-sm text-gray-500 dark:text-gray-400">
                                     Пока нет ни одного телефона.
                                 </td>
                             </tr>
@@ -1618,10 +1723,22 @@
                                 </td>
 
                                 <td class="py-2 pr-3 align-top">
+                                    <input
+                                        type="checkbox"
+                                        class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-white/10 dark:bg-transparent"
+                                        x-model="phoneRow.is_active"
+                                        x-bind:disabled="isPersisting"
+                                        x-on:change="syncState()"
+                                        title="Активен"
+                                        aria-label="Активен"
+                                    />
+                                </td>
+
+                                <td class="py-2 pr-3 align-top">
                                     <span
                                         class="inline-flex rounded-full px-2 py-1 text-xs font-medium"
-                                        x-bind:class="isDuplicatePhoneInActiveCampaigns(phoneRow.key) ? 'bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-200' : (isPhoneBusyForDisplay(phoneRow.key) ? 'bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-200' : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-200')"
-                                        x-text="isDuplicatePhoneInActiveCampaigns(phoneRow.key) ? 'дубль' : (isPhoneBusyForDisplay(phoneRow.key) ? 'занят' : 'свободен')"
+                                        x-bind:class="phoneRow.is_active === false ? 'bg-gray-100 text-gray-700 dark:bg-white/10 dark:text-gray-300' : (isDuplicatePhoneInActiveCampaigns(phoneRow.key) ? 'bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-200' : (isPhoneBusyForDisplay(phoneRow.key) ? 'bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-200' : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-200'))"
+                                        x-text="phoneRow.is_active === false ? 'неактивен' : (isDuplicatePhoneInActiveCampaigns(phoneRow.key) ? 'дубль' : (isPhoneBusyForDisplay(phoneRow.key) ? 'занят' : 'свободен'))"
                                     ></span>
                                 </td>
 

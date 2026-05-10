@@ -125,6 +125,7 @@ class UtmTrackerIntegrationExportService
         return [
             'id' => $phone->id,
             'phone' => $phone->phone,
+            'is_active' => $phone->is_active ?? true,
         ];
     }
 

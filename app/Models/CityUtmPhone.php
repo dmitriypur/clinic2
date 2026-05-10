@@ -13,6 +13,11 @@ class CityUtmPhone extends Model
     protected $fillable = [
         'city_id',
         'phone',
+        'is_active',
+    ];
+
+    protected $casts = [
+        'is_active' => 'boolean',
     ];
 
     public function city(): BelongsTo

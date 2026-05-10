@@ -66,6 +66,7 @@ class UtmTrackerService
                     'key' => $this->phoneKey($phone->id),
                     'id' => $phone->id,
                     'phone' => $phone->phone,
+                    'is_active' => $phone->is_active ?? true,
                 ])
                 ->all(),
             'sources' => $city->utmSources
@@ -339,6 +340,7 @@ class UtmTrackerService
                     'key' => $this->phoneKey($phone->id),
                     'id' => $phone->id,
                     'phone' => $phone->phone,
+                    'is_active' => $phone->is_active ?? true,
                 ])
                 ->all(),
             'sources' => $city->utmSources
@@ -573,6 +575,7 @@ class UtmTrackerService
             }
 
             $model->phone = $row['phone'];
+            $model->is_active = $row['is_active'] ?? true;
             $model->save();
 
             $keyToId[$row['key']] = $model->id;
@@ -891,6 +894,7 @@ class UtmTrackerService
                     'key' => (string) (data_get($row, 'key') ?: 'phone-' . Str::uuid()),
                     'id' => data_get($row, 'id') ? (int) data_get($row, 'id') : null,
                     'phone' => trim((string) data_get($row, 'phone', '')),
+                    'is_active' => data_get($row, 'is_active') ?? true,
                 ])
                 ->filter(fn (array $row): bool => filled($row['phone']))
                 ->values()
@@ -971,6 +975,7 @@ class UtmTrackerService
             'key' => $key,
             'id' => null,
             'phone' => $phone,
+            'is_active' => true,
         ];
 
         return $key;

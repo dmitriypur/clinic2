@@ -765,6 +765,44 @@ class UtmTrackerServiceTest extends TestCase
     }
 
     /** @test */
+    public function it_persists_phone_active_flag_in_editor_state(): void
+    {
+        $city = City::query()->create([
+            'name' => 'Ижевск',
+            'slug' => 'izhevsk',
+            'active' => true,
+        ]);
+
+        $service = app(UtmTrackerService::class);
+
+        $service->sync($city, [
+            'phones' => [
+                ['key' => 'phone-active', 'phone' => '+7 000 000-00-01'],
+                ['key' => 'phone-inactive', 'phone' => '+7 000 000-00-02', 'is_active' => false],
+            ],
+            'sources' => [],
+            'campaigns' => [],
+            'archived_campaigns' => [],
+        ]);
+
+        $this->assertDatabaseHas('city_utm_phones', [
+            'city_id' => $city->id,
+            'phone' => '+7 000 000-00-01',
+            'is_active' => true,
+        ]);
+        $this->assertDatabaseHas('city_utm_phones', [
+            'city_id' => $city->id,
+            'phone' => '+7 000 000-00-02',
+            'is_active' => false,
+        ]);
+
+        $state = $service->getEditorState($city->fresh());
+
+        $this->assertTrue(collect($state['phones'])->firstWhere('phone', '+7 000 000-00-01')['is_active']);
+        $this->assertFalse(collect($state['phones'])->firstWhere('phone', '+7 000 000-00-02')['is_active']);
+    }
+
+    /** @test */
     public function it_persists_widget_flags_in_campaign_state_without_changing_legacy_json_shape(): void
     {
         $city = City::query()->create([
