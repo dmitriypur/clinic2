@@ -13,7 +13,7 @@ export function getUtmParameters() {
       ? window.config.utm
       : {};
 
-  return UTM_KEYS.reduce((utm, key) => {
+  const utm = UTM_KEYS.reduce((utm, key) => {
     const value = params.get(key) || configuredUtm[key];
 
     if (value) {
@@ -22,4 +22,6 @@ export function getUtmParameters() {
 
     return utm;
   }, {});
+
+  return Object.keys(utm).length > 0 ? utm : { default_site: "organic" };
 }

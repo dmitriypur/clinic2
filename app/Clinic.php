@@ -18,6 +18,13 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 class Clinic
 {
     public static PendingRequest $http;
+    private const UTM_KEYS = [
+        'utm_source',
+        'utm_medium',
+        'utm_campaign',
+        'utm_content',
+        'utm_term',
+    ];
 
     public static function setHttp(): void
     {
@@ -140,20 +147,7 @@ class Clinic
             }
         }
 
-        $utmParameters = [];
-        foreach ([
-            'utm_source',
-            'utm_medium',
-            'utm_campaign',
-            'utm_content',
-            'utm_term',
-        ] as $key) {
-            $value = request()->query($key, request()->hasSession() ? request()->session()->get($key) : null);
-
-            if (filled($value)) {
-                $utmParameters[$key] = $value;
-            }
-        }
+        $utmParameters = self::frontendUtmParameters();
 
         return [
             'csrfToken' => csrf_token(),
@@ -174,6 +168,23 @@ class Clinic
                 'branchSortOrders' => $bookingWidgetOrderingService->getBranchOrderMapForCity($currentCity?->id),
             ],
         ];
+    }
+
+    public static function frontendUtmParameters(): array
+    {
+        $utmParameters = [];
+
+        foreach (self::UTM_KEYS as $key) {
+            $value = request()->query($key, request()->hasSession() ? request()->session()->get($key) : null);
+
+            if (filled($value)) {
+                $utmParameters[$key] = $value;
+            }
+        }
+
+        return $utmParameters !== []
+            ? $utmParameters
+            : ['default_site' => 'organic'];
     }
 
     public static function schema(): Schema

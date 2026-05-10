@@ -64,4 +64,20 @@ class UtmParametersTest extends TestCase
         $this->assertSame('67890', $session->get('utm_content'));
         $this->assertSame('проверка зрения', $session->get('utm_term'));
     }
+
+    /** @test */
+    public function it_does_not_store_default_site_marker_without_real_utm_parameters(): void
+    {
+        $session = app('session.store');
+        $session->flush();
+        $session->start();
+
+        $request = Request::create('/doctors', 'GET');
+        $request->setLaravelSession($session);
+
+        (new UtmParameters())->handle($request, static fn () => response('ok'));
+
+        $this->assertFalse($session->has('utm_source'));
+        $this->assertNull(Cookie::queued('zrenie_utm'));
+    }
 }
