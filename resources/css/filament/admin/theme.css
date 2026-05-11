@@ -17,6 +17,88 @@
     grid-template-columns: 44px 190px 170px 200px 70px 64px 120px 120px 190px;
 }
 
+.utm-tracker-table {
+    width: max-content;
+    min-width: 100%;
+}
+
+.utm-tracker-table .utm-tracker-grid {
+    width: max-content;
+    box-sizing: border-box;
+}
+
+.utm-tracker-grid--tree {
+    grid-template-columns: 280px 160px 160px 160px 200px 64px 64px 64px 120px 140px;
+}
+
+.utm-tracker-grid--archive-tree {
+    grid-template-columns: 280px 160px 160px 160px 180px 64px 64px 120px 120px 150px;
+}
+
+.utm-tracker-row > * {
+    min-width: 0;
+}
+
+.utm-tracker-level {
+    position: relative;
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    gap: 8px;
+}
+
+.utm-tracker-level--medium {
+    padding-left: 28px;
+}
+
+.utm-tracker-level--campaign {
+    padding-left: 56px;
+}
+
+.utm-tracker-level--medium::before,
+.utm-tracker-level--campaign::before {
+    position: absolute;
+    top: -14px;
+    bottom: -14px;
+    width: 1px;
+    background: rgb(209 213 219 / 0.65);
+    content: "";
+}
+
+.utm-tracker-level--medium::before {
+    left: 12px;
+}
+
+.utm-tracker-level--campaign::before {
+    left: 40px;
+}
+
+.dark .utm-tracker-level--medium::before,
+.dark .utm-tracker-level--campaign::before {
+    background: rgb(255 255 255 / 0.12);
+}
+
+.utm-tracker-badge {
+    flex-shrink: 0;
+    width: 62px;
+    color: rgb(107 114 128);
+    font-size: 10px;
+    font-weight: 500;
+    line-height: 1;
+    text-transform: uppercase;
+}
+
+.dark .utm-tracker-badge {
+    color: rgb(156 163 175);
+}
+
+.utm-tracker-phone-cell {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    gap: 8px;
+}
+
 .utm-tracker-cell {
     min-width: 0;
 }
