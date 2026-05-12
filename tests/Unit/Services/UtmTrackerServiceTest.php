@@ -1173,6 +1173,74 @@ class UtmTrackerServiceTest extends TestCase
     }
 
     /** @test */
+    public function it_persists_and_launches_medium_and_campaign_without_own_phone_when_source_has_default_phone(): void
+    {
+        $city = City::query()->create([
+            'name' => 'Омск',
+            'slug' => 'omsk',
+            'active' => true,
+        ]);
+
+        $service = app(UtmTrackerService::class);
+
+        $draftState = [
+            'phones' => [
+                ['key' => 'phone-source', 'phone' => '+7 000 000-00-09'],
+            ],
+            'sources' => [
+                [
+                    'key' => 'source-vk',
+                    'source' => 'vk',
+                    'name' => 'VK',
+                    'default_phone_key' => 'phone-source',
+                    'open_booking_widget' => false,
+                ],
+            ],
+            'campaigns' => [
+                [
+                    'key' => 'campaign-medium',
+                    'type' => 'medium',
+                    'source_key' => 'source-vk',
+                    'medium' => 'post',
+                    'phone_key' => null,
+                    'started_at' => null,
+                ],
+                [
+                    'key' => 'campaign-campaign',
+                    'type' => 'campaign',
+                    'source_key' => 'source-vk',
+                    'medium' => 'post',
+                    'campaign' => 'test',
+                    'phone_key' => null,
+                    'started_at' => null,
+                ],
+            ],
+            'archived_campaigns' => [],
+        ];
+
+        $savedDraft = $service->saveEditorState($city, $draftState);
+
+        $mediumRow = collect($savedDraft['campaigns'])->firstWhere('type', 'medium');
+        $campaignRow = collect($savedDraft['campaigns'])->firstWhere('type', 'campaign');
+
+        $this->assertNotNull($mediumRow);
+        $this->assertNotNull($campaignRow);
+        $this->assertNull($mediumRow['phone_key']);
+        $this->assertNull($campaignRow['phone_key']);
+
+        $launchedState = $service->launchCampaigns($city->fresh(), $savedDraft, [$mediumRow['key'], $campaignRow['key']]);
+
+        $launchedMedium = collect($launchedState['campaigns'])->firstWhere('key', $mediumRow['key']);
+        $launchedCampaign = collect($launchedState['campaigns'])->firstWhere('key', $campaignRow['key']);
+
+        $this->assertNotNull($launchedMedium['started_at']);
+        $this->assertNotNull($launchedCampaign['started_at']);
+        $this->assertSame('vk', data_get($city->fresh()->utm_phones, '0.source'));
+        $this->assertSame('post', data_get($city->fresh()->utm_phones, '0.medium.0.name'));
+        $this->assertSame('test', data_get($city->fresh()->utm_phones, '0.medium.0.campaign.0.name'));
+    }
+
+    /** @test */
     public function it_keeps_phone_rows_as_drafts_until_they_are_explicitly_launched(): void
     {
         $city = City::query()->create([

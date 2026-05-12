@@ -151,9 +151,14 @@ class UtmTrackerService
         $selectedKeys = array_fill_keys($campaignKeys, true);
         $startedAt = CarbonImmutable::now()->format(self::DATE_TIME_FORMAT);
         $launched = false;
+        $sourcesByKey = collect($state['sources'])->keyBy('key');
 
-        $state['campaigns'] = array_values(array_map(function (array $row) use ($selectedKeys, $startedAt, &$launched): array {
-            if (! isset($selectedKeys[$row['key']]) || ! filled($row['phone_key']) || filled($row['started_at'])) {
+        $state['campaigns'] = array_values(array_map(function (array $row) use ($selectedKeys, $startedAt, $sourcesByKey, &$launched): array {
+            if (
+                ! isset($selectedKeys[$row['key']])
+                || ! $this->campaignHasLaunchPhone($row, $sourcesByKey)
+                || filled($row['started_at'])
+            ) {
                 return $row;
             }
 
@@ -1063,14 +1068,7 @@ class UtmTrackerService
 
                 return $this->normalizeCampaignRowChronology($normalized);
             })
-            ->filter(fn (array $row): bool => filled($row['source_key'])
-                && (
-                    filled($row['phone_key'])
-                    || (bool) $row['open_booking_widget']
-                    || filled($row['cabinet'])
-                    || (bool) $row['vk_app_enabled']
-                    || (bool) $row['is_organic_overridden']
-                ))
+            ->filter(fn (array $row): bool => filled($row['source_key']) && $this->campaignRowShouldPersist($row))
             ->values()
             ->all();
     }
@@ -1080,6 +1078,36 @@ class UtmTrackerService
         $cabinet = trim((string) $value);
 
         return array_key_exists($cabinet, self::CABINETS) ? $cabinet : null;
+    }
+
+    private function campaignRowShouldPersist(array $row): bool
+    {
+        $hasPayload = filled($row['phone_key'])
+            || filled($row['cabinet'])
+            || (bool) $row['is_organic_overridden'];
+
+        if ($hasPayload) {
+            return true;
+        }
+
+        return match ($row['type'] ?? 'source') {
+            'campaign' => filled($row['medium']) || filled($row['campaign']),
+            'medium' => filled($row['medium']),
+            default => false,
+        };
+    }
+
+    private function campaignHasLaunchPhone(array $row, Collection $sourcesByKey): bool
+    {
+        if (filled($row['phone_key'] ?? null)) {
+            return true;
+        }
+
+        if (($row['type'] ?? 'source') === 'source') {
+            return false;
+        }
+
+        return filled(data_get($sourcesByKey->get($row['source_key']), 'default_phone_key'));
     }
 
     private function prepareState(array $state): array
@@ -1312,11 +1340,9 @@ class UtmTrackerService
 
             $sourceRows = $campaigns->filter(fn (array $row): bool => ($row['type'] ?? 'source') === 'source' && ($row['source_key'] ?? null) === $sourceKey)->values();
             $archivedSourceExists = $archivedCampaigns->contains(fn (array $row): bool => ($row['type'] ?? 'source') === 'source' && ($row['source_key'] ?? null) === $sourceKey);
-            $sourceDefaultNeedsRule = filled($defaultPhoneKey) || (bool) ($sourceRow['open_booking_widget'] ?? false);
+            $sourceDefaultNeedsRule = filled($defaultPhoneKey);
             $activeSourceHasPayload = $sourceRows->contains(fn (array $row): bool => filled($row['phone_key'] ?? null)
-                || (bool) ($row['open_booking_widget'] ?? false)
                 || filled($row['cabinet'] ?? null)
-                || (bool) ($row['vk_app_enabled'] ?? false)
                 || (bool) ($row['is_organic_overridden'] ?? false));
             $shouldHaveRow = ($sourceDefaultNeedsRule || $activeSourceHasPayload) && ($sourceRows->isNotEmpty() || ! $archivedSourceExists);
 

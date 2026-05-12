@@ -971,7 +971,7 @@
                 return sourceNode.sourceRule
             }
 
-            if (! force && ! sourceNode.source.default_phone_key && ! sourceNode.source.open_booking_widget) {
+            if (! force && ! sourceNode.source.default_phone_key) {
                 return null
             }
 
@@ -1257,8 +1257,8 @@
                 const defaultPhoneKey = sourceRow.default_phone_key || ''
                 const activeSourceRows = campaigns.filter((row) => row.type === 'source' && row.source_key === sourceKey)
                 const archivedSourceExists = archivedCampaigns.some((row) => row.type === 'source' && row.source_key === sourceKey)
-                const sourceDefaultNeedsRule = !! defaultPhoneKey || !! sourceRow.open_booking_widget
-                const activeSourceHasPayload = activeSourceRows.some((row) => row.phone_key || row.open_booking_widget || row.cabinet || row.vk_app_enabled || row.is_organic_overridden)
+                const sourceDefaultNeedsRule = !! defaultPhoneKey
+                const activeSourceHasPayload = activeSourceRows.some((row) => row.phone_key || row.cabinet || row.is_organic_overridden)
                 const shouldHaveRow = (sourceDefaultNeedsRule || activeSourceHasPayload) && (activeSourceRows.length > 0 || ! archivedSourceExists)
 
                 if (! shouldHaveRow) {
