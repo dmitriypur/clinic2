@@ -103,7 +103,15 @@
             return text.length > maxLength ? `${text.slice(0, maxLength - 1)}…` : text
         },
         ruleHasPhone(row) {
-            return !! row?.phone_key
+            if (row?.phone_key) {
+                return true
+            }
+
+            if (row?.type === 'source') {
+                return false
+            }
+
+            return !! this.sourceRow(row?.source_key)?.default_phone_key
         },
         ruleIsLaunched(row) {
             return !! row?.started_at && ! row?.archived_at
