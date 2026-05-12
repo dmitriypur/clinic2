@@ -73,6 +73,8 @@ class UtmTrackerIntegrationTest extends TestCase
             'campaign_name' => null,
             'phone_id' => $sourcePhone->id,
             'open_booking_widget' => false,
+            'cabinet' => 'direct',
+            'vk_app_enabled' => true,
             'is_organic' => false,
             'is_organic_overridden' => false,
             'started_at' => '2026-05-01 09:00:00',
@@ -87,6 +89,8 @@ class UtmTrackerIntegrationTest extends TestCase
             'campaign_name' => null,
             'phone_id' => $mediumPhone->id,
             'open_booking_widget' => true,
+            'cabinet' => 'target',
+            'vk_app_enabled' => false,
             'is_organic' => false,
             'is_organic_overridden' => true,
             'started_at' => '2026-05-02 09:00:00',
@@ -101,6 +105,8 @@ class UtmTrackerIntegrationTest extends TestCase
             'campaign_name' => 'Test Campaign',
             'phone_id' => $campaignPhone->id,
             'open_booking_widget' => false,
+            'cabinet' => 'y_business',
+            'vk_app_enabled' => true,
             'is_organic' => false,
             'is_organic_overridden' => false,
             'started_at' => '2026-05-03 09:00:00',
@@ -115,6 +121,8 @@ class UtmTrackerIntegrationTest extends TestCase
             'campaign_name' => null,
             'phone_id' => $archivedPhone->id,
             'open_booking_widget' => false,
+            'cabinet' => 'direct',
+            'vk_app_enabled' => true,
             'is_organic' => false,
             'is_organic_overridden' => false,
             'started_at' => '2026-04-01 09:00:00',
@@ -124,7 +132,7 @@ class UtmTrackerIntegrationTest extends TestCase
 
         $this->getJson('/api/integrations/utm-tracker')
             ->assertOk()
-            ->assertJsonPath('meta.schema_version', 1)
+            ->assertJsonPath('meta.schema_version', 2)
             ->assertJsonCount(1, 'cities')
             ->assertJsonPath('cities.0.slug', 'kirov')
             ->assertJsonPath('cities.0.sources.0.utm_source', 'vk')
@@ -134,6 +142,9 @@ class UtmTrackerIntegrationTest extends TestCase
             ->assertJsonCount(1, 'cities.0.sources.0.archived_rules')
             ->assertJsonPath('cities.0.sources.0.active_rules.0.type', 'source')
             ->assertJsonPath('cities.0.sources.0.active_rules.0.priority', 1)
+            ->assertJsonPath('cities.0.sources.0.active_rules.0.cabinet.code', 'direct')
+            ->assertJsonPath('cities.0.sources.0.active_rules.0.cabinet.label', 'Директ')
+            ->assertJsonPath('cities.0.sources.0.active_rules.0.vk_app_enabled', true)
             ->assertJsonPath('cities.0.sources.0.active_rules.0.organic.effective', true)
             ->assertJsonPath('cities.0.sources.0.active_rules.0.organic.overridden', false)
             ->assertJsonPath('cities.0.sources.0.active_rules.0.organic.override_value', null)
@@ -141,6 +152,8 @@ class UtmTrackerIntegrationTest extends TestCase
             ->assertJsonPath('cities.0.sources.0.active_rules.1.utm.medium', 'banner')
             ->assertJsonPath('cities.0.sources.0.active_rules.1.phone.phone', '+7 000 000-00-02')
             ->assertJsonPath('cities.0.sources.0.active_rules.1.open_booking_widget', true)
+            ->assertJsonPath('cities.0.sources.0.active_rules.1.cabinet.code', 'target')
+            ->assertJsonPath('cities.0.sources.0.active_rules.1.vk_app_enabled', false)
             ->assertJsonPath('cities.0.sources.0.active_rules.1.organic.effective', false)
             ->assertJsonPath('cities.0.sources.0.active_rules.1.organic.overridden', true)
             ->assertJsonPath('cities.0.sources.0.active_rules.1.organic.override_value', false)
@@ -149,8 +162,12 @@ class UtmTrackerIntegrationTest extends TestCase
             ->assertJsonPath('cities.0.sources.0.active_rules.2.utm.campaign', 'test')
             ->assertJsonPath('cities.0.sources.0.active_rules.2.labels.campaign_name', 'Test Campaign')
             ->assertJsonPath('cities.0.sources.0.active_rules.2.phone.phone', '+7 000 000-00-03')
+            ->assertJsonPath('cities.0.sources.0.active_rules.2.cabinet.code', 'y_business')
+            ->assertJsonPath('cities.0.sources.0.active_rules.2.vk_app_enabled', true)
             ->assertJsonPath('cities.0.sources.0.archived_rules.0.status', 'archived')
             ->assertJsonPath('cities.0.sources.0.archived_rules.0.utm.medium', 'old')
+            ->assertJsonPath('cities.0.sources.0.archived_rules.0.cabinet.code', 'direct')
+            ->assertJsonPath('cities.0.sources.0.archived_rules.0.vk_app_enabled', true)
             ->assertJsonMissing(['slug' => 'moskva'])
             ->assertJsonMissingPath('cities.0.utm_phones');
     }

@@ -420,7 +420,7 @@ class UtmTrackerServiceTest extends TestCase
     }
 
     /** @test */
-    public function it_auto_creates_source_only_campaign_from_source_default_phone_when_no_active_medium_exists(): void
+    public function it_creates_source_only_campaign_draft_from_source_default_phone_when_no_active_medium_exists(): void
     {
         $city = City::query()->create([
             'name' => 'Пермь',
@@ -450,6 +450,11 @@ class UtmTrackerServiceTest extends TestCase
 
         $this->assertCount(1, $state['campaigns']);
         $this->assertSame('source', $state['campaigns'][0]['type']);
+        $this->assertNull($state['campaigns'][0]['started_at']);
+        $this->assertSame([], $city->fresh()->utm_phones);
+
+        $service->launchCampaign($city->fresh(), $state, $state['campaigns'][0]['key']);
+
         $this->assertSame('+7 000 000-00-01', data_get($city->fresh()->utm_phones, '0.phone'));
     }
 
@@ -516,6 +521,115 @@ class UtmTrackerServiceTest extends TestCase
         $this->assertNotNull($activeCampaign);
         $this->assertNotSame($archivedCampaign->id, $activeCampaign->id);
         $this->assertSame($archivedCampaign->id, $activeCampaign->restarted_from_id);
+    }
+
+    /** @test */
+    public function it_removes_empty_source_when_last_archived_rule_is_deleted(): void
+    {
+        $city = City::query()->create([
+            'name' => 'Пермь',
+            'slug' => 'perm',
+            'active' => true,
+        ]);
+
+        $service = app(UtmTrackerService::class);
+
+        $service->sync($city, [
+            'phones' => [
+                ['key' => 'phone-old', 'phone' => '+7 000 000-00-03'],
+            ],
+            'sources' => [
+                [
+                    'key' => 'source-old',
+                    'source' => 'old_source',
+                    'name' => 'Old source',
+                    'default_phone_key' => null,
+                ],
+            ],
+            'campaigns' => [],
+            'archived_campaigns' => [
+                [
+                    'key' => 'campaign-old',
+                    'type' => 'medium',
+                    'source_key' => 'source-old',
+                    'medium' => 'old_medium',
+                    'medium_name' => 'Old medium',
+                    'phone_key' => 'phone-old',
+                    'started_at' => now()->subDay()->format('Y-m-d H:i:s'),
+                    'stopped_at' => now()->subHour()->format('Y-m-d H:i:s'),
+                    'archived_at' => now()->subHour()->format('Y-m-d H:i:s'),
+                ],
+            ],
+        ]);
+
+        $state = $service->getEditorState($city->fresh());
+        $result = $service->deleteArchivedCampaign($city->fresh(), $state, $state['archived_campaigns'][0]['key']);
+
+        $this->assertCount(0, $result['campaigns']);
+        $this->assertCount(0, $result['archived_campaigns']);
+        $this->assertCount(0, $result['sources']);
+        $this->assertDatabaseMissing('city_utm_sources', [
+            'city_id' => $city->id,
+            'source' => 'old_source',
+        ]);
+    }
+
+    /** @test */
+    public function it_merges_duplicate_sources_and_keeps_nested_medium_rule(): void
+    {
+        $city = City::query()->create([
+            'name' => 'Казань',
+            'slug' => 'kazan',
+            'active' => true,
+        ]);
+
+        $service = app(UtmTrackerService::class);
+
+        $service->sync($city, [
+            'phones' => [
+                ['key' => 'phone-medium', 'phone' => '+7 000 000-00-04'],
+            ],
+            'sources' => [
+                [
+                    'key' => 'source-huj',
+                    'source' => 'huj',
+                    'name' => 'Huj',
+                    'default_phone_key' => null,
+                ],
+            ],
+            'campaigns' => [],
+            'archived_campaigns' => [],
+        ]);
+
+        $state = $service->getEditorState($city->fresh());
+        $phoneKey = $state['phones'][0]['key'];
+        $state['sources'][] = [
+            'key' => 'source-huj-duplicate',
+            'id' => null,
+            'source' => 'huj',
+            'name' => 'Huj duplicate',
+            'default_phone_key' => null,
+            'open_booking_widget' => false,
+            'is_organic' => false,
+        ];
+        $state['campaigns'][] = [
+            'key' => 'campaign-subhuj',
+            'type' => 'medium',
+            'source_key' => 'source-huj-duplicate',
+            'medium' => 'subhuj',
+            'medium_name' => 'Subhuj',
+            'phone_key' => $phoneKey,
+            'started_at' => null,
+        ];
+
+        $result = $service->saveEditorState($city->fresh(), $state);
+
+        $this->assertCount(1, $result['sources']);
+        $this->assertSame('huj', $result['sources'][0]['source']);
+        $this->assertCount(1, $result['campaigns']);
+        $this->assertSame($result['sources'][0]['key'], $result['campaigns'][0]['source_key']);
+        $this->assertSame('subhuj', $result['campaigns'][0]['medium']);
+        $this->assertSame(1, CityUtmSource::query()->where('city_id', $city->id)->where('source', 'huj')->count());
     }
 
     /** @test */
@@ -615,7 +729,7 @@ class UtmTrackerServiceTest extends TestCase
         $this->assertCount(2, $state['campaigns']);
         $this->assertTrue(collect($state['campaigns'])->contains(fn (array $row): bool => $row['type'] === 'source'));
         $this->assertTrue(collect($state['campaigns'])->contains(fn (array $row): bool => $row['type'] === 'medium'));
-        $this->assertSame('+7 000 000-00-01', data_get($city->fresh()->utm_phones, '0.phone'));
+        $this->assertNull(data_get($city->fresh()->utm_phones, '0.phone'));
         $this->assertSame('cpc', data_get($city->fresh()->utm_phones, '0.medium.0.name'));
     }
 
@@ -873,6 +987,242 @@ class UtmTrackerServiceTest extends TestCase
         $this->assertNull(data_get($city->fresh()->utm_phones, '0.medium.0.open_booking_widget'));
         $this->assertNull(data_get($city->fresh()->utm_phones, '0.is_organic'));
         $this->assertNull(data_get($city->fresh()->utm_phones, '0.medium.0.is_organic'));
+    }
+
+    /** @test */
+    public function it_persists_vk_app_and_cabinet_fields_without_changing_legacy_json_shape(): void
+    {
+        $city = City::query()->create([
+            'name' => 'Самара',
+            'slug' => 'samara',
+            'active' => true,
+        ]);
+
+        $service = app(UtmTrackerService::class);
+
+        $service->sync($city, [
+            'phones' => [
+                ['key' => 'phone-source', 'phone' => '+7 000 000-00-01'],
+                ['key' => 'phone-medium', 'phone' => '+7 000 000-00-02'],
+                ['key' => 'phone-campaign', 'phone' => '+7 000 000-00-03'],
+            ],
+            'sources' => [
+                [
+                    'key' => 'source-vk',
+                    'source' => 'vk',
+                    'name' => 'VK',
+                    'default_phone_key' => 'phone-source',
+                ],
+            ],
+            'campaigns' => [
+                [
+                    'key' => 'campaign-source',
+                    'type' => 'source',
+                    'source_key' => 'source-vk',
+                    'phone_key' => 'phone-source',
+                    'cabinet' => 'direct',
+                    'vk_app_enabled' => true,
+                    'started_at' => now()->subHours(3)->format('Y-m-d H:i:s'),
+                ],
+                [
+                    'key' => 'campaign-medium',
+                    'type' => 'medium',
+                    'source_key' => 'source-vk',
+                    'medium' => 'post',
+                    'phone_key' => 'phone-medium',
+                    'cabinet' => 'invalid',
+                    'vk_app_enabled' => false,
+                    'started_at' => now()->subHours(2)->format('Y-m-d H:i:s'),
+                ],
+                [
+                    'key' => 'campaign-campaign',
+                    'type' => 'campaign',
+                    'source_key' => 'source-vk',
+                    'medium' => 'post',
+                    'campaign' => 'brand',
+                    'phone_key' => 'phone-campaign',
+                    'cabinet' => 'target',
+                    'vk_app_enabled' => true,
+                    'started_at' => now()->subHour()->format('Y-m-d H:i:s'),
+                ],
+            ],
+            'archived_campaigns' => [
+                [
+                    'key' => 'campaign-archive',
+                    'type' => 'medium',
+                    'source_key' => 'source-vk',
+                    'medium' => 'old',
+                    'phone_key' => 'phone-medium',
+                    'cabinet' => 'y_business',
+                    'vk_app_enabled' => true,
+                    'started_at' => now()->subDays(2)->format('Y-m-d H:i:s'),
+                    'stopped_at' => now()->subDay()->format('Y-m-d H:i:s'),
+                    'archived_at' => now()->subDay()->format('Y-m-d H:i:s'),
+                ],
+            ],
+        ]);
+
+        $editorState = $service->getEditorState($city->fresh());
+
+        $sourceRow = collect($editorState['campaigns'])->firstWhere('type', 'source');
+        $mediumRow = collect($editorState['campaigns'])->firstWhere('type', 'medium');
+        $campaignRow = collect($editorState['campaigns'])->firstWhere('type', 'campaign');
+        $archivedRow = collect($editorState['archived_campaigns'])->firstWhere('medium', 'old');
+
+        $this->assertSame('direct', $sourceRow['cabinet']);
+        $this->assertTrue((bool) $sourceRow['vk_app_enabled']);
+        $this->assertNull($mediumRow['cabinet']);
+        $this->assertSame('target', $campaignRow['cabinet']);
+        $this->assertTrue((bool) $campaignRow['vk_app_enabled']);
+        $this->assertSame('y_business', $archivedRow['cabinet']);
+        $this->assertTrue((bool) $archivedRow['vk_app_enabled']);
+
+        $this->assertDatabaseHas('city_utm_campaigns', [
+            'medium' => 'post',
+            'campaign' => 'brand',
+            'cabinet' => 'target',
+            'vk_app_enabled' => true,
+        ]);
+        $this->assertDatabaseHas('city_utm_campaigns', [
+            'medium' => 'old',
+            'cabinet' => 'y_business',
+            'vk_app_enabled' => true,
+        ]);
+
+        $legacy = $city->fresh()->utm_phones;
+        $this->assertNull(data_get($legacy, '0.cabinet'));
+        $this->assertNull(data_get($legacy, '0.vk_app_enabled'));
+        $this->assertNull(data_get($legacy, '0.medium.0.cabinet'));
+        $this->assertNull(data_get($legacy, '0.medium.0.vk_app_enabled'));
+        $this->assertNull(data_get($legacy, '0.medium.0.campaign.0.cabinet'));
+        $this->assertNull(data_get($legacy, '0.medium.0.campaign.0.vk_app_enabled'));
+    }
+
+    /** @test */
+    public function it_persists_campaign_metadata_without_phone_and_makes_vk_app_exclusive_with_widget(): void
+    {
+        $city = City::query()->create([
+            'name' => 'Пермь',
+            'slug' => 'perm',
+            'active' => true,
+        ]);
+
+        $service = app(UtmTrackerService::class);
+
+        $service->sync($city, [
+            'phones' => [
+                ['key' => 'phone-source', 'phone' => '+7 000 000-00-01'],
+            ],
+            'sources' => [
+                [
+                    'key' => 'source-vk',
+                    'source' => 'vk',
+                    'name' => 'VK',
+                    'default_phone_key' => null,
+                    'open_booking_widget' => true,
+                ],
+            ],
+            'campaigns' => [
+                [
+                    'key' => 'campaign-source',
+                    'type' => 'source',
+                    'source_key' => 'source-vk',
+                    'phone_key' => null,
+                    'open_booking_widget' => true,
+                    'cabinet' => 'direct',
+                    'vk_app_enabled' => true,
+                    'started_at' => now()->format('Y-m-d H:i:s'),
+                ],
+                [
+                    'key' => 'campaign-medium',
+                    'type' => 'medium',
+                    'source_key' => 'source-vk',
+                    'medium' => 'post',
+                    'phone_key' => null,
+                    'open_booking_widget' => true,
+                    'cabinet' => 'target',
+                    'vk_app_enabled' => true,
+                    'started_at' => now()->format('Y-m-d H:i:s'),
+                ],
+            ],
+            'archived_campaigns' => [],
+        ]);
+
+        $this->assertDatabaseCount('city_utm_campaigns', 2);
+        $this->assertDatabaseHas('city_utm_campaigns', [
+            'medium' => null,
+            'phone_id' => null,
+            'cabinet' => 'direct',
+            'vk_app_enabled' => true,
+            'open_booking_widget' => false,
+        ]);
+        $this->assertDatabaseHas('city_utm_campaigns', [
+            'medium' => 'post',
+            'phone_id' => null,
+            'cabinet' => 'target',
+            'vk_app_enabled' => true,
+            'open_booking_widget' => false,
+        ]);
+
+        $editorRows = collect($service->getEditorState($city->fresh())['campaigns']);
+
+        $this->assertTrue((bool) $editorRows->firstWhere('type', 'source')['vk_app_enabled']);
+        $this->assertFalse((bool) $editorRows->firstWhere('type', 'source')['open_booking_widget']);
+        $this->assertTrue((bool) $editorRows->firstWhere('type', 'medium')['vk_app_enabled']);
+        $this->assertFalse((bool) $editorRows->firstWhere('type', 'medium')['open_booking_widget']);
+    }
+
+    /** @test */
+    public function it_keeps_phone_rows_as_drafts_until_they_are_explicitly_launched(): void
+    {
+        $city = City::query()->create([
+            'name' => 'Рязань',
+            'slug' => 'ryazan',
+            'active' => true,
+        ]);
+
+        $service = app(UtmTrackerService::class);
+
+        $draftState = [
+            'phones' => [
+                ['key' => 'phone-main', 'phone' => '+7 000 000-00-01'],
+            ],
+            'sources' => [
+                [
+                    'key' => 'source-vk',
+                    'source' => 'vk',
+                    'name' => 'VK',
+                    'default_phone_key' => null,
+                    'open_booking_widget' => false,
+                ],
+            ],
+            'campaigns' => [
+                [
+                    'key' => 'campaign-post',
+                    'type' => 'medium',
+                    'source_key' => 'source-vk',
+                    'medium' => 'post',
+                    'phone_key' => 'phone-main',
+                    'open_booking_widget' => false,
+                    'vk_app_enabled' => true,
+                    'started_at' => null,
+                ],
+            ],
+            'archived_campaigns' => [],
+        ];
+
+        $savedDraft = $service->saveEditorState($city, $draftState);
+        $draftRow = collect($savedDraft['campaigns'])->firstWhere('medium', 'post');
+
+        $this->assertNull($draftRow['started_at']);
+        $this->assertSame([], $city->fresh()->utm_phones);
+
+        $launchedState = $service->launchCampaign($city->fresh(), $savedDraft, $draftRow['key']);
+        $launchedRow = collect($launchedState['campaigns'])->firstWhere('medium', 'post');
+
+        $this->assertNotNull($launchedRow['started_at']);
+        $this->assertSame('vk', data_get($city->fresh()->utm_phones, '0.source'));
+        $this->assertSame('post', data_get($city->fresh()->utm_phones, '0.medium.0.name'));
     }
 
     /** @test */

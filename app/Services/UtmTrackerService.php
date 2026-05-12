@@ -16,6 +16,12 @@ class UtmTrackerService
 {
     private const DATE_TIME_FORMAT = 'Y-m-d H:i:s';
 
+    public const CABINETS = [
+        'direct' => 'Директ',
+        'target' => 'Таргет',
+        'y_business' => 'Я.Бизнес',
+    ];
+
     public function emptyEditorState(): array
     {
         return [
@@ -83,7 +89,7 @@ class UtmTrackerService
                 ])
                 ->all(),
             'campaigns' => $this->mapCampaignStateRows(
-                $this->activeCampaigns($city)->sortByDesc(fn (CityUtmCampaign $campaign): int => $campaign->created_at?->timestamp ?? 0)
+                $this->editorActiveCampaigns($city)->sortByDesc(fn (CityUtmCampaign $campaign): int => $campaign->created_at?->timestamp ?? 0)
             ),
             'archived_campaigns' => $this->mapCampaignStateRows(
                 $this->archivedCampaigns($city)->sortByDesc(fn (CityUtmCampaign $campaign): int => $campaign->created_at?->timestamp ?? 0)
@@ -128,6 +134,46 @@ class UtmTrackerService
         return $this->stopCampaigns($city, $state, [$campaignKey]);
     }
 
+    public function launchCampaign(City $city, array $state, string $campaignKey): array
+    {
+        return $this->launchCampaigns($city, $state, [$campaignKey]);
+    }
+
+    public function launchCampaigns(City $city, array $state, array $campaignKeys): array
+    {
+        $state = $this->prepareState($state);
+        $campaignKeys = array_values(array_unique(array_filter($campaignKeys)));
+
+        if ($campaignKeys === []) {
+            return $this->getEditorState($city);
+        }
+
+        $selectedKeys = array_fill_keys($campaignKeys, true);
+        $startedAt = CarbonImmutable::now()->format(self::DATE_TIME_FORMAT);
+        $launched = false;
+
+        $state['campaigns'] = array_values(array_map(function (array $row) use ($selectedKeys, $startedAt, &$launched): array {
+            if (! isset($selectedKeys[$row['key']]) || ! filled($row['phone_key']) || filled($row['started_at'])) {
+                return $row;
+            }
+
+            $launched = true;
+
+            return [
+                ...$row,
+                'started_at' => $startedAt,
+                'stopped_at' => null,
+                'archived_at' => null,
+            ];
+        }, $state['campaigns']));
+
+        if (! $launched) {
+            return $this->getEditorState($city);
+        }
+
+        return $this->saveEditorState($city, $state);
+    }
+
     public function stopCampaigns(City $city, array $state, array $campaignKeys): array
     {
         $state = $this->prepareState($state);
@@ -142,7 +188,7 @@ class UtmTrackerService
         $archivedRows = [];
 
         foreach ($state['campaigns'] as $row) {
-            if (! isset($selectedKeys[$row['key']])) {
+            if (! isset($selectedKeys[$row['key']]) || ! filled($row['started_at'])) {
                 continue;
             }
 
@@ -245,6 +291,8 @@ class UtmTrackerService
             }, $state['sources']));
         }
 
+        $state = $this->pruneEmptySourceRows($state);
+
         return $this->saveEditorState($city, $state);
     }
 
@@ -311,6 +359,8 @@ class UtmTrackerService
                 'campaign_name' => $campaign->campaign_name,
                 'phone_key' => $campaign->phone_id ? $this->phoneKey($campaign->phone_id) : null,
                 'open_booking_widget' => (bool) $campaign->open_booking_widget,
+                'cabinet' => $campaign->cabinet,
+                'vk_app_enabled' => (bool) $campaign->vk_app_enabled,
                 'is_organic' => (bool) $campaign->is_organic,
                 'is_organic_overridden' => (bool) $campaign->is_organic_overridden,
                 'effective_is_organic' => $this->effectiveCampaignOrganic($campaign),
@@ -376,6 +426,8 @@ class UtmTrackerService
                 'campaign_name' => null,
                 'phone_key' => $source->default_phone_id ? $this->phoneKey($source->default_phone_id) : null,
                 'open_booking_widget' => (bool) $source->open_booking_widget,
+                'cabinet' => null,
+                'vk_app_enabled' => false,
                 'is_organic' => false,
                 'is_organic_overridden' => false,
                 'effective_is_organic' => (bool) $source->is_organic,
@@ -402,6 +454,8 @@ class UtmTrackerService
                 'campaign_name' => null,
                 'phone_key' => $medium->phone_id ? $this->phoneKey($medium->phone_id) : null,
                 'open_booking_widget' => (bool) $medium->open_booking_widget,
+                'cabinet' => null,
+                'vk_app_enabled' => false,
                 'is_organic' => false,
                 'is_organic_overridden' => false,
                 'effective_is_organic' => false,
@@ -470,6 +524,8 @@ class UtmTrackerService
                     'campaign_name' => null,
                     'phone_key' => $defaultPhoneKey,
                     'open_booking_widget' => false,
+                    'cabinet' => null,
+                    'vk_app_enabled' => false,
                     'is_organic' => false,
                     'is_organic_overridden' => false,
                     'effective_is_organic' => false,
@@ -505,6 +561,8 @@ class UtmTrackerService
                     'campaign_name' => null,
                     'phone_key' => $phoneKey,
                     'open_booking_widget' => false,
+                    'cabinet' => null,
+                    'vk_app_enabled' => false,
                     'is_organic' => false,
                     'is_organic_overridden' => false,
                     'effective_is_organic' => false,
@@ -539,6 +597,8 @@ class UtmTrackerService
                         'campaign_name' => '',
                         'phone_key' => $campaignPhoneKey,
                         'open_booking_widget' => false,
+                        'cabinet' => null,
+                        'vk_app_enabled' => false,
                         'is_organic' => false,
                         'is_organic_overridden' => false,
                         'effective_is_organic' => false,
@@ -688,6 +748,8 @@ class UtmTrackerService
         $model->campaign_name = $row['type'] === 'campaign' ? ($row['campaign_name'] ?: null) : null;
         $model->phone_id = $row['phone_key'] ? ($phoneKeyToId[$row['phone_key']] ?? null) : null;
         $model->open_booking_widget = (bool) $row['open_booking_widget'];
+        $model->cabinet = $row['cabinet'] ?? null;
+        $model->vk_app_enabled = (bool) ($row['vk_app_enabled'] ?? false);
         $model->is_organic_overridden = (bool) $row['is_organic_overridden'];
         $model->is_organic = $model->is_organic_overridden ? (bool) $row['is_organic'] : false;
         $parsedStartedAt = $this->parseEditorDateTime(
@@ -697,9 +759,7 @@ class UtmTrackerService
 
         // Existing campaigns keep their original launch timestamp even when their
         // archived/active state changes in the editor.
-        $model->started_at = $model->exists
-            ? ($model->started_at ?? $parsedStartedAt ?? CarbonImmutable::now())
-            : ($parsedStartedAt ?? CarbonImmutable::now());
+        $model->started_at = $parsedStartedAt;
         $model->restarted_from_id = $row['restarted_from_id'] ?: null;
 
         if ($archived) {
@@ -888,7 +948,7 @@ class UtmTrackerService
 
     private function normalizeState(array $state): array
     {
-        return [
+        return $this->mergeDuplicateSources([
             'phones' => collect(data_get($state, 'phones', []))
                 ->map(fn (mixed $row): array => [
                     'key' => (string) (data_get($row, 'key') ?: 'phone-' . Str::uuid()),
@@ -914,7 +974,53 @@ class UtmTrackerService
                 ->all(),
             'campaigns' => $this->normalizeCampaignRows(data_get($state, 'campaigns', [])),
             'archived_campaigns' => $this->normalizeCampaignRows(data_get($state, 'archived_campaigns', [])),
-        ];
+        ]);
+    }
+
+    private function mergeDuplicateSources(array $state): array
+    {
+        $sourceGroups = collect($state['sources'])
+            ->groupBy(fn (array $row): string => strtolower($row['source']));
+
+        $sourceKeyMap = [];
+        $sources = [];
+
+        foreach ($sourceGroups as $rows) {
+            /** @var array $primary */
+            $primary = $rows->firstWhere('id', '!=', null) ?? $rows->first();
+
+            foreach ($rows as $row) {
+                $sourceKeyMap[$row['key']] = $primary['key'];
+
+                if ($row['key'] === $primary['key']) {
+                    continue;
+                }
+
+                $primary['name'] = $primary['name'] ?: $row['name'];
+                $primary['default_phone_key'] = $primary['default_phone_key'] ?: $row['default_phone_key'];
+                $primary['open_booking_widget'] = (bool) $primary['open_booking_widget'] || (bool) $row['open_booking_widget'];
+                $primary['is_organic'] = (bool) $primary['is_organic'] || (bool) $row['is_organic'];
+            }
+
+            $sources[] = $primary;
+        }
+
+        foreach (['campaigns', 'archived_campaigns'] as $campaignGroup) {
+            $state[$campaignGroup] = collect($state[$campaignGroup])
+                ->map(function (array $row) use ($sourceKeyMap): array {
+                    if (isset($sourceKeyMap[$row['source_key']])) {
+                        $row['source_key'] = $sourceKeyMap[$row['source_key']];
+                    }
+
+                    return $row;
+                })
+                ->values()
+                ->all();
+        }
+
+        $state['sources'] = array_values($sources);
+
+        return $state;
     }
 
     private function normalizeCampaignRows(array $rows): array
@@ -928,7 +1034,7 @@ class UtmTrackerService
                     ? 'source'
                     : (filled($campaign) ? 'campaign' : (filled($medium) || in_array($type, ['medium', 'campaign'], true) ? 'medium' : 'source'));
 
-                return $this->normalizeCampaignRowChronology([
+                $normalized = [
                     'key' => (string) (data_get($row, 'key') ?: 'campaign-' . Str::uuid()),
                     'id' => data_get($row, 'id') ? (int) data_get($row, 'id') : null,
                     'type' => $type,
@@ -939,6 +1045,8 @@ class UtmTrackerService
                     'campaign_name' => $type === 'campaign' ? trim((string) data_get($row, 'campaign_name', '')) : null,
                     'phone_key' => data_get($row, 'phone_key') ? (string) data_get($row, 'phone_key') : null,
                     'open_booking_widget' => (bool) data_get($row, 'open_booking_widget', false),
+                    'cabinet' => $this->normalizeCabinet(data_get($row, 'cabinet')),
+                    'vk_app_enabled' => (bool) data_get($row, 'vk_app_enabled', false),
                     'is_organic' => (bool) data_get($row, 'is_organic', false),
                     'is_organic_overridden' => (bool) data_get($row, 'is_organic_overridden', false),
                     'effective_is_organic' => (bool) data_get($row, 'effective_is_organic', false),
@@ -947,16 +1055,64 @@ class UtmTrackerService
                     'stopped_at' => $this->normalizeDateTime(data_get($row, 'stopped_at')),
                     'archived_at' => $this->normalizeDateTime(data_get($row, 'archived_at')),
                     'restarted_from_id' => data_get($row, 'restarted_from_id') ? (int) data_get($row, 'restarted_from_id') : null,
-                ]);
+                ];
+
+                if ($normalized['vk_app_enabled']) {
+                    $normalized['open_booking_widget'] = false;
+                }
+
+                return $this->normalizeCampaignRowChronology($normalized);
             })
-            ->filter(fn (array $row): bool => filled($row['source_key']) || filled($row['medium']) || filled($row['campaign']) || filled($row['phone_key']))
+            ->filter(fn (array $row): bool => filled($row['source_key'])
+                && (
+                    filled($row['phone_key'])
+                    || (bool) $row['open_booking_widget']
+                    || filled($row['cabinet'])
+                    || (bool) $row['vk_app_enabled']
+                    || (bool) $row['is_organic_overridden']
+                ))
             ->values()
             ->all();
     }
 
+    private function normalizeCabinet(mixed $value): ?string
+    {
+        $cabinet = trim((string) $value);
+
+        return array_key_exists($cabinet, self::CABINETS) ? $cabinet : null;
+    }
+
     private function prepareState(array $state): array
     {
-        return $this->synchronizeSourceOnlyCampaignRows($this->normalizeState($state));
+        return $this->synchronizeSourceOnlyCampaignRows(
+            $this->synchronizeSourceWidgetFlags($this->normalizeState($state))
+        );
+    }
+
+    private function synchronizeSourceWidgetFlags(array $state): array
+    {
+        $sourceKeysWithVkApp = collect($state['campaigns'])
+            ->filter(fn (array $row): bool => ($row['type'] ?? 'source') === 'source' && (bool) ($row['vk_app_enabled'] ?? false))
+            ->pluck('source_key')
+            ->filter()
+            ->all();
+
+        if ($sourceKeysWithVkApp === []) {
+            return $state;
+        }
+
+        $state['sources'] = collect($state['sources'])
+            ->map(function (array $row) use ($sourceKeysWithVkApp): array {
+                if (in_array($row['key'], $sourceKeysWithVkApp, true)) {
+                    $row['open_booking_widget'] = false;
+                }
+
+                return $row;
+            })
+            ->values()
+            ->all();
+
+        return $state;
     }
 
     private function legacyPhoneKey(string $phone, array &$phones, array &$phonesByNumber): ?string
@@ -1091,6 +1247,12 @@ class UtmTrackerService
     private function activeCampaigns(City $city): Collection
     {
         return $city->utmCampaigns
+            ->filter(fn (CityUtmCampaign $campaign): bool => $campaign->archived_at === null && $campaign->started_at !== null);
+    }
+
+    private function editorActiveCampaigns(City $city): Collection
+    {
+        return $city->utmCampaigns
             ->filter(fn (CityUtmCampaign $campaign): bool => $campaign->archived_at === null);
     }
 
@@ -1150,7 +1312,13 @@ class UtmTrackerService
 
             $sourceRows = $campaigns->filter(fn (array $row): bool => ($row['type'] ?? 'source') === 'source' && ($row['source_key'] ?? null) === $sourceKey)->values();
             $archivedSourceExists = $archivedCampaigns->contains(fn (array $row): bool => ($row['type'] ?? 'source') === 'source' && ($row['source_key'] ?? null) === $sourceKey);
-            $shouldHaveRow = filled($defaultPhoneKey) && ($sourceRows->isNotEmpty() || ! $archivedSourceExists);
+            $sourceDefaultNeedsRule = filled($defaultPhoneKey) || (bool) ($sourceRow['open_booking_widget'] ?? false);
+            $activeSourceHasPayload = $sourceRows->contains(fn (array $row): bool => filled($row['phone_key'] ?? null)
+                || (bool) ($row['open_booking_widget'] ?? false)
+                || filled($row['cabinet'] ?? null)
+                || (bool) ($row['vk_app_enabled'] ?? false)
+                || (bool) ($row['is_organic_overridden'] ?? false));
+            $shouldHaveRow = ($sourceDefaultNeedsRule || $activeSourceHasPayload) && ($sourceRows->isNotEmpty() || ! $archivedSourceExists);
 
             if (! $shouldHaveRow) {
                 $campaigns = $campaigns->reject(fn (array $row): bool => ($row['type'] ?? 'source') === 'source' && ($row['source_key'] ?? null) === $sourceKey)->values();
@@ -1168,11 +1336,13 @@ class UtmTrackerService
                     'medium_name' => null,
                     'phone_key' => $defaultPhoneKey,
                     'open_booking_widget' => (bool) ($sourceRow['open_booking_widget'] ?? false),
+                    'cabinet' => null,
+                    'vk_app_enabled' => false,
                     'is_organic' => false,
                     'is_organic_overridden' => false,
                     'effective_is_organic' => (bool) ($sourceRow['is_organic'] ?? false),
                     'created_at' => now()->format('Y-m-d H:i:s'),
-                    'started_at' => now()->format('Y-m-d H:i:s'),
+                    'started_at' => null,
                     'stopped_at' => null,
                     'archived_at' => null,
                     'restarted_from_id' => null,
@@ -1202,6 +1372,31 @@ class UtmTrackerService
         $state['campaigns'] = $this->dropConflictingSourceCampaignPhones([
             'campaigns' => $campaigns->all(),
         ])['campaigns'];
+
+        return $state;
+    }
+
+    private function pruneEmptySourceRows(array $state): array
+    {
+        $usedSourceKeys = collect(data_get($state, 'campaigns', []))
+            ->merge(data_get($state, 'archived_campaigns', []))
+            ->pluck('source_key')
+            ->filter()
+            ->unique()
+            ->values();
+
+        $state['sources'] = collect(data_get($state, 'sources', []))
+            ->filter(function (array $row) use ($usedSourceKeys): bool {
+                if ($usedSourceKeys->contains($row['key'] ?? null)) {
+                    return true;
+                }
+
+                return filled($row['default_phone_key'] ?? null)
+                    || (bool) ($row['open_booking_widget'] ?? false)
+                    || (bool) ($row['is_organic'] ?? false);
+            })
+            ->values()
+            ->all();
 
         return $state;
     }

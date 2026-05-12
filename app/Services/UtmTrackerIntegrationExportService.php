@@ -15,7 +15,7 @@ class UtmTrackerIntegrationExportService
     {
         return [
             'meta' => [
-                'schema_version' => 1,
+                'schema_version' => 2,
                 'generated_at' => now()->toISOString(),
             ],
             'cities' => City::query()
@@ -105,6 +105,8 @@ class UtmTrackerIntegrationExportService
             ],
             'phone' => $rule->phone ? $this->mapPhone($rule->phone) : null,
             'open_booking_widget' => (bool) $rule->open_booking_widget,
+            'cabinet' => $this->mapCabinet($rule->cabinet),
+            'vk_app_enabled' => (bool) $rule->vk_app_enabled,
             'organic' => [
                 'effective' => $this->effectiveOrganic($rule, $source),
                 'source_default' => (bool) $source->is_organic,
@@ -126,6 +128,18 @@ class UtmTrackerIntegrationExportService
             'id' => $phone->id,
             'phone' => $phone->phone,
             'is_active' => $phone->is_active ?? true,
+        ];
+    }
+
+    private function mapCabinet(?string $cabinet): ?array
+    {
+        if (! $cabinet || ! array_key_exists($cabinet, UtmTrackerService::CABINETS)) {
+            return null;
+        }
+
+        return [
+            'code' => $cabinet,
+            'label' => UtmTrackerService::CABINETS[$cabinet],
         ];
     }
 

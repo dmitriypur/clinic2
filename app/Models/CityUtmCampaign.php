@@ -19,6 +19,8 @@ class CityUtmCampaign extends Model
         'campaign_name',
         'phone_id',
         'open_booking_widget',
+        'cabinet',
+        'vk_app_enabled',
         'is_organic',
         'is_organic_overridden',
         'started_at',
@@ -29,6 +31,7 @@ class CityUtmCampaign extends Model
 
     protected $casts = [
         'open_booking_widget' => 'boolean',
+        'vk_app_enabled' => 'boolean',
         'is_organic' => 'boolean',
         'is_organic_overridden' => 'boolean',
         'started_at' => 'immutable_datetime',

@@ -19,6 +19,8 @@ class UtmTrackerEditor extends Component
 
     public string $trackingBaseUrl = '';
 
+    public string $trackingCitySlug = '';
+
     public function mount(?City $record = null, ?int $cityId = null): void
     {
         $this->authorizeAccess();
@@ -41,6 +43,22 @@ class UtmTrackerEditor extends Component
         $this->runStateAction(
             fn (City $city, UtmTrackerService $service): array => $service->stopCampaign($city, $state, $campaignKey),
             'Кампания остановлена',
+        );
+    }
+
+    public function launchCampaign(string $campaignKey, array $state): void
+    {
+        $this->runStateAction(
+            fn (City $city, UtmTrackerService $service): array => $service->launchCampaign($city, $state, $campaignKey),
+            'Кампания запущена',
+        );
+    }
+
+    public function launchCampaigns(array $campaignKeys, array $state): void
+    {
+        $this->runStateAction(
+            fn (City $city, UtmTrackerService $service): array => $service->launchCampaigns($city, $state, $campaignKeys),
+            'Кампании запущены',
         );
     }
 
@@ -80,6 +98,7 @@ class UtmTrackerEditor extends Component
     {
         return view('filament.forms.components.utm-tracker-manager', [
             'trackingBaseUrl' => $this->trackingBaseUrl,
+            'trackingCitySlug' => $this->trackingCitySlug,
         ]);
     }
 
@@ -92,6 +111,7 @@ class UtmTrackerEditor extends Component
 
         $this->state = $service->getEditorState($city);
         $this->trackingBaseUrl = $this->resolveTrackingBaseUrl($city);
+        $this->trackingCitySlug = (string) $city->slug;
     }
 
     private function runStateAction(callable $callback, string $successTitle): void
@@ -118,7 +138,9 @@ class UtmTrackerEditor extends Component
             return;
         }
 
-        $this->trackingBaseUrl = $this->resolveTrackingBaseUrl($city->fresh());
+        $freshCity = $city->fresh();
+        $this->trackingBaseUrl = $this->resolveTrackingBaseUrl($freshCity);
+        $this->trackingCitySlug = (string) $freshCity->slug;
 
         Notification::make()
             ->title($successTitle)
@@ -150,4 +172,5 @@ class UtmTrackerEditor extends Component
 
         return $baseUrl . '/' . ltrim((string) $city->slug, '/');
     }
+
 }

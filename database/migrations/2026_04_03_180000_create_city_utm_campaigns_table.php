@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('medium_name')->nullable();
             $table->foreignId('phone_id')->nullable()->constrained('city_utm_phones')->nullOnDelete();
             $table->boolean('open_booking_widget')->default(false);
-            $table->timestamp('started_at');
+            $table->timestamp('started_at')->nullable();
             $table->timestamp('stopped_at')->nullable();
             $table->timestamp('archived_at')->nullable();
             $table->foreignId('restarted_from_id')->nullable()->constrained('city_utm_campaigns')->nullOnDelete();

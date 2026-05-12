@@ -28,11 +28,11 @@
 }
 
 .utm-tracker-grid--tree {
-    grid-template-columns: 280px 160px 160px 160px 200px 64px 64px 64px 120px 220px;
+    grid-template-columns: 280px 160px 160px 160px 200px 150px 64px 64px 64px 64px 120px 220px;
 }
 
 .utm-tracker-grid--archive-tree {
-    grid-template-columns: 280px 160px 160px 160px 180px 64px 64px 120px 120px 150px;
+    grid-template-columns: 280px 160px 160px 160px 180px 140px 64px 64px 120px 120px 150px;
 }
 
 .utm-tracker-row > * {
