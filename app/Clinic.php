@@ -8,6 +8,7 @@ use App\Services\BookingWidgetOrderingService;
 use App\Settings\GeneralSettings;
 use App\Settings\SeoSettings;
 use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
@@ -39,9 +40,9 @@ class Clinic
         self::$http->post(config('zrenie-clinic.urls.appointment'), $data);
     }
 
-    public static function callback(array $data): void
+    public static function callback(array $data): Response
     {
-        self::$http->post(config('zrenie-clinic.urls.callback'), $data);
+        return self::$http->post(config('zrenie-clinic.urls.callback'), $data);
     }
 
     public static function sendForm(array $data): void

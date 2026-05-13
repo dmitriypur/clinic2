@@ -66,6 +66,12 @@
           />
         </div>
 
+        <p
+          v-if="submitMessage"
+          class="text-center text-sm font-semibold text-[#E04F4F]"
+          v-text="submitMessage"
+        />
+
         <button
           type="submit"
           :disabled="form.processing"
@@ -153,6 +159,7 @@ export default {
   data() {
     return {
       showSuccessMessage: false,
+      submitMessage: null,
       form: new Form({
         name: this.name,
         phone: this.phone,
@@ -167,14 +174,28 @@ export default {
 
   methods: {
     submit() {
+      this.submitMessage = null
+
       this.form
         .post(`/api/callback${window.location.search}`)
-        .then(() => {
+        .then((response) => {
+          if (response?.response !== 'ok') {
+            this.submitMessage = 'Не удалось отправить заявку. Попробуйте позже.'
+            return
+          }
+
           if (typeof ym === 'function') {
             ym(94302729, 'reachGoal', 'otpravka-formy')
           }
 
           this.showSuccessMessage = true
+        })
+        .catch((error) => {
+          const response = error?.response?.data
+
+          this.submitMessage = response?.errors
+            ? null
+            : response?.message || 'Не удалось отправить заявку. Попробуйте позже.'
         })
     },
   },
