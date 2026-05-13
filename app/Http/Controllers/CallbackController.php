@@ -34,6 +34,8 @@ class CallbackController extends Controller
             'phone' => $this->phoneService->make($user->phone),
             'guest' => Auth::guest(),
             'city' => $cityName,
+            'source' => $request->input('source') ?: 'site',
+            'type' => $request->input('type'),
             'utm_source' => data_get($request, 'utm_source', Session::get('utm_source')),
             'utm_medium' => data_get($request, 'utm_medium', Session::get('utm_medium')),
             'utm_campaign' => data_get($request, 'utm_campaign', Session::get('utm_campaign')),

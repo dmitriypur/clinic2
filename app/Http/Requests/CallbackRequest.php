@@ -13,6 +13,8 @@ use Illuminate\Foundation\Http\FormRequest;
  * @property ?string $utm_campaign
  * @property ?string $utm_content
  * @property ?string $utm_term
+ * @property ?string $source
+ * @property ?string $type
  */
 class CallbackRequest extends FormRequest
 {
@@ -35,6 +37,8 @@ class CallbackRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'phone' => ['required', 'string', 'phone:RU'],
             'city' => ['nullable', 'string', 'max:255'],
+            'source' => ['nullable', 'string', 'in:site,vk_mini_app'],
+            'type' => ['nullable', 'string', 'in:callback_form'],
             'privacy' => ['nullable', 'accepted'],
         ];
     }

@@ -6,11 +6,12 @@ return [
     'urls' => [
         'services' => 'events?action=services',
         'appointment' => 'events?action=newrecord',
-        'callback' => 'events?action=callrequest',
+        'callback' => 'events?action=callback',
         'profile' => 'events?action=authorization',
         'source' => 'events?action=source',
         'form' => 'events?action=spravka',
         'schedule' => 'events?action=raspisanie',
+        'callback-old' => 'events?action=callrequest',
     ],
     'sms_aero' => [
         'user_login' => env('SMS_AERO_USER_LOGIN', ''),

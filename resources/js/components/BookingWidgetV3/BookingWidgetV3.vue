@@ -166,6 +166,7 @@
           v-else-if="currentStep === 'leave-request'"
           button-content="Отправить"
           :target="callbackFormTarget"
+          :source="callbackFormSource"
           :showOnlineLink="true"
           @open-online="goToStart"
         />
@@ -269,7 +270,7 @@ export default {
     },
     mode: {
       type: String,
-      default: null, // 'doctor' | 'clinic'
+      default: null, // 'doctor' | 'clinic' | 'date' | 'vk'
     },
     launchContext: {
       type: Object,
@@ -412,6 +413,9 @@ export default {
     },
     callbackFormTarget() {
       return this.callbackTarget || "otpravka-formy";
+    },
+    callbackFormSource() {
+      return this.mode === "vk" ? "vk_mini_app" : "site";
     },
     doctorFlowEmptySlotsMessage() {
       return this.getEmptySlotsMessage(this.doctorFlowLastAvailableDate);

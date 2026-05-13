@@ -142,6 +142,12 @@ export default {
       type: Boolean,
       default: false,
     },
+
+    source: {
+      type: String,
+      default: 'site',
+      validator: (value) => ['site', 'vk_mini_app'].includes(value),
+    },
   },
 
   data() {
@@ -151,6 +157,8 @@ export default {
         name: this.name,
         phone: this.phone,
         city: getCurrentCityName(),
+        source: this.source,
+        type: 'callback_form',
         privacy: false,
         ...getUtmParameters(),
       }),
