@@ -165,7 +165,7 @@ export default {
         phone: this.phone,
         city: getCurrentCityName(),
         source: this.source,
-        type: 'callback_form',
+        type: 'Заявка на звонок',
         privacy: false,
         ...getUtmParameters(),
       }),

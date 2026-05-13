@@ -38,7 +38,7 @@ class CallbackSourceTest extends TestCase
             'city' => 'Москва',
             'privacy' => true,
             'source' => 'vk_mini_app',
-            'type' => 'callback_form',
+            'type' => 'Заявка на звонок',
         ])
             ->assertOk()
             ->assertJson([
@@ -48,7 +48,7 @@ class CallbackSourceTest extends TestCase
 
         Http::assertSent(fn($request) => $request->url() === 'https://unf.test/events?action=callback'
             && $request['source'] === 'vk_mini_app'
-            && $request['type'] === 'callback_form'
+            && $request['type'] === 'Заявка на звонок'
             && $request['name'] === 'Test'
         );
     }
@@ -81,6 +81,39 @@ class CallbackSourceTest extends TestCase
 
         Http::assertSent(fn($request) => $request->url() === 'https://unf.test/events?action=callback'
             && $request['source'] === 'site'
+        );
+    }
+
+    public function test_callback_accepts_legacy_type_and_normalizes_it_for_clinic_payload(): void
+    {
+        config()->set('zrenie-clinic.base_url', 'https://unf.test/');
+
+        Http::fake([
+            'https://unf.test/events?action=callback' => Http::response([
+                'response' => 'ok',
+                'uid_request' => '550e8400-e29b-41d4-a716-446655440000',
+            ], 200),
+        ]);
+
+        Clinic::setHttp();
+
+        User::query()->create([
+            'name' => 'Old Name',
+            'phone' => '+79999999999',
+            'password' => Hash::make('password'),
+        ]);
+
+        $this->postJson('/api/callback', [
+            'name' => 'Test',
+            'phone' => '+7 (999) 999-99-99',
+            'city' => 'Москва',
+            'privacy' => true,
+            'source' => 'site',
+            'type' => 'callback_form',
+        ])->assertOk();
+
+        Http::assertSent(fn($request) => $request->url() === 'https://unf.test/events?action=callback'
+            && $request['type'] === 'Заявка на звонок'
         );
     }
 
@@ -184,7 +217,7 @@ class CallbackSourceTest extends TestCase
             'city' => 'Москва',
             'privacy' => true,
             'source' => 'site',
-            'type' => 'callback_form',
+            'type' => 'Заявка на звонок',
         ], $overrides);
     }
 }

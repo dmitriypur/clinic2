@@ -166,7 +166,7 @@
           v-else-if="currentStep === 'leave-request'"
           button-content="Отправить"
           :target="callbackFormTarget"
-          :source="callbackFormSource"
+          :source="submissionSource"
           :showOnlineLink="true"
           @open-online="goToStart"
         />
@@ -414,7 +414,7 @@ export default {
     callbackFormTarget() {
       return this.callbackTarget || "otpravka-formy";
     },
-    callbackFormSource() {
+    submissionSource() {
       return this.mode === "vk" ? "vk_mini_app" : "site";
     },
     doctorFlowEmptySlotsMessage() {
@@ -2187,7 +2187,9 @@ export default {
           phone: this.cleanPhone(formData.phone),
           promo_code: formData.promo_code || null,
           comment: formData.comment || null,
-          appointment_source: "site",
+          appointment_source: this.submissionSource,
+          source: this.submissionSource,
+          type: "Онлайн-запись",
           ...this.getUtmParameters(),
         };
 
