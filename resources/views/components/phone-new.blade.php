@@ -1,16 +1,24 @@
-<div class="flex gap-2">
+<div class="hidden lg:flex gap-2">
+     @if ($socials['vk'] ?? false)
+        <div class="mr-2">
+            <a href="{{ $socials['vk'] }}" target="_blank" rel="nofollow"
+                class="">
+                <x-icon-vk-dark/>
+            </a>
+        </div>
+    @endif
     <div class="w-5 h-5 pt-0.5">
         <a href="tel:{{ $phone }}"
             class="inline-flex w-5 h-5 text-icon-interactive">
             <x-icon-phone-new class="fill-action-primary lg:fill-current"></x-icon-phone-new>
         </a>
     </div>
-    <div class="hidden lg:block font-medium flex flex-col items-end">
+    <div class=" font-medium flex flex-col items-end">
         <a href="tel:{{ $phone }}"
            class="text-lg/6 font-semibold">{{ $phone }}</a>
     </div>
     <button
-        class="hidden lg:block accessibility:hidden text-base/6 font-semibold text-action-primary ml-4 border-b hover:border-action-primary border-transparent"
+        class="accessibility:hidden text-base/6 font-semibold text-action-primary ml-4 border-b hover:border-action-primary border-transparent"
         @click="showCallbackFormNew(null, 'otpravka-formy')">
         Перезвоните мне
     </button>

@@ -1,5 +1,5 @@
 <div class="relative w-full">
-    <div class="top-8 font-medium bg-white w-full flex items-center gap-4">
+    <div class="top-8 font-medium bg-white lg:w-full lg:flex items-center gap-4">
         @php
             $branches = $currentCity->branches ?? [];
             $citiesCount = collect($cities ?? [])->count();
@@ -41,7 +41,7 @@
                 @endif
        
         </div>
-        <div class="[&_span]:font-semibold [&_span]:text-action-primary [&_span]:ml-2">{!! str_replace(';', '', trim($schedule)) !!}</div>
+        <div class="text-sm lg:text-base font-normal lg:font-semibold [&_span]:block flex justify-center gap-2 lg:[&_span]:inline lg:[&_span]:font-semibold [&_span]:text-action-primary lg:[&_span]:ml-2">{!! str_replace(';', '', trim($schedule)) !!}</div>
         @if($showSpecialSchedule ?? false)
             <a href="/storage/{{ $specialSchedule }}"
                class="text-lg pt-1 block font-medium text-interactive"

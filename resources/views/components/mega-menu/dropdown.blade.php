@@ -3,7 +3,7 @@
         'dropdown-in': isMobile ? mobileSubIndex === '{{ $menuIndex }}' : activeTop === '{{ $menuIndex }}',
         'hidden': isMobile ? mobileSubIndex !== '{{ $menuIndex }}' : activeTop !== '{{ $menuIndex }}',
         'lg:absolute left-0 top-10 lg:pt-8 w-full': !{{ $item['is_simple'] ? 'true' : 'false' }},
-        'lg:absolute top-full left-0 w-72 pt-1': {{ $item['is_simple'] ? 'true' : 'false' }}
+        'lg:absolute top-full left-0 pt-1 w-full lg:w-72': {{ $item['is_simple'] ? 'true' : 'false' }}
      }">
     @if($item['is_doctor_grid'])
         {{-- МАКЕТ ДЛЯ РАЗДЕЛА "ВРАЧИ" (2 колонки) --}}
@@ -18,7 +18,7 @@
         </div>
     @elseif($item['is_simple'])
         {{-- ПРОСТОЙ МАКЕТ (СПИСОК) --}}
-        <div class="bg-white rounded-lg shadow-xl py-2 px-0 border border-gray-100 overflow-hidden">
+        <div class="bg-surface-subdued w-full lg:bg-white rounded-lg lg:shadow-xl lg:py-2 px-0 lg:border lg:border-gray-100 overflow-hidden">
             <ul class="flex flex-col">
                 @foreach ($item['children'] as $child)
                     <li>

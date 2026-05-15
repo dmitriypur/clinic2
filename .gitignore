@@ -27,3 +27,4 @@ forge.sh
 .DS_Store
 /.DS_Store
 .playwright-cli
+docs/site-admin-api-v1-plan.md

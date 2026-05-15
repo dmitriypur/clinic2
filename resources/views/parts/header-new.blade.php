@@ -19,11 +19,11 @@
                 </button>
                 @if (Request::is('/'))
                     <div
-                        class="flex-none w-full max-w-48 overflow-hidden lg:hidden">
+                        class="flex-none w-full max-w-[125px] lg:max-w-48 overflow-hidden lg:hidden">
                         <x-brand :settings="$seoSettings"/>
                     </div>
                 @else
-                    <a class="flex-none block w-full max-w-48 overflow-hidden lg:hidden"
+                    <a class="flex-none block w-full max-w-[125px] lg:max-w-48 overflow-hidden lg:hidden"
                         href="{{ home_route() }}">
                         <x-brand :settings="$seoSettings"/>
                     </a>
@@ -40,12 +40,10 @@
                     <x-button-primary
                         @click="showCallbackModal(null, 'otpravka-formy')"
                         onclick="ym(94302729,'reachGoal','shapka-forma-open')"
-                        class="hidden lg:block w-[224px]"
-                    >Записаться на приём
+                        class="w-[127px] !py-1.5 !px-2 lg:!py-3 lg:!px-6 lg:w-[224px]"
+                    >    <span class="lg:hidden">Записаться</span>
+                        <span class="hidden lg:inline">Записаться на приём</span>
                     </x-button-primary>
-                </div>
-                <div class="lg:hidden text-gray-300">
-                    <x-icon-map-pin width="22" height="22" />
                 </div>
             </div>
         </div>
@@ -62,9 +60,18 @@
                         <x-brand :settings="$seoSettings"/>
                     </a>
                 @endif
-                <div class="lg:hidden">
+                <div class="flex items-center justify-between lg:hidden">
                     @if(isset($cities) && count($cities) > 1)
                     <x-city-switcher :cities="$cities" :currentCity="$currentCity" />
+                    @endif
+                    <x-address-new :cities="$cities ?? []" />
+                    @if ($socials['vk'] ?? false)
+                        <div class="mr-2">
+                            <a href="{{ $socials['vk'] }}" target="_blank" rel="nofollow"
+                                class="">
+                                <x-icon-vk-dark/>
+                            </a>
+                        </div>
                     @endif
                 </div>
                  <div class="block lg:hidden">
@@ -90,12 +97,23 @@
                         <accessibility-toggle></accessibility-toggle>
                     </div>
                 </div>
-                <x-button-primary
-                        @click="showCallbackModal(null, 'otpravka-formy')"
-                        onclick="ym(94302729,'reachGoal','shapka-forma-open')"
-                        class="lg:hidden w-full"
-                    >Записаться на приём
-                </x-button-primary>
+                <div class="font-medium flex lg:hidden items-center justify-center gap-2">
+                    <div class="w-5 h-5">
+                        <a href="tel:{{ $phone }}"
+                            class="inline-flex w-5 h-5 text-icon-interactive">
+                            <x-icon-phone-new class="lg:fill-current"></x-icon-phone-new>
+                        </a>
+                    </div>
+                    <div class=" font-medium flex flex-col items-end">
+                        <a href="tel:{{ $phone }}"
+                        class="text-lg/6 font-semibold">{{ $phone }}</a>
+                    </div>
+                </div>
+                <button
+                    class="accessibility:hidden lg:hidden text-base/6 font-semibold text-action-primary ml-4 border-b hover:border-action-primary border-transparent"
+                    @click="showCallbackFormNew(null, 'otpravka-formy')">
+                    Перезвоните мне
+                </button>
 
             </div>
         </div>
