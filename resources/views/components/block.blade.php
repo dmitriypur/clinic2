@@ -297,6 +297,14 @@
             <x-block.reception-steps :block="$block"/>
             @break
 
+        @case(\App\Enums\BlockType::DIAGNOSTIC_METHODS)
+            <x-block.diagnostic-methods :block="$block"/>
+            @break
+
+        @case(\App\Enums\BlockType::TREATMENT_METHODS)
+            <x-block.treatment-methods :block="$block"/>
+            @break
+
         @case(\App\Enums\BlockType::UNIVERSAL_TEXT_BLOCK)
             <x-block.universal-block :block="$block"/>
             @break

@@ -542,6 +542,31 @@ class Block extends Model implements HasMedia, Sortable
             ->toArray();
     }
 
+    public function getDiagnosticMethodsItemsAttribute(): array
+    {
+        if (!in_array($this->type, [BlockType::DIAGNOSTIC_METHODS, BlockType::TREATMENT_METHODS], true) || !isset($this->payload['items'])) {
+            return [];
+        }
+
+        return collect($this->payload['items'])
+            ->map(function ($item) {
+                $item['responsive_image'] = null;
+                $item['image_html'] = null;
+                $item['href'] = !empty($item['link']) ? city_url($item['link']) : null;
+
+                if (isset($item['media_collection'])) {
+                    $responsiveImage = $this->getResponsiveImage($item['media_collection'], $item['title'] ?? $this->title, 'main');
+                    $item['responsive_image'] = $responsiveImage;
+                    $item['image_html'] = $responsiveImage?->toHtml();
+                }
+
+                return $item;
+            })
+            ->filter(fn ($item) => !empty($item['title']) || !empty($item['body_html']))
+            ->values()
+            ->toArray();
+    }
+
     public function getPostsAttribute(): Collection|null
     {
         if ($this->type !== BlockType::CARDS_SLIDER || !($this->payload['is_blog'] ?? false)) {

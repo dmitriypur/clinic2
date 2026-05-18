@@ -247,7 +247,7 @@ class BlockResource extends Resource
                             fn(Forms\Get $get) => !in_array(
                                 BlockType::from($get('type')),
                                 [BlockType::HTML, BlockType::TEXT_WITH_IMAGE, BlockType::TEXT_WITH_IMAGE_NEW,
-                                BlockType::TEXT_SUBDUED, BlockType::WELCOME, BlockType::POST_TEXT, BlockType::APPARATUS_DISEASES, BlockType::APPARATUS_METHODS, BlockType::APPARATUS_CONTRAINDICATIONS,]
+                                BlockType::TEXT_SUBDUED, BlockType::WELCOME, BlockType::POST_TEXT, BlockType::APPARATUS_DISEASES, BlockType::APPARATUS_METHODS, BlockType::APPARATUS_CONTRAINDICATIONS, BlockType::DIAGNOSTIC_METHODS, BlockType::TREATMENT_METHODS,]
                             )
                         )
                         ->columnSpan('full'),
@@ -421,8 +421,19 @@ class BlockResource extends Resource
                                     BlockType::POST_TEXT,
                                     BlockType::LIST_WITH_IMAGE,
                                     BlockType::APPARATUS_DISEASES,
+                                    BlockType::DIAGNOSTIC_METHODS,
                                 ])
                         ),
+
+                    Forms\Components\Textarea::make('payload.cards_intro')
+                        ->label('Подзаголовок перед карточками')
+                        ->hidden(
+                            fn(Forms\Get $get) => !in_array(BlockType::from($get('type')), [
+                                BlockType::DIAGNOSTIC_METHODS,
+                                BlockType::TREATMENT_METHODS,
+                            ], true)
+                        )
+                        ->columnSpanFull(),
 
                     Forms\Components\Select::make('payload.classes')
                         ->label('Классы')
@@ -648,6 +659,11 @@ class BlockResource extends Resource
                                 ->label('Текст')
                                 ->columnSpanFull()
                                 ->required(),
+
+                            Forms\Components\TextInput::make('link')
+                                ->label('Ссылка')
+                                ->columnSpanFull()
+                                ->url(),
 
                             Forms\Components\TextInput::make('media_collection')
                                 ->columnSpan('full')
@@ -1231,6 +1247,82 @@ class BlockResource extends Resource
                         BlockType::APPARATUS_DISEASES,
                         BlockType::APPARATUS_CONTRAINDICATIONS,
                     ])
+                ),
+
+                Forms\Components\Section::make([
+                    Forms\Components\Repeater::make('payload.items')
+                        ->label('Методы диагностики')
+                        ->schema([
+                            Forms\Components\TextInput::make('title')
+                                ->label('Заголовок')
+                                ->columnSpanFull()
+                                ->required(),
+
+                            Forms\Components\RichEditor::make('body_html')
+                                ->label('Текст')
+                                ->columnSpanFull()
+                                ->required(),
+
+                            Forms\Components\TextInput::make('link')
+                                ->label('Ссылка')
+                                ->columnSpanFull(),
+
+                            Forms\Components\TextInput::make('media_collection')
+                                ->columnSpan('full')
+                                ->hiddenLabel()
+                                ->default(
+                                    fn(Forms\Get $get) => $get('media_collection') ?? Str::uuid()->toString()
+                                )
+                                ->reactive()
+                                ->extraAttributes(['class' => 'hidden']),
+
+                            SpatieMediaLibraryFileUpload::make('image')
+                                ->collection(fn(Forms\Get $get) => $get('media_collection'))
+                                ->label('Мини-изображение')
+                                ->imageEditor()
+                                ->responsiveImages(),
+                        ])
+                        ->minItems(1)
+                        ->required(),
+                ])->hidden(
+                    fn(Forms\Get $get) => BlockType::from($get('type')) !== BlockType::DIAGNOSTIC_METHODS
+                ),
+
+                Forms\Components\Section::make([
+                    Forms\Components\Repeater::make('payload.items')
+                        ->label('Методы лечения')
+                        ->schema([
+                            Forms\Components\TextInput::make('title')
+                                ->label('Заголовок')
+                                ->columnSpanFull()
+                                ->required(),
+
+                            Forms\Components\RichEditor::make('body_html')
+                                ->label('Текст')
+                                ->columnSpanFull()
+                                ->required(),
+
+                            Forms\Components\TextInput::make('media_collection')
+                                ->columnSpan('full')
+                                ->hiddenLabel()
+                                ->default(
+                                    fn(Forms\Get $get) => $get('media_collection') ?? Str::uuid()->toString()
+                                )
+                                ->reactive()
+                                ->extraAttributes(['class' => 'hidden'])
+                                ->required(),
+
+                            SpatieMediaLibraryFileUpload::make('image')
+                                ->collection(fn(Forms\Get $get) => $get('media_collection'))
+                                ->label('Мини-изображение')
+                                ->imageEditor()
+                                ->responsiveImages()
+                                ->required(),
+                        ])
+                        ->minItems(1)
+                        ->required(),
+                ])->hidden(
+                    fn(Forms\Get $get) => BlockType::from($get('type')) !== BlockType::TREATMENT_METHODS
                 ),
 
                 Forms\Components\Section::make([

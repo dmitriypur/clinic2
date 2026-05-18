@@ -22,7 +22,7 @@
                     {{ $item['responsive_image'] }}
                 </picture>
                 <div>
-                    <h3 class="text-heading font-normal text-sm md:text-lg md:leading-none">{{ $item['title'] }}</h3>
+                    <p class="text-heading font-normal md:leading-5">{{ $item['title'] }}</p>
                 </div>
             </div>
         @endforeach

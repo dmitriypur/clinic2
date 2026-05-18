@@ -47,7 +47,7 @@
                                             @endif
                                         </div>
 
-                                        <div class="w-48 shrink-0">
+                                        <div class="hidden w-48 shrink-0">
                                             <x-button-primary class="w-full text-base">
                                                 {{ $buttonText }}
                                             </x-button-primary>

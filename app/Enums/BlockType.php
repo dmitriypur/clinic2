@@ -130,6 +130,8 @@ enum BlockType: int
     case BANNER_SPECIALIST_CALLBACK = 72;
     case DETAILS_ALT = 73;
     case RECEPTION_STEPS = 74;
+    case DIAGNOSTIC_METHODS = 75;
+    case TREATMENT_METHODS = 76;
 
 
 
@@ -207,6 +209,8 @@ enum BlockType: int
             self::BANNER_SPECIALIST_CALLBACK => 'Блок "Запись или обратный звонок"',
             self::DETAILS_ALT => 'Реквизиты карточки',
             self::RECEPTION_STEPS => 'Этапы приема',
+            self::DIAGNOSTIC_METHODS => 'Методы диагностики',
+            self::TREATMENT_METHODS => 'Методы лечения',
         };
     }
 
