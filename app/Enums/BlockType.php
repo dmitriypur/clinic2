@@ -129,6 +129,7 @@ enum BlockType: int
     case APPARATUS_CONTRAINDICATIONS = 71;
     case BANNER_SPECIALIST_CALLBACK = 72;
     case DETAILS_ALT = 73;
+    case RECEPTION_STEPS = 74;
 
 
 
@@ -205,6 +206,7 @@ enum BlockType: int
             self::APPARATUS_CONTRAINDICATIONS => 'Блок "Противопоказания аппаратного лечения"',
             self::BANNER_SPECIALIST_CALLBACK => 'Блок "Запись или обратный звонок"',
             self::DETAILS_ALT => 'Реквизиты карточки',
+            self::RECEPTION_STEPS => 'Этапы приема',
         };
     }
 

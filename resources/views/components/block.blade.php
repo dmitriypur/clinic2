@@ -293,6 +293,10 @@
             <x-block.details-alt :block="$block"/>
             @break
 
+        @case(\App\Enums\BlockType::RECEPTION_STEPS)
+            <x-block.reception-steps :block="$block"/>
+            @break
+
         @case(\App\Enums\BlockType::UNIVERSAL_TEXT_BLOCK)
             <x-block.universal-block :block="$block"/>
             @break

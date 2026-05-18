@@ -1235,6 +1235,26 @@ class BlockResource extends Resource
 
                 Forms\Components\Section::make([
                     Forms\Components\Repeater::make('payload.items')
+                        ->label('Этапы')
+                        ->schema([
+                            Forms\Components\TextInput::make('title')
+                                ->label('Заголовок')
+                                ->columnSpanFull()
+                                ->required(),
+
+                            Forms\Components\RichEditor::make('body_html')
+                                ->label('Текст')
+                                ->columnSpanFull()
+                                ->required(),
+                        ])
+                        ->minItems(1)
+                        ->required(),
+                ])->hidden(
+                    fn(Forms\Get $get) => BlockType::from($get('type')) !== BlockType::RECEPTION_STEPS
+                ),
+
+                Forms\Components\Section::make([
+                    Forms\Components\Repeater::make('payload.items')
                         ->label('Методики')
                         ->schema([
                             Forms\Components\TextInput::make('title')
