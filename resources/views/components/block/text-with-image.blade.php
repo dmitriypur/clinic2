@@ -26,7 +26,7 @@
         @endif
 
         <div
-            class="content [&_strong]:text-interactive [&_li]:marker:text-interactive {{ isset($block->payload['reverse']) ? 'mt-2' : 'mt-4' }}">
+            class="content [&_strong]:text-interactive [&_li]:marker:text-interactive {{ isset($block->payload['reverse']) ? 'mt-2' : 'mt-4' }} [&_h2]:font-semibold [&_h2]:mb-6 [&_h2]:text-[28px] [&_h2]:md:text-[34px]">
             {!! $block->body_html !!}
         </div>
     </div>

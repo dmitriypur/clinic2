@@ -22,11 +22,9 @@
 
                     @if($image)
                         <div class="hidden md:block md:mt-10">
-                            <div class="relative rounded-3xl bg-gradient-to-b from-white to-action-primary-light md:h-44 md:mt-10">
-                                <div class="absolute inset-x-0 bottom-0 flex justify-center">
-                                    <div class="w-72 md:w-80 [&_img]:h-auto [&_img]:w-full [&_img]:object-contain [&_img]:object-bottom">
-                                        {!! $image !!}
-                                    </div>
+                            <div class="relative rounded-3xl">
+                                <div class="w-full [&_img]:h-auto [&_img]:w-full [&_img]:object-contain [&_img]:object-bottom">
+                                    {!! $image !!}
                                 </div>
                             </div>
                         </div>
@@ -52,11 +50,9 @@
 
             @if($image)
                 <div class="mt-10 md:hidden">
-                    <div class="relative h-44 rounded-3xl bg-gradient-to-b from-white to-action-primary-light">
-                        <div class="absolute inset-x-0 bottom-0 flex justify-center">
-                            <div class="w-72 [&_img]:h-auto [&_img]:w-full [&_img]:object-contain [&_img]:object-bottom">
-                                {!! $image !!}
-                            </div>
+                    <div class="relative rounded-2xl overflow-hidden">
+                        <div class="w-full [&_img]:h-auto [&_img]:w-full [&_img]:object-contain [&_img]:object-bottom">
+                            {!! $image !!}
                         </div>
                     </div>
                 </div>

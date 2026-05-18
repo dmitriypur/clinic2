@@ -26,11 +26,11 @@
 
         <div class="mt-12 md:mt-16">
             <div class="relative border border-action-primary bg-action-primary-light rounded-20 px-4 pt-0 pb-6 overflow-visible md:px-8 md:py-0 md:min-h-32">
-                <div class="flex justify-center -mt-10 md:absolute md:left-8 md:bottom-0 md:mt-0 md:w-40 md:shrink-0">
+                <div class="flex justify-center -mt-10 md:absolute md:left-16 md:bottom-0 md:mt-0 md:w-40 md:shrink-0">
                     <picture>
-                        <source srcset="{{ asset('images/corgy/new-corgy.webp') }}" type="image/webp">
+                        <source srcset="{{ asset('images/blocks/doctor.webp') }}" type="image/webp">
                         <img
-                            src="{{ asset('images/corgy/new-corgy.png') }}"
+                            src="{{ asset('images/blocks/doctor.png') }}"
                             alt=""
                             class="w-40 md:w-full h-auto"
                             loading="lazy"
