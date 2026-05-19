@@ -749,7 +749,6 @@ new Vue({
       new Swiper(".cards-swiper", {
         modules: [Navigation, Pagination, Autoplay],
         slidesPerView: 1,
-        centeredSlides: true,
         loop: true,
         spaceBetween: 33,
         breakpoints: {
