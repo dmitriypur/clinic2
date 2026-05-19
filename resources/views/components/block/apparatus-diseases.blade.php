@@ -9,19 +9,19 @@
             <div class="md:flex md:items-start md:gap-8">
                 <div class="md:w-5/12 md:flex md:flex-col">
                     @if(!$block->title_hidden)
-                        <h2 class="text-2xl md:text-4xl font-semibold leading-tight text-heading text-center md:text-left">
+                        <h2 class="text-2xl md:text-3xl font-semibold leading-tight text-heading text-center md:text-left">
                             {{ $block->title }}
                         </h2>
                     @endif
 
                     @if($block->body_html)
-                        <div class="mt-6 text-base leading-6 text-heading [&_p:not(:last-child)]:mb-4">
+                        <div class="mt-4 text-base leading-6 text-heading [&_p:not(:last-child)]:mb-4">
                             {!! str($block->body_html)->sanitizeHtml() !!}
                         </div>
                     @endif
 
                     @if($image)
-                        <div class="hidden md:block md:mt-10">
+                        <div class="hidden md:block md:mt-4">
                             <div class="relative rounded-3xl">
                                 <div class="w-full [&_img]:h-auto [&_img]:w-full [&_img]:object-contain [&_img]:object-bottom">
                                     {!! $image !!}
