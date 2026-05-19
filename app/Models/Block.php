@@ -8,6 +8,7 @@ use App\Enums\PageType;
 use App\Helpers\Doctors;
 use App\Models\Doctor;
 use App\Models\Traits\HasCityScope;
+use App\Models\Traits\HasSafeMediaConversions;
 use App\Settings\GeneralSettings;
 use App\Settings\SeoSettings;
 use App\Support\CitySeoVariables;
@@ -42,7 +43,7 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
  */
 class Block extends Model implements HasMedia, Sortable
 {
-    use HasFactory, InteractsWithMedia, SortableTrait, HasCityScope;
+    use HasFactory, InteractsWithMedia, SortableTrait, HasCityScope, HasSafeMediaConversions;
 
     protected $fillable = [
         'page_id',
@@ -151,7 +152,7 @@ class Block extends Model implements HasMedia, Sortable
     {
         $settings = app(SeoSettings::class);
 
-        return $this->getFirstMedia($collection)?->img($conversion)->attributes([
+        return $this->safeMediaImage($this->getFirstMedia($collection), $conversion)?->attributes([
             'alt' => Str::of($settings->image_alt_template)->replace('{h1}', $title)->value(),
             'title' => Str::of($settings->image_title_template)->replace('{h1}', $title)->value(),
         ]);

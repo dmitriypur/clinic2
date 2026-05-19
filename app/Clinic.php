@@ -3,6 +3,7 @@
 namespace App;
 
 use App\Contracts\Services\Schema\Schema;
+use App\Models\Traits\HasSafeMediaConversions;
 use App\Models\Review;
 use App\Services\BookingWidgetOrderingService;
 use App\Settings\GeneralSettings;
@@ -18,6 +19,8 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class Clinic
 {
+    use HasSafeMediaConversions;
+
     public static PendingRequest $http;
     private const UTM_KEYS = [
         'utm_source',
@@ -202,7 +205,7 @@ class Clinic
     {
         $settings = app(SeoSettings::class);
 
-        return $media?->img('main')->attributes([
+        return self::safeMediaImageFor($media, 'main')?->attributes([
             'alt' => Str::of($settings->image_alt_template)->replace('{h1}', $title)->trim()->value(),
             'title' => Str::of($settings->image_title_template)->replace('{h1}', $title)->trim()->value(),
             'itemprop' => 'contentUrl'

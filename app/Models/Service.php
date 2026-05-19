@@ -6,6 +6,7 @@ use App\Clinic;
 use App\Jobs\RegenerateSitemap;
 use App\Models\ServicePrice;
 use App\Models\Traits\HasCityScope;
+use App\Models\Traits\HasSafeMediaConversions;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
@@ -17,7 +18,7 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class Service extends Model implements HasMedia
 {
-    use HasFactory, InteractsWithMedia, HasCityScope;
+    use HasFactory, InteractsWithMedia, HasCityScope, HasSafeMediaConversions;
 
     protected $fillable = [
         'title',

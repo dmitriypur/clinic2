@@ -14,7 +14,7 @@
             <span itemprop="name" class="hidden">{{ $block->title  }}</span>
             <div
                 class="rounded-full w-72 h-72 [&_img]:w-72 [&_img]:h-72 overflow-hidden lg:shadow-lg [&_img]:object-cover">
-                {{ $block->getFirstMedia()?->img('main')->attributes(['alt' => $block->title, 'itemprop' => 'contentUrl']) }}
+                {{ $block->getSafeMediaImage($block->getFirstMedia(), 'main')?->attributes(['alt' => $block->title, 'itemprop' => 'contentUrl']) }}
             </div>
             <span itemprop="description"
                   class="hidden">{{ $block->title }}</span>

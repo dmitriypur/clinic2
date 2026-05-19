@@ -9,7 +9,7 @@
         <div
             class="md:w-[calc(33.33333%-1.5rem)] grow flex gap-4 items-center even:flex-row-reverse md:even:flex-row flex-nowrap group">
             <picture class="w-1/2">
-                <img src="{{ $block->getFirstMediaUrl($item['uuid'], 'thumb') }}"
+                <img src="{{ $block->getSafeFirstMediaUrl($item['uuid'], 'thumb') }}"
                      alt="{{ $item['title'] }}">
             </picture>
             <div class="w-1/2 md:w-2/5 group-even:text-right md:group-even:text-left">

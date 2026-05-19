@@ -16,7 +16,7 @@
                         class="border-2 border-action-primary lg:border-none rounded-full overflow-hidden w-40 lg:w-48">
 
                         <img
-                            src="{{ $block->getFirstMediaUrl($item['media_collection'], 'thumb') }}"
+                            src="{{ $block->getSafeFirstMediaUrl($item['media_collection'], 'thumb') }}"
                             alt="{{ $item['title'] }}">
                     </div>
                     <div class="p-4 text-center">

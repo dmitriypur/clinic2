@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Settings\SeoSettings;
 use App\Models\Traits\HasCityScope;
+use App\Models\Traits\HasSafeMediaConversions;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
@@ -24,7 +25,7 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
  */
 class Promotion extends Model implements HasMedia, Sortable
 {
-    use HasFactory, InteractsWithMedia, SortableTrait, HasCityScope;
+    use HasFactory, InteractsWithMedia, SortableTrait, HasCityScope, HasSafeMediaConversions;
 
     protected $fillable = [
         'title',
@@ -90,7 +91,7 @@ class Promotion extends Model implements HasMedia, Sortable
 
         $settings = app(SeoSettings::class);
 
-        return $this->getFirstMedia()->img('main')->attributes([
+        return $this->safeMediaImage($this->getFirstMedia(), 'main')->attributes([
             'alt' => Str::of($settings->image_alt_template)->replace('{h1}', $this->title)->trim()->value(),
             'title' => Str::of($settings->image_title_template)->replace('{h1}', $this->title)->trim()->value(),
             'itemprop' => 'contentUrl'

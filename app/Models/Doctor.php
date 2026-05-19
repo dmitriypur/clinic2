@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Jobs\RegenerateSitemap;
 use App\Models\Traits\HasCityScope;
+use App\Models\Traits\HasSafeMediaConversions;
 use App\Support\DoctorAge;
 use App\Support\CitySeoVariables;
 use App\Settings\SeoSettings;
@@ -38,7 +39,7 @@ use Spatie\Sluggable\SlugOptions;
  */
 class Doctor extends Model implements HasMedia
 {
-    use HasFactory, InteractsWithMedia, HasUlids, HasSlug, HasCityScope;
+    use HasFactory, InteractsWithMedia, HasUlids, HasSlug, HasCityScope, HasSafeMediaConversions;
 
 
     protected $dispatchesEvents = [
@@ -173,8 +174,7 @@ class Doctor extends Model implements HasMedia
 
         $settings = app(SeoSettings::class);
 
-        return $this->getFirstMedia()
-            ->img('main')
+        return $this->safeMediaImage($this->getFirstMedia(), 'main')
             ->attributes([
                 'alt' => Str::of($settings->image_alt_template)
                     ->replace('{h1}', $this->full_name)

@@ -10,7 +10,7 @@
             class="basis-[calc(50%-0.5rem)] md:basis-[calc(25%-1.5rem)] items-center flex flex-col">
             <picture class="mb-4">
                 <img
-                    src="{{ $block->getFirstMediaUrl($item['uuid'], 'thumb') }}"
+                    src="{{ $block->getSafeFirstMediaUrl($item['uuid'], 'thumb') }}"
                     alt="{{ $item['title'] }}">
             </picture>
             <h3 class="text-heading font-medium text-lg text-center">{{ $item['title'] }}</h3>

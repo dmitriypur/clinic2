@@ -7,6 +7,7 @@ use App\Enums\PageType;
 use App\Jobs\RegenerateSitemap;
 use App\Models\Traits\Filterable;
 use App\Models\Traits\HasCityScope;
+use App\Models\Traits\HasSafeMediaConversions;
 use App\Support\CitySeoVariables;
 use App\Settings\SeoSettings;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -36,7 +37,7 @@ use Spatie\Sluggable\SlugOptions;
  */
 class Page extends Model implements HasMedia
 {
-    use HasFactory, InteractsWithMedia, HasSlug, Filterable, HasCityScope;
+    use HasFactory, InteractsWithMedia, HasSlug, Filterable, HasCityScope, HasSafeMediaConversions;
     protected $dispatchesEvents = [
         'created' => RegenerateSitemap::class,
         'updated' => RegenerateSitemap::class,
@@ -208,7 +209,7 @@ class Page extends Model implements HasMedia
     {
         $settings = app(SeoSettings::class);
 
-        return $this->getFirstMedia($collection)?->img($conversion)->attributes([
+        return $this->safeMediaImage($this->getFirstMedia($collection), $conversion)?->attributes([
             'alt' => Str::of($settings->image_alt_template)->replace('{h1}', $title)->value(),
             'title' => Str::of($settings->image_title_template)->replace('{h1}', $title)->value(),
         ]);

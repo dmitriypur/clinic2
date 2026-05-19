@@ -2,7 +2,7 @@
     <div class="relative overflow-hidden bg-white" ref="container">
         <div class="hidden md:block absolute top-0 left-1/2 w-[1920px] h-full -translate-x-1/2">
             <picture class="block w-full h-full">
-                <source :srcset="isLoaded ? '{{$block->getFirstMediaUrl('bg', 'hero')}}' : ''" type="image/webp">
+                <source :srcset="isLoaded ? '{{$block->getSafeFirstMediaUrl('bg', 'hero')}}' : ''" type="image/webp">
                 <img
                     :src="isLoaded ? '{{$block->getFirstMediaUrl('bg')}}' : ''"
                     class="w-full h-full object-cover object-right"
@@ -29,7 +29,7 @@
 
                 <div class="mt-4 md:hidden">
                     <picture class="block">
-                        <source :srcset="isLoaded ? '{{$block->getFirstMediaUrl('pic', 'hero')}}' : ''" type="image/webp">
+                        <source :srcset="isLoaded ? '{{$block->getSafeFirstMediaUrl('pic', 'hero')}}' : ''" type="image/webp">
                         <img
                             :src="isLoaded ? '{{$block->getFirstMediaUrl('pic')}}' : ''"
                             class="w-full h-auto"

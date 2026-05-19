@@ -35,7 +35,7 @@
                     itemscope
                     itemtype="http://schema.org/ImageObject">
                     <span itemprop="name" class="hidden">{{ $block->title  }}</span>
-                    {{ $block->getFirstMedia()->img('main')->attributes(['alt' => $block->title, 'itemprop' => 'contentUrl']) }}
+                    {{ $block->getSafeMediaImage($block->getFirstMedia(), 'main')->attributes(['alt' => $block->title, 'itemprop' => 'contentUrl']) }}
                     <span itemprop="description"
                           class="hidden">{{ $block->title }}</span>
                 </div>
@@ -46,7 +46,7 @@
                     itemscope
                     itemtype="http://schema.org/ImageObject">
                     <span itemprop="name" class="hidden">{{ $block->title  }}</span>
-                    {{ $block->getFirstMedia()->img('main-post-750')->attributes(['alt' => $block->title, 'itemprop' => 'contentUrl']) }}
+                    {{ $block->getSafeMediaImage($block->getFirstMedia(), 'main-post-750')->attributes(['alt' => $block->title, 'itemprop' => 'contentUrl']) }}
                     <span itemprop="description"
                           class="hidden">{{ $block->title }}</span>
                 </div>

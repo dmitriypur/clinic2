@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Traits\HasSafeMediaConversions;
 use App\Settings\SeoSettings;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -26,7 +27,7 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
  */
 class Element extends Model implements HasMedia, Sortable
 {
-    use HasFactory, InteractsWithMedia, SortableTrait;
+    use HasFactory, InteractsWithMedia, SortableTrait, HasSafeMediaConversions;
 
     protected $fillable = [
         'uuid',
@@ -82,7 +83,7 @@ class Element extends Model implements HasMedia, Sortable
 
         $settings = app(SeoSettings::class);
 
-        return $this->getFirstMedia()->img('main')->attributes([
+        return $this->safeMediaImage($this->getFirstMedia(), 'main')->attributes([
             'alt' => Str::of($settings->image_alt_template)->replace('{h1}', $this->title)->trim()->value(),
             'title' => Str::of($settings->image_title_template)->replace('{h1}', $this->title)->trim()->value(),
             'itemprop' => 'contentUrl'
