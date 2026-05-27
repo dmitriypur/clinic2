@@ -110,6 +110,77 @@ class SetCityMiddlewareTest extends TestCase
     }
 
     /** @test */
+    public function force_city_query_keeps_booking_doctor_parameter_when_switching_to_default_city(): void
+    {
+        $defaultCity = new City();
+        $defaultCity->slug = 'moskva';
+        $defaultCity->is_default = true;
+
+        $cityService = $this->createMock(CityService::class);
+        $cityService->expects($this->once())
+            ->method('getCityBySlug')
+            ->with('moskva')
+            ->willReturn($defaultCity);
+        $cityService->expects($this->once())
+            ->method('getActiveCities')
+            ->willReturn(new EloquentCollection([$defaultCity]));
+        $cityService->expects($this->once())
+            ->method('isGlobalPath')
+            ->with('')
+            ->willReturn(false);
+
+        $middleware = new SetCityMiddleware($cityService, $this->createMock(GeoIpService::class));
+        $request = Request::create('/?booking_doctor_id=00000000-0000-0000-0000-000000000001&force_city=moskva', 'GET');
+        $request->cookies->set('selected_city', 'kirov');
+
+        $route = new Route('GET', '/', ['uses' => fn() => response('ok')]);
+        $route->name('pages.show');
+        $request->setRouteResolver(static fn() => $route->bind($request));
+
+        $response = $middleware->handle($request, static fn() => response('ok'));
+
+        $this->assertInstanceOf(RedirectResponse::class, $response);
+        $this->assertSame(url('/?booking_doctor_id=00000000-0000-0000-0000-000000000001'), $response->getTargetUrl());
+        $this->assertStringNotContainsString('force_city', $response->getTargetUrl());
+        $this->assertSame(302, $response->getStatusCode());
+    }
+
+    /** @test */
+    public function force_city_query_keeps_booking_branch_parameter_when_switching_to_non_default_city(): void
+    {
+        $kirov = new City();
+        $kirov->slug = 'kirov';
+        $kirov->is_default = false;
+
+        $cityService = $this->createMock(CityService::class);
+        $cityService->expects($this->once())
+            ->method('getCityBySlug')
+            ->with('kirov')
+            ->willReturn($kirov);
+        $cityService->expects($this->once())
+            ->method('getActiveCities')
+            ->willReturn(new EloquentCollection([$kirov]));
+        $cityService->expects($this->once())
+            ->method('isGlobalPath')
+            ->with('')
+            ->willReturn(false);
+
+        $middleware = new SetCityMiddleware($cityService, $this->createMock(GeoIpService::class));
+        $request = Request::create('/?booking_branch_id=501&force_city=kirov', 'GET');
+
+        $route = new Route('GET', '/', ['uses' => fn() => response('ok')]);
+        $route->name('pages.show');
+        $request->setRouteResolver(static fn() => $route->bind($request));
+
+        $response = $middleware->handle($request, static fn() => response('ok'));
+
+        $this->assertInstanceOf(RedirectResponse::class, $response);
+        $this->assertSame(url('/kirov?booking_branch_id=501'), $response->getTargetUrl());
+        $this->assertStringNotContainsString('force_city', $response->getTargetUrl());
+        $this->assertSame(302, $response->getStatusCode());
+    }
+
+    /** @test */
     public function force_city_query_allows_switching_doctor_page_back_to_default_city(): void
     {
         Cookie::unqueue('manual_city_override');

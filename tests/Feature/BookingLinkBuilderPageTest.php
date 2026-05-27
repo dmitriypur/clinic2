@@ -81,6 +81,8 @@ class BookingLinkBuilderPageTest extends TestCase
             ->assertSee('Готовая ссылка')
             ->assertSee('booking_doctor_id')
             ->assertSee('00000000-0000-0000-0000-000000000001')
+            ->assertSee('force_city')
+            ->assertSee('moskva')
             ->assertSee('utm_source')
             ->assertSee('direct')
             ->assertSee('utm_medium')
@@ -133,6 +135,7 @@ class BookingLinkBuilderPageTest extends TestCase
             ->assertOk()
             ->assertSee('Конструктор ссылок записи')
             ->assertSee('booking_doctor_id')
+            ->assertSee('force_city')
             ->assertSee('00000000-0000-0000-0000-000000000002');
     }
 
@@ -198,6 +201,7 @@ class BookingLinkBuilderPageTest extends TestCase
 
         Livewire::test(BookingLinkBuilder::class)
             ->assertSee('booking_doctor_id=00000000-0000-0000-0000-000000000010', false)
+            ->assertSee('force_city=moskva', false)
             ->set('data.doctor_id', $secondDoctor->uuid)
             ->assertSee('booking_doctor_id=00000000-0000-0000-0000-000000000011', false)
             ->set('data.entry', 'branch')

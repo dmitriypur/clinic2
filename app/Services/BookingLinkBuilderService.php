@@ -24,6 +24,7 @@ class BookingLinkBuilderService
     ): string {
         $query = [
             $this->bookingParameterName($entry) => $targetId,
+            'force_city' => $city->slug,
         ];
 
         foreach ($this->normalizeUtm($utm) as $key => $value) {

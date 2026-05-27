@@ -43,7 +43,7 @@ class BookingLinkBuilderServiceTest extends TestCase
         );
 
         $this->assertSame(
-            'https://example.test/?booking_doctor_id=00000000-0000-0000-0000-000000000001&utm_source=yandex&utm_medium=cpc&utm_campaign=doctor_card',
+            'https://example.test/?booking_doctor_id=00000000-0000-0000-0000-000000000001&force_city=moskva&utm_source=yandex&utm_medium=cpc&utm_campaign=doctor_card',
             $url,
         );
     }
@@ -80,7 +80,7 @@ class BookingLinkBuilderServiceTest extends TestCase
         );
 
         $this->assertSame(
-            'https://example.test/kirov/services/diagnostika?booking_branch_id=501&utm_source=vk&utm_medium=banner',
+            'https://example.test/kirov/services/diagnostika?booking_branch_id=501&force_city=kirov&utm_source=vk&utm_medium=banner',
             $url,
         );
     }
