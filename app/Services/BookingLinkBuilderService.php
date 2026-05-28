@@ -215,6 +215,26 @@ class BookingLinkBuilderService
         ], fn ($value): bool => filled($value));
     }
 
+    public function buildVkUrl(
+        City $city,
+        string $entry,
+        string $targetId,
+        ?array $utm = null,
+    ): string {
+        $params = [
+            $this->bookingParameterName($entry) => $targetId,
+            'city' => $city->slug,
+        ];
+
+        foreach ($this->normalizeUtm($utm) as $key => $value) {
+            $params[$key] = $value;
+        }
+
+        $hash = http_build_query($params, '', '&', PHP_QUERY_RFC3986);
+
+        return rtrim((string) config('app.vk_mini_app_url'), '/') . '#' . $hash;
+    }
+
     private function utmOptionLabel(array $row): string
     {
         $parts = array_filter([

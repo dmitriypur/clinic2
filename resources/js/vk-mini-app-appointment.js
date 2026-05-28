@@ -4,6 +4,7 @@ import VCalendar from "v-calendar";
 import vkBridge from "@vkontakte/vk-bridge";
 
 import BookingWidgetV3 from "./components/BookingWidgetV3/BookingWidgetV3.vue";
+import { buildBookingLaunchContextFromSearchParams } from "./utilities/bookingLaunchContext";
 
 Vue.use(VueTheMask);
 Vue.use(VCalendar, {
@@ -17,6 +18,8 @@ const FORWARDED_HASH_KEYS = [
   "utm_campaign",
   "utm_content",
   "utm_term",
+  "booking_doctor_id",
+  "booking_branch_id",
 ];
 
 function getHashParams() {
@@ -108,6 +111,10 @@ async function fetchVkInitialPatientData() {
 }
 
 if (!forwardHashParamsToQuery()) {
+const launchContext = buildBookingLaunchContextFromSearchParams(
+  window.location.search
+);
+
 new Vue({
   data() {
     return {
@@ -122,6 +129,7 @@ new Vue({
       props: {
         open: true,
         mode: "vk",
+        launchContext,
         initialPatientData: this.initialPatientData,
       },
     });

@@ -8,6 +8,7 @@ use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Toggle;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Forms\Form;
@@ -56,6 +57,7 @@ class BookingLinkBuilder extends Page implements HasForms
             'doctor_id' => $this->firstOptionKey($this->doctorOptions($cityId, $linkBuilder)),
             'branch_id' => $this->firstOptionKey($this->branchOptions($cityId, $linkBuilder)),
             'utm_key' => $this->firstOptionKey($this->utmOptions($cityId, $linkBuilder)),
+            'is_vk' => false,
         ]);
     }
 
@@ -93,6 +95,7 @@ class BookingLinkBuilder extends Page implements HasForms
                             ->native(false)
                             ->searchable()
                             ->live()
+                            ->visible(fn (Get $get): bool => ! (bool) $get('is_vk'))
                             ->required(),
 
                         Select::make('entry')
@@ -124,6 +127,11 @@ class BookingLinkBuilder extends Page implements HasForms
                             ->required(fn (Get $get): bool => $get('entry') === 'branch')
                             ->helperText('Филиалы берутся из списка настроек виджета. Если список пустой, сначала откройте “Настройки виджета” для обновления филиалов.'),
 
+                        Toggle::make('is_vk')
+                            ->label('Для VK Mini App')
+                            ->visible(fn (): bool => Filament::auth()->user()?->can('page_BookingLinkBuilder') ?? false)
+                            ->live(),
+
                         Select::make('utm_key')
                             ->label('UTM')
                             ->options(fn (Get $get): array => [
@@ -151,12 +159,23 @@ class BookingLinkBuilder extends Page implements HasForms
             return '';
         }
 
+        $utm = $linkBuilder->getUtmPayloadByKey($city, $this->selectedUtmKey($city, $linkBuilder));
+
+        if ((bool) data_get($this->data, 'is_vk', false)) {
+            return $linkBuilder->buildVkUrl(
+                city: $city,
+                entry: $entry,
+                targetId: (string) $targetId,
+                utm: $utm,
+            );
+        }
+
         return $linkBuilder->buildUrl(
             city: $city,
             page: $linkBuilder->findPageByOption(data_get($this->data, 'page_id')),
             entry: $entry,
             targetId: (string) $targetId,
-            utm: $linkBuilder->getUtmPayloadByKey($city, $this->selectedUtmKey($city, $linkBuilder)),
+            utm: $utm,
         );
     }
 

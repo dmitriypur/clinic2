@@ -215,4 +215,6 @@ return [
 
     'vk_mini_app_dev_bypass' => env('VK_MINI_APP_DEV_BYPASS', false),
 
+    'vk_mini_app_url' => env('VK_MINI_APP_URL', 'https://vk.com/app54582705'),
+
 ];
