@@ -89,15 +89,6 @@ class BookingLinkBuilder extends Page implements HasForms
                                 $set('utm_key', $this->firstOptionKey($this->utmOptions($cityId, $linkBuilder)));
                             }),
 
-                        Select::make('page_id')
-                            ->label('Страница')
-                            ->options(fn (Get $get): array => $this->pageOptions($this->numericState($get('city_id')), app(BookingLinkBuilderService::class)))
-                            ->native(false)
-                            ->searchable()
-                            ->live()
-                            ->visible(fn (Get $get): bool => ! (bool) $get('is_vk'))
-                            ->required(),
-
                         Select::make('entry')
                             ->label('Тип ссылки')
                             ->options([
@@ -141,6 +132,14 @@ class BookingLinkBuilder extends Page implements HasForms
                             ->native(false)
                             ->searchable()
                             ->live(),
+                        Select::make('page_id')
+                            ->label('Страница')
+                            ->options(fn (Get $get): array => $this->pageOptions($this->numericState($get('city_id')), app(BookingLinkBuilderService::class)))
+                            ->native(false)
+                            ->searchable()
+                            ->live()
+                            ->visible(fn (Get $get): bool => ! (bool) $get('is_vk'))
+                            ->required(),
                     ]),
             ])
             ->statePath('data');
