@@ -199,6 +199,7 @@
 
 <script>
 import bookingApi from "../../services/bookingApi";
+import axios from "axios";
 import {
   getDoctorExternalUuids,
   mergeDoctorsWithSitePayload,
@@ -589,6 +590,39 @@ export default {
 
         return utm;
       }, {});
+    },
+    buildEventUuid() {
+      if (window.crypto?.randomUUID) {
+        return window.crypto.randomUUID();
+      }
+
+      return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (char) => {
+        const random = Math.random() * 16 | 0;
+        const value = char === "x" ? random : (random & 0x3 | 0x8);
+
+        return value.toString(16);
+      });
+    },
+    async trackArticleBookingConversion() {
+      const conversionConfig = window.config?.articleBookingConversion;
+
+      if (!conversionConfig?.pageId) {
+        return;
+      }
+
+      try {
+        await axios.post("/api/article-booking-conversions", {
+          page_id: conversionConfig.pageId,
+          city_id: window.config?.booking?.siteCityId || null,
+          event_uuid: this.buildEventUuid(),
+          page_url: conversionConfig.pageUrl || window.location.href,
+          page_path: conversionConfig.pagePath || window.location.pathname,
+          entry_point: "booking_widget",
+          booking_mode: this.selectedMode || this.mode || this.effectiveLaunchContext?.entry || null,
+        });
+      } catch (error) {
+        console.warn("Article booking conversion tracking failed", error);
+      }
     },
     shouldPrepareInitialStep() {
       if (!this.open || this.currentStep !== "start") {
@@ -2200,6 +2234,7 @@ export default {
         }
 
         this.currentStep = "success";
+        void this.trackArticleBookingConversion();
       } catch (error) {
         if (error.status === 422 && error.errors) {
           this.$refs.patientForm?.setErrors(error.errors);

@@ -119,6 +119,11 @@ class Page extends Model implements HasMedia
         return $this->belongsToMany(Review::class);
     }
 
+    public function articleBookingConversions(): HasMany
+    {
+        return $this->hasMany(ArticleBookingConversion::class);
+    }
+
     public function tags(): BelongsToMany
     {
         return $this->belongsToMany(Tag::class);

@@ -29,6 +29,17 @@
     @if($category->header_scripts)
         {!! $category->header_scripts !!}
     @endif
+
+    @if($isPostsType)
+        <script>
+            window.config = window.config || {};
+            window.config.articleBookingConversion = {
+                pageId: @json($page->id),
+                pageUrl: @json(url()->current()),
+                pagePath: @json('/' . ltrim(request()->path(), '/')),
+            };
+        </script>
+    @endif
 @endpush
 
 <x-app-layout title="{{ $title }}"
@@ -84,6 +95,14 @@
                                     <meta itemprop="position" content="3"/>
                                 </li>
                             </ol>
+                            @if($isPostsType)
+                                <div class="mt-4">
+                                    <x-article-booking-counter
+                                        :page="$page"
+                                        class="text-base text-interactive"
+                                    />
+                                </div>
+                            @endif
                         </div>
                     </div>
                 </section>

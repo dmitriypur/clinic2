@@ -22,7 +22,10 @@
         @endif
     </div>
 
-    <p class="text-sm text-interactive/40 mt-3 mb-2">{{ $item->created_at->format('d.m.Y') }}</p>
+    <div class="flex flex-wrap items-center justify-between gap-2 mt-3 mb-2">
+        <p class="text-sm text-interactive/40">{{ $item->created_at->format('d.m.Y') }}</p>
+        <x-article-booking-counter :page="$item" :count="$item->booking_conversions_count ?? null" />
+    </div>
     <hr>
     <a href="{{ $item->getUrl() }}">
         <span class="text-lg font-semibold mt-2 leading-tight">{{ $item->title }}</span>

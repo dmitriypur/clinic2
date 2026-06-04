@@ -56,6 +56,13 @@ class PostController extends Controller
             $posts = $tag->pages()
                 ->where('active', true)
                 ->with(['tags', 'media'])
+                ->withCount([
+                    'articleBookingConversions as booking_conversions_count' => function ($query) use ($currentCity) {
+                        if ($currentCity) {
+                            $query->where('city_id', $currentCity->id);
+                        }
+                    },
+                ])
                 ->paginate($count_items);
 
             $posts->setCollection(
@@ -80,6 +87,13 @@ class PostController extends Controller
             ->where('category_id', $categoryCurrent->id)
             ->orderByDesc('created_at')
             ->with(['tags', 'media', 'category'])
+            ->withCount([
+                'articleBookingConversions as booking_conversions_count' => function ($query) use ($currentCity) {
+                    if ($currentCity) {
+                        $query->where('city_id', $currentCity->id);
+                    }
+                },
+            ])
             ->paginate($count_items);
 
         $posts->setCollection(

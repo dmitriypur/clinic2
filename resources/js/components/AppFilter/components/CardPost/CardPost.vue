@@ -25,7 +25,13 @@ export default {
       </div>
     </div>
 
-    <p class="text-sm text-interactive/40 mt-3 mb-2">{{ post.created_at }}</p>
+    <div class="flex flex-wrap items-center justify-between gap-2 mt-3 mb-2">
+      <p class="text-sm text-interactive/40">{{ post.created_at }}</p>
+      <span class="inline-flex items-center gap-1 text-sm font-medium text-interactive/60">
+        <span>Записей:</span>
+        <span>{{ Number(post.booking_conversions_count || 0).toLocaleString('ru-RU') }}</span>
+      </span>
+    </div>
     <hr>
     <a :href="post.handle">
       <h3 class="text-lg font-semibold mt-2 leading-tight">{{ post.title }}</h3>

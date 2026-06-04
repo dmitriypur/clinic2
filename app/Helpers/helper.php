@@ -21,6 +21,23 @@ function getSettings(){
     return $settings;
 }
 
+if (!function_exists('article_booking_count')) {
+    function article_booking_count(\App\Models\Page|int|null $page, ?int $cityId = null): int
+    {
+        if (!$page) {
+            return 0;
+        }
+
+        $pageId = $page instanceof \App\Models\Page ? $page->id : $page;
+        $cityId ??= app(\App\Services\CityService::class)->getCurrentCity()?->id;
+
+        return \App\Models\ArticleBookingConversion::query()
+            ->where('page_id', $pageId)
+            ->when($cityId, fn($query) => $query->where('city_id', $cityId))
+            ->count();
+    }
+}
+
 
 /**
  * Находит путь к активному пункту меню (2-го или 3-го уровня) и возвращает его индексы и изображение.

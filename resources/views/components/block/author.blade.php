@@ -36,12 +36,15 @@
         <!-- Правая часть -->
         @if(isset($block->payload['theme']))
             <div
-                class="bg-white rounded-lg md:rounded-20 p-4 md:py-6 md:px-10 w-full {{ $hasAuthor ? 'md:w-1/2' : '' }} flex text-center md:text-left z-10">
+                class="bg-white rounded-lg md:rounded-20 p-4 md:py-6 md:px-10 w-full {{ $hasAuthor ? 'md:w-1/2' : '' }} flex md:text-left z-10">
                 <div class="ml-4">
                     <p class="text-interactive text-left">Тема статьи:</p>
                     <span class="text-lg md:text-xl font-semibold text-interactive mt-1">{{ $block->payload['theme'] }}</span>
+                    <x-article-booking-counter :page="$block->page_id" />
                 </div>
+                
             </div>
         @endif
     </div>
+    
 </div>

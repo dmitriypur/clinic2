@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\DoctorController;
+use App\Http\Controllers\Api\ArticleBookingConversionController;
 use App\Http\Controllers\Api\BookingDoctorLaunchController;
 use App\Http\Controllers\Api\BookingDoctorBranchesAvailabilityController;
 use App\Http\Controllers\Api\BookingClinicBranchesController;
@@ -30,6 +31,7 @@ Route::get('schedule', ScheduleController::class);
 
 Route::post('/making-an-appointment', MakingAnAppointmentController::class);
 Route::post('/callback', CallbackController::class);
+Route::post('/article-booking-conversions', ArticleBookingConversionController::class);
 Route::post('/review', App\Http\Controllers\Review\ReviewController::class);
 Route::post('/send-verification-code', VerificationCodeController::class);
 

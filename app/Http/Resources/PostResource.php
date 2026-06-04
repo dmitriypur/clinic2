@@ -22,6 +22,7 @@ class PostResource extends JsonResource
             'tags' => $this->tags->pluck('title', 'handle'),
             'created_at' => $this->created_at->format('d.m.Y'),
             'image' => $this->getImageUrl('default') ?? null,
+            'booking_conversions_count' => (int) ($this->booking_conversions_count ?? 0),
         ];
     }
 }
