@@ -38,7 +38,7 @@
             <div class="text-sm my-2">{!! str(reduction($item->body_html, 80))->sanitizeHtml() !!}</div>
         @endif
 
-        <x-article-booking-counter class="mt-auto" :page="$item" :count="$item->booking_conversions_count ?? null" />
+        <x-article-booking-counter class="mt-auto text-xs" :page="$item" :count="$item->booking_conversions_count ?? null" />
     </div>
     
 </div>

@@ -49,7 +49,7 @@
                             />
                             <x-article-booking-counter
                                 :page="$block->page_id"
-                                class="text-base text-interactive"
+                                class="text-sm text-interactive"
                             />
                         </div>
                     </div>

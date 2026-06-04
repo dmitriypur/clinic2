@@ -8,7 +8,7 @@
     $value = $count ?? article_booking_count($page);
 @endphp
 
-<span {{ $attributes->class('flex items-center gap-1 text-xs font-medium text-interactive/50') }}>
+<span {{ $attributes->class('flex items-center gap-1 font-medium text-interactive/50') }}>
     <span>{{ $label }}:</span>
     <span>{{ number_format((int) $value, 0, '.', ' ') }}</span>
 </span>
