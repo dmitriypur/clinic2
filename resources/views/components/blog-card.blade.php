@@ -1,4 +1,4 @@
-<div class="px-3 pt-3 pb-6 bg-white rounded-2xl h-full">
+<div class="px-3 pt-3 pb-6 bg-white rounded-2xl h-full flex flex-col">
     <div
         class="relative rounded-xl overflow-hidden border border-interactive/40 h-56 [&_img]:w-full [&_img]:h-full [&_img]:object-cover">
         <a href="{{ $item->getUrl() }}">
@@ -24,14 +24,21 @@
 
     <div class="flex flex-wrap items-center justify-between gap-2 mt-3 mb-2">
         <p class="text-sm text-interactive/40">{{ $item->created_at->format('d.m.Y') }}</p>
-        <x-article-booking-counter :page="$item" :count="$item->booking_conversions_count ?? null" />
+        <div class="flex flex-wrap items-center gap-3">
+            <x-article-views-counter :page="$item" />
+        </div>
     </div>
-    <hr>
-    <a href="{{ $item->getUrl() }}">
-        <span class="text-lg font-semibold mt-2 leading-tight">{{ $item->title }}</span>
-    </a>
+    <hr class="mb-2">
+    <div class="flex flex-col flex-auto">
+        <a href="{{ $item->getUrl() }}">
+            <span class="text-lg font-semibold mt-2 leading-tight">{{ $item->title }}</span>
+        </a>
 
-    @if(!empty($item->body_html))
-        <div class="text-sm mt-2">{!! str(reduction($item->body_html, 80))->sanitizeHtml() !!}</div>
-    @endif
+        @if(!empty($item->body_html))
+            <div class="text-sm my-2">{!! str(reduction($item->body_html, 80))->sanitizeHtml() !!}</div>
+        @endif
+
+        <x-article-booking-counter class="mt-auto" :page="$item" :count="$item->booking_conversions_count ?? null" />
+    </div>
+    
 </div>

@@ -38,6 +38,31 @@ if (!function_exists('article_booking_count')) {
     }
 }
 
+if (!function_exists('article_views_count')) {
+    function article_views_count(\App\Models\Page|int|null $page): int
+    {
+        if (!$page) {
+            return 0;
+        }
+
+        if ($page instanceof \App\Models\Page) {
+            if (isset($page->article_views_count)) {
+                return (int) $page->article_views_count;
+            }
+
+            if ($page->relationLoaded('articleViewCounter')) {
+                return (int) ($page->articleViewCounter?->views_count ?? 0);
+            }
+
+            $page = $page->id;
+        }
+
+        return (int) \App\Models\ArticleViewCounter::query()
+            ->where('page_id', $page)
+            ->value('views_count');
+    }
+}
+
 
 /**
  * Находит путь к активному пункту меню (2-го или 3-го уровня) и возвращает его индексы и изображение.

@@ -9,6 +9,7 @@ use App\Enums\PageType;
 use App\Models\Doctor;
 use App\Models\Page;
 use App\Models\Service;
+use App\Services\ArticleViews\ArticleViewCounterService;
 use App\Services\PageService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Cache;
@@ -19,7 +20,8 @@ class PageController extends Controller
     public const DOCTORS_PER_PAGE = 3;
 
     public function __construct(
-        private readonly PageService $pageService
+        private readonly PageService $pageService,
+        private readonly ArticleViewCounterService $articleViewCounterService,
     ) {}
 
     public function __invoke(?string $category, ?string $handle = null): View|\Illuminate\Http\RedirectResponse
@@ -32,6 +34,7 @@ class PageController extends Controller
 
         $viewData = $this->prepareViewData($page);
         $seoData = $this->pageService->getPageSeoData($page);
+        $this->trackArticleView($page);
         
         $viewName = $this->pageService->shouldShowPostsView($page) ? 'posts.show' : 'pages.show';
 
@@ -155,6 +158,16 @@ class PageController extends Controller
             'doctors' => $this->getDoctorsForPage($page),
             'services' => $this->getServicesForPage($page),
         ];
+    }
+
+    private function trackArticleView(Page $page): void
+    {
+        if ($page->type !== PageType::Posts) {
+            return;
+        }
+
+        $this->articleViewCounterService->incrementForPage($page, '/' . ltrim(request()->path(), '/'));
+        $page->load('articleViewCounter');
     }
 
     private function getServicesForPage(Page $page): \Illuminate\Support\Collection|array

@@ -124,6 +124,11 @@ class Page extends Model implements HasMedia
         return $this->hasMany(ArticleBookingConversion::class);
     }
 
+    public function articleViewCounter(): HasOne
+    {
+        return $this->hasOne(ArticleViewCounter::class);
+    }
+
     public function tags(): BelongsToMany
     {
         return $this->belongsToMany(Tag::class);

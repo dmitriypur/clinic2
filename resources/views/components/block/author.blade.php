@@ -40,7 +40,19 @@
                 <div class="ml-4">
                     <p class="text-interactive text-left">Тема статьи:</p>
                     <span class="text-lg md:text-xl font-semibold text-interactive mt-1">{{ $block->payload['theme'] }}</span>
-                    <x-article-booking-counter :page="$block->page_id" />
+                    
+                    <div class="mt-4">
+                        <div class="flex flex-wrap items-center gap-4">
+                            <x-article-views-counter
+                                :page="$block->page_id"
+                                class="text-base text-interactive"
+                            />
+                            <x-article-booking-counter
+                                :page="$block->page_id"
+                                class="text-base text-interactive"
+                            />
+                        </div>
+                    </div>
                 </div>
                 
             </div>

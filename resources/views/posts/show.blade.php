@@ -95,14 +95,6 @@
                                     <meta itemprop="position" content="3"/>
                                 </li>
                             </ol>
-                            @if($isPostsType)
-                                <div class="mt-4">
-                                    <x-article-booking-counter
-                                        :page="$page"
-                                        class="text-base text-interactive"
-                                    />
-                                </div>
-                            @endif
                         </div>
                     </div>
                 </section>

@@ -23,6 +23,7 @@ class PostResource extends JsonResource
             'created_at' => $this->created_at->format('d.m.Y'),
             'image' => $this->getImageUrl('default') ?? null,
             'booking_conversions_count' => (int) ($this->booking_conversions_count ?? 0),
+            'article_views_count' => article_views_count($this->resource),
         ];
     }
 }

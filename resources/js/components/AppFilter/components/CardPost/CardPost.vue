@@ -27,10 +27,16 @@ export default {
 
     <div class="flex flex-wrap items-center justify-between gap-2 mt-3 mb-2">
       <p class="text-sm text-interactive/40">{{ post.created_at }}</p>
-      <span class="inline-flex items-center gap-1 text-sm font-medium text-interactive/60">
-        <span>Записей:</span>
-        <span>{{ Number(post.booking_conversions_count || 0).toLocaleString('ru-RU') }}</span>
-      </span>
+      <div class="flex flex-wrap items-center gap-3">
+        <span class="inline-flex items-center gap-1 text-sm font-medium text-interactive/60">
+          <span>Просмотров:</span>
+          <span>{{ Number(post.article_views_count || 0).toLocaleString('ru-RU') }}</span>
+        </span>
+        <span class="inline-flex items-center gap-1 text-sm font-medium text-interactive/60">
+          <span>Записей:</span>
+          <span>{{ Number(post.booking_conversions_count || 0).toLocaleString('ru-RU') }}</span>
+        </span>
+      </div>
     </div>
     <hr>
     <a :href="post.handle">
