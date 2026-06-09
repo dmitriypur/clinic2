@@ -57,7 +57,7 @@
 
 <body
     class="bg-surface-subdued antialiased text-interactive pt-[72px] lg:pt-40 [&_*]:[-webkit-tap-highlight-color]:transparent">
-<div id="app" v-cloak class="overflow-hidden">
+<div id="app" v-cloak class="overflow-x-clip">
     @if (isset($seoSettings->scripts) && count($seoSettings->scripts))
         @foreach ($seoSettings->scripts as $script)
             {!! $script['value'] !!}

@@ -27,7 +27,7 @@ export class ScrollLockManager {
       body.classList.remove('overflow-hidden');
       body.classList.remove('m-0');
       if (wrapper) {
-        // wrapper.classList.remove('overflow-hidden');
+        wrapper.classList.remove('overflow-hidden');
         wrapper.classList.remove('h-full');
       }
       window.scroll(0, scrollPosition);
