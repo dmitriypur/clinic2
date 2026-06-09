@@ -185,6 +185,31 @@ class Page extends Model implements HasMedia
         return $this->hasOne(Block::class)->where('type', BlockType::AUTHOR);
     }
 
+    public function readingTimeMinutes(): Attribute
+    {
+        return Attribute::make(get: function (): int {
+            $blocks = $this->relationLoaded('blocks')
+                ? $this->blocks->where('type', BlockType::POST_TEXT)
+                : $this->blocks()
+                    ->where('type', BlockType::POST_TEXT)
+                    ->get(['body_html']);
+
+            $text = $blocks
+                ->pluck('body_html')
+                ->filter()
+                ->map(fn(string $html): string => html_entity_decode(
+                    strip_tags($html),
+                    ENT_QUOTES | ENT_HTML5,
+                    'UTF-8'
+                ))
+                ->implode(' ');
+
+            preg_match_all('/[\p{L}\p{N}]+(?:[\'’-][\p{L}\p{N}]+)*/u', $text, $matches);
+
+            return max(1, (int) ceil(count($matches[0]) / 200));
+        })->shouldCache();
+    }
+
     public function getBreadcrumbsTitleAttribute(?string $value): string
     {
         return $value ?? $this->title;
@@ -290,11 +315,16 @@ class Page extends Model implements HasMedia
         $page->seo = $seo;
 
         if ($page->relationLoaded('blocks')) {
+            $blocks = $page->blocks->map(function (Block $block) use ($page): Block {
+                $resolvedBlock = $block->withResolvedCitySeoVariables();
+                $resolvedBlock->setRelation('page', $page);
+
+                return $resolvedBlock;
+            });
+
             $page->setRelation(
                 'blocks',
-                new Collection(
-                    $page->blocks->map(fn (Block $block) => $block->withResolvedCitySeoVariables())->all()
-                )
+                new Collection($blocks->all())
             );
         }
 

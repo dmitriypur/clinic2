@@ -25,7 +25,7 @@
     <div class="flex flex-wrap items-center justify-between gap-2 mt-3 mb-2">
         <p class="text-sm text-interactive/40">{{ $item->created_at->format('d.m.Y') }}</p>
         <div class="flex flex-wrap items-center gap-3">
-            <x-article-views-counter :page="$item" />
+            <x-article-views-counter :page="$item" class="text-interactive/50" />
         </div>
     </div>
     <hr class="mb-2">
@@ -38,7 +38,7 @@
             <div class="text-sm my-2">{!! str(reduction($item->body_html, 80))->sanitizeHtml() !!}</div>
         @endif
 
-        <x-article-booking-counter class="mt-auto text-xs" :page="$item" :count="$item->booking_conversions_count ?? null" />
+        <x-article-booking-counter class="hidden mt-auto text-xs" :page="$item" :count="$item->booking_conversions_count ?? null" />
     </div>
     
 </div>

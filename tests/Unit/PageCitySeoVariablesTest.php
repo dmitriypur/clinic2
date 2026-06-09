@@ -65,6 +65,8 @@ class PageCitySeoVariablesTest extends TestCase
         $this->assertSame('<p>Приём в Симферополь</p>', $resolvedBlock->payload['items'][0]['body_html']);
         $this->assertTrue($resolvedBlock->payload['keep_bool']);
         $this->assertSame(12, $resolvedBlock->payload['keep_number']);
+        $this->assertTrue($resolvedBlock->relationLoaded('page'));
+        $this->assertSame($resolvedPage, $resolvedBlock->page);
 
         $this->assertSame('Лечение в {city}', $page->blocks->first()->title);
         $this->assertSame('Телефон: {city_phone}', $page->blocks->first()->payload['subtitle']);

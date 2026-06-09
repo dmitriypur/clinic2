@@ -9,10 +9,11 @@
 @endphp
 
 <span
-    {{ $attributes->class('inline-flex items-center gap-1 text-sm font-medium text-interactive/60') }}
+    {{ $attributes->class('inline-flex items-center gap-1 text-sm font-semibold') }}
     aria-label="{{ $label }}: {{ number_format((int) $value, 0, '.', ' ') }}"
     title="{{ $label }}"
 >
-    <x-icon-eye class="h-4 w-4" aria-hidden="true" />
+    
     <span>{{ number_format((int) $value, 0, '.', ' ') }}</span>
+    <x-icon-eye class="h-5 w-5" aria-hidden="true" />
 </span>
