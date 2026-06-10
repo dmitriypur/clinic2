@@ -3,9 +3,9 @@
     {{ $block->anchor ? 'id='. $block->anchor : null }}>
 
     @if ($block->show_breadcrumbs)
-        <div class="py-10">
+        <div class="py-10 overflow-x-auto no-scrollbar">
             <div class="container">
-                <ol class="flex space-x-2 font-medium" itemscope
+                <ol class="flex space-x-2 font-medium [&_li]:text-nowrap" itemscope
                     itemtype="https://schema.org/BreadcrumbList">
                     <li itemprop="itemListElement" itemscope
                         itemtype="https://schema.org/ListItem">

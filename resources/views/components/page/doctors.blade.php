@@ -1,8 +1,8 @@
 <section
     class="flex flex-col scroll-mt-16 scroll-smooth lg:scroll-mt-28 bg-surface pb-10">
-    <div class="py-10">
+    <div class="py-10 overflow-x-auto no-scrollbar">
         <div class="container">
-            <ol class="flex space-x-2 font-medium" itemscope
+            <ol class="flex space-x-2 font-medium [&_li]:text-nowrap" itemscope
                 itemtype="https://schema.org/BreadcrumbList">
                 <li itemprop="itemListElement" itemscope
                     itemtype="https://schema.org/ListItem">

@@ -31,9 +31,9 @@
 @endpush
 <x-app-layout title="{{ $doctor->seo['title'] ?? $doctor->full_name }}" description="{{ $doctor->seo['description'] }}">
     <section class="bg-surface space-y-2.5 pb-4">
-        <div class="py-10">
+        <div class="py-10 overflow-x-auto no-scrollbar">
             <div class="container">
-                <ol class="flex space-x-2 font-medium" itemscope itemtype="https://schema.org/BreadcrumbList">
+                <ol class="flex space-x-2 font-medium [&_li]:text-nowrap" itemscope itemtype="https://schema.org/BreadcrumbList">
                     <li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
                         <a itemprop="item" href="{{ home_route() }}"
                             class="text-interactive hover:text-interactive-hovered hover:underline">

@@ -8,7 +8,7 @@
             ])
         >
             @if($block->has_image)
-                <div class="relative z-10 md:w-3/4 md:sticky md:top-60 md:self-start [&_img]:w-full overflow-hidden rounded-lg md:rounded-2xl">
+                <div class="relative z-10 md:w-3/4 md:sticky md:top-72 md:self-start [&_img]:w-full overflow-hidden rounded-lg md:rounded-2xl">
                     {{ $block->getResponsiveImage('default', $block->title) }}
                 </div>
             @endif

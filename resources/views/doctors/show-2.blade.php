@@ -33,29 +33,32 @@
 <x-app-layout title="{{ $doctor->seo['title'] ?? $doctor->full_name }}" description="{{ $doctor->seo['description'] }}">
     <section class="bg-surface-subdued pb-10 md:pb-16">
         <div class="container py-6 md:py-10">
-            <ol class="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-medium text-interactive/50 md:text-sm"
-                itemscope itemtype="https://schema.org/BreadcrumbList">
-                <li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
-                    <a itemprop="item" href="{{ home_route() }}"
-                        class="transition hover:text-interactive hover:underline">
-                        <span itemprop="name">Главная</span>
-                    </a>
-                    <meta itemprop="position" content="1" />
-                </li>
-                <li>/</li>
-                <li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
-                    <a itemprop="item" href="{{ city_route('pages.show', ['handle' => $doctorsPage->handle]) }}"
-                        class="transition hover:text-interactive hover:underline">
-                        <span itemprop="name">{{ $doctorsPage->breadcrumbs_title }}</span>
-                    </a>
-                    <meta itemprop="position" content="2" />
-                </li>
-                <li>/</li>
-                <li class="text-action-primary" itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
-                    <span itemprop="name">{{ $doctor->full_name }}</span>
-                    <meta itemprop="position" content="3" />
-                </li>
-            </ol>
+            <div class="overflow-x-auto no-scrollbar">
+                <ol class="flex items-center gap-x-2 gap-y-1 text-xs font-medium text-interactive/50 md:text-sm [&_li]:text-nowrap"
+                    itemscope itemtype="https://schema.org/BreadcrumbList">
+                    <li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+                        <a itemprop="item" href="{{ home_route() }}"
+                            class="transition hover:text-interactive hover:underline">
+                            <span itemprop="name">Главная</span>
+                        </a>
+                        <meta itemprop="position" content="1" />
+                    </li>
+                    <li>/</li>
+                    <li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+                        <a itemprop="item" href="{{ city_route('pages.show', ['handle' => $doctorsPage->handle]) }}"
+                            class="transition hover:text-interactive hover:underline">
+                            <span itemprop="name">{{ $doctorsPage->breadcrumbs_title }}</span>
+                        </a>
+                        <meta itemprop="position" content="2" />
+                    </li>
+                    <li>/</li>
+                    <li class="text-action-primary" itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+                        <span itemprop="name">{{ $doctor->full_name }}</span>
+                        <meta itemprop="position" content="3" />
+                    </li>
+                </ol>
+            </div>
+            
 
             <div class="mt-4 rounded-3xl border border-slate-100 bg-white p-3 shadow-sm md:mt-6 md:rounded-3xl md:p-6 lg:p-7">
                 <div class="flex flex-col gap-6 lg:flex-row lg:gap-8">
