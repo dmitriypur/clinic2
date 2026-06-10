@@ -349,5 +349,9 @@
             <x-banner.specialist-callback :block="$block"/>
             @break
 
+        @case(\App\Enums\BlockType::EXPERT_OPINION)
+            <x-block.expert-opinion :block="$block"/>
+            @break
+
     @endswitch
 </section>

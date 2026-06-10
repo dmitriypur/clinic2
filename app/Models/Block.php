@@ -389,7 +389,7 @@ class Block extends Model implements HasMedia, Sortable
 
     public function getAuthorAttribute()
     {
-        if ($this->type !== BlockType::AUTHOR || !($this->payload['author'] ?? false)) {
+        if ($this->type !== BlockType::AUTHOR && $this->type !== BlockType::EXPERT_OPINION || !($this->payload['author'] ?? false)) {
             return null;
         }
 

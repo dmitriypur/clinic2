@@ -203,8 +203,10 @@ class BlockResource extends Resource
                         ->label('Специалист')
                         ->options(Doctor::query()->pluck('surname', 'id'))
                         ->hidden(
-                            fn(Forms\Get $get) => BlockType::from($get('type')) !==
-                                BlockType::AUTHOR
+                            fn(Forms\Get $get) => !in_array(
+                                BlockType::from($get('type')),
+                                [BlockType::AUTHOR, BlockType::EXPERT_OPINION]
+                            )
                         ),
 
                     Forms\Components\TextInput::make('payload.url')
@@ -247,10 +249,22 @@ class BlockResource extends Resource
                             fn(Forms\Get $get) => !in_array(
                                 BlockType::from($get('type')),
                                 [BlockType::HTML, BlockType::TEXT_WITH_IMAGE, BlockType::TEXT_WITH_IMAGE_NEW,
-                                BlockType::TEXT_SUBDUED, BlockType::WELCOME, BlockType::POST_TEXT, BlockType::APPARATUS_DISEASES, BlockType::APPARATUS_METHODS, BlockType::APPARATUS_CONTRAINDICATIONS, BlockType::DIAGNOSTIC_METHODS, BlockType::TREATMENT_METHODS,]
+                                BlockType::TEXT_SUBDUED, BlockType::WELCOME, BlockType::POST_TEXT, BlockType::APPARATUS_DISEASES, BlockType::APPARATUS_METHODS, BlockType::APPARATUS_CONTRAINDICATIONS, BlockType::DIAGNOSTIC_METHODS, BlockType::TREATMENT_METHODS, BlockType::EXPERT_OPINION,]
                             )
                         )
                         ->columnSpan('full'),
+
+                    Forms\Components\Section::make([
+                        Forms\Components\TextInput::make('payload.fio_expert')
+                            ->label('Фио эксперта'),
+                        Forms\Components\TextInput::make('payload.position_expert')
+                            ->label('Должность эксперта'),
+                    ])
+                        ->columns(2)
+                        ->hidden(
+                            fn(Forms\Get $get) => BlockType::from($get('type')) !=
+                                BlockType::EXPERT_OPINION
+                        ),
 
                     Forms\Components\Select::make('payload.bg_block')
                         ->label('Цвет блока')
@@ -422,6 +436,7 @@ class BlockResource extends Resource
                                     BlockType::LIST_WITH_IMAGE,
                                     BlockType::APPARATUS_DISEASES,
                                     BlockType::DIAGNOSTIC_METHODS,
+                                    BlockType::EXPERT_OPINION,
                                 ])
                         ),
 

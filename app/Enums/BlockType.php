@@ -132,6 +132,7 @@ enum BlockType: int
     case RECEPTION_STEPS = 74;
     case DIAGNOSTIC_METHODS = 75;
     case TREATMENT_METHODS = 76;
+    case EXPERT_OPINION = 77;
 
 
 
@@ -211,6 +212,7 @@ enum BlockType: int
             self::RECEPTION_STEPS => 'Этапы приема',
             self::DIAGNOSTIC_METHODS => 'Методы диагностики',
             self::TREATMENT_METHODS => 'Методы лечения',
+            self::EXPERT_OPINION => 'Мнение эксперта',
         };
     }
 
