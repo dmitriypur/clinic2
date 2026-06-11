@@ -142,7 +142,18 @@ class BlockResource extends Resource
                     Forms\Components\Select::make('type')
                         ->columnSpanFull()
                         ->label('Тип')
-                        ->options(BlockType::toArray())
+                        ->options(function (Forms\Get $get, $livewire): array {
+                            $options = BlockType::toArray();
+                            $page = $livewire instanceof RelationManager && $livewire->getOwnerRecord() instanceof Page
+                                ? $livewire->getOwnerRecord()
+                                : Page::query()->find($get('page_id'));
+
+                            if ($page?->type !== PageType::Posts) {
+                                unset($options[BlockType::ARTICLE_NAVIGATION->value]);
+                            }
+
+                            return $options;
+                        })
                         ->default(BlockType::HTML->value)
                         ->reactive(),
 

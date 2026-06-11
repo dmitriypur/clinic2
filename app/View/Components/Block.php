@@ -5,6 +5,7 @@ namespace App\View\Components;
 use App\Enums\BlockBackgroundType;
 use App\Enums\BlockType;
 use App\Models\Block as PageBlock;
+use App\Models\Page;
 use Closure;
 use Illuminate\Contracts\View\View;
 use Illuminate\View\Component;
@@ -19,6 +20,7 @@ class Block extends Component
         public string    $breadcrumbsTitle,
         public string    $pageTitle,
         public string    $pageDescription,
+        public ?Page     $page = null,
     )
     {
         //
@@ -34,6 +36,10 @@ class Block extends Component
 
     public function shouldRender(): bool
     {
+        if ($this->block->type === BlockType::ARTICLE_NAVIGATION) {
+            return $this->page?->type === \App\Enums\PageType::Posts;
+        }
+
         if ($this->block->type !== BlockType::BRANCH) {
             return true;
         }

@@ -133,6 +133,7 @@ enum BlockType: int
     case DIAGNOSTIC_METHODS = 75;
     case TREATMENT_METHODS = 76;
     case EXPERT_OPINION = 77;
+    case ARTICLE_NAVIGATION = 78;
 
 
 
@@ -213,6 +214,7 @@ enum BlockType: int
             self::DIAGNOSTIC_METHODS => 'Методы диагностики',
             self::TREATMENT_METHODS => 'Методы лечения',
             self::EXPERT_OPINION => 'Мнение эксперта',
+            self::ARTICLE_NAVIGATION => 'Навигация по статьям',
         };
     }
 

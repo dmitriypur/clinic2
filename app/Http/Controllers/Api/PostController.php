@@ -11,12 +11,17 @@ use App\Http\Resources\PostResource;
 use App\Models\Doctor;
 use App\Models\Page;
 use App\Models\Tag;
+use App\Services\ArticleOrderingService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\ItemNotFoundException;
 
 
 class PostController extends Controller
 {
+    public function __construct(
+        private readonly ArticleOrderingService $articleOrderingService,
+    ) {}
+
     public function __invoke(IndexRequest $request, $handle = '')
     {
         $path = $request->path();
@@ -53,7 +58,7 @@ class PostController extends Controller
 
         if($handle){
             $tag = Tag::query()->where('handle', $handle)->firstOrFail()->withResolvedCitySeoVariables();
-            $posts = $tag->pages()
+            $postsQuery = $tag->pages()
                 ->where('active', true)
                 ->with(['tags', 'media', 'articleViewCounter'])
                 ->withCount([
@@ -62,7 +67,10 @@ class PostController extends Controller
                             $query->where('city_id', $currentCity->id);
                         }
                     },
-                ])
+                ]);
+
+            $posts = $this->articleOrderingService
+                ->apply($postsQuery)
                 ->paginate($count_items);
 
             $posts->setCollection(
@@ -82,10 +90,9 @@ class PostController extends Controller
         }
 
         $filters = app()->make(PostFilter::class, ['queryParams' => array_filter($data)]);
-        $posts = Page::filter($filters)
+        $postsQuery = Page::filter($filters)
             ->where('active', true)
             ->where('category_id', $categoryCurrent->id)
-            ->orderByDesc('created_at')
             ->with(['tags', 'media', 'category', 'articleViewCounter'])
             ->withCount([
                 'articleBookingConversions as booking_conversions_count' => function ($query) use ($currentCity) {
@@ -93,7 +100,10 @@ class PostController extends Controller
                         $query->where('city_id', $currentCity->id);
                     }
                 },
-            ])
+            ]);
+
+        $posts = $this->articleOrderingService
+            ->apply($postsQuery)
             ->paginate($count_items);
 
         $posts->setCollection(

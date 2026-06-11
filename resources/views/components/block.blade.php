@@ -353,5 +353,9 @@
             <x-block.expert-opinion :block="$block"/>
             @break
 
+        @case(\App\Enums\BlockType::ARTICLE_NAVIGATION)
+            <x-block.article-navigation :page="$page"/>
+            @break
+
     @endswitch
 </section>

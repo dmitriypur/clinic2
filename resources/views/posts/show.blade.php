@@ -51,6 +51,7 @@
             @foreach($page->blocks as $index => $block)
                 <x-block
                     :block="$block"
+                    :page="$page"
                     breadcrumbsTitle="{{ $page->breadcrumbs_title }}"
                     pageTitle="{{ $page->title }}"
                     pageDescription="{{ $page->seo['description'] }}"
@@ -102,6 +103,7 @@
                 @foreach($page->blocks as $index => $block)
                     <x-block
                         :block="$block"
+                        :page="$page"
                         breadcrumbsTitle="{{ $page->breadcrumbs_title }}"
                         pageTitle="{{ $page->title }}"
                         pageDescription="{{ $page->seo['description'] }}"

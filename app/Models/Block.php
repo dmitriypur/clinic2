@@ -20,6 +20,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Http\File;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Str;
 use Spatie\EloquentSortable\Sortable;
 use Spatie\EloquentSortable\SortableTrait;
@@ -67,7 +68,39 @@ class Block extends Model implements HasMedia, Sortable
     {
         parent::boot();
 
+        static::saving(function (Block $block): void {
+            if ($block->type !== BlockType::ARTICLE_NAVIGATION) {
+                return;
+            }
+
+            $page = $block->page()->withoutGlobalScopes()->first();
+
+            if ($page?->type !== PageType::Posts) {
+                throw ValidationException::withMessages([
+                    'type' => 'Блок навигации можно добавить только к статье.',
+                ]);
+            }
+
+            $duplicateExists = static::query()
+                ->withoutGlobalScopes()
+                ->where('page_id', $block->page_id)
+                ->where('type', BlockType::ARTICLE_NAVIGATION)
+                ->when($block->exists, fn ($query) => $query->whereKeyNot($block->getKey()))
+                ->exists();
+
+            if ($duplicateExists) {
+                throw ValidationException::withMessages([
+                    'type' => 'У статьи уже есть блок навигации.',
+                ]);
+            }
+        });
+
         static::updated(function ($block) {
+            Cache::forget('services_with_media_and_prices');
+            $block->resolvePageForCache()?->clearCache();
+        });
+
+        static::created(function ($block) {
             Cache::forget('services_with_media_and_prices');
             $block->resolvePageForCache()?->clearCache();
         });
