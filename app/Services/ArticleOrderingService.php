@@ -6,11 +6,16 @@ use App\Enums\PageType;
 use App\Models\Page;
 use App\Support\ArticleNeighbors;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\Relation;
 
 class ArticleOrderingService
 {
-    public function apply(Builder $query): Builder
+    public function apply(Builder|Relation $query): Builder
     {
+        if ($query instanceof Relation) {
+            $query = $query->getQuery();
+        }
+
         return $query
             ->where('type', PageType::Posts)
             ->reorder()

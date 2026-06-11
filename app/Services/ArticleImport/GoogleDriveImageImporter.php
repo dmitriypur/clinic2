@@ -7,6 +7,7 @@ namespace App\Services\ArticleImport;
 use App\Models\Block;
 use App\Models\Page;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
 
 class GoogleDriveImageImporter
 {
@@ -33,6 +34,30 @@ class GoogleDriveImageImporter
                 ->toMediaCollection('default');
         } finally {
             @unlink($tempPath);
+        }
+    }
+
+    public function attachStoredFileToBlock(
+        Block $block,
+        string $path,
+        string $disk = 'local',
+    ): void {
+        if (! Storage::disk($disk)->exists($path)) {
+            throw new ArticleImportException(
+                'загрузка изображения эксперта',
+                'Файл фотографии эксперта не найден.'
+            );
+        }
+
+        $absolutePath = Storage::disk($disk)->path($path);
+        $extension = pathinfo($path, PATHINFO_EXTENSION) ?: 'webp';
+
+        try {
+            $block->addMedia($absolutePath)
+                ->usingFileName("article-expert-{$block->id}.{$extension}")
+                ->toMediaCollection('default');
+        } finally {
+            Storage::disk($disk)->delete($path);
         }
     }
 

@@ -7,9 +7,12 @@ namespace App\Services\ArticleImport;
 use App\Enums\BlockType;
 use App\Enums\PageType;
 use App\Models\Block;
+use App\Models\Doctor;
 use App\Models\Page;
 use App\Models\Tag;
+use App\Services\ArticleNavigationBlockService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Throwable;
 
@@ -19,6 +22,7 @@ class ArticleImportService
         private readonly GoogleDocsFetcher $googleDocsFetcher,
         private readonly ArticleContentParser $parser,
         private readonly GoogleDriveImageImporter $imageImporter,
+        private readonly ArticleNavigationBlockService $articleNavigationBlockService,
     ) {}
 
     public function import(array $data): ArticleImportResult
@@ -53,6 +57,10 @@ class ArticleImportService
             $order += count($parsed['sections']);
 
             $warnings = $this->attachImportedImages($createdPostTextBlocks, $parsed['image_urls'] ?? [], $page);
+            $warnings = array_merge(
+                $warnings,
+                $this->createExpertOpinionBlock($page, $data),
+            );
 
             if (!empty($parsed['faq_items'])) {
                 Block::query()->create([
@@ -66,6 +74,8 @@ class ArticleImportService
                     'settings' => $this->defaultSettings(),
                 ]);
             }
+
+            $this->articleNavigationBlockService->ensureForPage($page);
 
             if ($data['append_default_blocks'] ?? true) {
                 $this->appendDefaultBlocks($page, $order);
@@ -211,6 +221,56 @@ class ArticleImportService
         }
 
         return $blocks;
+    }
+
+    private function createExpertOpinionBlock(Page $page, array $data): array
+    {
+        if (! ($data['include_expert_opinion'] ?? false)) {
+            return [];
+        }
+
+        $expertId = $data['expert_id'] ?? null;
+        $bodyHtml = trim((string) ($data['expert_body_html'] ?? ''));
+        $imagePath = trim((string) ($data['expert_image_path'] ?? ''));
+
+        $doctor = Doctor::query()
+            ->withoutGlobalScopes()
+            ->find($expertId);
+
+        if (! $doctor || $bodyHtml === '' || $imagePath === '') {
+            if ($imagePath !== '') {
+                Storage::disk('local')->delete($imagePath);
+            }
+
+            return ['Не удалось добавить блок «Мнение эксперта»: проверьте врача, текст и фотографию.'];
+        }
+
+        $block = Block::query()->create([
+            'page_id' => $page->id,
+            'type' => BlockType::EXPERT_OPINION,
+            'title' => 'Мнение эксперта',
+            'body_html' => $bodyHtml,
+            'payload' => [
+                'author' => $doctor->id,
+                'fio_expert' => $doctor->full_name,
+                'position_expert' => $doctor->speciality,
+            ],
+            'settings' => $this->defaultSettings([
+                'background' => '1',
+            ]),
+        ]);
+
+        try {
+            $this->imageImporter->attachStoredFileToBlock($block, $imagePath);
+
+            return [];
+        } catch (Throwable $exception) {
+            report($exception);
+            Storage::disk('local')->delete($imagePath);
+            $block->delete();
+
+            return ['Не удалось добавить блок «Мнение эксперта»: фотография не была обработана.'];
+        }
     }
 
     private function appendDefaultBlocks(Page $page, int $startOrder): void

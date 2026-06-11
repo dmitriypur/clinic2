@@ -12,6 +12,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Storage;
 use Throwable;
 
 class ImportArticle implements ShouldQueue
@@ -57,6 +58,11 @@ class ImportArticle implements ShouldQueue
         $message = $exception instanceof ArticleImportException
             ? $exception->userMessage()
             : $exception->getMessage();
+        $expertImagePath = trim((string) data_get($articleImport->payload, 'expert_image_path', ''));
+
+        if ($expertImagePath !== '') {
+            Storage::disk('local')->delete($expertImagePath);
+        }
 
         $articleImport->update([
             'status' => ArticleImport::STATUS_FAILED,

@@ -7,6 +7,7 @@ use App\Enums\PageType;
 use App\Models\Block;
 use App\Models\Category;
 use App\Models\Page;
+use App\Models\Tag;
 use App\Services\ArticleOrderingService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Blade;
@@ -72,6 +73,25 @@ class ArticleNavigationTest extends TestCase
         $this->assertSame($olderId->id, $neighbors->next?->id);
     }
 
+    public function test_article_ordering_accepts_tag_pages_relation_and_keeps_tag_filter(): void
+    {
+        $category = $this->createCategory('stati');
+        $tag = Tag::query()->create([
+            'title' => 'Близорукость',
+            'handle' => 'blizorukost',
+        ]);
+        $taggedArticle = $this->createPage($category, 'tagged', '2026-06-02 10:00:00');
+        $untaggedArticle = $this->createPage($category, 'untagged', '2026-06-03 10:00:00');
+        $taggedArticle->tags()->attach($tag);
+
+        $articles = app(ArticleOrderingService::class)
+            ->apply($tag->pages())
+            ->get();
+
+        $this->assertSame([$taggedArticle->id], $articles->pluck('id')->all());
+        $this->assertFalse($articles->contains($untaggedArticle));
+    }
+
     public function test_navigation_block_renders_only_for_post_pages(): void
     {
         $category = $this->createCategory('stati');
@@ -133,12 +153,6 @@ class ArticleNavigationTest extends TestCase
         $article = $this->createPage($category, 'article', '2026-06-01 10:00:00');
         $blog = $this->createPage($category, 'blog', '2026-06-01 10:00:00', ['type' => PageType::Blog]);
 
-        Block::query()->create([
-            'page_id' => $article->id,
-            'type' => BlockType::ARTICLE_NAVIGATION,
-            'title' => 'Навигация по статьям',
-        ]);
-
         try {
             Block::query()->create([
                 'page_id' => $article->id,
@@ -157,6 +171,91 @@ class ArticleNavigationTest extends TestCase
             'type' => BlockType::ARTICLE_NAVIGATION,
             'title' => 'Навигация блога',
         ]);
+    }
+
+    public function test_post_page_automatically_gets_one_navigation_block(): void
+    {
+        $category = $this->createCategory('stati');
+
+        $article = $this->createPage($category, 'article', '2026-06-01 10:00:00');
+        $this->createPage($category, 'blog', '2026-06-01 10:00:00', ['type' => PageType::Blog]);
+
+        $this->assertSame(
+            1,
+            $article->blocks()
+                ->where('type', BlockType::ARTICLE_NAVIGATION)
+                ->count(),
+        );
+        $this->assertSame(
+            1,
+            Block::query()
+                ->where('type', BlockType::ARTICLE_NAVIGATION)
+                ->count(),
+        );
+    }
+
+    public function test_navigation_is_placed_after_article_content_and_before_faq(): void
+    {
+        $category = $this->createCategory('stati');
+        $article = $this->createPage($category, 'article', '2026-06-01 10:00:00');
+
+        Block::query()->create([
+            'page_id' => $article->id,
+            'type' => BlockType::POST_TEXT,
+            'title' => 'Первый текстовый блок',
+        ]);
+        Block::query()->create([
+            'page_id' => $article->id,
+            'type' => BlockType::EXPERT_OPINION,
+            'title' => 'Мнение эксперта',
+        ]);
+        Block::query()->create([
+            'page_id' => $article->id,
+            'type' => BlockType::FAQ,
+            'title' => 'Часто задаваемые вопросы',
+        ]);
+        Block::query()->create([
+            'page_id' => $article->id,
+            'type' => BlockType::CARDS_SLIDER,
+            'title' => 'Читайте также',
+        ]);
+
+        $this->assertSame(
+            [
+                BlockType::POST_TEXT,
+                BlockType::EXPERT_OPINION,
+                BlockType::ARTICLE_NAVIGATION,
+                BlockType::FAQ,
+                BlockType::CARDS_SLIDER,
+            ],
+            $article->blocks()->pluck('type')->all(),
+        );
+    }
+
+    public function test_navigation_without_faq_is_placed_after_last_article_content_block(): void
+    {
+        $category = $this->createCategory('stati');
+        $article = $this->createPage($category, 'article', '2026-06-01 10:00:00');
+
+        Block::query()->create([
+            'page_id' => $article->id,
+            'type' => BlockType::POST_TEXT,
+            'title' => 'Первый текстовый блок',
+        ]);
+        Block::query()->create([
+            'page_id' => $article->id,
+            'type' => BlockType::CARDS_SLIDER,
+            'title' => 'Читайте также',
+        ]);
+
+        $this->assertSame(
+            [
+                BlockType::POST_TEXT,
+                BlockType::ARTICLE_NAVIGATION,
+                BlockType::CARDS_SLIDER,
+            ],
+            $article->blocks()->pluck('type')->all(),
+        );
     }
 
     private function createCategory(string $handle): Category

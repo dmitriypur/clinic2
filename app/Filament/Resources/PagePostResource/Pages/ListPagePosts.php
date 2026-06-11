@@ -58,6 +58,35 @@ class ListPagePosts extends ListRecords
                     Forms\Components\TextInput::make('theme')
                         ->label('Тема статьи')
                         ->helperText('Если в документе есть строка "Тема:", она подставится автоматически.'),
+                    Forms\Components\Toggle::make('include_expert_opinion')
+                        ->label('Добавить блок «Мнение эксперта»')
+                        ->live()
+                        ->default(false),
+                    Forms\Components\Select::make('expert_id')
+                        ->label('Врач для блока «Мнение эксперта»')
+                        ->searchable()
+                        ->options(
+                            Doctor::query()
+                                ->orderBy('surname')
+                                ->orderBy('name')
+                                ->get()
+                                ->mapWithKeys(fn(Doctor $doctor) => [$doctor->id => trim($doctor->surname . ' ' . $doctor->name)])
+                                ->all()
+                        )
+                        ->required(fn(Get $get): bool => (bool) $get('include_expert_opinion'))
+                        ->visible(fn(Get $get): bool => (bool) $get('include_expert_opinion')),
+                    Forms\Components\RichEditor::make('expert_body_html')
+                        ->label('Текст мнения эксперта')
+                        ->required(fn(Get $get): bool => (bool) $get('include_expert_opinion'))
+                        ->visible(fn(Get $get): bool => (bool) $get('include_expert_opinion')),
+                    Forms\Components\FileUpload::make('expert_image_path')
+                        ->label('Фото врача для блока')
+                        ->disk('local')
+                        ->directory('article-imports/expert-images')
+                        ->image()
+                        ->required(fn(Get $get): bool => (bool) $get('include_expert_opinion'))
+                        ->visible(fn(Get $get): bool => (bool) $get('include_expert_opinion'))
+                        ->helperText('Используется только в блоке «Мнение эксперта» и не заменяет фото профиля врача.'),
                     Forms\Components\TextInput::make('breadcrumbs_title')
                         ->label('Заголовок для хлебных крошек'),
                     Forms\Components\Toggle::make('append_default_blocks')
