@@ -4,10 +4,10 @@ namespace App\Support;
 
 use App\Models\Page;
 
-final readonly class ArticleNeighbors
+final class ArticleNeighbors
 {
     public function __construct(
-        public ?Page $previous,
-        public ?Page $next,
+        public readonly ?Page $previous,
+        public readonly ?Page $next,
     ) {}
 }
