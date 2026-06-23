@@ -1023,6 +1023,9 @@
         overflow: visible;
         padding-bottom: 10px;
     }
+    .smart-action .btn::before{
+        content: none;
+    }
     .smart-action .btn span{
         display: flex;
         align-items: center;
