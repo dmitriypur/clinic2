@@ -354,7 +354,7 @@
             @break
 
         @case(\App\Enums\BlockType::ARTICLE_NAVIGATION)
-            <x-block.article-navigation :page="$page"/>
+            <x-article-navigation :page="$page"/>
             @break
 
     @endswitch

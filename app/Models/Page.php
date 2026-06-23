@@ -45,10 +45,6 @@ class Page extends Model implements HasMedia
 
     protected static function booted()
     {
-        static::saved(function (Page $page) {
-            $page->clearCache();
-        });
-
         static::deleting(function (Page $page) {
             $page->blocks()->with('media')->get()->each(function (Block $block) use ($page) {
                 $block->setRelation('page', $page);
@@ -58,10 +54,6 @@ class Page extends Model implements HasMedia
             $page->tags()->detach();
             $page->cities()->detach();
             $page->reviews()->detach();
-        });
-
-        static::deleted(function (Page $page) {
-            $page->clearCache();
         });
     }
 

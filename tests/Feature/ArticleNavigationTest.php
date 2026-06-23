@@ -2,21 +2,35 @@
 
 namespace Tests\Feature;
 
+use App\Contracts\ArticleSortStrategy;
 use App\Enums\BlockType;
 use App\Enums\PageType;
+use App\Filament\Actions\Tables\ReplicateBlockAction;
 use App\Models\Block;
 use App\Models\Category;
 use App\Models\Page;
 use App\Models\Tag;
 use App\Services\ArticleOrderingService;
+use App\Services\ArticleNavigationBlockService;
+use App\Services\ArticleSorting\NewestArticleSortStrategy;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
 class ArticleNavigationTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_default_article_sort_strategy_is_resolved_from_the_container(): void
+    {
+        $this->assertInstanceOf(
+            NewestArticleSortStrategy::class,
+            app(ArticleSortStrategy::class),
+        );
+    }
 
     public function test_article_order_and_neighbors_match_the_cards_order(): void
     {
@@ -173,6 +187,67 @@ class ArticleNavigationTest extends TestCase
         ]);
     }
 
+    public function test_navigation_block_can_be_deleted_and_added_manually_again(): void
+    {
+        $category = $this->createCategory('stati');
+        $article = $this->createPage($category, 'article', '2026-06-01 10:00:00');
+
+        $article->blocks()
+            ->where('type', BlockType::ARTICLE_NAVIGATION)
+            ->firstOrFail()
+            ->delete();
+
+        $this->assertSame(0, $article->blocks()->where('type', BlockType::ARTICLE_NAVIGATION)->count());
+
+        Block::query()->create([
+            'page_id' => $article->id,
+            'type' => BlockType::ARTICLE_NAVIGATION,
+            'title' => 'Навигация по статьям',
+        ]);
+
+        $this->assertSame(1, $article->blocks()->where('type', BlockType::ARTICLE_NAVIGATION)->count());
+    }
+
+    public function test_block_events_still_clear_the_shared_services_cache(): void
+    {
+        $category = $this->createCategory('stati');
+        $article = $this->createPage($category, 'article', '2026-06-01 10:00:00');
+        Cache::put('services_with_media_and_prices', ['cached']);
+
+        Block::query()->create([
+            'page_id' => $article->id,
+            'type' => BlockType::POST_TEXT,
+            'title' => 'Текст статьи',
+        ]);
+
+        $this->assertFalse(Cache::has('services_with_media_and_prices'));
+    }
+
+    public function test_navigation_block_cannot_be_replicated_in_filament(): void
+    {
+        $category = $this->createCategory('stati');
+        $article = $this->createPage($category, 'article', '2026-06-01 10:00:00');
+        $navigation = $article->blocks()
+            ->where('type', BlockType::ARTICLE_NAVIGATION)
+            ->firstOrFail();
+        $content = Block::query()->create([
+            'page_id' => $article->id,
+            'type' => BlockType::POST_TEXT,
+            'title' => 'Текст статьи',
+        ]);
+
+        $this->assertTrue(
+            ReplicateBlockAction::make('replicate-navigation')
+                ->record($navigation)
+                ->isHidden()
+        );
+        $this->assertFalse(
+            ReplicateBlockAction::make('replicate-content')
+                ->record($content)
+                ->isHidden()
+        );
+    }
+
     public function test_post_page_automatically_gets_one_navigation_block(): void
     {
         $category = $this->createCategory('stati');
@@ -253,6 +328,113 @@ class ArticleNavigationTest extends TestCase
                 BlockType::POST_TEXT,
                 BlockType::ARTICLE_NAVIGATION,
                 BlockType::CARDS_SLIDER,
+            ],
+            $article->blocks()->pluck('type')->all(),
+        );
+    }
+
+    public function test_navigation_is_removed_when_page_stops_being_a_post_and_restored_when_it_becomes_a_post_again(): void
+    {
+        $category = $this->createCategory('stati');
+        $article = $this->createPage($category, 'article', '2026-06-01 10:00:00');
+
+        $this->assertSame(1, $article->blocks()->where('type', BlockType::ARTICLE_NAVIGATION)->count());
+
+        $article->update(['type' => PageType::Blog]);
+
+        $this->assertSame(0, $article->blocks()->where('type', BlockType::ARTICLE_NAVIGATION)->count());
+
+        $article->update(['type' => PageType::Posts]);
+
+        $this->assertSame(1, $article->blocks()->where('type', BlockType::ARTICLE_NAVIGATION)->count());
+    }
+
+    public function test_positioning_does_not_update_blocks_when_order_is_already_correct(): void
+    {
+        $category = $this->createCategory('stati');
+        $article = $this->createPage($category, 'article', '2026-06-01 10:00:00');
+
+        Block::query()->create([
+            'page_id' => $article->id,
+            'type' => BlockType::POST_TEXT,
+            'title' => 'Текст статьи',
+        ]);
+
+        $updates = [];
+        DB::listen(function ($query) use (&$updates): void {
+            if (str_starts_with(strtolower(ltrim($query->sql)), 'update "blocks"')) {
+                $updates[] = $query->sql;
+            }
+        });
+
+        app(ArticleNavigationBlockService::class)->positionExistingForPage($article);
+
+        $this->assertSame([], $updates);
+    }
+
+    public function test_moving_a_block_repositions_navigation_on_both_pages(): void
+    {
+        $category = $this->createCategory('stati');
+        $source = $this->createPage($category, 'source', '2026-06-02 10:00:00');
+        $target = $this->createPage($category, 'target', '2026-06-01 10:00:00');
+
+        $content = Block::query()->create([
+            'page_id' => $source->id,
+            'type' => BlockType::POST_TEXT,
+            'title' => 'Переносимый текст',
+        ]);
+
+        $this->assertSame(
+            2,
+            $source->blocks()->where('type', BlockType::ARTICLE_NAVIGATION)->value('order_column'),
+        );
+
+        $content->update(['page_id' => $target->id]);
+
+        $this->assertSame(
+            1,
+            $source->blocks()->where('type', BlockType::ARTICLE_NAVIGATION)->value('order_column'),
+        );
+        $this->assertSame(
+            [BlockType::POST_TEXT, BlockType::ARTICLE_NAVIGATION],
+            $target->blocks()->pluck('type')->all(),
+        );
+    }
+
+    public function test_deferred_positioning_updates_block_order_only_once(): void
+    {
+        $category = $this->createCategory('stati');
+        $article = $this->createPage($category, 'article', '2026-06-01 10:00:00');
+        $service = app(ArticleNavigationBlockService::class);
+
+        $updates = [];
+        DB::listen(function ($query) use (&$updates): void {
+            if (str_starts_with(strtolower(ltrim($query->sql)), 'update "blocks"')) {
+                $updates[] = $query->sql;
+            }
+        });
+
+        $service->deferPositioning($article, function () use ($article): void {
+            foreach ([
+                BlockType::POST_TEXT,
+                BlockType::EXPERT_OPINION,
+                BlockType::FAQ,
+            ] as $index => $type) {
+                Block::query()->create([
+                    'page_id' => $article->id,
+                    'type' => $type,
+                    'title' => 'Блок ' . $index,
+                ]);
+            }
+        });
+
+        $this->assertCount(4, $updates);
+        $this->assertSame(
+            [
+                BlockType::POST_TEXT,
+                BlockType::EXPERT_OPINION,
+                BlockType::ARTICLE_NAVIGATION,
+                BlockType::FAQ,
             ],
             $article->blocks()->pluck('type')->all(),
         );

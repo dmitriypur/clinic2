@@ -2,6 +2,8 @@
 
 namespace App\Filament\Actions\Tables;
 
+use App\Enums\BlockType;
+use App\Models\Block;
 use Filament\Forms\Components\Select;
 use Filament\Tables\Actions\ReplicateAction;
 use Illuminate\Database\Eloquent\Model;
@@ -11,6 +13,11 @@ class ReplicateBlockAction extends ReplicateAction
     protected function setUp(): void
     {
         parent::setUp();
+
+        $this->hidden(
+            fn (Model $record): bool => $record instanceof Block
+                && $record->type === BlockType::ARTICLE_NAVIGATION
+        );
 
         $this->excludeAttributes(['order_column']);
 

@@ -95,31 +95,6 @@ class Block extends Model implements HasMedia, Sortable
             }
         });
 
-        static::updated(function ($block) {
-            Cache::forget('services_with_media_and_prices');
-            $block->resolvePageForCache()?->clearCache();
-        });
-
-        static::created(function ($block) {
-            Cache::forget('services_with_media_and_prices');
-            $block->resolvePageForCache()?->clearCache();
-        });
-
-        static::deleted(function ($block) {
-            Cache::forget('services_with_media_and_prices');
-            $block->resolvePageForCache()?->clearCache();
-        });
-    }
-
-    private function resolvePageForCache(): ?Page
-    {
-        $page = $this->getRelationValue('page');
-
-        if ($page instanceof Page) {
-            return $page;
-        }
-
-        return $this->page()->with('category')->first();
     }
 
     public function registerMediaConversions(Media $media = null): void

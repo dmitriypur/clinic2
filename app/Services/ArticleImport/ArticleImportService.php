@@ -11,6 +11,7 @@ use App\Models\Doctor;
 use App\Models\Page;
 use App\Models\Tag;
 use App\Services\ArticleNavigationBlockService;
+use App\Services\PageService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -23,6 +24,7 @@ class ArticleImportService
         private readonly ArticleContentParser $parser,
         private readonly GoogleDriveImageImporter $imageImporter,
         private readonly ArticleNavigationBlockService $articleNavigationBlockService,
+        private readonly PageService $pageService,
     ) {}
 
     public function import(array $data): ArticleImportResult
@@ -49,37 +51,47 @@ class ArticleImportService
                 $page->tags()->sync(collect($tags)->pluck('id')->all());
             }
 
-            $order = 1;
+            $warnings = $this->articleNavigationBlockService->deferPositioning(
+                $page,
+                function () use ($page, $data, $parsed): array {
+                    $order = 1;
 
-            $this->createAuthorBlock($page, $data, $parsed, $order++);
-            $this->createTagsBlock($page, $parsed, $order++);
-            $createdPostTextBlocks = $this->createPostTextBlocks($page, $parsed, $order);
-            $order += count($parsed['sections']);
+                    $this->createAuthorBlock($page, $data, $parsed, $order++);
+                    $this->createTagsBlock($page, $parsed, $order++);
+                    $createdPostTextBlocks = $this->createPostTextBlocks($page, $parsed, $order);
+                    $order += count($parsed['sections']);
 
-            $warnings = $this->attachImportedImages($createdPostTextBlocks, $parsed['image_urls'] ?? [], $page);
-            $warnings = array_merge(
-                $warnings,
-                $this->createExpertOpinionBlock($page, $data),
+                    $warnings = $this->attachImportedImages(
+                        $createdPostTextBlocks,
+                        $parsed['image_urls'] ?? [],
+                        $page,
+                    );
+                    $warnings = array_merge(
+                        $warnings,
+                        $this->createExpertOpinionBlock($page, $data),
+                    );
+
+                    if (!empty($parsed['faq_items'])) {
+                        Block::query()->create([
+                            'page_id' => $page->id,
+                            'type' => BlockType::FAQ,
+                            'title' => 'Часто задаваемые вопросы',
+                            'order_column' => $order++,
+                            'payload' => [
+                                'faq' => $parsed['faq_items'],
+                            ],
+                            'settings' => $this->defaultSettings(),
+                        ]);
+                    }
+
+                    if ($data['append_default_blocks'] ?? true) {
+                        $this->appendDefaultBlocks($page, $order);
+                    }
+
+                    return $warnings;
+                },
             );
-
-            if (!empty($parsed['faq_items'])) {
-                Block::query()->create([
-                    'page_id' => $page->id,
-                    'type' => BlockType::FAQ,
-                    'title' => 'Часто задаваемые вопросы',
-                    'order_column' => $order++,
-                    'payload' => [
-                        'faq' => $parsed['faq_items'],
-                    ],
-                    'settings' => $this->defaultSettings(),
-                ]);
-            }
-
-            $this->articleNavigationBlockService->ensureForPage($page);
-
-            if ($data['append_default_blocks'] ?? true) {
-                $this->appendDefaultBlocks($page, $order);
-            }
+            $this->pageService->clearPageCache($page);
 
             return new ArticleImportResult(
                 page: $page->fresh(['blocks', 'tags', 'category']),

@@ -13,6 +13,7 @@ use App\Services\ArticleImport\ArticleImportService;
 use App\Services\ArticleImport\GoogleDriveImageImporter;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use RuntimeException;
@@ -127,6 +128,30 @@ class ArticleImportServiceTest extends TestCase
         $this->assertSame(
             ArticleImport::STATUS_FAILED,
             $articleImport->fresh()->status,
+        );
+    }
+
+    public function test_import_positions_article_navigation_once_after_all_blocks_are_created(): void
+    {
+        $updates = [];
+        DB::listen(function ($query) use (&$updates): void {
+            if (str_starts_with(strtolower(ltrim($query->sql)), 'update "blocks"')) {
+                $updates[] = $query->sql;
+            }
+        });
+
+        $result = app(ArticleImportService::class)->import($this->importData());
+
+        $this->assertCount($result->page->blocks->count(), $updates);
+        $this->assertSame(
+            [
+                BlockType::AUTHOR,
+                BlockType::TAGS,
+                BlockType::POST_TEXT,
+                BlockType::ARTICLE_NAVIGATION,
+                BlockType::FAQ,
+            ],
+            $result->page->blocks->pluck('type')->all(),
         );
     }
 

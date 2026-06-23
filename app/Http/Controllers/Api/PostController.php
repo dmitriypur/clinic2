@@ -59,7 +59,6 @@ class PostController extends Controller
         if($handle){
             $tag = Tag::query()->where('handle', $handle)->firstOrFail()->withResolvedCitySeoVariables();
             $postsQuery = $tag->pages()
-                ->where('active', true)
                 ->with(['tags', 'media', 'articleViewCounter'])
                 ->withCount([
                     'articleBookingConversions as booking_conversions_count' => function ($query) use ($currentCity) {
@@ -91,7 +90,6 @@ class PostController extends Controller
 
         $filters = app()->make(PostFilter::class, ['queryParams' => array_filter($data)]);
         $postsQuery = Page::filter($filters)
-            ->where('active', true)
             ->where('category_id', $categoryCurrent->id)
             ->with(['tags', 'media', 'category', 'articleViewCounter'])
             ->withCount([

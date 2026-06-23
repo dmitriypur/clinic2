@@ -150,6 +150,15 @@ class BlockResource extends Resource
 
                             if ($page?->type !== PageType::Posts) {
                                 unset($options[BlockType::ARTICLE_NAVIGATION->value]);
+                            } elseif (
+                                (int) $get('type') !== BlockType::ARTICLE_NAVIGATION->value
+                                && Block::query()
+                                    ->withoutGlobalScopes()
+                                    ->where('page_id', $page->id)
+                                    ->where('type', BlockType::ARTICLE_NAVIGATION)
+                                    ->exists()
+                            ) {
+                                unset($options[BlockType::ARTICLE_NAVIGATION->value]);
                             }
 
                             return $options;

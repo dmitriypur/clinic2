@@ -1,7 +1,3 @@
-@php
-    $neighbors = app(\App\Services\ArticleOrderingService::class)->neighbors($page);
-@endphp
-
 <div class="article-navigation container">
     <nav
         class="mx-auto flex max-w-[668px] flex-col gap-4 md:grid md:grid-cols-2 md:gap-8"

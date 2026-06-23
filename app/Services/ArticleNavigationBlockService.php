@@ -8,9 +8,30 @@ use App\Enums\BlockType;
 use App\Enums\PageType;
 use App\Models\Block;
 use App\Models\Page;
+use Closure;
 
 class ArticleNavigationBlockService
 {
+    /** @var array<int, int> */
+    private array $deferredPageIds = [];
+
+    public function syncForPage(Page $page): ?Block
+    {
+        if ($page->type === PageType::Posts) {
+            return $this->ensureForPage($page);
+        }
+
+        Block::query()
+            ->withoutGlobalScopes()
+            ->where('page_id', $page->id)
+            ->where('type', BlockType::ARTICLE_NAVIGATION)
+            ->get()
+            ->each
+            ->delete();
+
+        return null;
+    }
+
     public function ensureForPage(Page $page): ?Block
     {
         if ($page->type !== PageType::Posts) {
@@ -27,14 +48,19 @@ class ArticleNavigationBlockService
                 'payload' => [],
             ]);
 
-        $this->positionExistingForPage($page);
+        if (! $block->wasRecentlyCreated) {
+            $this->positionExistingForPage($page);
+        }
 
         return $block;
     }
 
     public function positionExistingForPage(Page $page): void
     {
-        if ($page->type !== PageType::Posts) {
+        if (
+            $page->type !== PageType::Posts
+            || $this->isPositioningDeferredFor($page->id)
+        ) {
             return;
         }
 
@@ -77,13 +103,52 @@ class ArticleNavigationBlockService
             }
         }
 
+        $currentOrder = $blocks->pluck('id')->all();
+        $newOrder = $orderedBlocks->pluck('id')->all();
+        $orderColumnsAreNormalized = $blocks->values()->every(
+            fn (Block $block, int $index): bool => $block->order_column === $index + 1,
+        );
+
+        if ($currentOrder === $newOrder && $orderColumnsAreNormalized) {
+            return;
+        }
+
         Block::setNewOrder(
-            $orderedBlocks->pluck('id')->all(),
+            $newOrder,
             1,
             null,
             fn($query) => $query
                 ->withoutGlobalScopes()
                 ->where('page_id', $page->id),
         );
+    }
+
+    public function deferPositioning(Page $page, Closure $callback): mixed
+    {
+        $pageId = (int) $page->id;
+        $this->deferredPageIds[$pageId] = ($this->deferredPageIds[$pageId] ?? 0) + 1;
+        $completed = false;
+
+        try {
+            $result = $callback();
+            $completed = true;
+
+            return $result;
+        } finally {
+            $this->deferredPageIds[$pageId]--;
+
+            if ($this->deferredPageIds[$pageId] === 0) {
+                unset($this->deferredPageIds[$pageId]);
+
+                if ($completed) {
+                    $this->positionExistingForPage($page);
+                }
+            }
+        }
+    }
+
+    public function isPositioningDeferredFor(int $pageId): bool
+    {
+        return isset($this->deferredPageIds[$pageId]);
     }
 }

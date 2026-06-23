@@ -3,19 +3,21 @@
 namespace App\Providers;
 
 use App\Clinic;
+use App\Contracts\ArticleSortStrategy;
 use App\Models\Block;
 use App\Models\Doctor;
 use App\Models\Page;
 use App\Observers\BlockObserver;
 use App\Observers\DoctorObserver;
 use App\Observers\PageObserver;
+use App\Services\ArticleNavigationBlockService;
+use App\Services\ArticleSorting\NewestArticleSortStrategy;
+use App\Services\ServicePriceService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\View;
 use RyanChandler\FilamentNavigation\Filament\Resources\NavigationResource;
 use RyanChandler\FilamentNavigation\Models\Navigation;
-
-use Illuminate\Support\Facades\View;
-use App\Services\ServicePriceService;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -25,7 +27,9 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(\App\Services\CityService::class);
+        $this->app->singleton(ArticleNavigationBlockService::class);
         $this->app->singleton(ServicePriceService::class);
+        $this->app->bind(ArticleSortStrategy::class, NewestArticleSortStrategy::class);
 
         if (!class_exists('Clinic')) {
             class_alias('App\Clinic', 'Clinic');

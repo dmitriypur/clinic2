@@ -20,7 +20,7 @@ class PageObserver
      */
     public function created(Page $page): void
     {
-        $this->articleNavigationBlockService->ensureForPage($page);
+        $this->articleNavigationBlockService->syncForPage($page);
         $this->clearPageCache($page);
     }
 
@@ -30,7 +30,7 @@ class PageObserver
     public function updated(Page $page): void
     {
         if ($page->wasChanged('type')) {
-            $this->articleNavigationBlockService->ensureForPage($page);
+            $this->articleNavigationBlockService->syncForPage($page);
         }
 
         $this->clearPageCache($page);
