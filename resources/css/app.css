@@ -968,6 +968,11 @@
 
     .smart-action {
         z-index: 48;
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transform: translateY(12px);
+        animation: smartActionReveal .45s ease 30s forwards;
     }
 
     .smart-action .icons{
@@ -1040,6 +1045,22 @@
     }
     .smart-action .btn svg{
         fill: #1F3462;
+    }
+
+    @keyframes smartActionReveal {
+        0% {
+            opacity: 0;
+            visibility: visible;
+            pointer-events: auto;
+            transform: translateY(12px);
+        }
+
+        100% {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+            transform: translateY(0);
+        }
     }
 
     @keyframes phoneOrbit {
@@ -1116,17 +1137,32 @@
     }
 
     @media (prefers-reduced-motion: reduce) {
-        .icon,
+        .smart-action {
+            transform: none;
+            animation: smartActionRevealReduced 1ms linear 30s forwards;
+        }
+
+        .smart-action .icon,
         .smart-action::before {
             animation: none;
         }
 
-        .icon-phone {
+        .smart-action .icon-phone {
             opacity: 1;
         }
 
-        .icon-calendar {
+        .smart-action .icon-calendar {
             opacity: 0;
+        }
+    }
+
+    @keyframes smartActionRevealReduced {
+        0%,
+        100% {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+            transform: none;
         }
     }
 }

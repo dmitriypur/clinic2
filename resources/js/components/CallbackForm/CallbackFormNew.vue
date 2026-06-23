@@ -185,7 +185,7 @@ export default {
           }
 
           if (typeof ym === 'function') {
-            ym(94302729, 'reachGoal', 'otpravka-formy')
+            ym(94302729, 'reachGoal', this.target || 'otpravka-formy')
           }
 
           this.showSuccessMessage = true

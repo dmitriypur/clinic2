@@ -76,38 +76,6 @@
         <x-icon.chevron-up class="h-10 w-10"/>
     </button>
 
-    <div class="smart-action fixed bottom-10 right-4 md:right-10">
-
-        <div class="icons orange-gr-nohover rounded-xl w-14 h-14 cursor-pointer">
-            <span class="icon icon-calendar">
-                <x-icon.calendar/>
-            </span>
-            <span class="icon icon-phone">
-                <x-icon.phone/>
-            </span>
-            <div class="close w-full h-full">
-                <x-icon.cancel/>
-            </div>
-        </div>
-        
-        <button
-            @click="showCallbackModal(null, 'otpravka-formy')"
-            onclick="ym(94302729,'reachGoal','shapka-forma-open')"
-            class="btn btn-calendar">
-            <span>
-                <x-icon.calendar/>
-            </span>
-            
-        </button>
-         <button
-            @click="showCallbackFormNew(null, 'otpravka-formy')"
-            class="btn btn-phone">
-            <span>
-                <x-icon.phone/>
-            </span>
-        </button>
-    </div>
-
     @php
         $headerView = $headerView ?? 'parts.header-new';
         $usesLegacyBookingForm = ($settings->booking_form_variant ?? 'old') === 'old';

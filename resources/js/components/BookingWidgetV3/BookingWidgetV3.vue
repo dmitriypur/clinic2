@@ -2230,7 +2230,13 @@ export default {
         await bookingApi.createApplication(applicationData);
 
         if (typeof ym === "function") {
-          ym(94302729, "reachGoal", "bloki-otpravka-formy");
+          ym(
+            94302729,
+            "reachGoal",
+            this.callbackTarget === "otpravka-widget_article"
+              ? this.callbackTarget
+              : "bloki-otpravka-formy"
+          );
         }
 
         this.currentStep = "success";
