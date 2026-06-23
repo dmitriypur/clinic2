@@ -965,6 +965,167 @@
         -ms-overflow-style: none;  /* IE и Edge */
         scrollbar-width: none;  /* Firefox */
     }
+
+    .smart-action {
+        z-index: 48;
+    }
+
+    .smart-action .icons{
+        box-shadow: 0px 1px 2px 0px #0000004D, 0px 2px 6px 2px #00000026;
+    }
+    .smart-action .icon {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+
+        font-size: 25px;
+        color: #fff;
+
+        transform-origin: 50% 50%;
+        animation-duration: 4s;
+        animation-iteration-count: infinite;
+        animation-timing-function: cubic-bezier(.34, 1.56, .64, 1);
+    }
+
+    .smart-action .icon svg, .smart-action .close svg{
+        width: 50%;
+        height: auto;
+    }
+    .smart-action .icon svg{
+        fill: #ffffff;
+    }
+
+    .smart-action .close svg{
+        stroke: #fff;
+    }
+
+    .smart-action .icon-phone {
+        animation-name: phoneOrbit;
+    }
+
+    .smart-action .icon-calendar {
+        animation-name: calendarOrbit;
+    }
+
+    .smart-action .btn{
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: absolute;
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        height: 64px;
+        opacity: 0;
+        transition: all .3s;
+        z-index: -10;
+        overflow: visible;
+        padding-bottom: 10px;
+    }
+    .smart-action .btn span{
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #ffffff;
+        width: 48px;
+        height: 48px;
+        min-width: 48px;
+        border-radius: 10px;
+        border: 1px solid #1F3462;
+        box-shadow: 0px 1px 2px 0px #0000004D, 0px 2px 6px 2px #00000026;
+    }
+    .smart-action .btn svg{
+        fill: #1F3462;
+    }
+
+    @keyframes phoneOrbit {
+        0%, 42% {
+            opacity: 1;
+            transform: translate(0, 0) scale(1) rotate(0deg);
+            filter: blur(0);
+        }
+
+        48% {
+            opacity: 0;
+            transform: translate(-22px, 22px) scale(.35) rotate(-70deg);
+            filter: blur(2px);
+        }
+
+        49%, 92% {
+            opacity: 0;
+            transform: translate(22px, -22px) scale(.35) rotate(70deg);
+            filter: blur(2px);
+        }
+
+        100% {
+            opacity: 1;
+            transform: translate(0, 0) scale(1) rotate(0deg);
+            filter: blur(0);
+        }
+    }
+
+    @keyframes calendarOrbit {
+        0%, 42% {
+            opacity: 0;
+            transform: translate(22px, -22px) scale(.35) rotate(70deg);
+            filter: blur(2px);
+        }
+
+        50%, 88% {
+            opacity: 1;
+            transform: translate(0, 0) scale(1) rotate(0deg);
+            filter: blur(0);
+        }
+
+        94%, 100% {
+            opacity: 0;
+            transform: translate(-22px, 22px) scale(.35) rotate(-70deg);
+            filter: blur(2px);
+        }
+    }
+
+    .smart-action .close{
+        opacity: 0;
+        transition: opacity .1s;
+    }
+    .smart-action .close svg{
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+    }
+    .smart-action:hover .close{
+        opacity: 1;
+    }
+    .smart-action:hover .icon {
+        animation-play-state: paused;
+        display: none;
+    }
+
+    .smart-action:hover .btn-calendar {
+        opacity: 1;
+        top: -110px;
+    }
+    .smart-action:hover .btn-phone {
+        opacity: 1;
+        top: -56px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .icon,
+        .smart-action::before {
+            animation: none;
+        }
+
+        .icon-phone {
+            opacity: 1;
+        }
+
+        .icon-calendar {
+            opacity: 0;
+        }
+    }
 }
 
 .dropdown-in{
