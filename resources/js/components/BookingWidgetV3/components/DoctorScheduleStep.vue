@@ -351,7 +351,8 @@ export default {
       return getDoctorDisplayPrice(
         this.doctor,
         this.selectedBranch,
-        this.patientBirthDate
+        this.patientBirthDate,
+        { priority: "branch-first" }
       );
     },
     branchSkeletonCount() {

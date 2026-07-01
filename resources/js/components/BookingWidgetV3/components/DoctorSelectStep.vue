@@ -138,7 +138,9 @@ export default {
       return getDoctorReceivesDisplay(doctor) || "—";
     },
     doctorDisplayPrice(doctor) {
-      return getDoctorDisplayPrice(doctor, null, this.patientBirthDate);
+      return getDoctorDisplayPrice(doctor, null, this.patientBirthDate, {
+        priority: "doctor-first",
+      });
     },
     doctorVideoUrl(doctor) {
       return doctor?.video_url || doctor?.actual_video_url || doctor?.video || null;

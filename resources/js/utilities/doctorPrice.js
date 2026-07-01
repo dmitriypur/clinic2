@@ -44,25 +44,54 @@ export function getDoctorAgeAwarePrice(doctor, patientBirthDate = null) {
 export function getDoctorDisplayPrice(
   doctor,
   branch = null,
-  patientBirthDate = null
+  patientBirthDate = null,
+  options = {}
 ) {
-  return (
-    getDoctorAgeAwarePrice(doctor, patientBirthDate) ||
-    getBranchPromoPrice(branch)
-  );
+  const priority = options?.priority || "branch-first";
+  const doctorPrice = getDoctorAgeAwarePrice(doctor, patientBirthDate);
+  const branchPrice = getBranchPromoPrice(branch);
+
+  if (priority === "doctor-first") {
+    return doctorPrice || branchPrice;
+  }
+
+  if (priority === "doctor-only") {
+    return doctorPrice;
+  }
+
+  return branchPrice || doctorPrice;
 }
 
 export function getDoctorDisplayPriceSource(
   doctor,
   branch = null,
-  patientBirthDate = null
+  patientBirthDate = null,
+  options = {}
 ) {
-  if (getDoctorAgeAwarePrice(doctor, patientBirthDate)) {
-    return "doctor";
-  }
+  const priority = options?.priority || "branch-first";
+  const doctorPrice = getDoctorAgeAwarePrice(doctor, patientBirthDate);
+  const branchPrice = getBranchPromoPrice(branch);
 
-  if (getBranchPromoPrice(branch)) {
-    return "branch";
+  if (priority === "doctor-first") {
+    if (doctorPrice) {
+      return "doctor";
+    }
+
+    if (branchPrice) {
+      return "branch";
+    }
+  } else if (priority === "doctor-only") {
+    if (doctorPrice) {
+      return "doctor";
+    }
+  } else {
+    if (branchPrice) {
+      return "branch";
+    }
+
+    if (doctorPrice) {
+      return "doctor";
+    }
   }
 
   return null;

@@ -455,7 +455,8 @@ export default {
       return getDoctorDisplayPrice(
         doctor,
         this.doctorBranch(doctor),
-        this.patientBirthDate
+        this.patientBirthDate,
+        { priority: "branch-first" }
       );
     },
     doctorHasVideo(doctor) {
