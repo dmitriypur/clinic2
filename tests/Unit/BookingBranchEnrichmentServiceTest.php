@@ -24,12 +24,16 @@ class BookingBranchEnrichmentServiceTest extends TestCase
                     'external_id' => 'branch-1',
                     'address' => 'Адрес из админки',
                     'metro' => 'ВДНХ',
+                    'price' => '1800',
+                    'price_child' => '1200',
                 ],
                 [
                     'name' => 'Филиал 2',
                     'external_id' => 'branch-2',
                     'address' => '',
                     'metro' => 'Алексеевская',
+                    'price' => '',
+                    'price_child' => '',
                 ],
             ],
         ]);
@@ -42,12 +46,16 @@ class BookingBranchEnrichmentServiceTest extends TestCase
                 'external_id' => 'BRANCH-1',
                 'address' => 'Адрес из API',
                 'metro' => 'Метро из API',
+                'price' => '2500',
+                'price_child' => '2000',
             ],
             [
                 'id' => 102,
                 'external_id' => 'branch-2',
                 'address' => 'Адрес из API 2',
                 'metro' => 'Метро из API 2',
+                'price' => '2600',
+                'price_child' => '2100',
             ],
             [
                 'id' => 103,
@@ -59,10 +67,14 @@ class BookingBranchEnrichmentServiceTest extends TestCase
 
         $this->assertSame('Адрес из админки', $result[0]['address']);
         $this->assertSame('ВДНХ', $result[0]['metro']);
+        $this->assertSame('1800', $result[0]['price']);
+        $this->assertSame('1200', $result[0]['price_child']);
         $this->assertSame('Москва', $result[0]['city']);
 
         $this->assertSame('Адрес из API 2', $result[1]['address']);
         $this->assertSame('Алексеевская', $result[1]['metro']);
+        $this->assertSame('2600', $result[1]['price']);
+        $this->assertSame('2100', $result[1]['price_child']);
         $this->assertSame('Москва', $result[1]['city']);
 
         $this->assertSame('Адрес из API 3', $result[2]['address']);

@@ -23,7 +23,7 @@ Backend сайта:
 - `app/Services/BookingWidgetApiService.php` — прокси к `adminzrenie.ru/api/v1`, timeout/retry/cache.
 - `app/Services/BookingDoctorLaunchService.php` — загрузка одного врача для direct-launch.
 - `app/Services/BookingDoctorsByDateService.php` — агрегированный flow выбора по дате.
-- `app/Services/BookingBranchEnrichmentService.php` — обогащение филиалов локальными данными сайта, включая `address`, `metro`, `price`.
+- `app/Services/BookingBranchEnrichmentService.php` — обогащение филиалов локальными данными сайта, включая `address`, `metro`, `price`, `price_child`.
 - `app/Services/BookingSiteDoctorsService.php` — локальные данные видимых врачей сайта по UUID.
 
 Тесты:
@@ -359,15 +359,18 @@ Direct doctor отличается:
 
 - взрослая цена врача: `doctor.extra.price`;
 - детская цена врача: `doctor.extra.price_child`;
-- акционная цена филиала: `branch.price`, приходит через branch enrichment из локальных данных города.
+- взрослая акционная цена филиала: `branch.price`;
+- детская акционная цена филиала: `branch.price_child`.
 
 Текущее правило:
 
-1. если филиал уже известен и у него есть `branch.price`, показывается акционная цена филиала;
-2. если филиал неизвестен или у него нет `branch.price`, показывается цена врача;
-3. если у врача есть взрослая и детская цена, выбирается по возрасту пациента;
-4. если у врача указана только одна из цен, показывается она;
+1. если у известного филиала заполнены обе цены, до 18 лет показывается `branch.price_child`, с 18 лет — `branch.price`;
+2. если у филиала заполнена только одна из цен, она показывается для любого возраста;
+3. любая найденная цена филиала имеет приоритет над ценой врача;
+4. если филиал неизвестен или обе его цены пусты, используется возрастная цена врача по тем же правилам;
 5. если нет ни цены врача, ни цены филиала, цена не показывается.
+
+Цена используется только для отображения в виджете и не передается в payload создания записи.
 
 Граница детской цены:
 
@@ -424,7 +427,7 @@ GET api/booking/clinics/{clinic}/branches
 - скрыть часть сложности внешнего API;
 - добавить локальные данные сайта по врачам;
 - отфильтровать врачей по видимости на сайте;
-- обогатить филиалы локальными `address`, `metro`, `price`;
+- обогатить филиалы локальными `address`, `metro`, `price`, `price_child`;
 - ускорить тяжелые flow через cache/aggregation;
 - учитывать `site_city_id`.
 
@@ -458,7 +461,7 @@ GET api/booking/clinics/{clinic}/branches
 
 - сопоставляет филиалы внешнего API с локальными филиалами города;
 - matching по `external_id`, адресу, названию, телефону, email, координатам;
-- локальные поля `address`, `metro`, `price` могут переопределить API payload.
+- локальные поля `address`, `metro`, `price`, `price_child` могут переопределить API payload.
 
 ## Кэши и preload
 

@@ -10,6 +10,7 @@ class BookingBranchEnrichmentService
         'address',
         'metro',
         'price',
+        'price_child',
     ];
 
     public function enrichPayload(array $payload, ?City $city): array

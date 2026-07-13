@@ -92,6 +92,8 @@ class BookingDoctorsByDateApiTest extends TestCase
                 'external_id' => 'branch-1',
                 'address' => 'Москва, адрес из админки',
                 'metro' => 'ВДНХ',
+                'price' => '1800',
+                'price_child' => '1200',
             ]]
         );
 
@@ -169,6 +171,8 @@ class BookingDoctorsByDateApiTest extends TestCase
         $response->assertJsonPath('data.0.branch.metro', 'ВДНХ');
         $response->assertJsonPath('data.0.branch.city', 'Москва');
         $response->assertJsonPath('data.0.branch.external_id', 'branch-1');
+        $response->assertJsonPath('data.0.branch.price', '1800');
+        $response->assertJsonPath('data.0.branch.price_child', '1200');
         $response->assertJsonPath('data.0.available_slots', 2);
         $response->assertJsonPath('data.0.first_available_time', '10:00');
     }
@@ -246,6 +250,7 @@ class BookingDoctorsByDateApiTest extends TestCase
                 'address' => 'Москва, адрес из админки',
                 'metro' => 'ВДНХ',
                 'price' => '1500',
+                'price_child' => '1000',
             ]]
         );
 
@@ -289,6 +294,7 @@ class BookingDoctorsByDateApiTest extends TestCase
         $response->assertJsonPath('data.0.city', 'Москва');
         $response->assertJsonPath('data.0.external_id', 'branch-1');
         $response->assertJsonPath('data.0.price', '1500');
+        $response->assertJsonPath('data.0.price_child', '1000');
         $response->assertJsonPath('data.0.available_slots', 3);
         $response->assertJsonPath('data.0.first_available_time', '09:00');
         $response->assertJsonPath('meta.default_branch_id', 501);

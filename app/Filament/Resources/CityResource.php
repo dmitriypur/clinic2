@@ -111,7 +111,9 @@ class CityResource extends Resource
                                 TextInput::make('schedule')
                                     ->label('Режим работы'),
                                 TextInput::make('price')
-                                    ->label('Акционная цена'),
+                                    ->label('Акционная цена с 18 лет'),
+                                TextInput::make('price_child')
+                                    ->label('Акционная цена до 18 лет'),
                                 TextInput::make('external_id')
                                     ->label('External ID'),
                             ])
