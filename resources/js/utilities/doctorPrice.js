@@ -46,14 +46,49 @@ export function getDoctorAgeAwarePrice(doctor, patientBirthDate = null) {
 }
 
 export function getBranchAgeAwarePrice(branch, patientBirthDate = null) {
-  const adultPrice = getBranchPromoPrice(branch);
-  const childPrice = getBranchChildPromoPrice(branch);
+  return isChildPatient(patientBirthDate)
+    ? getBranchChildPromoPrice(branch)
+    : getBranchPromoPrice(branch);
+}
 
-  if (adultPrice && childPrice) {
-    return isChildPatient(patientBirthDate) ? childPrice : adultPrice;
+export function isDoctorExcludedFromBranchPromoPrice(doctor) {
+  return doctor?.extra?.exclude_from_branch_promo_price === true;
+}
+
+function priceResult(price, source) {
+  return {
+    price: price || null,
+    source: price ? source : null,
+  };
+}
+
+export function resolveDoctorDisplayPrice(
+  doctor,
+  branch = null,
+  patientBirthDate = null,
+  options = {}
+) {
+  const priority = options?.priority || "branch-first";
+  const doctorPrice = getDoctorAgeAwarePrice(doctor, patientBirthDate);
+
+  if (
+    priority === "doctor-only" ||
+    isDoctorExcludedFromBranchPromoPrice(doctor)
+  ) {
+    return priceResult(doctorPrice, "doctor");
   }
 
-  return adultPrice || childPrice || null;
+  const branchPrice = getBranchAgeAwarePrice(branch, patientBirthDate);
+
+  if (priority === "doctor-first") {
+    return doctorPrice
+      ? priceResult(doctorPrice, "doctor")
+      : priceResult(branchPrice, "branch");
+  }
+
+  return branchPrice
+    ? priceResult(branchPrice, "branch")
+    : priceResult(doctorPrice, "doctor");
 }
 
 export function getDoctorDisplayPrice(
@@ -62,19 +97,12 @@ export function getDoctorDisplayPrice(
   patientBirthDate = null,
   options = {}
 ) {
-  const priority = options?.priority || "branch-first";
-  const doctorPrice = getDoctorAgeAwarePrice(doctor, patientBirthDate);
-  const branchPrice = getBranchAgeAwarePrice(branch, patientBirthDate);
-
-  if (priority === "doctor-first") {
-    return doctorPrice || branchPrice;
-  }
-
-  if (priority === "doctor-only") {
-    return doctorPrice;
-  }
-
-  return branchPrice || doctorPrice;
+  return resolveDoctorDisplayPrice(
+    doctor,
+    branch,
+    patientBirthDate,
+    options
+  ).price;
 }
 
 export function getDoctorDisplayPriceSource(
@@ -83,31 +111,10 @@ export function getDoctorDisplayPriceSource(
   patientBirthDate = null,
   options = {}
 ) {
-  const priority = options?.priority || "branch-first";
-  const doctorPrice = getDoctorAgeAwarePrice(doctor, patientBirthDate);
-  const branchPrice = getBranchAgeAwarePrice(branch, patientBirthDate);
-
-  if (priority === "doctor-first") {
-    if (doctorPrice) {
-      return "doctor";
-    }
-
-    if (branchPrice) {
-      return "branch";
-    }
-  } else if (priority === "doctor-only") {
-    if (doctorPrice) {
-      return "doctor";
-    }
-  } else {
-    if (branchPrice) {
-      return "branch";
-    }
-
-    if (doctorPrice) {
-      return "doctor";
-    }
-  }
-
-  return null;
+  return resolveDoctorDisplayPrice(
+    doctor,
+    branch,
+    patientBirthDate,
+    options
+  ).source;
 }

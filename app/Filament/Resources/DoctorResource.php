@@ -183,6 +183,10 @@ class DoctorResource extends Resource
                             ->label('Взрослый прием цена'),
                         Forms\Components\TextInput::make('extra.price_child')
                             ->label('Детский прием цена'),
+                        Forms\Components\Toggle::make('extra.exclude_from_branch_promo_price')
+                            ->label('Не применять акционные цены филиалов')
+                            ->helperText('Виджет записи будет показывать только цену врача.')
+                            ->default(false),
                     ]),
 
 

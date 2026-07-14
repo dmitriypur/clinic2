@@ -10,9 +10,18 @@ class BookingSiteDoctorsService
 {
     private const CACHE_TTL_SECONDS = 60;
 
+    public function __construct(
+        private readonly BookingWidgetCacheVersionService $bookingWidgetCacheVersionService,
+    ) {
+    }
+
     public function getVisibleUuidsForCity(?\App\Models\City $city): array
     {
-        $cacheKey = 'booking-site-doctors:visible-uuids:' . ($city?->id ?? 'global');
+        $cacheKey = implode(':', [
+            'booking-site-doctors:visible-uuids',
+            $city?->id ?? 'global',
+            $this->bookingWidgetCacheVersionService->current(),
+        ]);
 
         return Cache::remember($cacheKey, now()->addSeconds(self::CACHE_TTL_SECONDS), function () use ($city): array {
             $query = Doctor::withoutGlobalScopes()
@@ -59,7 +68,11 @@ class BookingSiteDoctorsService
             ];
         }
 
-        $cacheKey = 'booking-site-doctors:v1:' . sha1(collect($normalizedUuids)->sort()->implode(','));
+        $cacheKey = implode(':', [
+            'booking-site-doctors:v1',
+            sha1(collect($normalizedUuids)->sort()->implode(',')),
+            $this->bookingWidgetCacheVersionService->current(),
+        ]);
 
         return Cache::remember($cacheKey, now()->addSeconds(self::CACHE_TTL_SECONDS), function () use ($normalizedUuids): array {
             $allMatchedUuids = Doctor::withoutGlobalScopes()

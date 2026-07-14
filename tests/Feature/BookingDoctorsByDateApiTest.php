@@ -39,6 +39,7 @@ class BookingDoctorsByDateApiTest extends TestCase
                     'receives_text' => null,
                     'extra' => [
                         'price' => '2000',
+                        'exclude_from_branch_promo_price' => true,
                     ],
                 ]],
                 'meta' => [
@@ -80,6 +81,7 @@ class BookingDoctorsByDateApiTest extends TestCase
         $response->assertJsonPath('data.age_min_months', 36);
         $response->assertJsonPath('data.age_max_months', 204);
         $response->assertJsonPath('data.extra.price', '2000');
+        $response->assertJsonPath('data.extra.exclude_from_branch_promo_price', true);
     }
 
     public function test_booking_doctors_by_date_endpoint_enriches_cards_for_explicit_site_city(): void
@@ -115,7 +117,9 @@ class BookingDoctorsByDateApiTest extends TestCase
                     'age_min_months' => 36,
                     'age_max_months' => null,
                     'receives_text' => null,
-                    'extra' => [],
+                    'extra' => [
+                        'exclude_from_branch_promo_price' => true,
+                    ],
                 ]],
                 'meta' => [
                     'hidden_uuids' => ['00000000-0000-0000-0000-000000000102'],
@@ -173,6 +177,7 @@ class BookingDoctorsByDateApiTest extends TestCase
         $response->assertJsonPath('data.0.branch.external_id', 'branch-1');
         $response->assertJsonPath('data.0.branch.price', '1800');
         $response->assertJsonPath('data.0.branch.price_child', '1200');
+        $response->assertJsonPath('data.0.extra.exclude_from_branch_promo_price', true);
         $response->assertJsonPath('data.0.available_slots', 2);
         $response->assertJsonPath('data.0.first_available_time', '10:00');
     }

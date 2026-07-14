@@ -21,7 +21,7 @@
             </li>
             <li class="bg-surface-subdued py-2 px-3 rounded-md">
                 <p class="text-xs leading-[100%] opacity-60">Врачебный стаж:</p>
-                <p class="text-sm font-semibold leading-4 mt-0.5">{{ $doctor->extra['seniority'] }}</p>
+                <p class="text-sm font-semibold leading-4 mt-0.5">{{ data_get($doctor->extra, 'seniority') }}</p>
             </li>
             <li class="bg-surface-subdued py-2 px-3 rounded-md">
                 <p class="text-xs leading-[100%] opacity-60">Ведёт приём:</p>

@@ -4,6 +4,17 @@ export function buildCompositeCacheKey(parts = []) {
     .join("|");
 }
 
+export function buildVersionedCacheKey(version, parts = []) {
+  return buildCompositeCacheKey([
+    version,
+    ...(Array.isArray(parts) ? parts : [parts]),
+  ]);
+}
+
+export function isCurrentCacheVersion(requestVersion, currentVersion) {
+  return requestVersion === currentVersion;
+}
+
 export function getTimestampedCacheEntry(cacheObject, key, ttlMs) {
   const cached = cacheObject?.[key];
   if (!cached) {
@@ -37,4 +48,27 @@ export function trimTimestampedCache(cacheObject, maxEntries = 100) {
     .forEach((key) => {
       delete cacheObject[key];
     });
+}
+
+export function clearObjectCaches(...cacheObjects) {
+  cacheObjects
+    .filter((cacheObject) => cacheObject && typeof cacheObject === "object")
+    .forEach((cacheObject) => {
+      Object.keys(cacheObject).forEach((key) => {
+        delete cacheObject[key];
+      });
+    });
+}
+
+export function resetBookingLoadingFlags(state) {
+  [
+    "loadingClinics",
+    "loadingCityBranches",
+    "loadingDoctors",
+    "loadingDateFlowDoctors",
+    "loadingSlots",
+    "loadingDoctorFlowBranches",
+  ].forEach((key) => {
+    state[key] = false;
+  });
 }

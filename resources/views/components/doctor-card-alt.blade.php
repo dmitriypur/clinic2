@@ -32,7 +32,7 @@
             </li>
             <li class="bg-transparent backdrop-blur-sm border border-l-[10px] border-l-blue-label py-3 px-2 rounded-md w-6/12 md:w-5/12 relative overflow-hidden before:absolute  before:white-to-orange-gradient before:inset-0 before:accessibility:content-[none] before:opacity-30 z-50 before:-z-10">
                 <p class="text-xs font-bold">Врачебный стаж:</p>
-                <p class="text-sm leading-4">{{ $doctor->extra['seniority'] }}</p>
+                <p class="text-sm leading-4">{{ data_get($doctor->extra, 'seniority') }}</p>
             </li> 
         </ul>
         <div class="flex w-full gap-2 relative mt-2.5">

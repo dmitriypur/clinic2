@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\BookingWidgetCacheVersionService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -77,6 +78,10 @@ class City extends Model
             if ($city->isDirty('slug') && $city->getOriginal('slug')) {
                 \Illuminate\Support\Facades\Cache::forget("city_by_slug_{$city->getOriginal('slug')}");
             }
+
+            if ($city->wasChanged('branches')) {
+                app(BookingWidgetCacheVersionService::class)->bump();
+            }
         });
 
         static::deleted(function (City $city) {
@@ -84,6 +89,7 @@ class City extends Model
             \Illuminate\Support\Facades\Cache::forget('default_city');
             \Illuminate\Support\Facades\Cache::forget('active_cities');
             \Illuminate\Support\Facades\Cache::forget("city_by_slug_{$city->slug}");
+            app(BookingWidgetCacheVersionService::class)->bump();
         });
     }
 

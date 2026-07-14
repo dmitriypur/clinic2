@@ -13,6 +13,7 @@ class BookingDoctorLaunchService
     public function __construct(
         private readonly BookingWidgetApiService $bookingWidgetApiService,
         private readonly BookingSiteDoctorsService $bookingSiteDoctorsService,
+        private readonly BookingWidgetCacheVersionService $bookingWidgetCacheVersionService,
     ) {
     }
 
@@ -34,6 +35,7 @@ class BookingDoctorLaunchService
             $siteCity?->id ?? 'global',
             $birthDate ?: 'all',
             $normalizedUuid,
+            $this->bookingWidgetCacheVersionService->current(),
         ]);
 
         return Cache::remember($cacheKey, now()->addSeconds(self::CACHE_TTL_SECONDS), function () use (

@@ -54,7 +54,7 @@ class ScheduleService implements Contract
                     'age_min_months' => $doctor->age_min_months,
                     'age_max_months' => $doctor->age_max_months,
                     'receives_text' => $doctor->receives_text,
-                    'seniority' => $doctor->extra['seniority'],
+                    'seniority' => data_get($doctor->extra, 'seniority'),
                 ];
             })
             ->sortBy('iddb')

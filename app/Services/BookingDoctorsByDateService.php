@@ -14,6 +14,7 @@ class BookingDoctorsByDateService
         private readonly BookingWidgetApiService $bookingWidgetApiService,
         private readonly BookingBranchEnrichmentService $bookingBranchEnrichmentService,
         private readonly BookingSiteDoctorsService $bookingSiteDoctorsService,
+        private readonly BookingWidgetCacheVersionService $bookingWidgetCacheVersionService,
     ) {
     }
 
@@ -296,6 +297,7 @@ class BookingDoctorsByDateService
             $siteCityId ?: 'site-any',
             $clinicId ?: 'clinic-any',
             $branchId ?: 'branch-any',
+            $this->bookingWidgetCacheVersionService->current(),
         ]);
     }
 }

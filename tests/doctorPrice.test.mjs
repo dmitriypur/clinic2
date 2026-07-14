@@ -51,24 +51,38 @@ test("branch price uses age-specific value when both prices are configured", () 
   );
 });
 
-test("a single configured branch price applies to every age", () => {
+test("branch prices only apply to their matching age category", () => {
   assert.equal(
     priceModule.getBranchAgeAwarePrice(
       { price: "1800", price_child: "" },
       birthDateYearsAgo(10)
     ),
-    "1800"
+    null
   );
   assert.equal(
     priceModule.getBranchAgeAwarePrice(
       { price: "", price_child: "1200" },
       birthDateYearsAgo(30)
     ),
+    null
+  );
+  assert.equal(
+    priceModule.getBranchAgeAwarePrice(
+      { price: "1800", price_child: "" },
+      birthDateYearsAgo(30)
+    ),
+    "1800"
+  );
+  assert.equal(
+    priceModule.getBranchAgeAwarePrice(
+      { price: "", price_child: "1200" },
+      birthDateYearsAgo(10)
+    ),
     "1200"
   );
 });
 
-test("branch price keeps priority and falls back to the doctor only when both branch prices are empty", () => {
+test("a missing age-specific branch price falls back to the matching doctor price", () => {
   const doctor = {
     extra: {
       price: "2500",
@@ -79,17 +93,73 @@ test("branch price keeps priority and falls back to the doctor only when both br
   assert.equal(
     priceModule.getDoctorDisplayPrice(
       doctor,
-      { price: "1800", price_child: "1200" },
+      { price: "1800", price_child: "" },
       birthDateYearsAgo(10)
     ),
-    "1200"
+    "2000"
   );
   assert.equal(
     priceModule.getDoctorDisplayPrice(
       doctor,
-      { price: "", price_child: "" },
+      { price: "", price_child: "1200" },
+      birthDateYearsAgo(30)
+    ),
+    "2500"
+  );
+});
+
+test("doctor exclusion flag disables branch promotion for both age categories", () => {
+  assert.equal(typeof priceModule.resolveDoctorDisplayPrice, "function");
+
+  const doctor = {
+    extra: {
+      price: "2500",
+      price_child: "2000",
+      exclude_from_branch_promo_price: true,
+    },
+  };
+  const branch = { price: "1800", price_child: "1200" };
+
+  assert.deepEqual(
+    priceModule.resolveDoctorDisplayPrice(
+      doctor,
+      branch,
       birthDateYearsAgo(10)
     ),
-    "2000"
+    { price: "2000", source: "doctor" }
+  );
+  assert.deepEqual(
+    priceModule.resolveDoctorDisplayPrice(
+      doctor,
+      branch,
+      birthDateYearsAgo(30)
+    ),
+    { price: "2500", source: "doctor" }
+  );
+});
+
+test("excluded doctor without a price does not fall back to branch promotion", () => {
+  const doctor = {
+    extra: {
+      exclude_from_branch_promo_price: true,
+    },
+  };
+  const branch = { price: "1800", price_child: "1200" };
+
+  assert.equal(
+    priceModule.getDoctorDisplayPrice(
+      doctor,
+      branch,
+      birthDateYearsAgo(30)
+    ),
+    null
+  );
+  assert.equal(
+    priceModule.getDoctorDisplayPriceSource(
+      doctor,
+      branch,
+      birthDateYearsAgo(30)
+    ),
+    null
   );
 });

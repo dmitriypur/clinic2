@@ -217,7 +217,11 @@ import {
 } from "./utils/doctorAgeBlocker";
 import {
   buildCompositeCacheKey,
+  buildVersionedCacheKey,
+  clearObjectCaches,
   getTimestampedCacheEntry,
+  isCurrentCacheVersion,
+  resetBookingLoadingFlags,
   setTimestampedCacheEntry,
 } from "./utils/cacheUtils";
 import {
@@ -324,6 +328,7 @@ export default {
       dateFlowCalendarCacheByQuery: {},
       siteDoctorsCacheByUuids: {},
       slotsCacheByQuery: {},
+      adminDataCacheEpoch: 0,
       clinicsCacheTtlMs: 60 * 1000,
       cityBranchesCacheTtlMs: 60 * 1000,
       doctorsCacheTtlMs: 60 * 1000,
@@ -640,6 +645,12 @@ export default {
     },
     setCacheEntry(cache, key, data) {
       setTimestampedCacheEntry(cache, key, { data });
+    },
+    getAdminDataCacheKey(parts = []) {
+      return buildVersionedCacheKey(this.adminDataCacheEpoch, parts);
+    },
+    isAdminDataRequestCurrent(requestEpoch) {
+      return isCurrentCacheVersion(requestEpoch, this.adminDataCacheEpoch);
     },
     getEmptySlotsMessage(lastAvailableDate) {
       if (
@@ -1076,7 +1087,7 @@ export default {
       }
 
       try {
-        const cacheKey = uuids.join(",");
+        const cacheKey = this.getAdminDataCacheKey([uuids.join(",")]);
         const cachedPayload = this.getSiteDoctorsFromCache(cacheKey);
         const response = cachedPayload || (await bookingApi.getSiteDoctorsByUuids(uuids));
         if (!cachedPayload) {
@@ -1140,10 +1151,14 @@ export default {
       }
     },
     async loadDoctorsByCity() {
+      const requestEpoch = this.adminDataCacheEpoch;
       await this.initCities();
-      if (!this.currentCityId) return;
+      if (!this.isAdminDataRequestCurrent(requestEpoch) || !this.currentCityId) return;
 
-      const cacheKey = `${this.currentCityId}:${this.patientBirthDateIso || "all"}`;
+      const cacheKey = this.getAdminDataCacheKey([
+        this.currentCityId,
+        this.patientBirthDateIso || "all",
+      ]);
       const cached = this.doctorsCacheByCity[cacheKey];
       if (
         cached &&
@@ -1162,6 +1177,8 @@ export default {
         );
         const doctors = response.data || response || [];
         const enrichedDoctors = await this.enrichDoctorsWithSiteData(doctors);
+        if (!this.isAdminDataRequestCurrent(requestEpoch)) return;
+
         this.doctors = sortDoctorsByMinimumAge(
           this.filterDoctorsByBirthDate(enrichedDoctors),
           {
@@ -1173,24 +1190,31 @@ export default {
           data: this.doctors,
         };
       } finally {
-        this.loadingDoctors = false;
+        if (this.isAdminDataRequestCurrent(requestEpoch)) {
+          this.loadingDoctors = false;
+        }
       }
     },
     async loadDoctorByLaunchId(doctorId, options = {}) {
+      const requestEpoch = this.adminDataCacheEpoch;
       await this.initCities();
 
-      if (!doctorId || !this.currentCityId) {
+      if (
+        !this.isAdminDataRequestCurrent(requestEpoch) ||
+        !doctorId ||
+        !this.currentCityId
+      ) {
         return null;
       }
 
       const birthDate = options.ignoreBirthDate === true
         ? null
         : this.patientBirthDateIso || null;
-      const cacheKey = [
+      const cacheKey = this.getAdminDataCacheKey([
         this.currentCityId,
         birthDate || "all",
         String(doctorId).trim().toLowerCase(),
-      ].join(":");
+      ]);
       const cached = this.getCacheEntry(
         this.doctorLaunchCacheByQuery,
         cacheKey,
@@ -1209,7 +1233,7 @@ export default {
         );
         const doctor = response?.data || null;
 
-        if (!doctor) {
+        if (!this.isAdminDataRequestCurrent(requestEpoch) || !doctor) {
           return null;
         }
 
@@ -1224,6 +1248,7 @@ export default {
         this.clinicDoctors = [];
         return;
       }
+      const requestEpoch = this.adminDataCacheEpoch;
       this.loadingDoctors = true;
       try {
         const response = await bookingApi.getClinicDoctors(
@@ -1233,6 +1258,8 @@ export default {
         );
         const doctors = response.data || response || [];
         const enrichedDoctors = await this.enrichDoctorsWithSiteData(doctors);
+        if (!this.isAdminDataRequestCurrent(requestEpoch)) return;
+
         this.clinicDoctors = sortDoctorsByMinimumAge(
           this.filterDoctorsByBirthDate(enrichedDoctors),
           {
@@ -1241,13 +1268,20 @@ export default {
           }
         );
       } finally {
-        this.loadingDoctors = false;
+        if (this.isAdminDataRequestCurrent(requestEpoch)) {
+          this.loadingDoctors = false;
+        }
       }
     },
     async loadDateFlowDoctors(options = {}) {
+      const requestEpoch = this.adminDataCacheEpoch;
       await this.initCities();
 
-      if (!this.currentCityId || !this.selectedDate) {
+      if (
+        !this.isAdminDataRequestCurrent(requestEpoch) ||
+        !this.currentCityId ||
+        !this.selectedDate
+      ) {
         this.dateFlowDoctors = [];
         this.dateFlowDoctorShiftMap = {};
         return;
@@ -1255,7 +1289,11 @@ export default {
 
       const keepSelectedDoctor = options.keepSelectedDoctor === true;
       const dateStr = this.formatDateForApi(this.selectedDate);
-      const cacheKey = `${this.currentCityId}:${dateStr}:${this.patientBirthDateIso || "all"}`;
+      const cacheKey = this.getAdminDataCacheKey([
+        this.currentCityId,
+        dateStr,
+        this.patientBirthDateIso || "all",
+      ]);
       const cached = this.dateFlowDoctorsCacheByQuery[cacheKey];
 
       if (
@@ -1282,6 +1320,8 @@ export default {
           ? response
           : [];
 
+        if (!this.isAdminDataRequestCurrent(requestEpoch)) return;
+
         this.dateFlowDoctors = this.filterDoctorsByBirthDate(doctors);
         this.dateFlowDoctorsCacheByQuery[cacheKey] = {
           ts: Date.now(),
@@ -1290,23 +1330,34 @@ export default {
 
         await this.setDefaultDoctorForDateFlow({ keepSelectedDoctor });
       } finally {
-        this.loadingDateFlowDoctors = false;
+        if (this.isAdminDataRequestCurrent(requestEpoch)) {
+          this.loadingDateFlowDoctors = false;
+        }
       }
     },
     async loadBranches(clinicId) {
       if (!clinicId) return;
+      const requestEpoch = this.adminDataCacheEpoch;
       const response = await bookingApi.getClinicBranches(clinicId, this.currentCityId);
+      if (!this.isAdminDataRequestCurrent(requestEpoch)) return;
+
       this.branches = response.data || response || [];
     },
     async loadCityBranches() {
+      const requestEpoch = this.adminDataCacheEpoch;
       await this.initCities();
+      if (!this.isAdminDataRequestCurrent(requestEpoch)) return;
+
       this.loadingCityBranches = true;
       try {
         if (!this.clinics.length) {
           await this.loadClinics();
         }
+        if (!this.isAdminDataRequestCurrent(requestEpoch)) return;
 
-        const cacheKey = String(this.currentCityId || "default");
+        const cacheKey = this.getAdminDataCacheKey([
+          this.currentCityId || "default",
+        ]);
         const cached = this.getCacheEntry(
           this.cityBranchesCacheByCity,
           cacheKey,
@@ -1338,6 +1389,8 @@ export default {
           })
         );
 
+        if (!this.isAdminDataRequestCurrent(requestEpoch)) return;
+
         this.cityBranches = branchGroups.flat();
         this.setCacheEntry(
           this.cityBranchesCacheByCity,
@@ -1345,7 +1398,9 @@ export default {
           this.cityBranches
         );
       } finally {
-        this.loadingCityBranches = false;
+        if (this.isAdminDataRequestCurrent(requestEpoch)) {
+          this.loadingCityBranches = false;
+        }
       }
     },
     syncDoctorFlowBranches(nextBranches = []) {
@@ -1446,6 +1501,7 @@ export default {
         this.doctorFlowBranchesLoadedOnce = false;
         return;
       }
+      const requestEpoch = this.adminDataCacheEpoch;
       const keepVisibleBranches =
         options.keepVisibleBranches === true &&
         this.doctorFlowBranchesLoadedOnce &&
@@ -1461,6 +1517,8 @@ export default {
             clinicId,
             cityId: this.currentCityId,
           });
+        if (!this.isAdminDataRequestCurrent(requestEpoch)) return;
+
         const normalizedBranches = branches.map((branch) => ({
           ...branch,
           enabled: true,
@@ -1478,7 +1536,9 @@ export default {
           }
         );
       } finally {
-        this.loadingDoctorFlowBranches = false;
+        if (this.isAdminDataRequestCurrent(requestEpoch)) {
+          this.loadingDoctorFlowBranches = false;
+        }
       }
     },
     async selectDoctorFlowBranchByDate(
@@ -1559,7 +1619,12 @@ export default {
       clinicId,
       cityId,
     }) {
-      return buildCompositeCacheKey([doctorId, dateStr, clinicId, cityId]);
+      return this.getAdminDataCacheKey([
+        doctorId,
+        dateStr,
+        clinicId,
+        cityId,
+      ]);
     },
     getDoctorFlowBranchesAvailabilityFromCache(key) {
       return (
@@ -2257,7 +2322,19 @@ export default {
     handleClose() {
       this.$emit("close");
     },
+    clearAdminManagedDataCaches() {
+      clearObjectCaches(
+        this.cityBranchesCacheByCity,
+        this.doctorsCacheByCity,
+        this.doctorLaunchCacheByQuery,
+        this.doctorFlowBranchesAvailabilityCacheByQuery,
+        this.dateFlowDoctorsCacheByQuery,
+        this.siteDoctorsCacheByUuids
+      );
+    },
     resetState() {
+      this.adminDataCacheEpoch += 1;
+      this.clearAdminManagedDataCaches();
       this.currentStep = "start";
       this.selectedMode = null;
       this.selectedDoctor = null;
@@ -2272,6 +2349,7 @@ export default {
       this.doctorFlowBranchesLoadedOnce = false;
       this.branches = [];
       this.cityBranches = [];
+      this.doctors = [];
       this.clinicDoctors = [];
       this.clinicDoctorShiftMap = {};
       this.dateFlowDoctors = [];
@@ -2282,7 +2360,7 @@ export default {
       this.doctorFlowLastAvailableDate = null;
       this.clinicFlowLastAvailableDate = null;
       this.dateFlowLastAvailableDate = null;
-      this.loadingDateFlowDoctors = false;
+      resetBookingLoadingFlags(this);
       this.isSubmitting = false;
       this.formSourceStep = null;
       this.ageBlockedDoctor = null;

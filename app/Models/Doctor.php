@@ -8,6 +8,7 @@ use App\Models\Traits\HasSafeMediaConversions;
 use App\Support\DoctorAge;
 use App\Support\CitySeoVariables;
 use App\Settings\SeoSettings;
+use App\Services\BookingWidgetCacheVersionService;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Builder;
@@ -94,6 +95,8 @@ class Doctor extends Model implements HasMedia
 
     private static function clearDoctorsCache(): void
     {
+        app(BookingWidgetCacheVersionService::class)->bump();
+
         Cache::forget('doctors'); // Clear old cache just in case
         Cache::forget('doctors-all');
 
@@ -196,12 +199,12 @@ class Doctor extends Model implements HasMedia
     {
         return Attribute::get(
             fn() => collect([
-                    $this->extra['seniority'],
-                    $this->extra['category'],
+                    data_get($this->extra, 'seniority'),
+                    data_get($this->extra, 'category'),
                     $this->receives_display,
-                    $this->extra['education'],
-                    $this->extra['professional_development'],
-                    count($this->extra['skills'] ?? []),
+                    data_get($this->extra, 'education'),
+                    data_get($this->extra, 'professional_development'),
+                    count((array) data_get($this->extra, 'skills', [])),
                 ])
                     ->filter()
                     ->count() > 0

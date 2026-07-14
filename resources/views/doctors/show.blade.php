@@ -116,13 +116,13 @@
                                         <div class="text-interactive font-semibold">
                                             Стаж работы:
                                         </div>
-                                        <div>{{ $doctor->extra['seniority'] }}</div>
+                                        <div>{{ data_get($doctor->extra, 'seniority') }}</div>
                                     </div>
                                     <div class="flex gap-1 text-[13px] md:text-base">
                                         <div class="text-interactive font-semibold">
                                             Категория:
                                         </div>
-                                        <div>{{ $doctor->extra['category'] }}</div>
+                                        <div>{{ data_get($doctor->extra, 'category') }}</div>
                                     </div>
                                 </div>
                             @endif
@@ -147,13 +147,13 @@
                                 </div>
 
 
-                                @if ($doctor->extra['reviews'])
+                                @if (data_get($doctor->extra, 'reviews'))
                                     <div class="space-y-5">
                                         <div class="font-semibold text-lg">
                                             Отзывы о специалисте:
                                         </div>
                                         <div class="flex gap-7">
-                                            @foreach ($doctor->extra['reviews'] as $service)
+                                            @foreach (data_get($doctor->extra, 'reviews', []) as $service)
                                                 @if (empty($service['url']))
                                                     @continue
                                                 @endif
@@ -218,25 +218,25 @@
                                 <div id="info"
                                     class="scroll-mt-20 scroll-smooth space-y-8 bg-[#fbfcfd] md:bg-transparent shadow-md md:shadow-none rounded-lg md:rounded-none p-5 md:p-0">
                                     <div class="space-y-4">
-                                        @if ($doctor->extra['seniority'])
+                                        @if (data_get($doctor->extra, 'seniority'))
                                             <x-doctor-info-block title="Стаж работы по специальности:"
-                                                :value="$doctor->extra['seniority']" />
+                                                :value="data_get($doctor->extra, 'seniority')" />
                                         @endif
-                                        @if ($doctor->extra['category'])
-                                            <x-doctor-info-block title="Категория:" :value="$doctor->extra['category']" />
+                                        @if (data_get($doctor->extra, 'category'))
+                                            <x-doctor-info-block title="Категория:" :value="data_get($doctor->extra, 'category')" />
                                         @endif
                                         @if ($doctor->receives_display)
                                             <x-doctor-info-block title="Ведёт приём:" :value="$doctor->receives_display" />
                                         @endif
                                     </div>
 
-                                    @if ($doctor->extra['education'])
+                                    @if (data_get($doctor->extra, 'education'))
                                         <div class="flex gap-5 md:gap-2">
                                             <div class="w-36 md:w-[217px] font-semibold">
                                                 Образование:
                                             </div>
                                             <div class="flex-1 space-y-8">
-                                                @foreach ($doctor->extra['education'] as $institution)
+                                                @foreach (data_get($doctor->extra, 'education', []) as $institution)
                                                     <div>
                                                         <div class="flex items-start gap-4">
                                                             <span class="flex-none">
@@ -266,7 +266,7 @@
                                         </div>
                                     @endif
 
-                                    @if ($doctor->extra['professional_development'])
+                                    @if (data_get($doctor->extra, 'professional_development'))
                                         <div class="flex gap-5 md:gap-2">
                                             <div class="w-36 md:w-[217px] font-semibold">
                                                 Повышение квалификации:
@@ -277,7 +277,7 @@
                                                         class="hidden md:block [&_rect]:stroke-current [&_path]:fill-current w-4 pt-1" />
                                                 </div>
                                                 <div class="border-l md:ml-1.5 pl-5 space-y-4">
-                                                    @foreach ($doctor->extra['professional_development'] as $item)
+                                                    @foreach (data_get($doctor->extra, 'professional_development', []) as $item)
                                                         <div>
                                                             <div class="text-sm md:text-base font-semibold">
                                                                 {{ $item['title'] }}</div>
