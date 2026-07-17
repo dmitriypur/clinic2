@@ -14,7 +14,9 @@
                         <p class="font-semibold !m-0">{{ $author->full_name }}</p>
                         <p>{{ $author->speciality }}</p>
                     </div>
-                    <div class="absolute left-1/2 -translate-x-1/2 -bottom-6 lg:-bottom-10 w-full h-64 sm:h-full [&_img]:w-full [&_img]:h-full [&_img]:object-contain lg:[&_img]:object-cover">{{ $block->getResponsiveImage('default', $block->title) }}</div>
+                    <div class="absolute left-1/2 -translate-x-1/2 -bottom-6 lg:-bottom-10 w-full h-64 sm:h-full [&_img]:w-full [&_img]:h-full [&_img]:object-contain lg:[&_img]:object-contain">
+                        {{ $block->getResponsiveImage('default', $block->title) }}
+                    </div>
                 </div>
             @endif
 
