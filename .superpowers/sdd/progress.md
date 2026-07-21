@@ -8,4 +8,4 @@ Baseline: `php artisan test` on `c4991ba` — 156 passed, 20 pre-existing failur
 - [x] Task 2: Direct doctor and service sources
 - [x] Task 3: Full-results and live-search UI
 - [x] Task 4: Anonymous full-search analytics and retention
-- [ ] Task 5: Integration verification
+- [x] Task 5: Integration verification
