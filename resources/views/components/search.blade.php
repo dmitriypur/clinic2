@@ -1,6 +1,6 @@
-<div is="search-live" inline-template class="mt-2 relative" initial-query="{{ $query ?? '' }}" live-search-url="{{ route('live.search') }}">
+<div is="search-live" inline-template class="mt-2 relative" initial-query="{{ $query ?? '' }}" live-search-url="{{ city_route('live.search') }}">
     <div>
-        <form action="{{ route('search') }}" method="GET">
+        <form action="{{ city_route('search') }}" method="GET">
             <div class="mt-2 relative w-full h-10">
                 <input
                     type="text"

@@ -28,11 +28,11 @@
     <section class="flex flex-col scroll-mt-16 scroll-smooth lg:scroll-mt-28">
         <div class="container py-10">
             <div class="mb-4">
-                <form action="{{ route('search') }}" method="GET">
+                <form action="{{ city_route('search') }}" method="GET">
                     <div class="mt-2 relative w-full h-10">
                         <input type="text" name="q"
                                class="outline-none pl-14 text-interactive placeholder-interactive/50 text-sm w-1/3 h-full absolute left-0 top-0 border-none bg-white rounded-xl"
-                               placeholder="Поиск по сайту..." value="{{ $search }}" maxlength="100" autocomplete="off"
+                               placeholder="Поиск по сайту..." value="{{ old('q', $search) }}" maxlength="100" autocomplete="off"
                                aria-label="Поиск по сайту">
                         <button class="absolute top-0 left-4 z-10 p-1 w-7 h-full block [&_svg]:fill-[#8794AC]"
                                 type="submit">

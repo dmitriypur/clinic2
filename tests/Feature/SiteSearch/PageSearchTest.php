@@ -257,12 +257,32 @@ class PageSearchTest extends TestCase
             ->assertJsonValidationErrors('query');
     }
 
-    public function test_full_search_redirects_an_invalid_query_to_the_search_page_with_a_validation_error(): void
+    public function test_city_prefixed_search_uses_city_aware_actions_live_endpoint_and_validation_redirect(): void
     {
+        $city = City::create([
+            'name' => 'Санкт-Петербург',
+            'slug' => 'spb',
+            'is_default' => false,
+            'active' => true,
+        ]);
+        $invalidQuery = str_repeat('а', 101);
+
+        $this->get('/spb/search')
+            ->assertOk()
+            ->assertSee('action="' . url('/spb/search') . '"', false);
+
+        $this->getJson('/spb/live-search?query=лазерная')
+            ->assertOk();
+
         $this->from('/somewhere')
-            ->get('/search?q=' . str_repeat('а', 101))
-            ->assertRedirect(route('search'))
-            ->assertSessionHasErrors('q');
+            ->get('/spb/search?q=' . $invalidQuery)
+            ->assertRedirect(url('/spb/search'))
+            ->assertSessionHasErrors('q')
+            ->assertSessionHasInput('q', $invalidQuery);
+
+        $this->get('/spb/search')
+            ->assertOk()
+            ->assertSee('value="' . $invalidQuery . '"', false);
     }
 
     private function createPage(array $attributes = []): Page

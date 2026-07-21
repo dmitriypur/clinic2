@@ -35,6 +35,8 @@ export default {
   },
   methods: {
     performSearch() {
+      const requestId = ++this.requestId;
+
       clearTimeout(this.searchTimeout);
       this.cancelRequest();
       this.searchResults = [];
@@ -47,11 +49,10 @@ export default {
       }
 
       this.searchTimeout = setTimeout(() => {
-        this.fetchResults();
+        this.fetchResults(requestId);
       }, 300);
     },
-    fetchResults() {
-      const requestId = ++this.requestId;
+    fetchResults(requestId) {
       this.requestController = new AbortController();
       this.isLoading = true;
 

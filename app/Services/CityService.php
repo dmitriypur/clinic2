@@ -11,8 +11,6 @@ class CityService
         'stati',
         'directory',
         'tags',
-        'search',
-        'live-search',
         'vk-mini-app',
     ];
 

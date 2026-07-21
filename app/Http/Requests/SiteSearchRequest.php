@@ -41,7 +41,7 @@ class SiteSearchRequest extends FormRequest
             return parent::getRedirectUrl();
         }
 
-        return route('search');
+        return city_route('search');
     }
 
     private function inputKey(): string
