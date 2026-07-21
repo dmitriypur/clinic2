@@ -109,6 +109,53 @@ class EntitySearchTest extends TestCase
         $this->assertNotContains("service:{$inactive->id}", app(SiteSearchService::class)->suggest('скрытая', 10)->pluck('key')->all());
     }
 
+    public function test_search_excludes_children_without_a_visible_active_parent_in_the_current_city(): void
+    {
+        $city = $this->createCity('Киров', 'kirov');
+        $foreignCity = $this->createCity('Пермь', 'perm');
+        app(CityService::class)->setCurrentCity($city);
+
+        $visibleParent = $this->createService(['title' => 'Видимый родитель']);
+        $visibleChild = $this->createService(['title' => 'Детская диагностика', 'parent_id' => $visibleParent->id]);
+        $inactiveParent = $this->createService(['title' => 'Неактивный родитель', 'is_active' => false]);
+        $inactiveParentChild = $this->createService(['title' => 'Скрытая диагностика', 'parent_id' => $inactiveParent->id]);
+        $foreignParent = $this->createService(['title' => 'Пермский родитель']);
+        $foreignParentChild = $this->createService(['title' => 'Чужая диагностика', 'parent_id' => $foreignParent->id]);
+
+        $visibleParent->cities()->attach($city);
+        $visibleChild->cities()->attach($city);
+        $inactiveParent->cities()->attach($city);
+        $inactiveParentChild->cities()->attach($city);
+        $foreignParent->cities()->attach($foreignCity);
+        $foreignParentChild->cities()->attach($city);
+
+        Service::addGlobalScope('test-production-city', function (Builder $query) use ($city): void {
+            $query->whereExists(function ($subQuery) use ($city): void {
+                $subQuery->selectRaw(1)
+                    ->from('city_service')
+                    ->whereColumn('city_service.service_id', 'services.id')
+                    ->where('city_service.city_id', $city->id);
+            });
+        });
+
+        try {
+            $visibleResults = app(SiteSearchService::class)->suggest('видимый родитель', 10);
+
+            $this->assertNotNull($visibleResults->firstWhere('key', "service:{$visibleParent->id}"));
+            $this->assertNotNull($visibleResults->firstWhere('key', "service:{$visibleChild->id}"));
+            $this->assertNotContains(
+                "service:{$inactiveParentChild->id}",
+                app(SiteSearchService::class)->suggest('скрытая диагностика', 10)->pluck('key')->all(),
+            );
+            $this->assertNotContains(
+                "service:{$foreignParentChild->id}",
+                app(SiteSearchService::class)->suggest('чужая диагностика', 10)->pluck('key')->all(),
+            );
+        } finally {
+            Service::clearBootedModels();
+        }
+    }
+
     public function test_direct_entity_title_matches_rank_above_page_body_mentions_and_keep_unique_type_keys(): void
     {
         $doctor = $this->createDoctor(['surname' => 'Диагностика', 'name' => 'Иван']);

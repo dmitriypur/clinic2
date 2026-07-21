@@ -4,13 +4,16 @@ namespace Tests\Feature\SiteSearch;
 
 use App\Enums\BlockType;
 use App\Models\Block;
+use App\Models\Category;
 use App\Models\City;
 use App\Models\Page;
 use App\Services\CityService;
 use App\Services\SiteSearchService;
+use Illuminate\Database\Connection;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Mockery;
 use Tests\TestCase;
 
 class PageSearchTest extends TestCase
@@ -96,6 +99,84 @@ class PageSearchTest extends TestCase
         $this->assertSame("page:{$page->id}", $results->first()->key);
         $this->assertStringNotContainsString('<', (string) $results->first()->snippet);
         $this->assertStringContainsString('лазерная коррекция', (string) $results->first()->snippet);
+    }
+
+    public function test_search_prefers_a_matching_block_when_the_page_body_does_not_match(): void
+    {
+        $page = $this->createPage([
+            'title' => 'Информационная страница',
+            'body_html' => '<p>Общие сведения о клинике.</p>',
+        ]);
+        $this->createBlock($page, ['body_html' => '<p>Точная лазерная диагностика зрения.</p>']);
+
+        $result = app(SiteSearchService::class)->suggest('лазерная диагностика', 10)->first();
+
+        $this->assertSame("page:{$page->id}", $result?->key);
+        $this->assertStringContainsString('лазерная диагностика', (string) $result?->snippet);
+        $this->assertStringNotContainsString('Общие сведения', (string) $result?->snippet);
+    }
+
+    public function test_search_decodes_entities_before_removing_encoded_markup_from_snippets(): void
+    {
+        $page = $this->createPage([
+            'title' => 'Информационная страница',
+            'body_html' => '&lt;script&gt;alert(1)&lt;/script&gt; безопасная диагностика',
+        ]);
+
+        $result = app(SiteSearchService::class)->suggest('безопасная диагностика', 10)->first();
+
+        $this->assertSame("page:{$page->id}", $result?->key);
+        $this->assertSame('alert(1) безопасная диагностика', $result?->snippet);
+        $this->assertStringNotContainsString('<script', (string) $result?->snippet);
+    }
+
+    public function test_page_category_urls_are_eager_loaded_without_result_count_dependent_queries(): void
+    {
+        $singleCategory = Category::create(['title' => 'Одна категория', 'handle' => 'single-category']);
+        $manyCategory = Category::create(['title' => 'Несколько страниц', 'handle' => 'many-category']);
+        $single = $this->createPage(['title' => 'единичный результат', 'category_id' => $singleCategory->id]);
+        $many = collect(range(1, 3))->map(fn (int $number): Page => $this->createPage([
+            'title' => "массовый результат {$number}",
+            'category_id' => $manyCategory->id,
+        ]));
+
+        DB::enableQueryLog();
+        DB::flushQueryLog();
+        $singleResults = app(SiteSearchService::class)->suggest('единичный результат', 10);
+        $singleCategoryQueryCount = collect(DB::getQueryLog())
+            ->filter(fn (array $query): bool => str_contains($query['query'], 'from "categories"'))
+            ->count();
+
+        DB::flushQueryLog();
+        $manyResults = app(SiteSearchService::class)->suggest('массовый результат', 10);
+        $manyCategoryQueryCount = collect(DB::getQueryLog())
+            ->filter(fn (array $query): bool => str_contains($query['query'], 'from "categories"'))
+            ->count();
+        DB::disableQueryLog();
+
+        $this->assertSame(["page:{$single->id}"], $singleResults->pluck('key')->all());
+        $this->assertSame($many->map(fn (Page $page): string => "page:{$page->id}")->all(), $manyResults->pluck('key')->all());
+        $this->assertStringContainsString('/single-category/', $singleResults->first()->url);
+        $this->assertSame(1, $singleCategoryQueryCount);
+        $this->assertSame($singleCategoryQueryCount, $manyCategoryQueryCount, 'Page result count must not add category queries.');
+    }
+
+    public function test_mysql_payload_search_applies_a_case_insensitive_collation_to_the_search_pattern(): void
+    {
+        $connection = Mockery::mock(Connection::class);
+        $connection->shouldReceive('getDriverName')->twice()->andReturn('mysql');
+
+        $builder = Mockery::mock(Builder::class);
+        $builder->shouldReceive('getConnection')->twice()->andReturn($connection);
+        $builder->shouldReceive('orWhereRaw')->once()->with(
+            "JSON_SEARCH(payload, 'one', CONVERT(? USING utf8mb4) COLLATE utf8mb4_unicode_ci, '!') IS NOT NULL",
+            ['%лазерная%'],
+        );
+
+        $method = new \ReflectionMethod(SiteSearchService::class, 'wherePayloadContains');
+        $method->invoke(app(SiteSearchService::class), $builder, '%лазерная%');
+
+        $this->addToAssertionCount(1);
     }
 
     public function test_search_ranks_title_matches_before_supporting_text_with_stable_ties(): void

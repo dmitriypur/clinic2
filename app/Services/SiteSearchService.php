@@ -51,7 +51,7 @@ class SiteSearchService
 
         $pages = Page::query()
             ->active()
-            ->with('blocks')
+            ->with(['blocks', 'category'])
             ->where(function ($query) use ($tokens): void {
                 foreach ($tokens as $token) {
                     $like = '%' . $this->escapeLike($token) . '%';
@@ -148,9 +148,17 @@ class SiteSearchService
             })
             ->filter();
 
+        $visibleParentIds = Service::query()
+            ->select('id')
+            ->where('is_active', true);
+
         $serviceQuery = Service::query()
             ->where('is_active', true)
-            ->with('parent');
+            ->where(function (Builder $query) use ($visibleParentIds): void {
+                $query->whereNull('parent_id')
+                    ->orWhereIn('parent_id', $visibleParentIds);
+            })
+            ->with(['parent' => fn ($parentQuery) => $parentQuery->where('is_active', true)]);
 
         if ($serviceQuery->getConnection()->getDriverName() !== 'sqlite') {
             $serviceQuery->where(function ($query) use ($tokens): void {
@@ -218,7 +226,10 @@ class SiteSearchService
         }
 
         if ($query->getConnection()->getDriverName() === 'mysql') {
-            $query->orWhereRaw("JSON_SEARCH(payload, 'one', ?, '!') IS NOT NULL", [$like]);
+            $query->orWhereRaw(
+                "JSON_SEARCH(payload, 'one', CONVERT(? USING utf8mb4) COLLATE utf8mb4_unicode_ci, '!') IS NOT NULL",
+                [$like],
+            );
 
             return;
         }
@@ -277,10 +288,10 @@ class SiteSearchService
 
     private function snippet(string $body, Collection $blocks, string $term, array $tokens): ?string
     {
-        $source = $body !== ''
+        $source = $body !== '' && $this->matchesAllTokens($tokens, $body)
             ? $body
             : $blocks->first(fn (string $block): bool => $this->matchesAllTokens($tokens, $block));
-        $source ??= $blocks->first();
+        $source ??= $body !== '' ? $body : $blocks->first();
 
         if (! is_string($source) || $source === '') {
             return null;
@@ -356,7 +367,11 @@ class SiteSearchService
 
     private function plainText(?string $value): string
     {
-        return trim((string) preg_replace('/\s+/u', ' ', html_entity_decode(strip_tags((string) $value), ENT_QUOTES | ENT_HTML5, 'UTF-8')));
+        return trim((string) preg_replace(
+            '/\s+/u',
+            ' ',
+            strip_tags(html_entity_decode((string) $value, ENT_QUOTES | ENT_HTML5, 'UTF-8')),
+        ));
     }
 
     private function resolvedText(?string $value): string
