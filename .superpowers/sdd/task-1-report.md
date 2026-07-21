@@ -8,7 +8,10 @@ Complete.
 
 - RED: `php artisan test --filter=PageSearchTest` initially failed because the legacy live endpoint did not expose `key`.
 - RED: added coverage exposed literal `LIKE` wildcard matching, JSON payload candidate selection, phone token handling, and effective-term length handling.
-- GREEN: `php artisan test --filter=PageSearchTest` passes with 10 tests and 31 assertions.
+- RED (review fix): `Киров лазерная коррекция` ranked a non-exact title above `лазерная коррекция`, because scoring and snippet selection used the raw term after city-token removal.
+- RED (review fix): removing the broad non-null payload condition exposed that SQLite stores JSON Unicode escapes, so a raw payload `LIKE` did not search scalar JSON strings.
+- GREEN (review fix): scoring and snippets use the phrase rebuilt from effective tokens; payload candidates use scalar JSON string matching (`json_tree` for SQLite, `JSON_SEARCH` for MySQL); a production-like page global scope is verified through `/live-search` with a foreign-city page.
+- GREEN: `php artisan test --filter=PageSearchTest` passes with 12 tests and 35 assertions.
 
 ## Changed files
 
@@ -17,6 +20,7 @@ Complete.
 - `app/Services/SiteSearchService.php`
 - `app/Http/Controllers/SearchController.php`
 - `tests/Feature/SiteSearch/PageSearchTest.php`
+- `.superpowers/sdd/task-1-report.md`
 - `docs/superpowers/plans/2026-07-21-site-search-foundation.md`
 - `.superpowers/sdd/progress.md`
 
@@ -24,7 +28,7 @@ Complete.
 
 ```text
 php artisan test --filter=PageSearchTest
-PASS: 10 tests, 31 assertions
+PASS: 12 tests, 35 assertions
 
 git diff --check
 PASS

@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Block;
 use App\Models\Page;
 use App\Search\SiteSearchResult;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 
@@ -39,8 +40,9 @@ class SiteSearchService
     private function results(string $term): Collection
     {
         $tokens = $this->effectiveTokens($term);
+        $effectivePhrase = implode(' ', $tokens);
 
-        if ($tokens === [] || $this->length(implode('', $tokens)) < 2) {
+        if ($tokens === [] || $this->length(str_replace(' ', '', $effectivePhrase)) < 2) {
             return collect();
         }
 
@@ -56,9 +58,9 @@ class SiteSearchService
                             ->orWhereRaw("body_html LIKE ? ESCAPE '!'", [$like])
                             ->orWhereHas('blocks', function ($blockQuery) use ($like): void {
                                 $blockQuery->whereRaw("title LIKE ? ESCAPE '!'", [$like])
-                                    ->orWhereRaw("body_html LIKE ? ESCAPE '!'", [$like])
-                                    ->orWhereRaw("payload LIKE ? ESCAPE '!'", [$like])
-                                    ->orWhereNotNull('payload');
+                                    ->orWhereRaw("body_html LIKE ? ESCAPE '!'", [$like]);
+
+                                $this->wherePayloadContains($blockQuery, $like);
                             });
                     });
                 }
@@ -66,7 +68,7 @@ class SiteSearchService
             ->get();
 
         return $pages
-            ->map(function (Page $page) use ($term, $tokens): ?SiteSearchResult {
+            ->map(function (Page $page) use ($effectivePhrase, $tokens): ?SiteSearchResult {
                 $page = $page->withResolvedCitySeoVariables();
                 $title = $this->plainText($page->title);
                 $body = $this->plainText($page->body_html);
@@ -84,8 +86,8 @@ class SiteSearchService
                     typeLabel: 'Страница',
                     title: $title,
                     url: $page->getUrl(),
-                    snippet: $this->snippet($body, $blocks, $term, $tokens),
-                    score: $this->score($title, $supportingText, $term, $tokens),
+                    snippet: $this->snippet($body, $blocks, $effectivePhrase, $tokens),
+                    score: $this->score($title, $supportingText, $effectivePhrase, $tokens),
                 );
             })
             ->filter()
@@ -98,6 +100,26 @@ class SiteSearchService
                     <=> [$this->lower($right->title), $right->key];
             })
             ->values();
+    }
+
+    private function wherePayloadContains(Builder $query, string $like): void
+    {
+        if ($query->getConnection()->getDriverName() === 'sqlite') {
+            $query->orWhereRaw(
+                "EXISTS (SELECT 1 FROM json_tree(blocks.payload) WHERE json_tree.type = 'text' AND json_tree.value LIKE ? ESCAPE '!')",
+                [$like],
+            );
+
+            return;
+        }
+
+        if ($query->getConnection()->getDriverName() === 'mysql') {
+            $query->orWhereRaw("JSON_SEARCH(payload, 'one', ?, '!') IS NOT NULL", [$like]);
+
+            return;
+        }
+
+        $query->orWhereRaw("payload LIKE ? ESCAPE '!'", [$like]);
     }
 
     private function effectiveTokens(string $term): array

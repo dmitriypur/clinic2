@@ -8,6 +8,7 @@ use App\Models\City;
 use App\Models\Page;
 use App\Services\CityService;
 use App\Services\SiteSearchService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
@@ -114,6 +115,69 @@ class PageSearchTest extends TestCase
             "page:{$allTitle->id}",
             "page:{$supporting->id}",
         ], $results->pluck('key')->all());
+    }
+
+    public function test_search_ranks_the_effective_phrase_after_ignoring_the_current_city(): void
+    {
+        $city = City::create([
+            'name' => 'Киров',
+            'slug' => 'kirov',
+            'is_default' => false,
+            'active' => true,
+        ]);
+        app(CityService::class)->setCurrentCity($city);
+
+        $exact = $this->createPage(['title' => 'лазерная коррекция']);
+        $allTokens = $this->createPage(['title' => 'абажур лазерная современная коррекция']);
+
+        $results = app(SiteSearchService::class)->suggest('Киров лазерная коррекция', 10);
+
+        $this->assertSame([
+            "page:{$exact->id}",
+            "page:{$allTokens->id}",
+        ], $results->pluck('key')->all());
+    }
+
+    public function test_live_search_honors_a_production_like_city_global_scope(): void
+    {
+        $currentCity = City::create([
+            'name' => 'Киров',
+            'slug' => 'kirov',
+            'is_default' => false,
+            'active' => true,
+        ]);
+        $foreignCity = City::create([
+            'name' => 'Пермь',
+            'slug' => 'perm',
+            'is_default' => false,
+            'active' => true,
+        ]);
+        app(CityService::class)->setCurrentCity($currentCity);
+
+        $currentPage = $this->createPage(['title' => 'лазерная коррекция в Кирове']);
+        $foreignPage = $this->createPage(['title' => 'лазерная коррекция в Перми']);
+        $currentPage->cities()->attach($currentCity);
+        $foreignPage->cities()->attach($foreignCity);
+
+        Page::addGlobalScope('test-production-city', function (Builder $query) use ($currentCity): void {
+            $query->whereExists(function ($subQuery) use ($currentCity): void {
+                $subQuery->selectRaw(1)
+                    ->from('city_page')
+                    ->whereColumn('city_page.page_id', 'pages.id')
+                    ->where('city_page.city_id', $currentCity->id);
+            });
+        });
+
+        try {
+            $results = $this->getJson('/live-search?query=лазерная коррекция')
+                ->assertOk()
+                ->json();
+
+            $this->assertSame([$currentPage->id], collect($results)->pluck('id')->all());
+            $this->assertNotContains($foreignPage->id, collect($results)->pluck('id')->all());
+        } finally {
+            Page::clearBootedModels();
+        }
     }
 
     public function test_search_uses_current_city_for_urls_and_resolves_seo_variables_before_display(): void
