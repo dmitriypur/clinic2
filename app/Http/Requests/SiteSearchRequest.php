@@ -35,6 +35,15 @@ class SiteSearchRequest extends FormRequest
         }
     }
 
+    protected function getRedirectUrl(): string
+    {
+        if ($this->routeIs('live.search')) {
+            return parent::getRedirectUrl();
+        }
+
+        return route('search');
+    }
+
     private function inputKey(): string
     {
         return $this->routeIs('live.search') ? 'query' : 'q';

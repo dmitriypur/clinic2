@@ -257,6 +257,14 @@ class PageSearchTest extends TestCase
             ->assertJsonValidationErrors('query');
     }
 
+    public function test_full_search_redirects_an_invalid_query_to_the_search_page_with_a_validation_error(): void
+    {
+        $this->from('/somewhere')
+            ->get('/search?q=' . str_repeat('а', 101))
+            ->assertRedirect(route('search'))
+            ->assertSessionHasErrors('q');
+    }
+
     private function createPage(array $attributes = []): Page
     {
         return Page::create(array_replace([
