@@ -70,6 +70,12 @@ class Doctor extends Model implements HasMedia
 
     public function scopePubliclyVisible(Builder $query): Builder
     {
+        if ($query->getConnection()->getDriverName() === 'sqlite') {
+            return $query->whereRaw(
+                "LOWER(COALESCE(JSON_EXTRACT(`seo`, '$.\"noindex\"'), 'false')) NOT IN ('true', '1')"
+            );
+        }
+
         return $query->whereRaw(
             "LOWER(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(`seo`, '$.\"noindex\"')), 'false')) NOT IN ('true', '1')"
         );

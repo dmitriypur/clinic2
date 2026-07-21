@@ -3,8 +3,11 @@
 namespace App\Services;
 
 use App\Models\Block;
+use App\Models\Doctor;
 use App\Models\Page;
+use App\Models\Service;
 use App\Search\SiteSearchResult;
+use App\Support\CitySeoVariables;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
@@ -67,7 +70,7 @@ class SiteSearchService
             })
             ->get();
 
-        return $pages
+        $pageResults = $pages
             ->map(function (Page $page) use ($effectivePhrase, $tokens): ?SiteSearchResult {
                 $page = $page->withResolvedCitySeoVariables();
                 $title = $this->plainText($page->title);
@@ -90,7 +93,108 @@ class SiteSearchService
                     score: $this->score($title, $supportingText, $effectivePhrase, $tokens),
                 );
             })
-            ->filter()
+            ->filter();
+
+        $doctorQuery = Doctor::query()->publiclyVisible();
+
+        if ($doctorQuery->getConnection()->getDriverName() !== 'sqlite') {
+            $doctorQuery->where(function ($query) use ($tokens): void {
+                foreach ($tokens as $token) {
+                    $like = '%' . $this->escapeLike($token) . '%';
+
+                    $query->where(function ($tokenQuery) use ($like): void {
+                        $tokenQuery->whereRaw("name LIKE ? ESCAPE '!'", [$like])
+                            ->orWhereRaw("surname LIKE ? ESCAPE '!'", [$like])
+                            ->orWhereRaw("speciality LIKE ? ESCAPE '!'", [$like])
+                            ->orWhereRaw("job_title LIKE ? ESCAPE '!'", [$like])
+                            ->orWhereRaw("excerpt LIKE ? ESCAPE '!'", [$like])
+                            ->orWhereRaw("bio LIKE ? ESCAPE '!'", [$like]);
+                    });
+                }
+            });
+        }
+
+        $doctorResults = $doctorQuery
+            ->get()
+            ->map(function (Doctor $doctor) use ($effectivePhrase, $tokens): ?SiteSearchResult {
+                $doctor = $doctor->withResolvedCitySeoVariables();
+                $title = $this->plainText($doctor->full_name);
+                $supportingText = trim(implode(' ', [
+                    $this->plainText($doctor->speciality),
+                    $this->plainText($doctor->job_title),
+                    $this->plainText($doctor->excerpt),
+                    $this->plainText($doctor->bio),
+                ]));
+
+                if (! $this->matchesAllTokens($tokens, trim($title . ' ' . $supportingText))) {
+                    return null;
+                }
+
+                return new SiteSearchResult(
+                    key: "doctor:{$doctor->id}",
+                    id: (int) $doctor->id,
+                    type: 'doctor',
+                    typeLabel: 'Врач',
+                    title: $title,
+                    url: $doctor->url,
+                    snippet: $this->entitySnippet([
+                        $this->plainText($doctor->speciality),
+                        $this->plainText($doctor->job_title),
+                        $this->plainText($doctor->excerpt),
+                        $this->plainText($doctor->bio),
+                    ], $effectivePhrase, $tokens),
+                    score: $this->score($title, $supportingText, $effectivePhrase, $tokens) + 10,
+                );
+            })
+            ->filter();
+
+        $serviceQuery = Service::query()
+            ->where('is_active', true)
+            ->with('parent');
+
+        if ($serviceQuery->getConnection()->getDriverName() !== 'sqlite') {
+            $serviceQuery->where(function ($query) use ($tokens): void {
+                foreach ($tokens as $token) {
+                    $like = '%' . $this->escapeLike($token) . '%';
+
+                    $query->where(function ($tokenQuery) use ($like): void {
+                        $tokenQuery->whereRaw("title LIKE ? ESCAPE '!'", [$like])
+                            ->orWhereHas('parent', fn (Builder $parentQuery) => $parentQuery->whereRaw("title LIKE ? ESCAPE '!'", [$like]));
+                    });
+                }
+            });
+        }
+
+        $serviceResults = $serviceQuery
+            ->get()
+            ->map(function (Service $service) use ($effectivePhrase, $tokens): ?SiteSearchResult {
+                $title = $this->resolvedText($service->title);
+                $parentTitle = $this->resolvedText($service->parent?->title);
+                $supportingText = $service->parent ? "{$parentTitle}: {$title}" : '';
+
+                if (! $this->matchesAllTokens($tokens, trim($title . ' ' . $supportingText))) {
+                    return null;
+                }
+
+                $anchor = $service->parent?->uuid ?? $service->uuid;
+
+                return new SiteSearchResult(
+                    key: "service:{$service->id}",
+                    id: (int) $service->id,
+                    type: 'service',
+                    typeLabel: 'Услуга',
+                    title: $title,
+                    url: city_url('/services') . "#{$anchor}",
+                    snippet: $service->parent ? "{$parentTitle}: {$title}" : null,
+                    score: $this->score($title, $supportingText, $effectivePhrase, $tokens) + 10,
+                );
+            })
+            ->filter();
+
+        return $pageResults
+            ->concat($doctorResults)
+            ->concat($serviceResults)
+            ->unique(fn (SiteSearchResult $result): string => $result->key)
             ->sort(function (SiteSearchResult $left, SiteSearchResult $right): int {
                 if ($left->score() !== $right->score()) {
                     return $right->score() <=> $left->score();
@@ -189,6 +293,24 @@ class SiteSearchService
         return $start > 0 ? '…' . $snippet : $snippet;
     }
 
+    private function entitySnippet(array $sources, string $term, array $tokens): ?string
+    {
+        $source = collect($sources)
+            ->filter(fn (string $source): bool => $source !== '')
+            ->first(fn (string $source): bool => $this->matchesAllTokens($tokens, $source));
+        $source ??= collect($sources)->first(fn (string $source): bool => $source !== '');
+
+        if (! is_string($source) || $source === '') {
+            return null;
+        }
+
+        $position = $this->matchPosition($source, $term, $tokens);
+        $start = max(0, $position - 60);
+        $snippet = trim($this->substr($source, $start, 180));
+
+        return $start > 0 ? '…' . $snippet : $snippet;
+    }
+
     private function matchPosition(string $text, string $term, array $tokens): int
     {
         $lowerText = $this->lower($text);
@@ -235,6 +357,11 @@ class SiteSearchService
     private function plainText(?string $value): string
     {
         return trim((string) preg_replace('/\s+/u', ' ', html_entity_decode(strip_tags((string) $value), ENT_QUOTES | ENT_HTML5, 'UTF-8')));
+    }
+
+    private function resolvedText(?string $value): string
+    {
+        return $this->plainText(app(CitySeoVariables::class)->replace($value));
     }
 
     private function matchesAllTokens(array $tokens, string $text): bool
