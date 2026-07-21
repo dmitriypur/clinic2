@@ -28,7 +28,11 @@ class SiteSearchAnalyticsRecorder
 
     private function containsPersonalData(string $query): bool
     {
+        if (preg_match('/[^\s@]+@[^\s@]+/u', $query) === 1) {
+            return true;
+        }
+
         return preg_match('/[A-Z0-9.!#$%&\'*+\/=?^_`{|}~-]+@[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?(?:\.[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?)+/iu', $query) === 1
-            || preg_match('/\+?\d(?:[\s().-]*\d){6,}/u', $query) === 1;
+        || preg_match('/\+?\d(?:[\s().-]*\d){6,}/u', $query) === 1;
     }
 }

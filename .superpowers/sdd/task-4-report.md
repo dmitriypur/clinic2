@@ -8,6 +8,8 @@ Complete.
 
 - RED: `php artisan test --filter=SearchAnalyticsTest` initially failed because the analytics table, model, recorder, and controller integration did not exist.
 - GREEN: full-search-only recording, normalization, current city and total, PII exclusions, recorder-failure isolation, and the 90-day pruning boundary now pass.
+- Regression RED: `test_search_queries_with_unicode_emails_are_not_recorded` failed with one persisted query for `тест@пример.рф`.
+- Regression GREEN: a Unicode-safe privacy guard now skips any non-whitespace `local@domain` sequence before storage; the existing phone-like pattern remains unchanged.
 
 ## Changed files
 
@@ -32,10 +34,10 @@ Complete.
 
 ```text
 php artisan test --filter=SearchAnalyticsTest
-PASS: 5 tests, 13 assertions
+PASS: 6 tests, 15 assertions
 
 php artisan test tests/Feature/SiteSearch
-PASS: 23 tests, 80 assertions
+PASS: 24 tests, 82 assertions
 
 php artisan schedule:list
 PASS: daily model:prune --model="App\\Models\\SiteSearchQuery" is registered

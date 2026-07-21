@@ -64,6 +64,14 @@ class SearchAnalyticsTest extends TestCase
         $this->assertDatabaseCount('site_search_queries', 0);
     }
 
+    public function test_search_queries_with_unicode_emails_are_not_recorded(): void
+    {
+        $this->get('/search?q=тест%40пример.рф')
+            ->assertOk();
+
+        $this->assertDatabaseCount('site_search_queries', 0);
+    }
+
     public function test_search_results_are_returned_when_analytics_storage_fails(): void
     {
         $this->createPage(['title' => 'лазерная коррекция зрения']);
