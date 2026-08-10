@@ -161,27 +161,7 @@
                                 </div>
                             @endif
 
-                            @if ($reviewItems->isNotEmpty())
-                                <div class="hidden space-y-4 md:block mt-auto">
-                                    <h2 class="text-sm font-semibold text-interactive md:text-base">
-                                        Отзывы о специалисте:
-                                    </h2>
-
-                                    <div class="flex flex-wrap gap-4">
-                                        @foreach ($reviewItems as $reviewItem)
-                                            <a href="{{ $reviewItem['url'] }}" target="_blank" rel="noopener"
-                                                class="flex min-h-10 items-center overflow-hidden rounded-xl border border-blue-100 bg-white transition hover:border-action-primary/40">
-                                                <span class="flex h-10 w-12 items-center justify-center bg-slate-50">
-                                                    {{ $reviewItem['media']->img()->attributes(['class' => 'h-8 w-auto']) }}
-                                                </span>
-                                                <span class="px-4 text-xs font-medium text-interactive">
-                                                    {{ $reviewItem['label'] }}
-                                                </span>
-                                            </a>
-                                        @endforeach
-                                    </div>
-                                </div>
-                            @endif
+                            
                         </div>
 
                         <x-button-primary
@@ -202,7 +182,7 @@
                                 @click="videoUrl='{{ $doctor->actual_video_url }}'">
                                 <span
                                     class="flex h-8 w-8 items-center justify-center rounded-full bg-action-primary text-white">
-                                    <x-icon-play />
+                                    <x-icon-play class="h-8 w-8" />
                                 </span>
                                 <span>Видеовизитка врача</span>
                             </button>
@@ -210,7 +190,7 @@
                             <div class="inline-flex items-center gap-3 self-start rounded-2xl bg-slate-100 px-5 py-3 text-sm font-medium text-slate-400 lg:self-end">
                                 <span
                                     class="flex h-8 w-8 items-center justify-center rounded-full bg-slate-300 text-white">
-                                    <x-icon-play />
+                                    <x-icon-play class="h-8 w-8" />
                                 </span>
                                 <span>Видеовизитка врача</span>
                             </div>
@@ -233,6 +213,27 @@
                 @if ($hasDesktopInfoSections)
                     <div class="mt-6 hidden rounded-3xl border border-slate-100 bg-white px-5 py-6 md:block lg:p-8">
                         <div class="space-y-8">
+                            @if ($reviewItems->isNotEmpty())
+                                <section class="border-b border-slate-200/80 pb-7">
+                                    <h2 class="text-xl font-semibold leading-tight text-interactive">
+                                        Отзывы о специалисте:
+                                    </h2>
+
+                                    <div class="flex flex-wrap gap-4 mt-5">
+                                        @foreach ($reviewItems as $reviewItem)
+                                            <a href="{{ $reviewItem['url'] }}" target="_blank" rel="noopener"
+                                                class="flex min-h-10 items-center overflow-hidden rounded-xl border border-blue-100 bg-white transition hover:border-action-primary/40">
+                                                <span class="flex h-10 w-12 items-center justify-center bg-slate-50">
+                                                    {{ $reviewItem['media']->img()->attributes(['class' => 'h-8 w-auto']) }}
+                                                </span>
+                                                <span class="px-4 text-xs font-medium text-interactive">
+                                                    {{ $reviewItem['label'] }}
+                                                </span>
+                                            </a>
+                                        @endforeach
+                                    </div>
+                                </section>
+                            @endif
                             @if ($education->isNotEmpty())
                                 <section class="border-b border-slate-200/80 pb-7">
                                     <h2 class="text-xl font-semibold leading-tight text-interactive">
