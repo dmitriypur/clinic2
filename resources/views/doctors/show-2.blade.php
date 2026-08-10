@@ -131,7 +131,7 @@
                                             @click="videoUrl='{{ $doctor->actual_video_url }}'">
                                             <span
                                                 class="flex h-8 w-8 items-center justify-center rounded-full bg-action-primary text-white">
-                                                <x-icon-play class="h-4 w-4 fill-current" />
+                                                <x-icon-play class="h-8 w-8" />
                                             </span>
                                             <span>Видеовизитка врача</span>
                                         </button>
