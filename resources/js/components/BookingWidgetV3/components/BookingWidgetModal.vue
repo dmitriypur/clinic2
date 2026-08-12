@@ -76,7 +76,7 @@ export default {
     layoutMode: {
       type: String,
       default: "default",
-      validator: (value) => ["default", "schedule"].includes(value),
+      validator: (value) => ["default", "schedule", "error"].includes(value),
     },
   },
   computed: {
@@ -93,7 +93,9 @@ export default {
     bodyClassName() {
       return classNames(
         "grow-0 shrink-0 basis-auto",
-        this.layoutMode === "schedule" ? "p-0" : "px-4 py-6 lg:p-8"
+        ["schedule", "error"].includes(this.layoutMode)
+          ? "p-0"
+          : "px-4 py-6 lg:p-8"
       );
     },
   },

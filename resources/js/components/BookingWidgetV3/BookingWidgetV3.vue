@@ -5,7 +5,7 @@
     :zIndexOverride="49"
     :layoutMode="widgetLayoutMode"
     :showBackdrop="mode !== 'vk'"
-    :showCloseButton="mode !== 'vk'"
+    :showCloseButton="mode !== 'vk' && !showBookingServiceUnavailable"
     :flat="mode === 'vk'"
     closeButtonHiddenOnMobile
     @close="handleClose"
@@ -138,23 +138,31 @@
           @back="goToBirthDate"
         />
 
-        <PatientFormStep
-          v-else-if="currentStep === 'form'"
-          :selectedDoctor="selectedDoctor"
-          :selectedClinic="selectedClinic"
-          :selectedBranch="selectedBranch"
-          :selectedDate="selectedDate"
-          :selectedSlot="selectedSlot"
-          :isSubmitting="isSubmitting"
-          :initialBirthDate="patientBirthDateIso"
-          :initialPatientData="initialPatientData"
-          :birthDateReadonly="!isBirthDateEditableInForm"
-          :stepChipText="formStepChipText"
-          ref="patientForm"
-          @close="handleClose"
-          @back="goBackFromForm"
-          @submit="handleFormSubmit"
-        />
+        <template v-else-if="currentStep === 'form'">
+          <PatientFormStep
+            v-show="!showBookingServiceUnavailable"
+            :selectedDoctor="selectedDoctor"
+            :selectedClinic="selectedClinic"
+            :selectedBranch="selectedBranch"
+            :selectedDate="selectedDate"
+            :selectedSlot="selectedSlot"
+            :isSubmitting="isSubmitting"
+            :initialBirthDate="patientBirthDateIso"
+            :initialPatientData="initialPatientData"
+            :birthDateReadonly="!isBirthDateEditableInForm"
+            :stepChipText="formStepChipText"
+            ref="patientForm"
+            @close="handleClose"
+            @back="goBackFromForm"
+            @submit="handleFormSubmit"
+          />
+
+          <BookingServiceUnavailableStep
+            v-if="showBookingServiceUnavailable"
+            @back="showBookingServiceUnavailable = false"
+            @close="handleClose"
+          />
+        </template>
 
         <DoctorAgeBlockedStep
           v-else-if="currentStep === 'doctor-age-blocked'"
@@ -248,6 +256,8 @@ const ClinicSelectStep = () => import("./components/ClinicSelectStep.vue");
 const DoctorScheduleStep = () => import("./components/DoctorScheduleStep.vue");
 const ClinicScheduleStep = () => import("./components/ClinicScheduleStep.vue");
 const PatientFormStep = () => import("./components/PatientFormStep.vue");
+const BookingServiceUnavailableStep = () =>
+  import("./components/BookingServiceUnavailableStep.vue");
 const DoctorAgeBlockedStep = () =>
   import("./components/DoctorAgeBlockedStep.vue");
 const CallbackFormNew = () => import("../CallbackForm/CallbackFormNew.vue");
@@ -264,6 +274,7 @@ export default {
     DoctorScheduleStep,
     ClinicScheduleStep,
     PatientFormStep,
+    BookingServiceUnavailableStep,
     DoctorAgeBlockedStep,
     CallbackFormNew,
     SuccessStep,
@@ -341,6 +352,7 @@ export default {
       loadingDoctorFlowBranches: false,
       doctorFlowBranchesLoadedOnce: false,
       isSubmitting: false,
+      showBookingServiceUnavailable: false,
       formSourceStep: null,
       ageBlockedDoctor: null,
       directDoctorLaunchPreload: null,
@@ -351,6 +363,10 @@ export default {
   },
   computed: {
     widgetLayoutMode() {
+      if (this.showBookingServiceUnavailable) {
+        return "error";
+      }
+
       return this.currentStep === "doctor-schedule" || this.currentStep === "clinic-schedule" || this.currentStep === "date-select"
         ? "schedule"
         : "default";
@@ -2309,6 +2325,11 @@ export default {
       } catch (error) {
         if (error.status === 422 && error.errors) {
           this.$refs.patientForm?.setErrors(error.errors);
+        } else if (
+          error.status === 503 &&
+          error.code === "booking_service_unavailable"
+        ) {
+          this.showBookingServiceUnavailable = true;
         } else {
           this.$refs.patientForm?.setGeneralError(
             error.message ||
@@ -2362,6 +2383,7 @@ export default {
       this.dateFlowLastAvailableDate = null;
       resetBookingLoadingFlags(this);
       this.isSubmitting = false;
+      this.showBookingServiceUnavailable = false;
       this.formSourceStep = null;
       this.ageBlockedDoctor = null;
       this.directDoctorLaunchPreload = null;

@@ -410,6 +410,15 @@ class BookingApiService {
             errors: data.errors || {},
             status: 422,
           };
+        case 503: {
+          const serviceUnavailableError = new Error(
+            data.message || "Сервис временно недоступен"
+          );
+          serviceUnavailableError.status = 503;
+          serviceUnavailableError.code = data.code || null;
+
+          return serviceUnavailableError;
+        }
         case 500:
           return new Error("Ошибка сервера. Попробуйте позже");
         default:
