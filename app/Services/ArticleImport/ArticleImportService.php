@@ -7,13 +7,13 @@ namespace App\Services\ArticleImport;
 use App\Enums\BlockType;
 use App\Enums\PageType;
 use App\Models\Block;
+use App\Models\CuratorMedia;
 use App\Models\Doctor;
 use App\Models\Page;
 use App\Models\Tag;
 use App\Services\ArticleNavigationBlockService;
 use App\Services\PageService;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Throwable;
 
@@ -71,7 +71,7 @@ class ArticleImportService
                         $this->createExpertOpinionBlock($page, $data),
                     );
 
-                    if (!empty($parsed['faq_items'])) {
+                    if (! empty($parsed['faq_items'])) {
                         Block::query()->create([
                             'page_id' => $page->id,
                             'type' => BlockType::FAQ,
@@ -156,7 +156,7 @@ class ArticleImportService
                 'author' => $data['author_id'] ?: null,
                 'theme' => $theme !== '' ? $theme : null,
                 'url' => '',
-            ], fn($value, string $key) => $key === 'url' || ($value !== null && $value !== ''), ARRAY_FILTER_USE_BOTH),
+            ], fn ($value, string $key) => $key === 'url' || ($value !== null && $value !== ''), ARRAY_FILTER_USE_BOTH),
             'settings' => $this->defaultSettings(),
         ]);
     }
@@ -164,8 +164,8 @@ class ArticleImportService
     private function createTagsBlock(Page $page, array $parsed, int $order): void
     {
         $sectionsByTitle = collect($parsed['sections'])
-            ->filter(fn(array $section) => !empty($section['anchor']))
-            ->keyBy(fn(array $section) => mb_strtolower($section['title']));
+            ->filter(fn (array $section) => ! empty($section['anchor']))
+            ->keyBy(fn (array $section) => mb_strtolower($section['title']));
 
         $tagLinks = collect($parsed['menu_items'] ?? [])
             ->map(function (array $item) use ($sectionsByTitle) {
@@ -173,19 +173,19 @@ class ArticleImportService
 
                 return [
                     'title' => $item['title'],
-                    'link' => '#' . ($section['anchor'] ?? Str::slug($item['target_title'])),
+                    'link' => '#'.($section['anchor'] ?? Str::slug($item['target_title'])),
                 ];
             })
-            ->filter(fn(array $item) => !empty($item['title']) && !empty($item['link']))
+            ->filter(fn (array $item) => ! empty($item['title']) && ! empty($item['link']))
             ->values()
             ->all();
 
         if ($tagLinks === []) {
             $tagLinks = collect($parsed['sections'])
-                ->filter(fn(array $section) => !($section['is_lead'] ?? false) && !empty($section['anchor']))
-                ->map(fn(array $section) => [
+                ->filter(fn (array $section) => ! ($section['is_lead'] ?? false) && ! empty($section['anchor']))
+                ->map(fn (array $section) => [
                     'title' => $section['title'],
-                    'link' => '#' . $section['anchor'],
+                    'link' => '#'.$section['anchor'],
                 ])
                 ->values()
                 ->all();
@@ -243,17 +243,15 @@ class ArticleImportService
 
         $expertId = $data['expert_id'] ?? null;
         $bodyHtml = trim((string) ($data['expert_body_html'] ?? ''));
-        $imagePath = trim((string) ($data['expert_image_path'] ?? ''));
+        $curatorImageId = $data['expert_curator_image_id'] ?? null;
 
         $doctor = Doctor::query()
             ->withoutGlobalScopes()
             ->find($expertId);
 
-        if (! $doctor || $bodyHtml === '' || $imagePath === '') {
-            if ($imagePath !== '') {
-                Storage::disk('local')->delete($imagePath);
-            }
+        $media = CuratorMedia::query()->find($curatorImageId);
 
+        if (! $doctor || $bodyHtml === '' || ! $media) {
             return ['Не удалось добавить блок «Мнение эксперта»: проверьте врача, текст и фотографию.'];
         }
 
@@ -266,23 +264,14 @@ class ArticleImportService
                 'author' => $doctor->id,
                 'fio_expert' => $doctor->full_name,
                 'position_expert' => $doctor->speciality,
+                'curator_image_id' => $media->getKey(),
             ],
             'settings' => $this->defaultSettings([
                 'background' => '1',
             ]),
         ]);
 
-        try {
-            $this->imageImporter->attachStoredFileToBlock($block, $imagePath);
-
-            return [];
-        } catch (Throwable $exception) {
-            report($exception);
-            Storage::disk('local')->delete($imagePath);
-            $block->delete();
-
-            return ['Не удалось добавить блок «Мнение эксперта»: фотография не была обработана.'];
-        }
+        return [];
     }
 
     private function appendDefaultBlocks(Page $page, int $startOrder): void
@@ -327,9 +316,9 @@ class ArticleImportService
     private function resolveTags(array $tagTitles): array
     {
         $normalizedTags = collect($tagTitles)
-            ->map(fn(string $title) => trim($title))
+            ->map(fn (string $title) => trim($title))
             ->filter()
-            ->mapWithKeys(fn(string $title) => [Str::slug($title) => $title]);
+            ->mapWithKeys(fn (string $title) => [Str::slug($title) => $title]);
 
         if ($normalizedTags->isEmpty()) {
             return [];
@@ -342,8 +331,8 @@ class ArticleImportService
             ->keyBy('handle');
 
         $missingRows = $normalizedTags
-            ->reject(fn(string $title, string $handle) => $existingTags->has($handle))
-            ->map(fn(string $title, string $handle) => [
+            ->reject(fn (string $title, string $handle) => $existingTags->has($handle))
+            ->map(fn (string $title, string $handle) => [
                 'handle' => $handle,
                 'title' => $title,
                 'created_at' => now(),
@@ -383,7 +372,7 @@ class ArticleImportService
             } catch (Throwable $exception) {
                 report($exception);
 
-                $warnings[] = 'Не удалось загрузить изображение для блока #' . ($index + 1) . '.';
+                $warnings[] = 'Не удалось загрузить изображение для блока #'.($index + 1).'.';
             }
         }
 

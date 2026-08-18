@@ -8,9 +8,9 @@ use App\Enums\BlockType;
 use App\Jobs\ImportArticle;
 use App\Models\ArticleImport;
 use App\Models\Category;
+use App\Models\CuratorMedia;
 use App\Models\Doctor;
 use App\Services\ArticleImport\ArticleImportService;
-use App\Services\ArticleImport\GoogleDriveImageImporter;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -36,22 +36,15 @@ class ArticleImportServiceTest extends TestCase
 
     public function test_import_creates_expert_opinion_before_navigation_and_faq(): void
     {
-        Storage::fake('local');
         Storage::fake('public');
-        $image = imagecreatetruecolor(10, 10);
-        ob_start();
-        imagepng($image);
-        $imageContents = ob_get_clean();
-        imagedestroy($image);
-        Storage::disk('local')->put('article-imports/expert.png', $imageContents);
-
         $doctor = $this->createDoctor();
+        $media = $this->createCuratorMedia();
         $result = app(ArticleImportService::class)->import(
             $this->importData([
                 'include_expert_opinion' => true,
                 'expert_id' => $doctor->id,
                 'expert_body_html' => '<p>Комментарий врача.</p>',
-                'expert_image_path' => 'article-imports/expert.png',
+                'expert_curator_image_id' => $media->id,
             ])
         );
 
@@ -71,43 +64,50 @@ class ArticleImportServiceTest extends TestCase
 
         $this->assertSame((string) $doctor->id, (string) $expertBlock->payload['author']);
         $this->assertSame('<p>Комментарий врача.</p>', $expertBlock->body_html);
-        $this->assertNotNull($expertBlock->getFirstMedia('default'));
+        $this->assertSame($media->id, $expertBlock->payload['curator_image_id']);
+        $this->assertNull($expertBlock->getFirstMedia('default'));
         $this->assertSame([], $result->warnings);
-        Storage::disk('local')->assertMissing('article-imports/expert.png');
     }
 
-    public function test_import_skips_expert_opinion_and_adds_warning_when_image_attach_fails(): void
+    public function test_import_skips_expert_opinion_and_adds_warning_when_curator_image_is_missing(): void
     {
-        $imageImporter = $this->mock(GoogleDriveImageImporter::class);
-        $imageImporter
-            ->shouldReceive('attachStoredFileToBlock')
-            ->once()
-            ->andThrow(new RuntimeException('Image failure'));
-
         $doctor = $this->createDoctor();
         $result = app(ArticleImportService::class)->import(
             $this->importData([
                 'include_expert_opinion' => true,
                 'expert_id' => $doctor->id,
                 'expert_body_html' => '<p>Комментарий врача.</p>',
-                'expert_image_path' => 'article-imports/expert.png',
+                'expert_curator_image_id' => 999999,
             ])
         );
 
         $this->assertFalse(
             $result->page->blocks->contains(
-                fn($block): bool => $block->type === BlockType::EXPERT_OPINION
+                fn ($block): bool => $block->type === BlockType::EXPERT_OPINION
             )
         );
         $this->assertTrue(
             $result->page->blocks->contains(
-                fn($block): bool => $block->type === BlockType::ARTICLE_NAVIGATION
+                fn ($block): bool => $block->type === BlockType::ARTICLE_NAVIGATION
             )
         );
         $this->assertSame(
-            ['Не удалось добавить блок «Мнение эксперта»: фотография не была обработана.'],
+            ['Не удалось добавить блок «Мнение эксперта»: проверьте врача, текст и фотографию.'],
             $result->warnings,
         );
+    }
+
+    private function createCuratorMedia(): CuratorMedia
+    {
+        return CuratorMedia::query()->create([
+            'disk' => 'public',
+            'directory' => 'expert-opinions',
+            'visibility' => 'public',
+            'name' => 'expert',
+            'path' => 'expert-opinions/expert.png',
+            'type' => 'image/png',
+            'ext' => 'png',
+        ]);
     }
 
     public function test_failed_import_job_deletes_temporary_expert_image(): void

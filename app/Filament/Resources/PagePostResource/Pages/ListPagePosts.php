@@ -8,6 +8,7 @@ use App\Jobs\ImportArticle;
 use App\Models\ArticleImport;
 use App\Models\Category;
 use App\Models\Doctor;
+use Awcodes\Curator\Components\Forms\CuratorPicker;
 use Filament\Actions;
 use Filament\Forms;
 use Filament\Forms\Get;
@@ -31,18 +32,18 @@ class ListPagePosts extends ListRecords
                     Forms\Components\TextInput::make('document_url')
                         ->label('Ссылка на Google Docs')
                         ->url()
-                        ->required(fn(Get $get): bool => blank(trim((string) $get('source'))))
+                        ->required(fn (Get $get): bool => blank(trim((string) $get('source'))))
                         ->placeholder('https://docs.google.com/document/d/...'),
                     Forms\Components\Textarea::make('source')
                         ->label('Резервный импорт из текста')
-                        ->required(fn(Get $get): bool => blank(trim((string) $get('document_url'))))
+                        ->required(fn (Get $get): bool => blank(trim((string) $get('document_url'))))
                         ->rows(18)
-                        ->helperText("Если ссылка недоступна, можно вставить структурированный текст: # Заголовок, затем блоки через ##, FAQ через ## FAQ и вопросы через ###.")
+                        ->helperText('Если ссылка недоступна, можно вставить структурированный текст: # Заголовок, затем блоки через ##, FAQ через ## FAQ и вопросы через ###.')
                         ->placeholder("# Заголовок статьи\nТема: Близорукость\nТеги: близорукость, лечение\n\n## Первый блок\nТекст блока\n\n## FAQ\n### Вопрос?\nОтвет"),
                     Forms\Components\Select::make('category_id')
                         ->label('Категория')
                         ->options(Category::query()->orderBy('title')->pluck('title', 'id'))
-                        ->default(fn() => Category::query()->where('handle', 'stati')->value('id'))
+                        ->default(fn () => Category::query()->where('handle', 'stati')->value('id'))
                         ->required(),
                     Forms\Components\Select::make('author_id')
                         ->label('Автор статьи')
@@ -52,7 +53,7 @@ class ListPagePosts extends ListRecords
                                 ->orderBy('surname')
                                 ->orderBy('name')
                                 ->get()
-                                ->mapWithKeys(fn(Doctor $doctor) => [$doctor->id => trim($doctor->surname . ' ' . $doctor->name)])
+                                ->mapWithKeys(fn (Doctor $doctor) => [$doctor->id => trim($doctor->surname.' '.$doctor->name)])
                                 ->all()
                         ),
                     Forms\Components\TextInput::make('theme')
@@ -70,22 +71,26 @@ class ListPagePosts extends ListRecords
                                 ->orderBy('surname')
                                 ->orderBy('name')
                                 ->get()
-                                ->mapWithKeys(fn(Doctor $doctor) => [$doctor->id => trim($doctor->surname . ' ' . $doctor->name)])
+                                ->mapWithKeys(fn (Doctor $doctor) => [$doctor->id => trim($doctor->surname.' '.$doctor->name)])
                                 ->all()
                         )
-                        ->required(fn(Get $get): bool => (bool) $get('include_expert_opinion'))
-                        ->visible(fn(Get $get): bool => (bool) $get('include_expert_opinion')),
+                        ->required(fn (Get $get): bool => (bool) $get('include_expert_opinion'))
+                        ->visible(fn (Get $get): bool => (bool) $get('include_expert_opinion')),
                     Forms\Components\RichEditor::make('expert_body_html')
                         ->label('Текст мнения эксперта')
-                        ->required(fn(Get $get): bool => (bool) $get('include_expert_opinion'))
-                        ->visible(fn(Get $get): bool => (bool) $get('include_expert_opinion')),
-                    Forms\Components\FileUpload::make('expert_image_path')
+                        ->required(fn (Get $get): bool => (bool) $get('include_expert_opinion'))
+                        ->visible(fn (Get $get): bool => (bool) $get('include_expert_opinion')),
+                    CuratorPicker::make('expert_curator_image_id')
                         ->label('Фото врача для блока')
-                        ->disk('local')
-                        ->directory('article-imports/expert-images')
-                        ->image()
-                        ->required(fn(Get $get): bool => (bool) $get('include_expert_opinion'))
-                        ->visible(fn(Get $get): bool => (bool) $get('include_expert_opinion'))
+                        ->buttonLabel('Выбрать из медиатеки')
+                        ->directory('expert-opinions')
+                        ->acceptedFileTypes([
+                            'image/jpeg',
+                            'image/png',
+                            'image/webp',
+                        ])
+                        ->required(fn (Get $get): bool => (bool) $get('include_expert_opinion'))
+                        ->visible(fn (Get $get): bool => (bool) $get('include_expert_opinion'))
                         ->helperText('Используется только в блоке «Мнение эксперта» и не заменяет фото профиля врача.'),
                     Forms\Components\TextInput::make('breadcrumbs_title')
                         ->label('Заголовок для хлебных крошек'),

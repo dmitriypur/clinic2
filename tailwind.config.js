@@ -7,6 +7,7 @@ module.exports = {
     "./app/View/**/*.php",
     "./resources/**/*.js",
     "./resources/**/*.vue",
+    "./vendor/awcodes/filament-curator/resources/**/*.blade.php",
   ],
   safelist: [
     "swiper-pagination-bullet",

@@ -12,12 +12,13 @@ use App\Models\Doctor;
 use App\Models\Page;
 use App\Models\Review;
 use App\Models\Service;
+use Awcodes\Curator\Components\Forms\CuratorPicker;
 use Filament\Forms;
 use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Form;
-use Filament\Resources\Resource;
 use Filament\Resources\RelationManagers\RelationManager;
+use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Actions\ReplicateAction;
 use Filament\Tables\Table;
@@ -52,13 +53,13 @@ class BlockResource extends Resource
             ->when($cityIds->isNotEmpty(), function ($query) use ($cityIds) {
                 $query->where(function ($doctorQuery) use ($cityIds) {
                     $doctorQuery
-                        ->whereHas('cities', fn($cityQuery) => $cityQuery->whereIn('cities.id', $cityIds))
+                        ->whereHas('cities', fn ($cityQuery) => $cityQuery->whereIn('cities.id', $cityIds))
                         ->orDoesntHave('cities');
                 });
             })
             ->when(
                 filled($search),
-                fn($query) => $query->where(function ($doctorQuery) use ($search) {
+                fn ($query) => $query->where(function ($doctorQuery) use ($search) {
                     $doctorQuery
                         ->where('surname', 'like', "%{$search}%")
                         ->orWhere('name', 'like', "%{$search}%")
@@ -76,7 +77,7 @@ class BlockResource extends Resource
             ->orderBy('surname')
             ->orderBy('name')
             ->get()
-            ->mapWithKeys(fn(Doctor $doctor) => [$doctor->id => trim($doctor->surname . ' ' . $doctor->name)])
+            ->mapWithKeys(fn (Doctor $doctor) => [$doctor->id => trim($doctor->surname.' '.$doctor->name)])
             ->all();
     }
 
@@ -95,7 +96,7 @@ class BlockResource extends Resource
                         ->columnSpanFull()
                         ->label('Не отображать заголовок')
                         ->afterStateUpdated(
-                            fn(Forms\Set $set, bool $state) => $set(
+                            fn (Forms\Set $set, bool $state) => $set(
                                 'settings.show_page_title',
                                 false
                             )
@@ -112,7 +113,7 @@ class BlockResource extends Resource
                         ->placeholder('Все типы')
                         ->dehydrated(false)
                         ->live()
-                        ->hidden(fn($livewire) => $livewire instanceof RelationManager && $livewire->getOwnerRecord() instanceof Page),
+                        ->hidden(fn ($livewire) => $livewire instanceof RelationManager && $livewire->getOwnerRecord() instanceof Page),
 
                     Forms\Components\Select::make('page_id')
                         ->label('Страница')
@@ -121,13 +122,13 @@ class BlockResource extends Resource
                             $type = $get('page_type_filter');
 
                             return Page::query()
-                                ->when($type !== null && $type !== '', fn($query) => $query->where('type', $type))
+                                ->when($type !== null && $type !== '', fn ($query) => $query->where('type', $type))
                                 ->orderBy('id')
                                 ->pluck('title', 'id');
                         })
                         ->searchable()
-                        ->hidden(fn($livewire) => $livewire instanceof RelationManager && $livewire->getOwnerRecord() instanceof Page)
-                        ->default(fn($livewire) => $livewire instanceof RelationManager && $livewire->getOwnerRecord() instanceof Page
+                        ->hidden(fn ($livewire) => $livewire instanceof RelationManager && $livewire->getOwnerRecord() instanceof Page)
+                        ->default(fn ($livewire) => $livewire instanceof RelationManager && $livewire->getOwnerRecord() instanceof Page
                             ? $livewire->getOwnerRecord()->id
                             : null)
                         ->dehydrated(),
@@ -171,7 +172,7 @@ class BlockResource extends Resource
                         ->columnSpanFull()
                         ->label('Заголовок фото')
                         ->hidden(
-                            fn(Forms\Get $get) => !in_array(
+                            fn (Forms\Get $get) => ! in_array(
                                 BlockType::from($get('type')),
                                 [BlockType::WELCOME, BlockType::PICTURE, BlockType::ADVANTAGES]
                             )
@@ -180,30 +181,29 @@ class BlockResource extends Resource
                         ->columnSpanFull()
                         ->label('Подзаголовок фото')
                         ->hidden(
-                            fn(Forms\Get $get) => BlockType::from($get('type')) !==
+                            fn (Forms\Get $get) => BlockType::from($get('type')) !==
                                 BlockType::WELCOME
                         ),
-
 
                     Forms\Components\Select::make('payload.excluded_doctors')
                         ->multiple()
                         ->columnSpanFull()
                         ->label('Исключить специалистов')
-                        ->options(fn(Forms\Get $get): array => static::getDoctorOptionsQuery($get('cities'))
+                        ->options(fn (Forms\Get $get): array => static::getDoctorOptionsQuery($get('cities'))
                             ->limit(200)
                             ->get()
-                            ->mapWithKeys(fn(Doctor $doctor) => [$doctor->id => trim($doctor->surname . ' ' . $doctor->name)])
+                            ->mapWithKeys(fn (Doctor $doctor) => [$doctor->id => trim($doctor->surname.' '.$doctor->name)])
                             ->all())
                         ->searchable()
-                        ->getSearchResultsUsing(fn(string $search, Forms\Get $get): array => static::getDoctorOptionsQuery($get('cities'), $search)
+                        ->getSearchResultsUsing(fn (string $search, Forms\Get $get): array => static::getDoctorOptionsQuery($get('cities'), $search)
                             ->limit(50)
                             ->get()
-                            ->mapWithKeys(fn(Doctor $doctor) => [$doctor->id => trim($doctor->surname . ' ' . $doctor->name)])
+                            ->mapWithKeys(fn (Doctor $doctor) => [$doctor->id => trim($doctor->surname.' '.$doctor->name)])
                             ->all())
-                        ->getOptionLabelsUsing(fn(array $values): array => static::getDoctorLabels($values))
+                        ->getOptionLabelsUsing(fn (array $values): array => static::getDoctorLabels($values))
                         ->helperText('Если поле пустое, блок покажет всех активных врачей выбранного города. В списке доступны врачи выбранных городов и врачи без привязки к городу.')
                         ->hidden(
-                            fn(Forms\Get $get) => !in_array(
+                            fn (Forms\Get $get) => ! in_array(
                                 BlockType::from($get('type')),
                                 [BlockType::DOCTORS_ALT]
                             )
@@ -215,7 +215,7 @@ class BlockResource extends Resource
                         ->options(Review::query()->pluck('name', 'id'))
                         ->label('Отзывы')
                         ->hidden(
-                            fn(Forms\Get $get) => BlockType::from($get('type')) !==
+                            fn (Forms\Get $get) => BlockType::from($get('type')) !==
                                 BlockType::REVIEWS_ALT
                         ),
 
@@ -224,7 +224,7 @@ class BlockResource extends Resource
                         ->label('Специалист')
                         ->options(Doctor::query()->pluck('surname', 'id'))
                         ->hidden(
-                            fn(Forms\Get $get) => !in_array(
+                            fn (Forms\Get $get) => ! in_array(
                                 BlockType::from($get('type')),
                                 [BlockType::AUTHOR, BlockType::EXPERT_OPINION]
                             )
@@ -234,7 +234,7 @@ class BlockResource extends Resource
                         ->columnSpanFull()
                         ->label('Ссылка')
                         ->hidden(
-                            fn(Forms\Get $get) => BlockType::from($get('type')) !==
+                            fn (Forms\Get $get) => BlockType::from($get('type')) !==
                                 BlockType::AUTHOR
                         ),
 
@@ -242,7 +242,7 @@ class BlockResource extends Resource
                         ->columnSpanFull()
                         ->label('Тема статьи')
                         ->hidden(
-                            fn(Forms\Get $get) => BlockType::from($get('type')) !==
+                            fn (Forms\Get $get) => BlockType::from($get('type')) !==
                                 BlockType::AUTHOR
                         ),
 
@@ -254,12 +254,12 @@ class BlockResource extends Resource
                                 ->pluck('title', 'uuid')
                         )
                         ->required(
-                            fn(Forms\Get $get) => in_array($get('type'), [
+                            fn (Forms\Get $get) => in_array($get('type'), [
                                 BlockType::PRICE_LIST->value,
                             ])
                         )
                         ->hidden(
-                            fn(Forms\Get $get) => !in_array($get('type'), [
+                            fn (Forms\Get $get) => ! in_array($get('type'), [
                                 BlockType::PRICE_LIST->value,
                             ])
                         ),
@@ -267,10 +267,10 @@ class BlockResource extends Resource
                     Forms\Components\RichEditor::make('body_html')
                         ->label('Текст')
                         ->hidden(
-                            fn(Forms\Get $get) => !in_array(
+                            fn (Forms\Get $get) => ! in_array(
                                 BlockType::from($get('type')),
                                 [BlockType::HTML, BlockType::TEXT_WITH_IMAGE, BlockType::TEXT_WITH_IMAGE_NEW,
-                                BlockType::TEXT_SUBDUED, BlockType::WELCOME, BlockType::POST_TEXT, BlockType::APPARATUS_DISEASES, BlockType::APPARATUS_METHODS, BlockType::APPARATUS_CONTRAINDICATIONS, BlockType::EXPERT_OPINION,]
+                                    BlockType::TEXT_SUBDUED, BlockType::WELCOME, BlockType::POST_TEXT, BlockType::APPARATUS_DISEASES, BlockType::APPARATUS_METHODS, BlockType::APPARATUS_CONTRAINDICATIONS, BlockType::EXPERT_OPINION, ]
                             )
                         )
                         ->columnSpan('full'),
@@ -283,7 +283,7 @@ class BlockResource extends Resource
                     ])
                         ->columns(2)
                         ->hidden(
-                            fn(Forms\Get $get) => BlockType::from($get('type')) !=
+                            fn (Forms\Get $get) => BlockType::from($get('type')) !=
                                 BlockType::EXPERT_OPINION
                         ),
 
@@ -296,7 +296,7 @@ class BlockResource extends Resource
                         ])
                         ->default('bg-surface')
                         ->hidden(
-                            fn(Forms\Get $get) => BlockType::tryFrom((string) $get('type')) !== BlockType::POST_TEXT
+                            fn (Forms\Get $get) => BlockType::tryFrom((string) $get('type')) !== BlockType::POST_TEXT
                         ),
                     Forms\Components\Select::make('payload.image_position')
                         ->label('Позиция изображения')
@@ -307,13 +307,13 @@ class BlockResource extends Resource
                         ])
                         ->default('right')
                         ->hidden(
-                            fn(Forms\Get $get) => BlockType::tryFrom((string) $get('type')) !== BlockType::POST_TEXT
+                            fn (Forms\Get $get) => BlockType::tryFrom((string) $get('type')) !== BlockType::POST_TEXT
                         ),
 
                     Forms\Components\Textarea::make('body_html')
-                        ->label(fn(Forms\Get $get) => $get('type') === BlockType::HTML_CODE ? 'HTML-код' : 'Текст')
+                        ->label(fn (Forms\Get $get) => $get('type') === BlockType::HTML_CODE ? 'HTML-код' : 'Текст')
                         ->hidden(
-                            fn(Forms\Get $get) => !in_array(BlockType::tryFrom((string) $get('type')), [
+                            fn (Forms\Get $get) => ! in_array(BlockType::tryFrom((string) $get('type')), [
                                 BlockType::HTML_CODE,
                                 BlockType::TEXT_WITH_IMAGE_ALT,
                             ], true))
@@ -329,13 +329,13 @@ class BlockResource extends Resource
                                 ->required(),
                         ])
                         ->required(
-                            fn(Forms\Get $get) => !in_array(BlockType::from($get('type')), [
+                            fn (Forms\Get $get) => ! in_array(BlockType::from($get('type')), [
                                 BlockType::TAGS,
                                 BlockType::TAGS_NEW,
                             ])
                         )
                         ->hidden(
-                            fn(Forms\Get $get) => !in_array(BlockType::from($get('type')), [
+                            fn (Forms\Get $get) => ! in_array(BlockType::from($get('type')), [
                                 BlockType::TAGS,
                                 BlockType::TAGS_NEW,
                             ])),
@@ -344,7 +344,7 @@ class BlockResource extends Resource
                         ->columnSpanFull()
                         ->label('Начальный текст')
                         ->hidden(
-                            fn(Forms\Get $get) => BlockType::from($get('type')) !==
+                            fn (Forms\Get $get) => BlockType::from($get('type')) !==
                                 BlockType::GUARANTEE
                         ),
                     Forms\Components\Repeater::make('payload.guarantee')
@@ -358,11 +358,11 @@ class BlockResource extends Resource
                         ])
                         ->label('Гарантии')
                         ->required(
-                            fn(Forms\Get $get) => BlockType::from($get('type')) ==
+                            fn (Forms\Get $get) => BlockType::from($get('type')) ==
                                 BlockType::GUARANTEE
                         )
                         ->hidden(
-                            fn(Forms\Get $get) => BlockType::from($get('type')) !=
+                            fn (Forms\Get $get) => BlockType::from($get('type')) !=
                                 BlockType::GUARANTEE
                         ),
 
@@ -376,7 +376,7 @@ class BlockResource extends Resource
                     ])
                         ->columns(4)
                         ->hidden(
-                            fn(Forms\Get $get) => BlockType::from($get('type')) !=
+                            fn (Forms\Get $get) => BlockType::from($get('type')) !=
                                 BlockType::TEXT_BLOCKS
                         ),
 
@@ -387,7 +387,7 @@ class BlockResource extends Resource
                                 Forms\Components\Toggle::make('is_grid')
                                     ->label('Сетка')
                                     ->reactive()
-                                    ->default(false)
+                                    ->default(false),
                             ])->columns(4),
                             Forms\Components\TextInput::make('title')
                                 ->label('Заголовок'),
@@ -417,13 +417,13 @@ class BlockResource extends Resource
                                 ])
                                 ->defaultItems(0)
                                 ->hidden(
-                                    fn(Forms\Get $get) => $get('is_grid') === false
+                                    fn (Forms\Get $get) => $get('is_grid') === false
                                 ),
 
                             Forms\Components\TextInput::make('cols_count')
                                 ->label('Кол-во колонок')
                                 ->hidden(
-                                    fn(Forms\Get $get) => $get('is_grid') === false
+                                    fn (Forms\Get $get) => $get('is_grid') === false
                                 ),
 
                             Forms\Components\Select::make('classes')
@@ -432,12 +432,30 @@ class BlockResource extends Resource
                                 ->options([
                                     'gray md:rounded-xl bg-surface-subdued p-4 md:py-10 md:px-10 -mx-5 md:mx-0' => 'Серый фон',
                                     'with-image-block' => 'Блок с изображением',
-                                    'text-center' => 'Текст по центру'
-                                ])
+                                    'text-center' => 'Текст по центру',
+                                ]),
                         ])
                         ->hidden(
-                            fn(Forms\Get $get) => BlockType::from($get('type')) !=
+                            fn (Forms\Get $get) => BlockType::from($get('type')) !=
                                 BlockType::TEXT_BLOCKS,
+                        ),
+
+                    CuratorPicker::make('payload.curator_image_id')
+                        ->label('Изображение')
+                        ->buttonLabel('Выбрать из медиатеки')
+                        ->directory('expert-opinions')
+                        ->acceptedFileTypes([
+                            'image/jpeg',
+                            'image/png',
+                            'image/webp',
+                        ])
+                        ->required(
+                            fn (Forms\Get $get) => BlockType::from($get('type')) ===
+                                BlockType::EXPERT_OPINION
+                        )
+                        ->hidden(
+                            fn (Forms\Get $get) => BlockType::from($get('type')) !==
+                                BlockType::EXPERT_OPINION
                         ),
 
                     SpatieMediaLibraryFileUpload::make('default')
@@ -446,7 +464,7 @@ class BlockResource extends Resource
                         ->responsiveImages()
                         ->openable()
                         ->hidden(
-                            fn(Forms\Get $get) => !in_array(BlockType::from($get('type')),
+                            fn (Forms\Get $get) => ! in_array(BlockType::from($get('type')),
                                 [
                                     BlockType::TEXT_WITH_IMAGE,
                                     BlockType::TEXT_WITH_IMAGE_NEW,
@@ -456,7 +474,6 @@ class BlockResource extends Resource
                                     BlockType::POST_TEXT,
                                     BlockType::LIST_WITH_IMAGE,
                                     BlockType::APPARATUS_DISEASES,
-                                    BlockType::EXPERT_OPINION,
                                 ])
                         ),
 
@@ -468,7 +485,7 @@ class BlockResource extends Resource
                             'rounded-xl md:rounded-20' => 'Скругление',
                         ])
                         ->hidden(
-                            fn(Forms\Get $get) => !in_array(BlockType::from($get('type')),
+                            fn (Forms\Get $get) => ! in_array(BlockType::from($get('type')),
                                 [
                                     BlockType::PICTURE,
                                 ])
@@ -477,15 +494,15 @@ class BlockResource extends Resource
                     Forms\Components\TextInput::make('payload.width')
                         ->label('Ширина')
                         ->hidden(
-                            fn(Forms\Get $get) => !in_array(BlockType::from($get('type')), [
-                                BlockType::PICTURE
+                            fn (Forms\Get $get) => ! in_array(BlockType::from($get('type')), [
+                                BlockType::PICTURE,
                             ])
                         ),
 
                     Forms\Components\TextInput::make('payload.subtitle')
                         ->label('Подзаголовок')
                         ->hidden(
-                            fn(Forms\Get $get) => !in_array(BlockType::from($get('type')), [
+                            fn (Forms\Get $get) => ! in_array(BlockType::from($get('type')), [
                                 BlockType::CALL_TO_ACTION,
                             ])
                         ),
@@ -494,7 +511,7 @@ class BlockResource extends Resource
                         ->columnSpanFull()
                         ->label('Ссылка на страницу')
                         ->hidden(
-                            fn(Forms\Get $get) => !in_array(
+                            fn (Forms\Get $get) => ! in_array(
                                 BlockType::from($get('type')),
                                 [BlockType::TEXT_WITH_IMAGE]
                             )
@@ -504,7 +521,7 @@ class BlockResource extends Resource
                         ->label('Перевернуть')
                         ->default(false)
                         ->hidden(
-                            fn(Forms\Get $get) => !in_array(BlockType::from($get('type')), [
+                            fn (Forms\Get $get) => ! in_array(BlockType::from($get('type')), [
                                 BlockType::TEXT_WITH_IMAGE,
                             ])
                         ),
@@ -513,7 +530,7 @@ class BlockResource extends Resource
                         ->label('Добавить лисенка')
                         ->default(true)
                         ->hidden(
-                            fn(Forms\Get $get) => !in_array(BlockType::from($get('type')), [
+                            fn (Forms\Get $get) => ! in_array(BlockType::from($get('type')), [
                                 BlockType::TEXT_WITH_IMAGE,
                                 BlockType::NIGHT_LENSES_SELECTION,
                                 BlockType::SELECT_LENSES_SELECTION,
@@ -525,7 +542,7 @@ class BlockResource extends Resource
                         ->label('Добавить 2го лисенка')
                         ->default(true)
                         ->hidden(
-                            fn(Forms\Get $get) => !in_array(BlockType::from($get('type')), [
+                            fn (Forms\Get $get) => ! in_array(BlockType::from($get('type')), [
                                 BlockType::CALL_TO_ACTION,
                             ])
                         ),
@@ -534,7 +551,7 @@ class BlockResource extends Resource
                         ->columnSpanFull()
                         ->label('Текст кнопки')
                         ->hidden(
-                            fn(Forms\Get $get) => !in_array(BlockType::from($get('type')), [
+                            fn (Forms\Get $get) => ! in_array(BlockType::from($get('type')), [
                                 BlockType::BANNER_SELECTION_GLASSES,
                                 BlockType::BANNER_APPARATUS_HERO,
                                 BlockType::APPARATUS_METHODS,
@@ -546,7 +563,7 @@ class BlockResource extends Resource
                         ->label('Видео')
                         ->openable()
                         ->hidden(
-                            fn(Forms\Get $get) => !in_array(BlockType::from($get('type')), [BlockType::VIDEO, BlockType::VIDEO_NEW])
+                            fn (Forms\Get $get) => ! in_array(BlockType::from($get('type')), [BlockType::VIDEO, BlockType::VIDEO_NEW])
                         ),
 
                     SpatieMediaLibraryFileUpload::make('cover')
@@ -555,7 +572,7 @@ class BlockResource extends Resource
                         ->imageEditor()
                         ->openable()
                         ->hidden(
-                            fn(Forms\Get $get) => !in_array(BlockType::from($get('type')), [BlockType::VIDEO, BlockType::VIDEO_NEW])
+                            fn (Forms\Get $get) => ! in_array(BlockType::from($get('type')), [BlockType::VIDEO, BlockType::VIDEO_NEW])
 
                         ),
 
@@ -563,28 +580,28 @@ class BlockResource extends Resource
                         ->label('Вариант 1 заголовок')
                         ->required()
                         ->hidden(
-                            fn(Forms\Get $get) => BlockType::from($get('type')) !=
+                            fn (Forms\Get $get) => BlockType::from($get('type')) !=
                                 BlockType::TEXT_WITH_CHART
                         ),
                     Forms\Components\Textarea::make('payload.var_1_text')
                         ->label('Вариант 1 текст')
                         ->required()
                         ->hidden(
-                            fn(Forms\Get $get) => BlockType::from($get('type')) !=
+                            fn (Forms\Get $get) => BlockType::from($get('type')) !=
                                 BlockType::TEXT_WITH_CHART
                         ),
                     Forms\Components\TextInput::make('payload.var_2_title')
                         ->label('Вариант 2 заголовок')
                         ->required()
                         ->hidden(
-                            fn(Forms\Get $get) => BlockType::from($get('type')) !=
+                            fn (Forms\Get $get) => BlockType::from($get('type')) !=
                                 BlockType::TEXT_WITH_CHART
                         ),
                     Forms\Components\Textarea::make('payload.var_2_text')
                         ->label('Вариант 2 текст')
                         ->required()
                         ->hidden(
-                            fn(Forms\Get $get) => BlockType::from($get('type')) !=
+                            fn (Forms\Get $get) => BlockType::from($get('type')) !=
                                 BlockType::TEXT_WITH_CHART
                         ),
                     SpatieMediaLibraryFileUpload::make('payload.bg_chart')
@@ -594,7 +611,7 @@ class BlockResource extends Resource
                         ->responsiveImages()
                         ->openable()
                         ->hidden(
-                            fn(Forms\Get $get) => !in_array(BlockType::from($get('type')), [BlockType::TEXT_WITH_CHART, BlockType::ADVANTAGES]),
+                            fn (Forms\Get $get) => ! in_array(BlockType::from($get('type')), [BlockType::TEXT_WITH_CHART, BlockType::ADVANTAGES]),
 
                         ),
                 ]),
@@ -613,12 +630,12 @@ class BlockResource extends Resource
                             ->label('Иконка'),
                     ])
                     ->required(
-                        fn(Forms\Get $get) => BlockType::from($get('type')) ==
+                        fn (Forms\Get $get) => BlockType::from($get('type')) ==
                             BlockType::FAQ
                     )
                     ->columnSpanFull()
                     ->hidden(
-                        fn(Forms\Get $get) => BlockType::from($get('type')) !=
+                        fn (Forms\Get $get) => BlockType::from($get('type')) !=
                             BlockType::FAQ
                     ),
 
@@ -634,12 +651,12 @@ class BlockResource extends Resource
                             ->required(),
                     ])
                     ->required(
-                        fn(Forms\Get $get) => BlockType::from($get('type')) ==
+                        fn (Forms\Get $get) => BlockType::from($get('type')) ==
                             BlockType::ADVANTAGES
                     )
                     ->columnSpanFull()
                     ->hidden(
-                        fn(Forms\Get $get) => !in_array(BlockType::from($get('type')), [
+                        fn (Forms\Get $get) => ! in_array(BlockType::from($get('type')), [
                             BlockType::ADVANTAGES,
                             BlockType::DETAILS,
                         ])
@@ -657,7 +674,7 @@ class BlockResource extends Resource
                     ->label('Карточка')
                     ->columnSpanFull()
                     ->hidden(
-                        fn(Forms\Get $get) => !in_array(BlockType::from($get('type')), [
+                        fn (Forms\Get $get) => ! in_array(BlockType::from($get('type')), [
                             BlockType::HOW_TO_ORDER,
                             BlockType::NIGHT_LENSES_SELECTION,
                             BlockType::SELECT_LENSES_SELECTION,
@@ -694,21 +711,21 @@ class BlockResource extends Resource
                                 ->columnSpan('full')
                                 ->hiddenLabel()
                                 ->default(
-                                    fn(Forms\Get $get) => $get('media_collection') ?? Str::uuid()->toString()
+                                    fn (Forms\Get $get) => $get('media_collection') ?? Str::uuid()->toString()
                                 )
                                 ->reactive()
                                 ->required()
                                 ->extraAttributes(['class' => 'hidden']),
 
                             SpatieMediaLibraryFileUpload::make('image')
-                                ->collection(fn(Forms\Get $get) => $get('media_collection'))
+                                ->collection(fn (Forms\Get $get) => $get('media_collection'))
                                 ->label('Изображение')
                                 ->imageEditor()
                                 ->responsiveImages()
                                 ->required(),
                         ]),
                 ])->hidden(
-                    fn(Forms\Get $get) => BlockType::from($get('type')) !== BlockType::APPARATUS_TREATMENT
+                    fn (Forms\Get $get) => BlockType::from($get('type')) !== BlockType::APPARATUS_TREATMENT
                 ),
 
                 Forms\Components\Section::make([
@@ -716,7 +733,7 @@ class BlockResource extends Resource
                         ->columnSpanFull()
                         ->label('Заголовок')
                         ->hidden(
-                            fn(Forms\Get $get) => !in_array(BlockType::from($get('type')), [
+                            fn (Forms\Get $get) => ! in_array(BlockType::from($get('type')), [
                                 BlockType::BANNER_WITH_BUTTON,
                                 BlockType::BANNER_NIGHT_LENSES,
                                 BlockType::BANNER_APPOINTMENT,
@@ -729,7 +746,7 @@ class BlockResource extends Resource
                         ->columnSpanFull()
                         ->label('Подзаголовок')
                         ->hidden(
-                            fn(Forms\Get $get) => !in_array(BlockType::from($get('type')), [
+                            fn (Forms\Get $get) => ! in_array(BlockType::from($get('type')), [
                                 BlockType::BANNER_WITH_BUTTON,
                                 BlockType::BANNER_NIGHT_LENSES,
                                 BlockType::BANNER_APPOINTMENT,
@@ -738,7 +755,7 @@ class BlockResource extends Resource
                         ->columnSpanFull()
                         ->label('Старая цена')
                         ->hidden(
-                            fn(Forms\Get $get) => !in_array(BlockType::from($get('type')), [
+                            fn (Forms\Get $get) => ! in_array(BlockType::from($get('type')), [
                                 BlockType::BANNER_WITH_BUTTON,
                                 BlockType::BANNER_NIGHT_LENSES,
                                 BlockType::BANNER_APPOINTMENT,
@@ -747,7 +764,7 @@ class BlockResource extends Resource
                         ->columnSpanFull()
                         ->label('Цена')
                         ->hidden(
-                            fn(Forms\Get $get) => !in_array(BlockType::from($get('type')), [
+                            fn (Forms\Get $get) => ! in_array(BlockType::from($get('type')), [
                                 BlockType::BANNER_WITH_BUTTON,
                                 BlockType::BANNER_NIGHT_LENSES,
                                 BlockType::BANNER_APPOINTMENT,
@@ -756,7 +773,7 @@ class BlockResource extends Resource
                         ->columnSpanFull()
                         ->label('Текст')
                         ->hidden(
-                            fn(Forms\Get $get) => !in_array(BlockType::from($get('type')), [
+                            fn (Forms\Get $get) => ! in_array(BlockType::from($get('type')), [
                                 BlockType::BANNER_WITH_BUTTON,
                                 BlockType::BANNER_NIGHT_LENSES,
                                 BlockType::BANNER_APPOINTMENT,
@@ -772,7 +789,7 @@ class BlockResource extends Resource
                         ->responsiveImages()
                         ->openable()
                         ->hidden(
-                            fn(Forms\Get $get) => !in_array(BlockType::from($get('type')), [
+                            fn (Forms\Get $get) => ! in_array(BlockType::from($get('type')), [
                                 BlockType::BANNER_WITH_BUTTON,
                                 BlockType::BANNER_NIGHT_LENSES,
                                 BlockType::BANNER_APPOINTMENT,
@@ -789,7 +806,7 @@ class BlockResource extends Resource
                         ->imageEditor()
                         ->openable()
                         ->hidden(
-                            fn(Forms\Get $get) => !in_array(BlockType::from($get('type')), [
+                            fn (Forms\Get $get) => ! in_array(BlockType::from($get('type')), [
                                 BlockType::BANNER_WITH_BUTTON,
                                 BlockType::BANNER_NIGHT_LENSES,
                                 BlockType::BANNER_APPOINTMENT,
@@ -817,8 +834,8 @@ class BlockResource extends Resource
                             ->columnSpan('3')
                             ->reactive(),
                     ])->hidden(
-                        fn(Forms\Get $get) => !in_array(BlockType::from($get('type')), [
-                            BlockType::CARDS_SLIDER, BlockType::ADVANTAGES_SLIDER
+                        fn (Forms\Get $get) => ! in_array(BlockType::from($get('type')), [
+                            BlockType::CARDS_SLIDER, BlockType::ADVANTAGES_SLIDER,
                         ])
                     ),
 
@@ -849,8 +866,8 @@ class BlockResource extends Resource
                                 ->label('Текст')
                                 ->columnSpan('full')
                                 ->hidden(
-                                    fn(Forms\Get $get) => !in_array(BlockType::from($get('../../type')), [
-                                        BlockType::ADVANTAGES_SLIDER, BlockType::CARDS_SLIDER
+                                    fn (Forms\Get $get) => ! in_array(BlockType::from($get('../../type')), [
+                                        BlockType::ADVANTAGES_SLIDER, BlockType::CARDS_SLIDER,
                                     ])
                                 ),
 
@@ -861,9 +878,9 @@ class BlockResource extends Resource
                                 ->columnSpan('full')
                                 ->reactive()
                                 ->hidden(
-                                    fn(Forms\Get $get) => BlockType::from(
-                                            $get('../../type')
-                                        ) !== BlockType::CAROUSEL
+                                    fn (Forms\Get $get) => BlockType::from(
+                                        $get('../../type')
+                                    ) !== BlockType::CAROUSEL
                                 ),
 
                             Forms\Components\TextInput::make('url')
@@ -871,35 +888,35 @@ class BlockResource extends Resource
                                 ->columnSpan('full')
                                 ->reactive()
                                 ->hidden(
-                                    fn(Forms\Get $get) => !in_array(BlockType::from($get('../../type')), [
-                                            BlockType::CAROUSEL, BlockType::CARDS_SLIDER, BlockType::BANNERS_GRID, BlockType::BANNERS_GRID_K
-                                        ]) ||
+                                    fn (Forms\Get $get) => ! in_array(BlockType::from($get('../../type')), [
+                                        BlockType::CAROUSEL, BlockType::CARDS_SLIDER, BlockType::BANNERS_GRID, BlockType::BANNERS_GRID_K,
+                                    ]) ||
                                         $get('show_callback_button') === true
                                 ),
 
                             SpatieMediaLibraryFileUpload::make('image')
-                                ->collection(fn(Forms\Get $get) => $get('uuid'))
+                                ->collection(fn (Forms\Get $get) => $get('uuid'))
                                 ->label('Изображение')
                                 ->responsiveImages()
                                 ->required(),
 
                             SpatieMediaLibraryFileUpload::make('mobile_image')
                                 ->collection(
-                                    fn(Forms\Get $get) => 'mobile_' . $get('uuid')
+                                    fn (Forms\Get $get) => 'mobile_'.$get('uuid')
                                 )
                                 ->label('Изображение для мобильных устройств')
                                 ->responsiveImages()
                                 ->hidden(
-                                    fn(Forms\Get $get) => in_array(BlockType::from($get('../../type')), [
-                                        BlockType::ADVANTAGES_SLIDER
+                                    fn (Forms\Get $get) => in_array(BlockType::from($get('../../type')), [
+                                        BlockType::ADVANTAGES_SLIDER,
                                     ])
                                 ),
                         ])
                         ->hidden(
-                            fn(Forms\Get $get) => $get('payload.is_blog') === true
-                        )
+                            fn (Forms\Get $get) => $get('payload.is_blog') === true
+                        ),
                 ])->hidden(
-                    fn(Forms\Get $get) => !in_array(BlockType::from($get('type')), [
+                    fn (Forms\Get $get) => ! in_array(BlockType::from($get('type')), [
                         BlockType::CAROUSEL,
                         BlockType::PHOTO,
                         BlockType::CARDS_SLIDER,
@@ -918,7 +935,7 @@ class BlockResource extends Resource
                                 ->hiddenLabel()
                                 ->columnSpan('full')
                                 ->default(
-                                    fn(Forms\Get $get) => $get('uuid') ??
+                                    fn (Forms\Get $get) => $get('uuid') ??
                                         Str::uuid()->toString()
                                 )
                                 ->required()
@@ -936,12 +953,12 @@ class BlockResource extends Resource
                                 ->required(),
 
                             SpatieMediaLibraryFileUpload::make('image')
-                                ->collection(fn(Forms\Get $get) => $get('uuid'))
+                                ->collection(fn (Forms\Get $get) => $get('uuid'))
                                 ->label('Изображение')
                                 ->responsiveImages()
                                 ->required(),
                         ]),
-                ])->hidden(fn(Forms\Get $get) => BlockType::from($get('type')) != BlockType::UTP),
+                ])->hidden(fn (Forms\Get $get) => BlockType::from($get('type')) != BlockType::UTP),
 
                 Forms\Components\Section::make([
                     Forms\Components\Repeater::make('payload.coating')
@@ -969,7 +986,7 @@ class BlockResource extends Resource
                                 ->columnSpan('full')
                                 ->required(),
                         ]),
-                ])->hidden(fn(Forms\Get $get) => BlockType::from($get('type')) != BlockType::CARD_COATING),
+                ])->hidden(fn (Forms\Get $get) => BlockType::from($get('type')) != BlockType::CARD_COATING),
 
                 Forms\Components\Section::make([
                     SpatieMediaLibraryFileUpload::make('videos')
@@ -978,8 +995,7 @@ class BlockResource extends Resource
                         ->multiple()
                         ->required(),
                 ])
-                    ->hidden(fn(Forms\Get $get) => !in_array(BlockType::from($get('type')), [BlockType::VIDEO_CAROUSEL])),
-
+                    ->hidden(fn (Forms\Get $get) => ! in_array(BlockType::from($get('type')), [BlockType::VIDEO_CAROUSEL])),
 
                 Forms\Components\Section::make([
                     Forms\Components\TextInput::make('payload.count_col')
@@ -1014,7 +1030,7 @@ class BlockResource extends Resource
                                 ->columnSpan('full')
                                 ->hiddenLabel()
                                 ->default(
-                                    fn(Forms\Get $get) => $get(
+                                    fn (Forms\Get $get) => $get(
                                         'media_collection'
                                     ) ?? Str::uuid()->toString()
                                 )
@@ -1022,34 +1038,33 @@ class BlockResource extends Resource
                                 ->extraAttributes(['class' => 'hidden'])
                                 ->required(),
 
-
                             SpatieMediaLibraryFileUpload::make('image')
                                 ->collection(
-                                    fn(Forms\Get $get) => $get('media_collection')
+                                    fn (Forms\Get $get) => $get('media_collection')
                                 )
                                 ->label('Изображение')
                                 ->responsiveImages()
                                 ->required(),
                         ]),
                 ])->hidden(
-                    fn(Forms\Get $get) => !in_array(BlockType::from($get('type')), [
-                        BlockType::SERVICES_BLOCK, BlockType::CARDS_FEATURE
+                    fn (Forms\Get $get) => ! in_array(BlockType::from($get('type')), [
+                        BlockType::SERVICES_BLOCK, BlockType::CARDS_FEATURE,
                     ])
                 ),
 
                 Forms\Components\TextInput::make('payload.count_column')
                     ->label('Кол-во колонок')
                     ->hidden(
-                        fn(Forms\Get $get) => !in_array(BlockType::from($get('type')), [
-                            BlockType::SEVERAL_COLS, BlockType::NIGHT_LENSES_SELECTION
+                        fn (Forms\Get $get) => ! in_array(BlockType::from($get('type')), [
+                            BlockType::SEVERAL_COLS, BlockType::NIGHT_LENSES_SELECTION,
                         ])
                     ),
                 Forms\Components\Toggle::make('payload.is_slider')
                     ->label('Слайдер')
                     ->default(0)
                     ->hidden(
-                        fn(Forms\Get $get) => !in_array(BlockType::from($get('type')), [
-                            BlockType::NIGHT_LENSES_SELECTION
+                        fn (Forms\Get $get) => ! in_array(BlockType::from($get('type')), [
+                            BlockType::NIGHT_LENSES_SELECTION,
                         ])
                     ),
 
@@ -1065,7 +1080,7 @@ class BlockResource extends Resource
                             Forms\Components\TextInput::make('subtitle')
                                 ->label('Подзаголовок')
                                 ->hidden(
-                                    fn(Forms\Get $get) => in_array(BlockType::from($get('../../../type')), [
+                                    fn (Forms\Get $get) => in_array(BlockType::from($get('../../../type')), [
                                         BlockType::CARDS_BORDER,
                                         BlockType::LIST_WITH_IMAGE,
                                     ])
@@ -1080,7 +1095,7 @@ class BlockResource extends Resource
                                 ->label('Не отображать во всплывающем окне')
                                 ->reactive()
                                 ->hidden(
-                                    fn(Forms\Get $get) => in_array(BlockType::from($get('../../../type')), [
+                                    fn (Forms\Get $get) => in_array(BlockType::from($get('../../../type')), [
                                         BlockType::CARDS_ITEM_ROW,
                                         BlockType::CARDS_BORDER,
                                         BlockType::NIGHT_LENSES_PICTURES,
@@ -1094,7 +1109,7 @@ class BlockResource extends Resource
                                 ->label('Отображать ссылку на общий прайс')
                                 ->reactive()
                                 ->hidden(
-                                    fn(Forms\Get $get) => in_array(BlockType::from($get('../../../type')), [
+                                    fn (Forms\Get $get) => in_array(BlockType::from($get('../../../type')), [
                                         BlockType::CARDS_ITEM_ROW,
                                         BlockType::CARDS_BORDER,
                                         BlockType::NIGHT_LENSES_PICTURES,
@@ -1108,14 +1123,14 @@ class BlockResource extends Resource
                                 ->columnSpanFull()
                                 ->label('Услуга')
                                 ->options(Service::query()->pluck('title', 'uuid'))
-                                ->required(fn(Forms\Get $get) => $get('has_price'))
-                                ->hidden(fn(Forms\Get $get) => !$get('has_price')),
+                                ->required(fn (Forms\Get $get) => $get('has_price'))
+                                ->hidden(fn (Forms\Get $get) => ! $get('has_price')),
 
                             Forms\Components\TextInput::make('media_collection')
                                 ->columnSpan('full')
                                 ->hiddenLabel()
                                 ->default(
-                                    fn(Forms\Get $get) => $get(
+                                    fn (Forms\Get $get) => $get(
                                         'media_collection'
                                     ) ?? Str::uuid()->toString()
                                 )
@@ -1126,7 +1141,7 @@ class BlockResource extends Resource
                             Forms\Components\Toggle::make('has_an_appointment')
                                 ->label('Отображать кнопку «Записаться на приём»')
                                 ->hidden(
-                                    fn(Forms\Get $get) => in_array(BlockType::from($get('../../../type')), [
+                                    fn (Forms\Get $get) => in_array(BlockType::from($get('../../../type')), [
                                         BlockType::CARDS_ITEM_ROW,
                                         BlockType::CARDS_BORDER,
                                         BlockType::NIGHT_LENSES_PICTURES,
@@ -1139,7 +1154,7 @@ class BlockResource extends Resource
                             Forms\Components\Toggle::make('work')
                                 ->label('Белые карточки на прозрачном фоне')
                                 ->hidden(
-                                    fn(Forms\Get $get) => in_array(BlockType::from($get('../../../type')), [
+                                    fn (Forms\Get $get) => in_array(BlockType::from($get('../../../type')), [
                                         BlockType::CARDS_ITEM_ROW,
                                         BlockType::CARDS_BORDER,
                                         BlockType::LIST_WITH_IMAGE,
@@ -1149,11 +1164,11 @@ class BlockResource extends Resource
 
                             SpatieMediaLibraryFileUpload::make('image')
                                 ->collection(
-                                    fn(Forms\Get $get) => $get('media_collection')
+                                    fn (Forms\Get $get) => $get('media_collection')
                                 )
                                 ->label('Изображение')
                                 ->hidden(
-                                    fn(Forms\Get $get) => in_array(BlockType::from($get('../../../type')), [
+                                    fn (Forms\Get $get) => in_array(BlockType::from($get('../../../type')), [
                                         BlockType::LIST_WITH_IMAGE,
                                     ])
                                 )
@@ -1162,14 +1177,14 @@ class BlockResource extends Resource
                             ColorPicker::make('card_color')
                                 ->label('Цвет карточки')
                                 ->hidden(
-                                    fn(Forms\Get $get) => in_array(BlockType::from($get('../../../type')), [
+                                    fn (Forms\Get $get) => in_array(BlockType::from($get('../../../type')), [
                                         BlockType::CARDS_ITEM_ROW,
                                     ])
                                 )
                                 ->rgba(),
                         ]),
                 ])->hidden(
-                    fn(Forms\Get $get) => !in_array(BlockType::from($get('type')), [
+                    fn (Forms\Get $get) => ! in_array(BlockType::from($get('type')), [
                         BlockType::ELEMENTS_ITEM_COLUMN,
                         BlockType::ELEMENTS_ITEM_ROW,
                         BlockType::CARDS_ITEM_ROW,
@@ -1185,7 +1200,7 @@ class BlockResource extends Resource
                         ->label('Текст HTML')
                         ->columnSpan('full')
                         ->hidden(
-                            fn(Forms\Get $get) => in_array(BlockType::from($get('type')), [
+                            fn (Forms\Get $get) => in_array(BlockType::from($get('type')), [
                                 BlockType::LIST_TEXT_WITH_LINK,
                             ])
                         ),
@@ -1200,21 +1215,21 @@ class BlockResource extends Resource
                                 ->reactive()
                                 ->directory('docs')
                                 ->hidden(
-                                    fn(Forms\Get $get) => !empty($get('link'))
+                                    fn (Forms\Get $get) => ! empty($get('link'))
                                 ),
                             Forms\Components\TextInput::make('link')
                                 ->label('Ссылка')
                                 ->reactive()
                                 ->columnSpan('full')
                                 ->hidden(
-                                    fn(Forms\Get $get) => in_array(BlockType::from($get('../../../type')), [
+                                    fn (Forms\Get $get) => in_array(BlockType::from($get('../../../type')), [
                                         BlockType::UNIVERSAL_TEXT_BLOCK,
-                                    ]) || !empty($get('document'))
+                                    ]) || ! empty($get('document'))
                                 ),
-                        ])
+                        ]),
                 ])->hidden(
-                    fn(Forms\Get $get) => !in_array(BlockType::from($get('type')), [
-                        BlockType::UNIVERSAL_TEXT_BLOCK, BlockType::LIST_TEXT_WITH_LINK
+                    fn (Forms\Get $get) => ! in_array(BlockType::from($get('type')), [
+                        BlockType::UNIVERSAL_TEXT_BLOCK, BlockType::LIST_TEXT_WITH_LINK,
                     ])
                 ),
 
@@ -1228,10 +1243,10 @@ class BlockResource extends Resource
                             Forms\Components\TextInput::make('title')
                                 ->label('Название организации'),
                             Forms\Components\RichEditor::make('info')
-                                ->label('Информация')
-                        ])
+                                ->label('Информация'),
+                        ]),
                 ])->hidden(
-                    fn(Forms\Get $get) => !in_array(BlockType::from($get('type')), [
+                    fn (Forms\Get $get) => ! in_array(BlockType::from($get('type')), [
                         BlockType::GRID_CONTACTS,
                     ])
                 ),
@@ -1253,7 +1268,7 @@ class BlockResource extends Resource
                         ->columnSpanFull()
                         ->required(),
                 ])->hidden(
-                    fn(Forms\Get $get) => BlockType::from($get('type')) !== BlockType::APPARATUS_TASKS
+                    fn (Forms\Get $get) => BlockType::from($get('type')) !== BlockType::APPARATUS_TASKS
                 ),
 
                 Forms\Components\Section::make([
@@ -1268,7 +1283,7 @@ class BlockResource extends Resource
                         ->minItems(1)
                         ->required(),
                 ])->hidden(
-                    fn(Forms\Get $get) => !in_array(BlockType::from($get('type')), [
+                    fn (Forms\Get $get) => ! in_array(BlockType::from($get('type')), [
                         BlockType::APPARATUS_DISEASES,
                         BlockType::APPARATUS_CONTRAINDICATIONS,
                     ])
@@ -1292,14 +1307,14 @@ class BlockResource extends Resource
                                 ->columnSpan('full')
                                 ->hiddenLabel()
                                 ->default(
-                                    fn(Forms\Get $get) => $get('media_collection') ?? Str::uuid()->toString()
+                                    fn (Forms\Get $get) => $get('media_collection') ?? Str::uuid()->toString()
                                 )
                                 ->reactive()
                                 ->required()
                                 ->extraAttributes(['class' => 'hidden']),
 
                             SpatieMediaLibraryFileUpload::make('image')
-                                ->collection(fn(Forms\Get $get) => $get('media_collection'))
+                                ->collection(fn (Forms\Get $get) => $get('media_collection'))
                                 ->label('Изображение')
                                 ->imageEditor()
                                 ->responsiveImages()
@@ -1308,9 +1323,8 @@ class BlockResource extends Resource
                         ->minItems(1)
                         ->required(),
                 ])->hidden(
-                    fn(Forms\Get $get) => BlockType::from($get('type')) !== BlockType::APPARATUS_METHODS
+                    fn (Forms\Get $get) => BlockType::from($get('type')) !== BlockType::APPARATUS_METHODS
                 ),
-
 
                 Forms\Components\Section::make([
                     Forms\Components\Repeater::make('payload.elements')->schema([
@@ -1323,8 +1337,8 @@ class BlockResource extends Resource
                             ->label('Текст')
                             ->columnSpan('full')
                             ->required(),
-                    ])
-                ])->visible(fn(Forms\Get $get) => BlockType::from($get('type')) === BlockType::POINTS),
+                    ]),
+                ])->visible(fn (Forms\Get $get) => BlockType::from($get('type')) === BlockType::POINTS),
 
                 Forms\Components\Section::make([
                     Forms\Components\Repeater::make('payload.elements')
@@ -1339,7 +1353,7 @@ class BlockResource extends Resource
                                 ->columnSpan('full')
                                 ->hiddenLabel()
                                 ->default(
-                                    fn(Forms\Get $get) => $get(
+                                    fn (Forms\Get $get) => $get(
                                         'media_collection'
                                     ) ?? Str::uuid()->toString()
                                 )
@@ -1347,17 +1361,16 @@ class BlockResource extends Resource
                                 ->required()
                                 ->extraAttributes(['class' => 'hidden']),
 
-
                             SpatieMediaLibraryFileUpload::make('image')
                                 ->collection(
-                                    fn(Forms\Get $get) => $get('media_collection')
+                                    fn (Forms\Get $get) => $get('media_collection')
                                 )
                                 ->label('Изображение')
                                 ->responsiveImages()
                                 ->required(),
                         ]),
                 ])->hidden(
-                    fn(Forms\Get $get) => !in_array(BlockType::from($get('type')), [
+                    fn (Forms\Get $get) => ! in_array(BlockType::from($get('type')), [
                         BlockType::GRID_CAROUSEL,
                     ])
                 ),
@@ -1386,12 +1399,12 @@ class BlockResource extends Resource
                             )
                             ->label('Отображать заголовок страницы h1 в этом блоке')
                             ->afterStateUpdated(
-                                fn(Forms\Set $set, bool $state) => $state === true
+                                fn (Forms\Set $set, bool $state) => $state === true
                                     ? $set('settings.title_hidden', true)
                                     : $set('settings.title_hidden', false)
                             )
                             ->hidden(
-                                fn(Forms\Get $get) => in_array(BlockType::from($get('type')), [BlockType::LICENSES->value, BlockType::GUARANTEE])
+                                fn (Forms\Get $get) => in_array(BlockType::from($get('type')), [BlockType::LICENSES->value, BlockType::GUARANTEE])
                             )
                             ->reactive(),
 
@@ -1401,7 +1414,7 @@ class BlockResource extends Resource
                             )
                             ->label('Отображать хлебные крошки в этом блоке')
                             ->hidden(
-                                fn(Forms\Get $get) => in_array(BlockType::from($get('type')), [BlockType::LICENSES->value, BlockType::GUARANTEE])
+                                fn (Forms\Get $get) => in_array(BlockType::from($get('type')), [BlockType::LICENSES->value, BlockType::GUARANTEE])
                             ),
 
                         Forms\Components\Toggle::make('settings.show_on_mobile')
@@ -1497,7 +1510,7 @@ class BlockResource extends Resource
                     ->label('Заменить CTA на новый баннер')
                     ->icon('heroicon-o-arrows-right-left')
                     ->color('primary')
-                    ->visible(fn(): bool => auth()->user()->hasRole('super_admin'))
+                    ->visible(fn (): bool => auth()->user()->hasRole('super_admin'))
                     ->requiresConfirmation()
                     ->modalHeading('Заменить старые формы на новый баннер')
                     ->modalDescription('У выбранных блоков типа "Форма заявки" будет изменён тип на "Запись или обратный звонок". Payload старой формы будет очищен, чтобы не тащить неиспользуемые данные в новый статичный баннер.')
@@ -1527,18 +1540,18 @@ class BlockResource extends Resource
                             ->label('Специалисты для исключения')
                             ->multiple()
                             ->required()
-                            ->options(fn(Forms\Get $get): array => static::getDoctorOptionsQuery($get('city_ids'))
+                            ->options(fn (Forms\Get $get): array => static::getDoctorOptionsQuery($get('city_ids'))
                                 ->limit(200)
                                 ->get()
-                                ->mapWithKeys(fn(Doctor $doctor) => [$doctor->id => trim($doctor->surname . ' ' . $doctor->name)])
+                                ->mapWithKeys(fn (Doctor $doctor) => [$doctor->id => trim($doctor->surname.' '.$doctor->name)])
                                 ->all())
                             ->searchable()
-                            ->getSearchResultsUsing(fn(string $search, Forms\Get $get): array => static::getDoctorOptionsQuery($get('city_ids'), $search)
+                            ->getSearchResultsUsing(fn (string $search, Forms\Get $get): array => static::getDoctorOptionsQuery($get('city_ids'), $search)
                                 ->limit(50)
                                 ->get()
-                                ->mapWithKeys(fn(Doctor $doctor) => [$doctor->id => trim($doctor->surname . ' ' . $doctor->name)])
+                                ->mapWithKeys(fn (Doctor $doctor) => [$doctor->id => trim($doctor->surname.' '.$doctor->name)])
                                 ->all())
-                            ->getOptionLabelsUsing(fn(array $values): array => static::getDoctorLabels($values))
+                            ->getOptionLabelsUsing(fn (array $values): array => static::getDoctorLabels($values))
                             ->helperText('Выбранные врачи будут добавлены в список исключений у всех отмеченных блоков типа "Специалисты (альтернативный)".'),
                     ])
                     ->modalHeading('Исключить врачей у выбранных блоков')

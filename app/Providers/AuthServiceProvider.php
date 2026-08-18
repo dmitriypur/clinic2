@@ -2,9 +2,11 @@
 
 namespace App\Providers;
 
+use App\Models\CuratorMedia;
+use App\Policies\CuratorMediaPolicy;
+use App\Policies\NavigationPolicy;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 use RyanChandler\FilamentNavigation\Models\Navigation;
-use App\Policies\NavigationPolicy;
 
 class AuthServiceProvider extends ServiceProvider
 {
@@ -15,6 +17,7 @@ class AuthServiceProvider extends ServiceProvider
      */
     protected $policies = [
         Navigation::class => NavigationPolicy::class,
+        CuratorMedia::class => CuratorMediaPolicy::class,
     ];
 
     /**

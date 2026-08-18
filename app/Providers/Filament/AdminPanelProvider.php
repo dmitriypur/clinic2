@@ -6,6 +6,7 @@ use App\Filament\Resources\NavigationResource;
 use App\Models\City;
 use App\Models\Doctor;
 use App\Models\Page;
+use Awcodes\Curator\CuratorPlugin;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -52,6 +53,15 @@ class AdminPanelProvider extends PanelProvider
                 Widgets\AccountWidget::class,
             ])
             ->plugin(\BezhanSalleh\FilamentShield\FilamentShieldPlugin::make())
+            ->plugin(
+                CuratorPlugin::make()
+                    ->label('Медиафайл')
+                    ->pluralLabel('Медиатека')
+                    ->navigationLabel('Медиатека')
+                    ->navigationGroup('Контент')
+                    ->navigationIcon('heroicon-o-photo')
+                    ->defaultListView('grid')
+            )
             ->plugin(FilamentNavigation::make()
                 ->usingResource(NavigationResource::class)
                 ->itemType('Страница', [

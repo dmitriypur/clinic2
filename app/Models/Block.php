@@ -6,7 +6,6 @@ use App\Clinic;
 use App\Enums\BlockType;
 use App\Enums\PageType;
 use App\Helpers\Doctors;
-use App\Models\Doctor;
 use App\Models\Traits\HasCityScope;
 use App\Models\Traits\HasSafeMediaConversions;
 use App\Settings\GeneralSettings;
@@ -20,8 +19,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Http\File;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Spatie\EloquentSortable\Sortable;
 use Spatie\EloquentSortable\SortableTrait;
 use Spatie\Image\Manipulations;
@@ -35,16 +34,17 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
  * @property string $title
  * @property string $anchor
  * @property string $body_html
- * @property integer $order_column
+ * @property int $order_column
  * @property array $images
  * @property array $settings
  * @property array $payload
  * @property array $price_list_items
  * @property bool $title_hidden
+ * @property-read ?CuratorMedia $expert_opinion_image
  */
 class Block extends Model implements HasMedia, Sortable
 {
-    use HasFactory, InteractsWithMedia, SortableTrait, HasCityScope, HasSafeMediaConversions;
+    use HasCityScope, HasFactory, HasSafeMediaConversions, InteractsWithMedia, SortableTrait;
 
     protected $fillable = [
         'page_id',
@@ -97,7 +97,7 @@ class Block extends Model implements HasMedia, Sortable
 
     }
 
-    public function registerMediaConversions(Media $media = null): void
+    public function registerMediaConversions(?Media $media = null): void
     {
         $this->addMediaConversion('main')
             ->width(400)
@@ -151,10 +151,10 @@ class Block extends Model implements HasMedia, Sortable
         return $this->belongsToMany(City::class, 'city_block');
     }
 
-//    public function elements(): HasMany
-//    {
-//        return $this->hasMany(Element::class)->orderBy('order_column');
-//    }
+    //    public function elements(): HasMany
+    //    {
+    //        return $this->hasMany(Element::class)->orderBy('order_column');
+    //    }
 
     public function getResponsiveImage(string $collection, string $title, ?string $conversion = '')
     {
@@ -197,7 +197,6 @@ class Block extends Model implements HasMedia, Sortable
         return $block;
     }
 
-
     public function getTitleHiddenAttribute()
     {
         return data_get($this->settings, 'title_hidden', false);
@@ -230,7 +229,24 @@ class Block extends Model implements HasMedia, Sortable
 
     public function getHasImageAttribute(): bool
     {
+        if ($this->type === BlockType::EXPERT_OPINION) {
+            return $this->expert_opinion_image !== null;
+        }
+
         return $this->getFirstMedia('default') !== null && $this->image_position !== 'none';
+    }
+
+    public function getExpertOpinionImageAttribute(): ?CuratorMedia
+    {
+        if ($this->type !== BlockType::EXPERT_OPINION) {
+            return null;
+        }
+
+        $mediaId = data_get($this->payload, 'curator_image_id');
+
+        return filled($mediaId)
+            ? CuratorMedia::query()->find($mediaId)
+            : null;
     }
 
     public function getPricesAttribute()
@@ -239,17 +255,17 @@ class Block extends Model implements HasMedia, Sortable
             return null;
         }
 
-        if (!$this->payload['service']) {
+        if (! $this->payload['service']) {
             return null;
         }
 
         // Получаем сервис по UUID
         $serviceUuid = $this->payload['service'];
-        
+
         $servicePriceService = app(\App\Services\ServicePriceService::class);
         $service = $servicePriceService->getServiceByUuid($serviceUuid);
 
-        if (!$service) {
+        if (! $service) {
             return [];
         }
 
@@ -257,7 +273,7 @@ class Block extends Model implements HasMedia, Sortable
         return $service->children->map(function ($child) {
             $priceModel = $child->current_price;
 
-            if (!$priceModel) {
+            if (! $priceModel) {
                 return null;
             }
 
@@ -304,7 +320,7 @@ class Block extends Model implements HasMedia, Sortable
         return [trim(strip_tags($item)), null];
     }
 
-    public function getFullPriceListAttribute(): Collection|null
+    public function getFullPriceListAttribute(): ?Collection
     {
         if ($this->type !== BlockType::FULL_PRICE_LIST) {
             return null;
@@ -325,7 +341,6 @@ class Block extends Model implements HasMedia, Sortable
                 ->values();
         });
     }
-
 
     public function getDoctorsAttribute()
     {
@@ -358,22 +373,22 @@ class Block extends Model implements HasMedia, Sortable
         return $doctors->values();
     }
 
-    public function getReviewsAttribute(): Collection|null
+    public function getReviewsAttribute(): ?Collection
     {
-        if ($this->type !== BlockType::REVIEWS || !($this->payload['reviews'] ?? false)) {
+        if ($this->type !== BlockType::REVIEWS || ! ($this->payload['reviews'] ?? false)) {
             return null;
         }
 
         $reviewIds = $this->payload['reviews'];
         $citySlug = app(\App\Services\CityService::class)->getCurrentCity()?->slug ?? 'global';
-        $cacheKey = 'block_reviews_' . $citySlug . '_' . md5(implode(',', $reviewIds));
+        $cacheKey = 'block_reviews_'.$citySlug.'_'.md5(implode(',', $reviewIds));
 
         return Cache::remember($cacheKey, 3600, function () use ($reviewIds) {
             return Review::with(['doctor', 'pages'])->whereIn('id', $reviewIds)->get();
         });
     }
 
-    public function getReviewsAltAttribute(): Collection|null
+    public function getReviewsAltAttribute(): ?Collection
     {
         $isHome = request()->is('/');
         if ($this->type !== BlockType::REVIEWS_ALT) {
@@ -382,13 +397,14 @@ class Block extends Model implements HasMedia, Sortable
 
         $citySlug = app(\App\Services\CityService::class)->getCurrentCity()?->slug ?? 'global';
         $cacheKey = "reviews_with_cities_{$citySlug}";
-        $reviews = Cache::remember($cacheKey, 2592000, fn() => Review::with(['doctor', 'pages'])->get());
+        $reviews = Cache::remember($cacheKey, 2592000, fn () => Review::with(['doctor', 'pages'])->get());
 
         if ($isHome) {
             // Композитная сортировка: сначала is_home, потом get_date
             $sorted = $reviews->sortByDesc(function ($item) {
                 return [$item->is_home, $item->get_date];
             });
+
             return $sorted->slice(0, 12)->values();
         } else {
             return $reviews->sortByDesc('get_date')->slice(0, 12)->values();
@@ -397,14 +413,14 @@ class Block extends Model implements HasMedia, Sortable
 
     public function getAuthorAttribute()
     {
-        if ($this->type !== BlockType::AUTHOR && $this->type !== BlockType::EXPERT_OPINION || !($this->payload['author'] ?? false)) {
+        if ($this->type !== BlockType::AUTHOR && $this->type !== BlockType::EXPERT_OPINION || ! ($this->payload['author'] ?? false)) {
             return null;
         }
 
         $authorId = $this->payload['author'];
         $cityService = app(\App\Services\CityService::class);
         $slug = $cityService->getCurrentCity()?->slug ?? 'global';
-        $cacheKey = 'block_author_' . $slug . '_' . $authorId;
+        $cacheKey = 'block_author_'.$slug.'_'.$authorId;
 
         return Cache::remember($cacheKey, 3600, function () use ($authorId) {
             $author = Doctors::getDoctors()->firstWhere('id', $authorId);
@@ -421,14 +437,14 @@ class Block extends Model implements HasMedia, Sortable
         });
     }
 
-    public function getLicensesAttribute(): array|null
+    public function getLicensesAttribute(): ?array
     {
         $settings = app(GeneralSettings::class);
 
         return $this->type === BlockType::LICENSES && $settings->licenses
             ? collect($settings->licenses)
                 ->map(function ($item) {
-                    $file = new File(storage_path('app/public/' . $item));
+                    $file = new File(storage_path('app/public/'.$item));
 
                     return [
                         'src' => "/storage/$item",
@@ -443,8 +459,9 @@ class Block extends Model implements HasMedia, Sortable
 
     public function getDocuments($item)
     {
-        if($this->type === BlockType::UNIVERSAL_TEXT_BLOCK && isset($item['document'])){
-            $file = new File(storage_path('app/public/' . $item['document']));
+        if ($this->type === BlockType::UNIVERSAL_TEXT_BLOCK && isset($item['document'])) {
+            $file = new File(storage_path('app/public/'.$item['document']));
+
             return [
                 'src' => "/storage/{$item['document']}",
                 'thumb' => "/storage/{$item['document']}",
@@ -474,8 +491,8 @@ class Block extends Model implements HasMedia, Sortable
                         $item['image_html'] = $responsiveImage?->toHtml();
                     }
                     $item['has_extra_info'] = $item['body_html']
-                        || !empty($item['has_price'])
-                        || !empty($item['has_an_appointment']);
+                        || ! empty($item['has_price'])
+                        || ! empty($item['has_an_appointment']);
 
                     return $item;
                 })
@@ -486,7 +503,7 @@ class Block extends Model implements HasMedia, Sortable
 
     public function getServicesAttribute(): Collection|array
     {
-        if (!isset($this->payload['services'])) {
+        if (! isset($this->payload['services'])) {
             return [];
         }
 
@@ -507,7 +524,7 @@ class Block extends Model implements HasMedia, Sortable
 
     public function getApparatusTreatmentSectionsAttribute(): array
     {
-        if ($this->type !== BlockType::APPARATUS_TREATMENT || !isset($this->payload['sections'])) {
+        if ($this->type !== BlockType::APPARATUS_TREATMENT || ! isset($this->payload['sections'])) {
             return [];
         }
 
@@ -530,7 +547,7 @@ class Block extends Model implements HasMedia, Sortable
 
     public function getApparatusMethodsItemsAttribute(): array
     {
-        if ($this->type !== BlockType::APPARATUS_METHODS || !isset($this->payload['items'])) {
+        if ($this->type !== BlockType::APPARATUS_METHODS || ! isset($this->payload['items'])) {
             return [];
         }
 
@@ -553,7 +570,7 @@ class Block extends Model implements HasMedia, Sortable
 
     public function getDiagnosticMethodsItemsAttribute(): array
     {
-        if (!in_array($this->type, [BlockType::DIAGNOSTIC_METHODS, BlockType::TREATMENT_METHODS], true) || !isset($this->payload['items'])) {
+        if (! in_array($this->type, [BlockType::DIAGNOSTIC_METHODS, BlockType::TREATMENT_METHODS], true) || ! isset($this->payload['items'])) {
             return [];
         }
 
@@ -561,7 +578,7 @@ class Block extends Model implements HasMedia, Sortable
             ->map(function ($item) {
                 $item['responsive_image'] = null;
                 $item['image_html'] = null;
-                $item['href'] = !empty($item['link']) ? city_url($item['link']) : null;
+                $item['href'] = ! empty($item['link']) ? city_url($item['link']) : null;
 
                 if (isset($item['media_collection'])) {
                     $responsiveImage = $this->getResponsiveImage($item['media_collection'], $item['title'] ?? $this->title, 'main');
@@ -571,14 +588,14 @@ class Block extends Model implements HasMedia, Sortable
 
                 return $item;
             })
-            ->filter(fn ($item) => !empty($item['title']) || !empty($item['body_html']))
+            ->filter(fn ($item) => ! empty($item['title']) || ! empty($item['body_html']))
             ->values()
             ->toArray();
     }
 
-    public function getPostsAttribute(): Collection|null
+    public function getPostsAttribute(): ?Collection
     {
-        if ($this->type !== BlockType::CARDS_SLIDER || !($this->payload['is_blog'] ?? false)) {
+        if ($this->type !== BlockType::CARDS_SLIDER || ! ($this->payload['is_blog'] ?? false)) {
             return null;
         }
 
@@ -591,7 +608,7 @@ class Block extends Model implements HasMedia, Sortable
         });
     }
 
-    public function getPromotionsAttribute(): Collection|null
+    public function getPromotionsAttribute(): ?Collection
     {
         if ($this->type !== BlockType::PROMOTIONS) {
             return null;
@@ -600,7 +617,7 @@ class Block extends Model implements HasMedia, Sortable
         $cityService = app(\App\Services\CityService::class);
         $slug = $cityService->getCurrentCity()?->slug ?? 'global';
 
-        return Cache::remember('active_promotions_' . $slug, 3600, function () {
+        return Cache::remember('active_promotions_'.$slug, 3600, function () {
             return Promotion::query()
                 ->where('archived', 0)
                 ->with('media')
@@ -622,7 +639,7 @@ class Block extends Model implements HasMedia, Sortable
         return Attribute::make(get: function () {
             $paragraphs = $this->paragraphs;
 
-            if (!count($paragraphs)) {
+            if (! count($paragraphs)) {
                 return ['', null];
             }
 
@@ -646,7 +663,7 @@ class Block extends Model implements HasMedia, Sortable
             return $replacer->replace($value);
         }
 
-        if (!is_array($value)) {
+        if (! is_array($value)) {
             return $value;
         }
 
