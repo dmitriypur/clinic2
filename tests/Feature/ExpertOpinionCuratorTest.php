@@ -103,6 +103,7 @@ class ExpertOpinionCuratorTest extends TestCase
             'type' => 'image/png',
             'ext' => 'png',
         ]);
+        Storage::disk('public')->put($media->path, 'image');
         $block = Block::query()->create([
             'page_id' => $page->getKey(),
             'type' => BlockType::EXPERT_OPINION,
@@ -116,7 +117,13 @@ class ExpertOpinionCuratorTest extends TestCase
 
         $html = view('components.block.expert-opinion', ['block' => $block])->render();
 
-        $this->assertStringContainsString('src="'.$media->large_url.'"', $html);
+        $this->assertStringContainsString('srcset="', $html);
+        $this->assertStringContainsString(' 480w', $html);
+        $this->assertStringContainsString(' 768w', $html);
+        $this->assertStringContainsString(' 1024w', $html);
+        $this->assertStringContainsString('fm=webp', $html);
+        $this->assertStringContainsString('q=82', $html);
+        $this->assertStringContainsString('loading="lazy"', $html);
         $this->assertStringNotContainsString('responsive-image', $html);
     }
 }

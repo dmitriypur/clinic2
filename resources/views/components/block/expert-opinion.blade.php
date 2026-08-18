@@ -4,6 +4,17 @@
         $hasAuthor = isset($block->payload['author']) && $author;
         $readingTime = $block->page->reading_time_minutes;
         $expertImage = $block->expert_opinion_image;
+        $expertImageWidths = [480, 768, 1024];
+        $expertImageUrls = $expertImage
+            ? collect($expertImageWidths)->mapWithKeys(fn (int $width) => [
+                $width => $expertImage->getSignedUrl([
+                    'w' => $width,
+                    'fit' => 'contain',
+                    'fm' => 'webp',
+                    'q' => 82,
+                ]),
+            ])
+            : collect();
     @endphp
 
     <div class="bg-[linear-gradient(106.43deg,#FFF8F0_52.02%,#FFE9D0_96.07%)] py-6 px-4 md:p-10 rounded-lg md:rounded-3xl">
@@ -16,7 +27,14 @@
                         <p>{{ $author->speciality }}</p>
                     </div>
                     <div class="absolute left-1/2 -translate-x-1/2 -bottom-6 lg:-bottom-10 w-full h-64 sm:h-full [&_img]:w-full [&_img]:h-full [&_img]:object-contain lg:[&_img]:object-contain">
-                        <img src="{{ $expertImage->large_url }}" alt="{{ $expertImage->alt ?: $block->title }}">
+                        <img
+                            src="{{ $expertImageUrls->get(1024) }}"
+                            srcset="{{ $expertImageUrls->map(fn (string $url, int $width) => "{$url} {$width}w")->implode(', ') }}"
+                            sizes="(min-width: 1024px) 42vw, 100vw"
+                            alt="{{ $expertImage->alt ?: $block->title }}"
+                            loading="lazy"
+                            decoding="async"
+                        >
                     </div>
                 </div>
             @endif
