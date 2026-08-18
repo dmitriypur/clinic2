@@ -30,6 +30,7 @@ class BlockResourceRegistryIntegrationTest extends TestCase
         parent::setUp();
 
         Queue::fake();
+        Storage::fake('public');
 
         if (! Schema::hasColumn('blocks', 'settings')) {
             Schema::table('blocks', function (Blueprint $table): void {
@@ -98,16 +99,14 @@ class BlockResourceRegistryIntegrationTest extends TestCase
         $this->assertSame('<p>Legacy content</p>', $block->fresh()->body_html);
     }
 
-    public function test_registered_diagnostic_methods_schema_saves_payload_and_media(): void
+    public function test_registered_diagnostic_methods_schema_preserves_payload_and_existing_media(): void
     {
-        Storage::fake('public');
         $mediaCollection = 'diagnostic-card';
 
         $this->createBlock([
             'title' => 'Методы диагностики',
             'type' => BlockType::DIAGNOSTIC_METHODS->value,
             'body_html' => '<p>Вводный текст</p>',
-            'default' => [UploadedFile::fake()->image('diagnostic.jpg')],
             'payload' => [
                 'cards_intro' => 'Перед карточками',
                 'items' => [
@@ -126,12 +125,21 @@ class BlockResourceRegistryIntegrationTest extends TestCase
         $this->assertSame(BlockType::DIAGNOSTIC_METHODS, $block->type);
         $this->assertSame($mediaCollection, $block->payload['items'][0]['media_collection']);
         $this->assertSame('Перед карточками', $block->payload['cards_intro']);
-        $this->assertCount(1, $block->getMedia('default'));
+
+        $media = $block
+            ->addMedia(UploadedFile::fake()->image('existing-diagnostic.jpg'))
+            ->toMediaCollection('default');
+        $payloadBefore = $block->payload;
+
+        $this->saveExistingBlock($block);
+
+        $block->refresh();
+        $this->assertSame($payloadBefore, $block->payload);
+        $this->assertSame($media->getKey(), $block->getFirstMedia('default')?->getKey());
     }
 
     public function test_registered_treatment_methods_schema_saves_payload_and_nested_media(): void
     {
-        Storage::fake('public');
         $mediaCollection = 'treatment-card';
 
         $this->createBlock([
@@ -145,6 +153,8 @@ class BlockResourceRegistryIntegrationTest extends TestCase
                         'title' => 'Лечение',
                         'body_html' => '<p>Описание</p>',
                         'media_collection' => $mediaCollection,
+                        'link' => '/legacy-treatment-link',
+                        'legacy_note' => 'Сохранить при редактировании',
                     ],
                 ],
             ],
@@ -156,17 +166,21 @@ class BlockResourceRegistryIntegrationTest extends TestCase
 
         $this->assertSame(BlockType::TREATMENT_METHODS, $block->type);
         $this->assertSame($mediaCollection, $block->payload['items'][0]['media_collection']);
+        $this->assertSame('/legacy-treatment-link', $block->payload['items'][0]['link']);
+        $this->assertSame('Сохранить при редактировании', $block->payload['items'][0]['legacy_note']);
         $this->assertSame('Перед методами', $block->payload['cards_intro']);
-        $this->assertCount(1, $block->getMedia($mediaCollection));
+        $block->clearMediaCollection($mediaCollection);
+        $media = $block
+            ->addMedia(UploadedFile::fake()->image('existing-treatment.jpg'))
+            ->toMediaCollection($mediaCollection);
 
         $payloadBefore = $block->payload;
-        $mediaIdsBefore = $block->getMedia($mediaCollection)->modelKeys();
 
         $this->saveExistingBlock($block);
 
         $block->refresh();
         $this->assertSame($payloadBefore, $block->payload);
-        $this->assertSame($mediaIdsBefore, $block->getMedia($mediaCollection)->modelKeys());
+        $this->assertSame($media->getKey(), $block->getFirstMedia($mediaCollection)?->getKey());
     }
 
     private function createBlock(array $state, array $uploads = []): void
