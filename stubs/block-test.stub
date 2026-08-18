@@ -1,0 +1,29 @@
+<?php
+
+namespace Tests\Feature\Blocks;
+
+use App\Enums\BlockType;
+use App\Models\Block;
+use Illuminate\Support\Facades\Blade;
+use Tests\TestCase;
+
+class {{ test_class }} extends TestCase
+{
+    public function test_it_renders_the_generated_block(): void
+    {
+        $block = new Block([
+            'type' => BlockType::{{ enum }},
+            'title' => {{ label }},
+            'payload' => [],
+            'settings' => [],
+        ]);
+
+        $html = Blade::render(
+            '<x-block :block="$block" breadcrumbs-title="" page-title="" page-description="" />',
+            ['block' => $block],
+        );
+
+        $this->assertStringContainsString('{{ slug }}-block', $html);
+        $this->assertStringContainsString($block->title, $html);
+    }
+}
