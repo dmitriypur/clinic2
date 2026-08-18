@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Blocks\BlockRegistry;
 use App\Clinic;
 use App\Contracts\ArticleSortStrategy;
 use App\Models\Block;
@@ -26,6 +27,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->app->singleton(
+            BlockRegistry::class,
+            fn ($app) => new BlockRegistry($app, config('block-definitions.definitions', [])),
+        );
         $this->app->singleton(\App\Services\CityService::class);
         $this->app->singleton(ArticleNavigationBlockService::class);
         $this->app->singleton(ServicePriceService::class);

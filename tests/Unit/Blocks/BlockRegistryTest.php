@@ -1,0 +1,110 @@
+<?php
+
+namespace Tests\Unit\Blocks;
+
+use App\Blocks\BlockRegistry;
+use App\Blocks\Contracts\BlockDefinition;
+use App\Enums\BlockType;
+use App\Models\Block;
+use InvalidArgumentException;
+use Tests\TestCase;
+
+if (interface_exists(BlockDefinition::class)) {
+    final class ReceptionStepsTestDefinition implements BlockDefinition
+    {
+        public function type(): BlockType
+        {
+            return BlockType::RECEPTION_STEPS;
+        }
+
+        public function label(): string
+        {
+            return 'Этапы приема из реестра';
+        }
+
+        public function view(): string
+        {
+            return 'components.block.reception-steps';
+        }
+
+        public function formSchema(): array
+        {
+            return [];
+        }
+
+        public function viewData(Block $block): array
+        {
+            return ['resolved_block_id' => $block->getKey()];
+        }
+    }
+
+    final class DuplicateReceptionStepsTestDefinition implements BlockDefinition
+    {
+        public function type(): BlockType
+        {
+            return BlockType::RECEPTION_STEPS;
+        }
+
+        public function label(): string
+        {
+            return 'Дубликат';
+        }
+
+        public function view(): string
+        {
+            return 'components.block.reception-steps';
+        }
+
+        public function formSchema(): array
+        {
+            return [];
+        }
+
+        public function viewData(Block $block): array
+        {
+            return [];
+        }
+    }
+}
+
+final class InvalidTestDefinition
+{
+}
+
+class BlockRegistryTest extends TestCase
+{
+    public function test_it_resolves_registered_definitions_and_keeps_legacy_options(): void
+    {
+        $registry = new BlockRegistry(app(), [ReceptionStepsTestDefinition::class]);
+
+        $definition = $registry->find(BlockType::RECEPTION_STEPS);
+
+        $this->assertInstanceOf(ReceptionStepsTestDefinition::class, $definition);
+        $this->assertTrue($registry->has(BlockType::RECEPTION_STEPS));
+        $this->assertFalse($registry->has(BlockType::HTML));
+        $this->assertNull($registry->find(BlockType::HTML));
+        $this->assertSame('Этапы приема из реестра', $registry->label(BlockType::RECEPTION_STEPS));
+        $this->assertNull($registry->label(BlockType::HTML));
+        $this->assertSame('Этапы приема из реестра', $registry->options()[BlockType::RECEPTION_STEPS->value]);
+        $this->assertSame('Текст', $registry->options()[BlockType::HTML->value]);
+    }
+
+    public function test_it_rejects_classes_that_do_not_implement_the_definition_contract(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage(InvalidTestDefinition::class . ' must implement BlockDefinition');
+
+        new BlockRegistry(app(), [InvalidTestDefinition::class]);
+    }
+
+    public function test_it_rejects_duplicate_block_types(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Duplicate block definition for type ' . BlockType::RECEPTION_STEPS->value);
+
+        new BlockRegistry(app(), [
+            ReceptionStepsTestDefinition::class,
+            DuplicateReceptionStepsTestDefinition::class,
+        ]);
+    }
+}
