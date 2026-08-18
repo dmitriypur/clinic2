@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Blocks\BlockRegistry;
 use App\Enums\BlockBackgroundType;
 use App\Enums\BlockType;
 use App\Enums\PageType;
@@ -143,7 +144,7 @@ class BlockResource extends Resource
                         ->columnSpanFull()
                         ->label('Тип')
                         ->options(function (Forms\Get $get, $livewire): array {
-                            $options = BlockType::toArray();
+                            $options = app(BlockRegistry::class)->options();
                             $page = $livewire instanceof RelationManager && $livewire->getOwnerRecord() instanceof Page
                                 ? $livewire->getOwnerRecord()
                                 : Page::query()->find($get('page_id'));
@@ -165,6 +166,22 @@ class BlockResource extends Resource
                         })
                         ->default(BlockType::HTML->value)
                         ->reactive(),
+
+                    Forms\Components\Group::make()
+                        ->schema(function (Forms\Get $get): array {
+                            $value = $get('type');
+
+                            if ($value === null || $value === '') {
+                                return [];
+                            }
+
+                            $type = BlockType::tryFrom((int) $value);
+
+                            return $type
+                                ? app(BlockRegistry::class)->find($type)?->formSchema() ?? []
+                                : [];
+                        })
+                        ->columnSpanFull(),
 
                     Forms\Components\TextInput::make('payload.image_title')
                         ->columnSpanFull()
@@ -269,7 +286,7 @@ class BlockResource extends Resource
                             fn(Forms\Get $get) => !in_array(
                                 BlockType::from($get('type')),
                                 [BlockType::HTML, BlockType::TEXT_WITH_IMAGE, BlockType::TEXT_WITH_IMAGE_NEW,
-                                BlockType::TEXT_SUBDUED, BlockType::WELCOME, BlockType::POST_TEXT, BlockType::APPARATUS_DISEASES, BlockType::APPARATUS_METHODS, BlockType::APPARATUS_CONTRAINDICATIONS, BlockType::DIAGNOSTIC_METHODS, BlockType::TREATMENT_METHODS, BlockType::EXPERT_OPINION,]
+                                BlockType::TEXT_SUBDUED, BlockType::WELCOME, BlockType::POST_TEXT, BlockType::APPARATUS_DISEASES, BlockType::APPARATUS_METHODS, BlockType::APPARATUS_CONTRAINDICATIONS, BlockType::EXPERT_OPINION,]
                             )
                         )
                         ->columnSpan('full'),
@@ -455,20 +472,9 @@ class BlockResource extends Resource
                                     BlockType::POST_TEXT,
                                     BlockType::LIST_WITH_IMAGE,
                                     BlockType::APPARATUS_DISEASES,
-                                    BlockType::DIAGNOSTIC_METHODS,
                                     BlockType::EXPERT_OPINION,
                                 ])
                         ),
-
-                    Forms\Components\Textarea::make('payload.cards_intro')
-                        ->label('Подзаголовок перед карточками')
-                        ->hidden(
-                            fn(Forms\Get $get) => !in_array(BlockType::from($get('type')), [
-                                BlockType::DIAGNOSTIC_METHODS,
-                                BlockType::TREATMENT_METHODS,
-                            ], true)
-                        )
-                        ->columnSpanFull(),
 
                     Forms\Components\Select::make('payload.classes')
                         ->label('Классы')
@@ -1286,102 +1292,6 @@ class BlockResource extends Resource
 
                 Forms\Components\Section::make([
                     Forms\Components\Repeater::make('payload.items')
-                        ->label('Методы диагностики')
-                        ->schema([
-                            Forms\Components\TextInput::make('title')
-                                ->label('Заголовок')
-                                ->columnSpanFull()
-                                ->required(),
-
-                            Forms\Components\RichEditor::make('body_html')
-                                ->label('Текст')
-                                ->columnSpanFull()
-                                ->required(),
-
-                            Forms\Components\TextInput::make('link')
-                                ->label('Ссылка')
-                                ->columnSpanFull(),
-
-                            Forms\Components\TextInput::make('media_collection')
-                                ->columnSpan('full')
-                                ->hiddenLabel()
-                                ->default(
-                                    fn(Forms\Get $get) => $get('media_collection') ?? Str::uuid()->toString()
-                                )
-                                ->reactive()
-                                ->extraAttributes(['class' => 'hidden']),
-
-                            SpatieMediaLibraryFileUpload::make('image')
-                                ->collection(fn(Forms\Get $get) => $get('media_collection'))
-                                ->label('Мини-изображение')
-                                ->imageEditor()
-                                ->responsiveImages(),
-                        ])
-                        ->minItems(1)
-                        ->required(),
-                ])->hidden(
-                    fn(Forms\Get $get) => BlockType::from($get('type')) !== BlockType::DIAGNOSTIC_METHODS
-                ),
-
-                Forms\Components\Section::make([
-                    Forms\Components\Repeater::make('payload.items')
-                        ->label('Методы лечения')
-                        ->schema([
-                            Forms\Components\TextInput::make('title')
-                                ->label('Заголовок')
-                                ->columnSpanFull()
-                                ->required(),
-
-                            Forms\Components\RichEditor::make('body_html')
-                                ->label('Текст')
-                                ->columnSpanFull()
-                                ->required(),
-
-                            Forms\Components\TextInput::make('media_collection')
-                                ->columnSpan('full')
-                                ->hiddenLabel()
-                                ->default(
-                                    fn(Forms\Get $get) => $get('media_collection') ?? Str::uuid()->toString()
-                                )
-                                ->reactive()
-                                ->extraAttributes(['class' => 'hidden'])
-                                ->required(),
-
-                            SpatieMediaLibraryFileUpload::make('image')
-                                ->collection(fn(Forms\Get $get) => $get('media_collection'))
-                                ->label('Мини-изображение')
-                                ->imageEditor()
-                                ->responsiveImages()
-                                ->required(),
-                        ])
-                        ->minItems(1)
-                        ->required(),
-                ])->hidden(
-                    fn(Forms\Get $get) => BlockType::from($get('type')) !== BlockType::TREATMENT_METHODS
-                ),
-
-                Forms\Components\Section::make([
-                    Forms\Components\Repeater::make('payload.items')
-                        ->label('Этапы')
-                        ->schema([
-                            Forms\Components\TextInput::make('title')
-                                ->label('Заголовок')
-                                ->columnSpanFull()
-                                ->required(),
-
-                            Forms\Components\RichEditor::make('body_html')
-                                ->label('Текст')
-                                ->columnSpanFull()
-                                ->required(),
-                        ])
-                        ->minItems(1)
-                        ->required(),
-                ])->hidden(
-                    fn(Forms\Get $get) => BlockType::from($get('type')) !== BlockType::RECEPTION_STEPS
-                ),
-
-                Forms\Components\Section::make([
-                    Forms\Components\Repeater::make('payload.items')
                         ->label('Методики')
                         ->schema([
                             Forms\Components\TextInput::make('title')
@@ -1539,7 +1449,7 @@ class BlockResource extends Resource
                     ->relationship('page', 'title'),
                 Tables\Filters\SelectFilter::make('type')
                     ->label('Тип блока')
-                    ->options(BlockType::toArray()),
+                    ->options(app(BlockRegistry::class)->options()),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),

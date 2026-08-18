@@ -6,6 +6,7 @@ namespace App\Blocks\Definitions;
 
 use App\Blocks\AbstractBlockDefinition;
 use App\Enums\BlockType;
+use Filament\Forms;
 
 final class ReceptionStepsDefinition extends AbstractBlockDefinition
 {
@@ -26,6 +27,24 @@ final class ReceptionStepsDefinition extends AbstractBlockDefinition
 
     public function formSchema(): array
     {
-        return [];
+        return [
+            Forms\Components\Section::make([
+                Forms\Components\Repeater::make('payload.items')
+                    ->label('Этапы')
+                    ->schema([
+                        Forms\Components\TextInput::make('title')
+                            ->label('Заголовок')
+                            ->columnSpanFull()
+                            ->required(),
+
+                        Forms\Components\RichEditor::make('body_html')
+                            ->label('Текст')
+                            ->columnSpanFull()
+                            ->required(),
+                    ])
+                    ->minItems(1)
+                    ->required(),
+            ]),
+        ];
     }
 }
