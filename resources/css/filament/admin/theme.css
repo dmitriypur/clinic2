@@ -4,6 +4,17 @@
 
 @config 'tailwind.config.js';
 
+.curator-media-picker .curator-picker-list-preview {
+    width: 3rem;
+    height: 3rem;
+}
+
+.curator-media-picker .curator-picker-list-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
 .utm-tracker-grid {
     display: grid;
     align-items: center;

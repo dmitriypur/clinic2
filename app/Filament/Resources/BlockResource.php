@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Blocks\BlockRegistry;
 use App\Enums\BlockBackgroundType;
 use App\Enums\BlockType;
+use App\Filament\Forms\Components\ReplaceableCuratorPicker;
 use App\Enums\PageType;
 use App\Filament\Resources\BlockResource\Pages;
 use App\Models\Block;
@@ -12,7 +13,6 @@ use App\Models\Doctor;
 use App\Models\Page;
 use App\Models\Review;
 use App\Models\Service;
-use Awcodes\Curator\Components\Forms\CuratorPicker;
 use Filament\Forms;
 use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
@@ -440,9 +440,10 @@ class BlockResource extends Resource
                                 BlockType::TEXT_BLOCKS,
                         ),
 
-                    CuratorPicker::make('payload.curator_image_id')
+                    ReplaceableCuratorPicker::make('payload.curator_image_id')
                         ->label('Изображение')
-                        ->buttonLabel('Выбрать из медиатеки')
+                        ->buttonLabel('Выбрать или заменить фото')
+                        ->listDisplay()
                         ->directory('expert-opinions')
                         ->acceptedFileTypes([
                             'image/jpeg',

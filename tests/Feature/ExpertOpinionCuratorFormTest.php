@@ -3,10 +3,10 @@
 namespace Tests\Feature;
 
 use App\Enums\BlockType;
+use App\Filament\Forms\Components\ReplaceableCuratorPicker;
 use App\Filament\Resources\BlockResource\Pages\CreateBlock;
 use App\Models\Page;
 use App\Models\Staff;
-use Awcodes\Curator\Components\Forms\CuratorPicker;
 use Awcodes\Curator\CuratorPlugin;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
@@ -47,7 +47,10 @@ class ExpertOpinionCuratorFormTest extends TestCase
             ->set('data.type', BlockType::EXPERT_OPINION->value)
             ->assertFormFieldExists(
                 'payload.curator_image_id',
-                fn ($field): bool => $field instanceof CuratorPicker && ! $field->isHidden(),
+                fn ($field): bool => $field instanceof ReplaceableCuratorPicker
+                    && ! $field->isHidden()
+                    && $field->shouldDisplayAsList()
+                    && $field->getView() === 'filament.forms.components.replaceable-curator-picker',
             )
             ->assertFormFieldExists(
                 'default',
