@@ -235,8 +235,9 @@ class MakeBlockCommandTest extends TestCase
         $this->assertFileDoesNotExist($this->fixtureRoot.'/tests/Feature/Blocks/TreatmentStepsBlockTest.php');
     }
 
-    public function test_scaffolder_continues_cleanup_and_preserves_the_original_error_if_a_restore_fails(): void
+    public function test_scaffolder_restores_registry_from_backups_without_relying_on_more_writes(): void
     {
+        $enumBefore = $this->files->get($this->fixtureRoot.'/app/Enums/BlockType.php');
         $configBefore = $this->files->get($this->fixtureRoot.'/config/block-definitions.php');
         $failingFiles = new FailOnBlockGeneratorWritesFilesystem([
             5 => 'Original write failure.',
@@ -254,6 +255,33 @@ class MakeBlockCommandTest extends TestCase
             $this->fail('Expected the original write failure.');
         } catch (RuntimeException $exception) {
             $this->assertSame('Original write failure.', $exception->getMessage());
+        }
+
+        $this->assertSame($enumBefore, $this->files->get($this->fixtureRoot.'/app/Enums/BlockType.php'));
+        $this->assertSame($configBefore, $this->files->get($this->fixtureRoot.'/config/block-definitions.php'));
+        $this->assertFileDoesNotExist($this->fixtureRoot.'/app/Blocks/Definitions/TreatmentStepsDefinition.php');
+        $this->assertFileDoesNotExist($this->fixtureRoot.'/resources/views/components/block/treatment-steps.blade.php');
+        $this->assertFileDoesNotExist($this->fixtureRoot.'/tests/Feature/Blocks/TreatmentStepsBlockTest.php');
+    }
+
+    public function test_scaffolder_reports_the_paths_that_could_not_be_restored(): void
+    {
+        $configBefore = $this->files->get($this->fixtureRoot.'/config/block-definitions.php');
+
+        try {
+            (new BlockScaffolder(new FailingBlockGeneratorRestoreFilesystem))->generate(
+                'Этапы лечения',
+                'treatment-steps',
+                'TREATMENT_STEPS',
+                $this->fixtureRoot,
+            );
+
+            $this->fail('Expected the rollback failure report.');
+        } catch (RuntimeException $exception) {
+            $this->assertStringContainsString('Original write failure.', $exception->getMessage());
+            $this->assertStringContainsString('Rollback incomplete for:', $exception->getMessage());
+            $this->assertStringContainsString('app/Enums/BlockType.php', $exception->getMessage());
+            $this->assertSame('Original write failure.', $exception->getPrevious()?->getMessage());
         }
 
         $this->assertSame($configBefore, $this->files->get($this->fixtureRoot.'/config/block-definitions.php'));
@@ -424,5 +452,34 @@ final class PartialThenFailingBlockGeneratorFilesystem extends Filesystem
         }
 
         return parent::put($path, $contents, $lock);
+    }
+}
+
+final class FailingBlockGeneratorRestoreFilesystem extends Filesystem
+{
+    private int $writeCount = 0;
+
+    private int $moveCount = 0;
+
+    public function put($path, $contents, $lock = false)
+    {
+        $this->writeCount++;
+
+        if ($this->writeCount === 5) {
+            throw new RuntimeException('Original write failure.');
+        }
+
+        return parent::put($path, $contents, $lock);
+    }
+
+    public function move($path, $target)
+    {
+        $this->moveCount++;
+
+        if ($this->moveCount === 1) {
+            return false;
+        }
+
+        return parent::move($path, $target);
     }
 }

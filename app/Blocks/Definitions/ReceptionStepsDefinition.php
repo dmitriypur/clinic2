@@ -42,6 +42,13 @@ final class ReceptionStepsDefinition extends AbstractBlockDefinition
                             ->columnSpanFull()
                             ->required(),
                     ])
+                    ->mutateDehydratedStateUsing(fn (array $state): array => collect($state)
+                        ->map(fn (array $item): array => array_intersect_key($item, array_flip([
+                            'title',
+                            'body_html',
+                        ])))
+                        ->values()
+                        ->all())
                     ->minItems(1)
                     ->required(),
             ]),

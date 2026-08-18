@@ -167,22 +167,6 @@ class BlockResource extends Resource
                         ->default(BlockType::HTML->value)
                         ->reactive(),
 
-                    Forms\Components\Group::make()
-                        ->schema(function (Forms\Get $get): array {
-                            $value = $get('type');
-
-                            if ($value === null || $value === '') {
-                                return [];
-                            }
-
-                            $type = BlockType::tryFrom((int) $value);
-
-                            return $type
-                                ? app(BlockRegistry::class)->find($type)?->formSchema() ?? []
-                                : [];
-                        })
-                        ->columnSpanFull(),
-
                     Forms\Components\TextInput::make('payload.image_title')
                         ->columnSpanFull()
                         ->label('Заголовок фото')
@@ -1377,6 +1361,22 @@ class BlockResource extends Resource
                         BlockType::GRID_CAROUSEL,
                     ])
                 ),
+
+                Forms\Components\Group::make()
+                    ->schema(function (Forms\Get $get): array {
+                        $value = $get('type');
+
+                        if ($value === null || $value === '') {
+                            return [];
+                        }
+
+                        $type = BlockType::tryFrom((int) $value);
+
+                        return $type
+                            ? app(BlockRegistry::class)->find($type)?->formSchema() ?? []
+                            : [];
+                    })
+                    ->columnSpanFull(),
 
                 Forms\Components\Section::make()
                     ->schema([

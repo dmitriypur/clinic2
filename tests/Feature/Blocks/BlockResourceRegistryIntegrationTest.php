@@ -4,6 +4,7 @@ namespace Tests\Feature\Blocks;
 
 use App\Enums\BlockType;
 use App\Filament\Resources\BlockResource\Pages\CreateBlock;
+use App\Filament\Resources\BlockResource\Pages\EditBlock;
 use App\Models\Block;
 use App\Models\Page;
 use App\Models\Staff;
@@ -41,13 +42,13 @@ class BlockResourceRegistryIntegrationTest extends TestCase
             'email' => 'blocks@example.test',
             'password' => 'password',
         ]);
-        foreach (['create_block', 'view_any_block'] as $permission) {
+        foreach (['create_block', 'view_any_block', 'view_block', 'update_block'] as $permission) {
             Permission::query()->create([
                 'name' => $permission,
                 'guard_name' => 'staff',
             ]);
         }
-        $staff->givePermissionTo('create_block', 'view_any_block');
+        $staff->givePermissionTo('create_block', 'view_any_block', 'view_block', 'update_block');
         $this->actingAs($staff, 'staff');
         Filament::setCurrentPanel(Filament::getPanel('admin'));
 
@@ -91,6 +92,10 @@ class BlockResourceRegistryIntegrationTest extends TestCase
         $this->assertSame(BlockType::HTML, $block->type);
         $this->assertSame('<p>Legacy content</p>', $block->body_html);
         $this->assertTrue($block->settings['show_on_mobile']);
+
+        $this->saveExistingBlock($block);
+
+        $this->assertSame('<p>Legacy content</p>', $block->fresh()->body_html);
     }
 
     public function test_registered_diagnostic_methods_schema_saves_payload_and_media(): void
@@ -153,6 +158,15 @@ class BlockResourceRegistryIntegrationTest extends TestCase
         $this->assertSame($mediaCollection, $block->payload['items'][0]['media_collection']);
         $this->assertSame('Перед методами', $block->payload['cards_intro']);
         $this->assertCount(1, $block->getMedia($mediaCollection));
+
+        $payloadBefore = $block->payload;
+        $mediaIdsBefore = $block->getMedia($mediaCollection)->modelKeys();
+
+        $this->saveExistingBlock($block);
+
+        $block->refresh();
+        $this->assertSame($payloadBefore, $block->payload);
+        $this->assertSame($mediaIdsBefore, $block->getMedia($mediaCollection)->modelKeys());
     }
 
     private function createBlock(array $state, array $uploads = []): void
@@ -185,6 +199,14 @@ class BlockResourceRegistryIntegrationTest extends TestCase
         }
 
         $component->call('create')
+            ->assertHasNoFormErrors();
+    }
+
+    private function saveExistingBlock(Block $block): void
+    {
+        Livewire::test(EditBlock::class, ['record' => $block->getRouteKey()])
+            ->assertStatus(200)
+            ->call('save')
             ->assertHasNoFormErrors();
     }
 }

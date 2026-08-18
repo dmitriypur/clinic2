@@ -103,6 +103,10 @@ class BlockScaffolder
                 'test' => strtr($this->files->get($stubPaths['test']), $replacements),
             ];
 
+            $backupFiles = $this->createBackups([
+                $absolutePaths['enum'],
+                $absolutePaths['config'],
+            ]);
             $createdFiles = [];
 
             try {
@@ -115,16 +119,40 @@ class BlockScaffolder
                     $this->write($absolutePaths[$target], $contents[$target]);
                 }
             } catch (Throwable $exception) {
-                $this->attemptRollback(fn () => $this->write($absolutePaths['enum'], $enumSource));
-                $this->attemptRollback(fn () => $this->write($absolutePaths['config'], $configSource));
+                $rollbackFailures = [];
+
+                foreach ($backupFiles as $targetPath => $backupPath) {
+                    $this->attemptRollback(
+                        "{$targetPath}; backup: {$backupPath}",
+                        fn () => $this->files->move($backupPath, $targetPath),
+                        $rollbackFailures,
+                    );
+                }
 
                 foreach ($createdFiles as $createdFile) {
                     if ($this->files->exists($createdFile)) {
-                        $this->attemptRollback(fn () => $this->files->delete($createdFile));
+                        $this->attemptRollback(
+                            $createdFile,
+                            fn () => $this->files->delete($createdFile),
+                            $rollbackFailures,
+                        );
                     }
                 }
 
+                if ($rollbackFailures !== []) {
+                    throw new RuntimeException(
+                        $exception->getMessage().' Rollback incomplete for: '.implode(', ', $rollbackFailures),
+                        previous: $exception,
+                    );
+                }
+
                 throw $exception;
+            }
+
+            foreach ($backupFiles as $backupPath) {
+                if ($this->files->exists($backupPath)) {
+                    $this->files->delete($backupPath);
+                }
             }
 
             return array_values($paths);
@@ -154,12 +182,54 @@ class BlockScaffolder
         return $lockHandle;
     }
 
-    private function attemptRollback(callable $operation): void
+    /**
+     * @param  array<string>  $paths
+     * @return array<string, string>
+     */
+    private function createBackups(array $paths): array
+    {
+        $backups = [];
+
+        try {
+            foreach ($paths as $path) {
+                $backupPath = tempnam(dirname($path), '.block-generator-backup-');
+
+                if ($backupPath === false || ! $this->files->copy($path, $backupPath)) {
+                    if ($backupPath !== false) {
+                        $backups[$path] = $backupPath;
+                    }
+
+                    throw new RuntimeException("Unable to back up block generator file: {$path}");
+                }
+
+                $backups[$path] = $backupPath;
+
+                if (! chmod($backupPath, fileperms($path) & 0777)) {
+                    throw new RuntimeException("Unable to preserve block generator backup permissions: {$path}");
+                }
+            }
+        } catch (Throwable $exception) {
+            foreach ($backups as $backupPath) {
+                if ($this->files->exists($backupPath)) {
+                    $this->files->delete($backupPath);
+                }
+            }
+
+            throw $exception;
+        }
+
+        return $backups;
+    }
+
+    /** @param array<string> $failures */
+    private function attemptRollback(string $path, callable $operation, array &$failures): void
     {
         try {
-            $operation();
-        } catch (Throwable) {
-            // Rollback is best-effort: continue cleanup and preserve the original failure.
+            if ($operation() === false) {
+                throw new RuntimeException('Rollback operation returned false.');
+            }
+        } catch (Throwable $exception) {
+            $failures[] = "{$path} ({$exception->getMessage()})";
         }
     }
 
