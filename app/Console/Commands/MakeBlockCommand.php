@@ -38,6 +38,9 @@ class MakeBlockCommand extends Command
             $this->line("- {$changedFile}");
         }
 
+        $this->newLine();
+        $this->line('Дальше: заполните formSchema(), Blade-шаблон и тест.');
+
         return self::SUCCESS;
     }
 }

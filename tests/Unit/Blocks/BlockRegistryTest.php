@@ -71,9 +71,7 @@ if (interface_exists(BlockDefinition::class)) {
     }
 }
 
-final class InvalidTestDefinition
-{
-}
+final class InvalidTestDefinition {}
 
 class BlockRegistryTest extends TestCase
 {
@@ -96,7 +94,7 @@ class BlockRegistryTest extends TestCase
     public function test_it_rejects_classes_that_do_not_implement_the_definition_contract(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage(InvalidTestDefinition::class . ' must implement BlockDefinition');
+        $this->expectExceptionMessage(InvalidTestDefinition::class.' must implement BlockDefinition');
 
         new BlockRegistry(app(), [InvalidTestDefinition::class]);
     }
@@ -104,7 +102,7 @@ class BlockRegistryTest extends TestCase
     public function test_it_rejects_duplicate_block_types(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Duplicate block definition for type ' . BlockType::RECEPTION_STEPS->value);
+        $this->expectExceptionMessage('Duplicate block definition for type '.BlockType::RECEPTION_STEPS->value);
 
         new BlockRegistry(app(), [
             ReceptionStepsTestDefinition::class,
@@ -155,5 +153,17 @@ class BlockRegistryTest extends TestCase
         );
 
         $this->assertSame('Этапы приема из реестра', BlockType::RECEPTION_STEPS->getLabel());
+    }
+
+    public function test_options_use_the_current_registry_instead_of_the_container_registry(): void
+    {
+        app()->instance(
+            BlockRegistry::class,
+            new BlockRegistry(app(), [ReceptionStepsTestDefinition::class]),
+        );
+
+        $localRegistry = new BlockRegistry(app(), []);
+
+        $this->assertSame('Этапы приема', $localRegistry->options()[BlockType::RECEPTION_STEPS->value]);
     }
 }

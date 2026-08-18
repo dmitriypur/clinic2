@@ -15,7 +15,7 @@ final class BlockRegistry
     private array $definitions = [];
 
     /**
-     * @param array<class-string> $definitionClasses
+     * @param  array<class-string>  $definitionClasses
      */
     public function __construct(Container $container, array $definitionClasses)
     {
@@ -55,7 +55,7 @@ final class BlockRegistry
     {
         return collect(BlockType::cases())
             ->mapWithKeys(fn (BlockType $type) => [
-                $type->value => $this->label($type) ?? $type->getLabel(),
+                $type->value => $this->label($type) ?? $type->legacyLabel(),
             ])
             ->sort()
             ->all();

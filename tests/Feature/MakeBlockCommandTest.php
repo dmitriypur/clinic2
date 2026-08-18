@@ -37,6 +37,7 @@ class MakeBlockCommandTest extends TestCase
     public function test_scaffolder_creates_the_complete_block_structure(): void
     {
         $scaffolder = new BlockScaffolder($this->files);
+        $enumModeBefore = fileperms($this->fixtureRoot.'/app/Enums/BlockType.php') & 0777;
 
         $changedFiles = $scaffolder->generate(
             'Этапы лечения',
@@ -68,6 +69,7 @@ class MakeBlockCommandTest extends TestCase
         $this->assertStringContainsString('treatment-steps-block', $view);
         $this->assertStringContainsString('class TreatmentStepsBlockTest', $test);
         $this->assertStringContainsString('BlockType::TREATMENT_STEPS', $test);
+        $this->assertSame($enumModeBefore, fileperms($this->fixtureRoot.'/app/Enums/BlockType.php') & 0777);
     }
 
     public function test_scaffolder_derives_transliterated_names_when_options_are_omitted(): void
@@ -109,6 +111,28 @@ class MakeBlockCommandTest extends TestCase
         $this->assertSame($enumBefore, $this->files->get($this->fixtureRoot.'/app/Enums/BlockType.php'));
         $this->assertSame($configBefore, $this->files->get($this->fixtureRoot.'/config/block-definitions.php'));
         $this->assertSame('existing definition', $this->files->get($definitionPath));
+    }
+
+    public function test_scaffolder_rejects_a_slug_that_would_create_an_invalid_php_class(): void
+    {
+        $enumBefore = $this->files->get($this->fixtureRoot.'/app/Enums/BlockType.php');
+        $configBefore = $this->files->get($this->fixtureRoot.'/config/block-definitions.php');
+
+        try {
+            (new BlockScaffolder($this->files))->generate(
+                'Лечение 123',
+                '123-treatment',
+                'TREATMENT_123',
+                $this->fixtureRoot,
+            );
+
+            $this->fail('Expected an invalid slug error.');
+        } catch (InvalidArgumentException $exception) {
+            $this->assertStringContainsString('must start with a lowercase Latin letter', $exception->getMessage());
+        }
+
+        $this->assertSame($enumBefore, $this->files->get($this->fixtureRoot.'/app/Enums/BlockType.php'));
+        $this->assertSame($configBefore, $this->files->get($this->fixtureRoot.'/config/block-definitions.php'));
     }
 
     public function test_scaffolder_rejects_missing_markers_before_writing(): void
@@ -154,6 +178,112 @@ class MakeBlockCommandTest extends TestCase
         $this->assertFileDoesNotExist($this->fixtureRoot.'/tests/Feature/Blocks/TreatmentStepsBlockTest.php');
     }
 
+    public function test_scaffolder_refuses_to_run_while_the_same_repository_is_locked(): void
+    {
+        $enumBefore = $this->files->get($this->fixtureRoot.'/app/Enums/BlockType.php');
+        $configBefore = $this->files->get($this->fixtureRoot.'/config/block-definitions.php');
+        $lockPath = sys_get_temp_dir().'/zrenie-block-generator-'.sha1((string) realpath($this->fixtureRoot)).'.lock';
+        $lockHandle = fopen($lockPath, 'c+');
+
+        $this->assertIsResource($lockHandle);
+        $this->assertTrue(flock($lockHandle, LOCK_EX | LOCK_NB));
+
+        try {
+            (new BlockScaffolder($this->files))->generate(
+                'Этапы лечения',
+                'treatment-steps',
+                'TREATMENT_STEPS',
+                $this->fixtureRoot,
+            );
+
+            $this->fail('Expected a repository lock conflict.');
+        } catch (RuntimeException $exception) {
+            $this->assertStringContainsString('already running', $exception->getMessage());
+        } finally {
+            flock($lockHandle, LOCK_UN);
+            fclose($lockHandle);
+            $this->files->delete($lockPath);
+        }
+
+        $this->assertSame($enumBefore, $this->files->get($this->fixtureRoot.'/app/Enums/BlockType.php'));
+        $this->assertSame($configBefore, $this->files->get($this->fixtureRoot.'/config/block-definitions.php'));
+    }
+
+    public function test_scaffolder_rolls_back_all_files_when_the_last_write_fails(): void
+    {
+        $enumBefore = $this->files->get($this->fixtureRoot.'/app/Enums/BlockType.php');
+        $configBefore = $this->files->get($this->fixtureRoot.'/config/block-definitions.php');
+        $failingFiles = new FailOnceBlockGeneratorFilesystem(5);
+
+        try {
+            (new BlockScaffolder($failingFiles))->generate(
+                'Этапы лечения',
+                'treatment-steps',
+                'TREATMENT_STEPS',
+                $this->fixtureRoot,
+            );
+
+            $this->fail('Expected the injected write failure.');
+        } catch (RuntimeException $exception) {
+            $this->assertSame('Injected block generator write failure.', $exception->getMessage());
+        }
+
+        $this->assertSame($enumBefore, $this->files->get($this->fixtureRoot.'/app/Enums/BlockType.php'));
+        $this->assertSame($configBefore, $this->files->get($this->fixtureRoot.'/config/block-definitions.php'));
+        $this->assertFileDoesNotExist($this->fixtureRoot.'/app/Blocks/Definitions/TreatmentStepsDefinition.php');
+        $this->assertFileDoesNotExist($this->fixtureRoot.'/resources/views/components/block/treatment-steps.blade.php');
+        $this->assertFileDoesNotExist($this->fixtureRoot.'/tests/Feature/Blocks/TreatmentStepsBlockTest.php');
+    }
+
+    public function test_scaffolder_continues_cleanup_and_preserves_the_original_error_if_a_restore_fails(): void
+    {
+        $configBefore = $this->files->get($this->fixtureRoot.'/config/block-definitions.php');
+        $failingFiles = new FailOnBlockGeneratorWritesFilesystem([
+            5 => 'Original write failure.',
+            6 => 'Rollback write failure.',
+        ]);
+
+        try {
+            (new BlockScaffolder($failingFiles))->generate(
+                'Этапы лечения',
+                'treatment-steps',
+                'TREATMENT_STEPS',
+                $this->fixtureRoot,
+            );
+
+            $this->fail('Expected the original write failure.');
+        } catch (RuntimeException $exception) {
+            $this->assertSame('Original write failure.', $exception->getMessage());
+        }
+
+        $this->assertSame($configBefore, $this->files->get($this->fixtureRoot.'/config/block-definitions.php'));
+        $this->assertFileDoesNotExist($this->fixtureRoot.'/app/Blocks/Definitions/TreatmentStepsDefinition.php');
+        $this->assertFileDoesNotExist($this->fixtureRoot.'/resources/views/components/block/treatment-steps.blade.php');
+        $this->assertFileDoesNotExist($this->fixtureRoot.'/tests/Feature/Blocks/TreatmentStepsBlockTest.php');
+    }
+
+    public function test_scaffolder_never_exposes_a_partially_written_registry_file(): void
+    {
+        $enumBefore = $this->files->get($this->fixtureRoot.'/app/Enums/BlockType.php');
+        $configBefore = $this->files->get($this->fixtureRoot.'/config/block-definitions.php');
+
+        try {
+            (new BlockScaffolder(new PartialThenFailingBlockGeneratorFilesystem))->generate(
+                'Этапы лечения',
+                'treatment-steps',
+                'TREATMENT_STEPS',
+                $this->fixtureRoot,
+            );
+
+            $this->fail('Expected the partial write failure.');
+        } catch (RuntimeException $exception) {
+            $this->assertStringContainsString('Unable to write block generator file', $exception->getMessage());
+        }
+
+        $this->assertSame($enumBefore, $this->files->get($this->fixtureRoot.'/app/Enums/BlockType.php'));
+        $this->assertSame($configBefore, $this->files->get($this->fixtureRoot.'/config/block-definitions.php'));
+    }
+
     public function test_make_block_command_reports_generated_files(): void
     {
         $scaffolder = Mockery::mock(BlockScaffolder::class);
@@ -176,6 +306,7 @@ class MakeBlockCommandTest extends TestCase
         ])
             ->expectsOutputToContain('Блок создан:')
             ->expectsOutputToContain('app/Blocks/Definitions/TreatmentStepsDefinition.php')
+            ->expectsOutputToContain('Дальше: заполните formSchema(), Blade-шаблон и тест.')
             ->assertSuccessful();
     }
 
@@ -249,6 +380,47 @@ final class FailOnceBlockGeneratorFilesystem extends Filesystem
 
         if ($this->writeCount === $this->failureWriteNumber) {
             throw new RuntimeException('Injected block generator write failure.');
+        }
+
+        return parent::put($path, $contents, $lock);
+    }
+}
+
+final class FailOnBlockGeneratorWritesFilesystem extends Filesystem
+{
+    private int $writeCount = 0;
+
+    /** @param array<int, string> $failures */
+    public function __construct(private readonly array $failures) {}
+
+    public function put($path, $contents, $lock = false)
+    {
+        $this->writeCount++;
+
+        if (isset($this->failures[$this->writeCount])) {
+            throw new RuntimeException($this->failures[$this->writeCount]);
+        }
+
+        return parent::put($path, $contents, $lock);
+    }
+}
+
+final class PartialThenFailingBlockGeneratorFilesystem extends Filesystem
+{
+    private int $writeCount = 0;
+
+    public function put($path, $contents, $lock = false)
+    {
+        $this->writeCount++;
+
+        if ($this->writeCount === 1) {
+            parent::put($path, 'partial contents', $lock);
+
+            return false;
+        }
+
+        if ($this->writeCount === 2) {
+            throw new RuntimeException('Rollback write failure.');
         }
 
         return parent::put($path, $contents, $lock);

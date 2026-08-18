@@ -141,10 +141,11 @@ enum BlockType: int
 
     public function getLabel(): string
     {
-        if ($label = app(BlockRegistry::class)->label($this)) {
-            return $label;
-        }
+        return app(BlockRegistry::class)->label($this) ?? $this->legacyLabel();
+    }
 
+    public function legacyLabel(): string
+    {
         return match ($this) {
             self::TEXT_WITH_IMAGE => 'Текст с изображением',
             self::ELEMENTS_ITEM_COLUMN => 'Элементы (каждый элемент расположен вертикально)',
