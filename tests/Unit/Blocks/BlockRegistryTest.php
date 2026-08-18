@@ -4,8 +4,12 @@ namespace Tests\Unit\Blocks;
 
 use App\Blocks\BlockRegistry;
 use App\Blocks\Contracts\BlockDefinition;
+use App\Blocks\Definitions\DiagnosticMethodsDefinition;
+use App\Blocks\Definitions\ReceptionStepsDefinition;
+use App\Blocks\Definitions\TreatmentMethodsDefinition;
 use App\Enums\BlockType;
 use App\Models\Block;
+use Illuminate\Support\Facades\View;
 use InvalidArgumentException;
 use Tests\TestCase;
 
@@ -106,5 +110,50 @@ class BlockRegistryTest extends TestCase
             ReceptionStepsTestDefinition::class,
             DuplicateReceptionStepsTestDefinition::class,
         ]);
+    }
+
+    public function test_application_registry_contains_the_three_pilot_definitions(): void
+    {
+        $registry = app(BlockRegistry::class);
+        $expected = [
+            BlockType::RECEPTION_STEPS->value => [
+                ReceptionStepsDefinition::class,
+                'Этапы приема',
+                'components.block.reception-steps',
+            ],
+            BlockType::DIAGNOSTIC_METHODS->value => [
+                DiagnosticMethodsDefinition::class,
+                'Методы диагностики',
+                'components.block.diagnostic-methods',
+            ],
+            BlockType::TREATMENT_METHODS->value => [
+                TreatmentMethodsDefinition::class,
+                'Методы лечения',
+                'components.block.treatment-methods',
+            ],
+        ];
+
+        foreach ($expected as $typeValue => [$class, $label, $view]) {
+            $type = BlockType::from($typeValue);
+            $definition = $registry->find($type);
+
+            $this->assertInstanceOf($class, $definition);
+            $this->assertSame($label, $definition->label());
+            $this->assertSame($view, $definition->view());
+            $this->assertTrue(View::exists($view));
+        }
+
+        $this->assertFalse($registry->has(BlockType::HTML));
+        $this->assertSame('Текст', BlockType::HTML->getLabel());
+    }
+
+    public function test_block_type_label_prefers_a_registered_definition(): void
+    {
+        app()->instance(
+            BlockRegistry::class,
+            new BlockRegistry(app(), [ReceptionStepsTestDefinition::class]),
+        );
+
+        $this->assertSame('Этапы приема из реестра', BlockType::RECEPTION_STEPS->getLabel());
     }
 }

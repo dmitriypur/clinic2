@@ -35,7 +35,12 @@
         </div>
     @endif
 
-    @switch($block->type)
+    @php($blockDefinition = app(\App\Blocks\BlockRegistry::class)->find($block->type))
+
+    @if($blockDefinition)
+        @include($blockDefinition->view(), $blockDefinition->viewData($block))
+    @else
+        @switch($block->type)
         @case(\App\Enums\BlockType::MAIN_PAGE_STATIC_BLOCK)
             <x-block.main/>
             @break
@@ -293,18 +298,6 @@
             <x-block.details-alt :block="$block"/>
             @break
 
-        @case(\App\Enums\BlockType::RECEPTION_STEPS)
-            <x-block.reception-steps :block="$block"/>
-            @break
-
-        @case(\App\Enums\BlockType::DIAGNOSTIC_METHODS)
-            <x-block.diagnostic-methods :block="$block"/>
-            @break
-
-        @case(\App\Enums\BlockType::TREATMENT_METHODS)
-            <x-block.treatment-methods :block="$block"/>
-            @break
-
         @case(\App\Enums\BlockType::UNIVERSAL_TEXT_BLOCK)
             <x-block.universal-block :block="$block"/>
             @break
@@ -357,5 +350,6 @@
             <x-article-navigation :page="$page"/>
             @break
 
-    @endswitch
+        @endswitch
+    @endif
 </section>

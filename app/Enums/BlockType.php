@@ -2,6 +2,8 @@
 
 namespace App\Enums;
 
+use App\Blocks\BlockRegistry;
+
 enum BlockType: int
 {
     case TEXT_WITH_IMAGE = 0;
@@ -135,10 +137,14 @@ enum BlockType: int
     case EXPERT_OPINION = 77;
     case ARTICLE_NAVIGATION = 78;
 
-
+    // <block-generator-cases>
 
     public function getLabel(): string
     {
+        if ($label = app(BlockRegistry::class)->label($this)) {
+            return $label;
+        }
+
         return match ($this) {
             self::TEXT_WITH_IMAGE => 'Текст с изображением',
             self::ELEMENTS_ITEM_COLUMN => 'Элементы (каждый элемент расположен вертикально)',
