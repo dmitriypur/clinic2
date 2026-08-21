@@ -34,7 +34,7 @@ class CuratorMediaPolicy
 
     public function delete(Staff $staff, CuratorMedia $media): bool
     {
-        return $staff->can('delete_block') && ! $media->isUsedByExpertOpinion();
+        return $staff->can('delete_block') && ! $media->isUsedByBlocks();
     }
 
     public function deleteAny(Staff $staff): bool

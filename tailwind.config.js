@@ -11,9 +11,38 @@ module.exports = {
   ],
   safelist: [
     "swiper-pagination-bullet",
+    "flex",
+    "inline-flex",
+    "flex-col",
+    "flex-wrap",
+    "items-start",
+    "items-center",
+    "items-end",
+    "justify-start",
+    "justify-center",
+    "justify-between",
+    "justify-end",
+    "grow",
+    "shrink-0",
     {
       pattern: /grid-cols-(1|2|3|4|5|6|7|8|9|10|11|12)/,
       variants: ["sm", "md", "lg", "xl"],
+    },
+    {
+      pattern: /(gap|p|px|py|pt|pr|pb|pl)-(0|1|2|3|4|5|6|8|10|12|16|20|24)/,
+      variants: ["sm", "md", "lg", "xl"],
+    },
+    {
+      pattern: /(w|h|min-w|min-h|max-w|max-h)-(0|4|6|8|10|12|16|20|24|32|40|48|56|64|72|80|96|auto|full|screen|min|max|fit)/,
+      variants: ["sm", "md", "lg", "xl"],
+    },
+    {
+      pattern: /rounded(-none|-sm|-md|-lg|-xl|-2xl|-3xl|-full|-20)?/,
+      variants: ["sm", "md", "lg", "xl"],
+    },
+    {
+      pattern: /(bg|text|border)-(transparent|white|surface|surface-subdued|heading|interactive|interactive-hovered|action-primary|action-primary-light|action-primary-hovered|action-secondary)/,
+      variants: ["hover", "sm", "md", "lg", "xl"],
     },
   ],
   theme: {

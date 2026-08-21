@@ -137,6 +137,8 @@ enum BlockType: int
     case EXPERT_OPINION = 77;
     case ARTICLE_NAVIGATION = 78;
 
+    case HTML_CARDS = 79;
+
     // <block-generator-cases>
 
     public function getLabel(): string
@@ -222,6 +224,7 @@ enum BlockType: int
             self::TREATMENT_METHODS => 'Методы лечения',
             self::EXPERT_OPINION => 'Мнение эксперта',
             self::ARTICLE_NAVIGATION => 'Навигация по статьям',
+            self::HTML_CARDS => 'HTML-карточки',
         };
     }
 
