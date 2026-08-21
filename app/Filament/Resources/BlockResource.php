@@ -659,7 +659,6 @@ class BlockResource extends Resource
                     ->hidden(
                         fn (Forms\Get $get) => ! in_array(BlockType::from($get('type')), [
                             BlockType::ADVANTAGES,
-                            BlockType::DETAILS,
                         ])
                     ),
 
@@ -796,7 +795,6 @@ class BlockResource extends Resource
                                 BlockType::BANNER_APPOINTMENT,
                                 BlockType::BANNER_CORRECTION,
                                 BlockType::BANNER_MYOPIA,
-                                BlockType::DETAILS,
                                 BlockType::BANNER_SELECTION_GLASSES,
                                 BlockType::BANNER_APPARATUS_HERO,
                             ])),
@@ -813,7 +811,6 @@ class BlockResource extends Resource
                                 BlockType::BANNER_APPOINTMENT,
                                 BlockType::BANNER_CORRECTION,
                                 BlockType::BANNER_MYOPIA,
-                                BlockType::DETAILS,
                                 BlockType::BANNER_SELECTION_GLASSES,
                                 BlockType::BANNER_APPARATUS_HERO,
                             ])),
@@ -1197,14 +1194,6 @@ class BlockResource extends Resource
                 ),
 
                 Forms\Components\Section::make([
-                    Forms\Components\Textarea::make('payload.html')
-                        ->label('Текст HTML')
-                        ->columnSpan('full')
-                        ->hidden(
-                            fn (Forms\Get $get) => in_array(BlockType::from($get('type')), [
-                                BlockType::LIST_TEXT_WITH_LINK,
-                            ])
-                        ),
                     Forms\Components\Repeater::make('payload.grid')
                         ->label('Сетка карточек')
                         ->schema([
@@ -1222,15 +1211,11 @@ class BlockResource extends Resource
                                 ->label('Ссылка')
                                 ->reactive()
                                 ->columnSpan('full')
-                                ->hidden(
-                                    fn (Forms\Get $get) => in_array(BlockType::from($get('../../../type')), [
-                                        BlockType::UNIVERSAL_TEXT_BLOCK,
-                                    ]) || ! empty($get('document'))
-                                ),
+                                ->hidden(fn (Forms\Get $get) => ! empty($get('document'))),
                         ]),
                 ])->hidden(
                     fn (Forms\Get $get) => ! in_array(BlockType::from($get('type')), [
-                        BlockType::UNIVERSAL_TEXT_BLOCK, BlockType::LIST_TEXT_WITH_LINK,
+                        BlockType::LIST_TEXT_WITH_LINK,
                     ])
                 ),
 

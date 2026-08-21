@@ -12,6 +12,7 @@
         "awcodes/filament-curator": "3.7.11",
         "bezhansalleh/filament-shield": "3.9.10",
         "bostjanob/filament-file-manager": "0.1",
+        "dotswan/filament-code-editor": "^1.1.4",
         "filament/filament": "3.3.43",
         "filament/spatie-laravel-media-library-plugin": "3.3.43",
         "filament/spatie-laravel-settings-plugin": "3.3.43",

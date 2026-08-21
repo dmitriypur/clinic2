@@ -10,6 +10,7 @@ return [
         'image/jpeg',
         'image/png',
         'image/webp',
+        'application/pdf',
     ],
     'cloud_disks' => [
         's3',
