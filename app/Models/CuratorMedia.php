@@ -9,6 +9,15 @@ class CuratorMedia extends Media
 {
     protected $table = 'curator_media';
 
+    public function getSignedUrl(array $params = [], bool $force = false): string
+    {
+        if ($this->directory === 'expert-opinions') {
+            return $this->url;
+        }
+
+        return parent::getSignedUrl($params, $force);
+    }
+
     public function isUsedByExpertOpinion(): bool
     {
         return $this->isUsedByBlocks();
