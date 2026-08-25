@@ -46,7 +46,7 @@
             @endforeach
 
             @if($imageUrl)
-                <div class="relative flex min-h-96 flex-col overflow-hidden rounded-3xl bg-action-primary-light pt-8 md:min-h-full md:pt-12">
+                <div class="relative hidden md:flex min-h-96 flex-col overflow-hidden rounded-3xl bg-action-primary-light pt-8 md:min-h-full md:pt-12">
                     <img class="relative z-10 mx-auto h-auto w-3/5 max-w-sm"
                          src="{{ asset('images/logo.svg') }}"
                          alt="Ангелы зрения">
