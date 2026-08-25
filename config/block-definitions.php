@@ -8,6 +8,7 @@ return [
         App\Blocks\Definitions\HtmlCardsDefinition::class,
         App\Blocks\Definitions\DetailsDefinition::class,
         App\Blocks\Definitions\UniversalTextBlockDefinition::class,
+        App\Blocks\Definitions\GridContactsDefinition::class,
         // <block-generator-definitions>
     ],
 ];

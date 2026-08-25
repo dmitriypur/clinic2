@@ -51,6 +51,14 @@ class BlockDefinitionFormSchemaTest extends TestCase
         );
     }
 
+    public function test_grid_contacts_definition_preserves_its_form_state_paths(): void
+    {
+        $this->assertSame(
+            ['payload.image', 'payload.contacts', 'title', 'info'],
+            $this->componentNames(BlockType::GRID_CONTACTS),
+        );
+    }
+
     private function componentNames(BlockType $type): array
     {
         $definition = app(BlockRegistry::class)->find($type);

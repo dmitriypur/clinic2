@@ -1220,24 +1220,6 @@ class BlockResource extends Resource
                 ),
 
                 Forms\Components\Section::make([
-                    Forms\Components\FileUpload::make('payload.image')
-                        ->label('Изображение')
-                        ->directory('corgi'),
-                    Forms\Components\Repeater::make('payload.contacts')
-                        ->label('Сетка контактов')
-                        ->schema([
-                            Forms\Components\TextInput::make('title')
-                                ->label('Название организации'),
-                            Forms\Components\RichEditor::make('info')
-                                ->label('Информация'),
-                        ]),
-                ])->hidden(
-                    fn (Forms\Get $get) => ! in_array(BlockType::from($get('type')), [
-                        BlockType::GRID_CONTACTS,
-                    ])
-                ),
-
-                Forms\Components\Section::make([
                     Forms\Components\Repeater::make('payload.tasks')
                         ->label('Пункты')
                         ->schema([

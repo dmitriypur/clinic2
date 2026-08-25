@@ -1,44 +1,61 @@
 <div class="container">
-    <div>
-        @if(!$block->title_hidden)
-            <div class="mx-auto md:rounded-2xl bg-action-primary-light p-4 md:p-6">
-                <h2 class="font-semibold text-2xl md:text-3xl text-center text-heading">
-                    {{ $block->title }}
-                </h2>
-            </div>
-        @endif
+    @if(! $block->title_hidden && filled($block->title))
+        <h2 class="mb-6 text-center text-3xl font-semibold leading-tight text-heading md:mb-8 md:text-4xl">
+            {{ $block->title }}
+        </h2>
+    @endif
 
-        <div>
-            @if(!empty($block->payload['contacts']))
-                <div class="grid md:grid-cols-2 gap-8 md:gap-16">
-                    @foreach($block->payload['contacts'] as $contact)
-                        <div class="bg-white rounded-20">
-                            <!-- Заголовок организации -->
-                            <div class="flex items-center justify-center bg-interactive text-white p-4 rounded-20 md:h-[98px]">
-                                <h3 class="font-medium text-xl/6 md:text-2xl/6 text-center">
-                                    {{ $contact['title'] ?? '' }}
-                                </h3>
-                            </div>
+    @if(! empty($contacts) || $imageUrl)
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+            @foreach($contacts as $contact)
+                <article class="overflow-hidden rounded-3xl bg-white p-6 text-heading md:p-10">
+                    @if(filled($contact['title']))
+                        <h3 class="text-xl font-semibold leading-tight md:text-2xl">
+                            {{ $contact['title'] }}
+                        </h3>
+                    @endif
 
-                            <!-- Контактная информация -->
-                            <div class="px-6 pt-5 pb-8 md:px-12 md:py-10">
-                                @if(!empty($contact['info']))
-                                    <div class="flex items-start space-x-2">
-                                        <div class="[&_ul]:space-y-2 [&_li]:relative [&_li]:pl-3 [&_li]:before:absolute [&_li]:before:rounded-full [&_li]:before:bg-interactive [&_li]:before:w-1 [&_li]:before:h-1 [&_li]:before:left-0 [&_li]:before:top-2.5">
-                                            {!! $contact['info'] !!}
-                                        </div>
-                                    </div>
-                                @endif
-                            </div>
+                    @if(! empty($contact['details']))
+                        <dl class="mt-4 divide-y divide-dotted divide-gray-300 text-base leading-snug">
+                            @foreach($contact['details'] as $detail)
+                                <div class="py-4 first:pt-0 last:pb-0">
+                                    @if($detail['heading'])
+                                        <dt class="font-semibold">{{ $detail['label'] }}</dt>
+                                    @else
+                                        <dt class="font-semibold leading-tight">{{ $detail['label'] }}</dt>
+                                        <dd class="mt-1 break-words">
+                                            @if($detail['url'])
+                                                <a class="text-action-primary underline hover:text-action-primary-hovered"
+                                                   href="{{ $detail['url'] }}">
+                                                    {{ $detail['value'] }}
+                                                </a>
+                                            @else
+                                                {{ $detail['value'] }}
+                                            @endif
+                                        </dd>
+                                    @endif
+                                </div>
+                            @endforeach
+                        </dl>
+                    @elseif(filled($contact['rawInfo']))
+                        <div class="mt-4 break-words text-base leading-snug [&_a]:text-action-primary [&_a]:underline [&_li]:mt-2">
+                            {!! $contact['rawInfo'] !!}
                         </div>
-                    @endforeach
-                        <div>
-                            <div class="relative">
-                                <img src="{{ '/storage/' . $block->payload['image'] }}" alt="">
-                            </div>
-                        </div>
+                    @endif
+                </article>
+            @endforeach
+
+            @if($imageUrl)
+                <div class="relative flex min-h-96 flex-col overflow-hidden rounded-3xl bg-action-primary-light pt-8 md:min-h-full md:pt-12">
+                    <img class="relative z-10 mx-auto h-auto w-3/5 max-w-sm"
+                         src="{{ asset('images/logo.svg') }}"
+                         alt="Ангелы зрения">
+                    <img class="mt-auto h-auto max-h-full w-full object-contain object-bottom"
+                         src="{{ $imageUrl }}"
+                         alt=""
+                         loading="lazy">
                 </div>
             @endif
         </div>
-    </div>
+    @endif
 </div>

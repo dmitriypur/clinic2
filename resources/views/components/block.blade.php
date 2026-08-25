@@ -302,10 +302,6 @@
             <x-block.universal-block :block="$block"/>
             @break
 
-        @case(\App\Enums\BlockType::GRID_CONTACTS)
-            <x-block.contacts-info :block="$block"/>
-            @break
-
         @case(\App\Enums\BlockType::LIST_TEXT_WITH_LINK)
             <x-block.list-text-with-link :block="$block"/>
             @break
