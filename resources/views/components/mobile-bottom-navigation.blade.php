@@ -51,13 +51,8 @@
                     @if($items['services']['active']) aria-current="page" @endif
                     @click="toggleServices"
                 >
-                    <span class="flex h-8 w-8 flex-col justify-between py-1" aria-hidden="true">
-                        @foreach(range(1, 3) as $row)
-                            <span class="flex items-center gap-1">
-                                <span class="h-1.5 w-1.5 rounded-full bg-current"></span>
-                                <span class="h-1.5 w-[22px] rounded-full bg-current"></span>
-                            </span>
-                        @endforeach
+                    <span class="h-8 w-8" aria-hidden="true">
+                        <x-mobile-nav.icon-services />
                     </span>
                     <span>Услуги</span>
                 </button>
@@ -69,9 +64,8 @@
                 <a href="{{ $items['doctors']['data']['url'] }}"
                    @if($items['doctors']['active']) aria-current="page" @endif
                    class="mobile-bottom-navigation__item {{ $items['doctors']['active'] ? 'text-[#F77C27]' : '' }}">
-                    <span class="relative flex h-8 w-8 items-center justify-center fill-current" aria-hidden="true">
-                        <span class="h-7 w-7"><x-icon-user /></span>
-                        <span class="absolute bottom-0 right-0 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-current text-[12px] leading-none text-white">+</span>
+                    <span class="h-8 w-8" aria-hidden="true">
+                        <x-mobile-nav.icon-doctors />
                     </span>
                     <span>{{ $items['doctors']['mobile_label'] ?? $items['doctors']['label'] }}</span>
                 </a>
@@ -82,7 +76,7 @@
             <button type="button" class="mobile-bottom-navigation__booking" @click="openBookingWidget">
                 <span class="absolute -top-[22px] flex h-16 w-16 items-center justify-center rounded-full bg-white">
                     <span class="flex h-[46px] w-[46px] items-center justify-center rounded-full bg-[#3981F1] text-white">
-                        <span class="h-6 w-6 fill-current"><x-icon-calendar /></span>
+                        <span class="h-6 w-6"><x-mobile-nav.icon-booking /></span>
                     </span>
                 </span>
                 <span class="absolute bottom-0.5">Записаться</span>
@@ -92,7 +86,7 @@
                 <a href="{{ $items['prices']['data']['url'] }}"
                    @if($items['prices']['active']) aria-current="page" @endif
                    class="mobile-bottom-navigation__item {{ $items['prices']['active'] ? 'text-[#F77C27]' : '' }}">
-                    <span class="flex h-8 w-8 items-center justify-center text-[32px] font-semibold leading-none">₽</span>
+                    <span class="h-8 w-8" aria-hidden="true"><x-mobile-nav.icon-prices /></span>
                     <span>{{ $items['prices']['label'] }}</span>
                 </a>
             @else
@@ -103,7 +97,7 @@
                 <a href="{{ $items['contacts']['data']['url'] }}"
                    @if($items['contacts']['active']) aria-current="page" @endif
                    class="mobile-bottom-navigation__item {{ $items['contacts']['active'] ? 'text-[#F77C27]' : '' }}">
-                    <span class="h-8 w-8"><x-icon-map-pin class="h-full w-full" /></span>
+                    <span class="h-8 w-8" aria-hidden="true"><x-mobile-nav.icon-contacts /></span>
                     <span>{{ $items['contacts']['label'] }}</span>
                 </a>
             @else

@@ -36,6 +36,26 @@ class MobileNavigationViewTest extends TestCase
     }
 
     /** @test */
+    public function bottom_navigation_renders_the_provided_svg_icons_with_inherited_colors(): void
+    {
+        $items = [
+            'services' => $this->item('Услуги', '/kirov/services', [], false, 'services'),
+            'doctors' => $this->item('Специалисты', '/kirov/doctors', [], false, 'doctors', 'Врачи'),
+            'prices' => $this->item('Цены', '/kirov/uslugi-i-ceny', [], false, 'prices'),
+            'contacts' => $this->item('Контакты', '/kirov/kontakty', [], false, 'contacts'),
+        ];
+
+        $view = $this->view('components.mobile-bottom-navigation', compact('items'));
+
+        foreach (['services', 'doctors', 'booking', 'prices', 'contacts'] as $icon) {
+            $view->assertSee('data-mobile-nav-icon="'.$icon.'"', false);
+        }
+
+        $view->assertSee('fill="currentColor"', false);
+        $view->assertDontSee('<span class="flex h-8 w-8 items-center justify-center text-[32px] font-semibold leading-none">₽</span>', false);
+    }
+
+    /** @test */
     public function incomplete_city_menu_keeps_all_five_layout_slots(): void
     {
         $items = [
