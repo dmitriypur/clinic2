@@ -1,4 +1,4 @@
-import {isServer} from "../target";
+import {isServer} from "../target.js";
 
 let scrollPosition = 0;
 

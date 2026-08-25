@@ -22,7 +22,7 @@ export default {
 
   mounted() {
     // Инициализация matchMedia
-    this.mediaQueryList = window.matchMedia('(max-width: 767px)');
+    this.mediaQueryList = window.matchMedia('(max-width: 1023px)');
     this.handleMediaChange(this.mediaQueryList); // начальное значение
     this.mediaQueryList.addEventListener('change', this.handleMediaChange);
   },

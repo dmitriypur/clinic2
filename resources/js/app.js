@@ -36,6 +36,8 @@ const Faq = () => import("./components/Faq/Faq.vue");
 const AppFilter = () => import("./components/AppFilter/AppFilter.vue");
 const BookingWidgetV3 = () =>
   import("./components/BookingWidgetV3/BookingWidgetV3.vue");
+const MobileBottomNavigation = () =>
+  import("./components/MobileBottomNavigation/MobileBottomNavigation.vue");
 const DoctorCard = () => import("./components/DoctorCard/DoctorCard.vue");
 const SearchLive = () => import("./components/SearchLive/SearchLive.vue");
 const CityConfirmationModal = () =>
@@ -99,6 +101,7 @@ new Vue({
     CityConfirmationModal,
     InfiniteDoctorsList,
     StickyTags,
+    MobileBottomNavigation,
   },
 
   data: {
@@ -158,6 +161,10 @@ new Vue({
 
     eventBus.$on("showVideoModal", function (url) {
       self.videoUrl = url;
+    });
+
+    eventBus.$on("openBookingWidgetV3", function (target = null, options = null) {
+      self.openBookingWidgetV3(target, options);
     });
   },
 

@@ -4,7 +4,8 @@
     "packageManager": "npm@11.6.2",
     "scripts": {
         "dev": "vite",
-        "build": "vite build"
+        "build": "vite build",
+        "test:mobile-navigation": "node --test tests/js/mobileBottomNavigation.test.mjs"
     },
     "devDependencies": {
         "@tailwindcss/forms": "0.5.11",

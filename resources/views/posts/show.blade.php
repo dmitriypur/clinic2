@@ -109,7 +109,7 @@
                         pageDescription="{{ $page->seo['description'] }}"
                     />
                 @endforeach
-                <div class="smart-action fixed bottom-10 right-4 md:right-10">
+                <div class="smart-action fixed bottom-[100px] right-4 lg:bottom-10 md:right-10">
 
                     <div class="icons orange-gr-nohover rounded-xl w-14 h-14 cursor-pointer">
                         <span class="icon icon-calendar">

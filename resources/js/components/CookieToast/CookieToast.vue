@@ -10,7 +10,7 @@
     <div
       v-if="show"
       aria-live="assertive"
-      class="z-50 js-cookie-consent cookie-consent max-w-lg w-full fixed bottom-0 right-0 pb-6 pointer-events-none"
+      class="z-50 js-cookie-consent cookie-consent max-w-lg w-full fixed bottom-[calc(60px+env(safe-area-inset-bottom))] lg:bottom-0 right-0 pb-6 pointer-events-none"
     >
       <div
         class="w-full flex flex-col items-center space-y-4 sm:items-end pr-6"

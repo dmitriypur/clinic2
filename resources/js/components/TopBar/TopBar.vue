@@ -36,7 +36,7 @@ export default {
     },
     navClassNameNew() {
       return classNames(
-        'relative md:container px-4 py-4 pb-20 lg:py-2 max-w-[100vw] h-screen overflow-y-auto lg:overflow-visible lg:h-auto',
+        'relative md:container px-5 py-[18px] pb-[calc(82px+env(safe-area-inset-bottom))] lg:px-4 lg:py-2 lg:pb-2 max-w-[100vw] h-[calc(100dvh-70px)] overflow-y-auto lg:overflow-visible lg:h-auto',
         this.active ? '' : 'hidden lg:block',
       )
     },
@@ -45,11 +45,14 @@ export default {
   mounted() {
     const self = this
     this.body = document.body
+    this.desktopMediaQuery = window.matchMedia('(min-width: 1024px)')
+    this.desktopMediaQuery.addEventListener('change', this.handleBreakpointChange)
     // window.addEventListener('scroll', this.handleScroll, { passive: true })
 
-    eventBus.$on('hideTopBar', function () {
+    this.hideTopBarHandler = function () {
       self.active = false
-    })
+    }
+    eventBus.$on('hideTopBar', this.hideTopBarHandler)
 
     document.addEventListener('click', this.handleDocumentClick)
   },
@@ -58,6 +61,11 @@ export default {
     // window.removeEventListener('scroll', this.handleScroll)
     // this.scrollLockManager.unregisterScrollLock()
     document.removeEventListener('click', this.handleDocumentClick)
+    eventBus.$off('hideTopBar', this.hideTopBarHandler)
+    this.desktopMediaQuery?.removeEventListener('change', this.handleBreakpointChange)
+    if (this.active) {
+      this.scrollLockManager.unregisterScrollLock()
+    }
   },
 
   watch: {
@@ -82,7 +90,16 @@ export default {
 
   methods: {
     toggle() {
+      if (!this.active) {
+        eventBus.$emit('hideMobileServices', false)
+      }
       this.active = !this.active
+    },
+
+    handleBreakpointChange(event) {
+      if (event.matches) {
+        this.active = false
+      }
     },
 
     toggleSearch() {

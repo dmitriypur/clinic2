@@ -7,6 +7,7 @@ use App\Support\CitySeoVariables;
 use App\Settings\GeneralSettings;
 use App\Settings\SeoSettings;
 use App\Services\MenuService;
+use App\Services\MobileNavigationService;
 use Closure;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
@@ -20,6 +21,8 @@ use SiroDiaz\Redirection\Models\Redirection;
 
 class AppLayout extends Component
 {
+    public array $mobileNavigation = [];
+
     /**
      * Create a new component instance.
      */
@@ -27,6 +30,7 @@ class AppLayout extends Component
         public GeneralSettings $settings,
         public SeoSettings     $seoSettings,
         public MenuService     $menuService,
+        public MobileNavigationService $mobileNavigationService,
         public ?Navigation     $footerMenu,
         public ?Navigation     $mainMenu,
         public ?string         $title = null,
@@ -41,7 +45,14 @@ class AppLayout extends Component
         $this->mainMenu = Cache::remember('main-menu', 3600, fn() => Navigation::fromHandle('main'));
 
         if ($this->mainMenu) {
-            $this->mainMenu->items = $this->menuService->prepareItems($this->mainMenu->items);
+            $currentCitySlug = app(\App\Services\CityService::class)->getCurrentCity()?->slug;
+            $markedItems = $this->mobileNavigationService->markItems(
+                $this->mainMenu->items,
+                $currentCitySlug,
+                request()->getHost(),
+            );
+            $this->mainMenu->items = $this->menuService->prepareItems($markedItems);
+            $this->mobileNavigation = $this->mobileNavigationService->bottomItems($this->mainMenu->items);
         }
 
         if ($this->footerMenu) {

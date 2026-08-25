@@ -2,6 +2,21 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer components {
+    .mobile-bottom-navigation__item,
+    .mobile-bottom-navigation__booking {
+        @apply flex min-w-0 flex-col items-center justify-start gap-1 pt-1 text-xs font-semibold leading-[1.2];
+    }
+
+    .mobile-bottom-navigation__booking {
+        @apply relative p-0 !overflow-visible;
+    }
+
+    .mobile-bottom-navigation__booking::before {
+        display: none;
+    }
+}
+
 @layer base {
     @font-face {
         font-family: "GilroyWeb";

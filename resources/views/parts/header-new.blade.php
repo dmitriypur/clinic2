@@ -2,32 +2,28 @@
     <header id="AppHeader"
             class="w-full top-0 z-40 bg-surface fixed group">
 
-        <div class="relative md:container p-4 max-w-[100vw] border-b border-black-subdued">
+        <div class="flex h-[70px] items-center justify-between border-b-2 border-[#EBF0F3] bg-white px-4 lg:hidden">
+            @if (Request::is('/'))
+                <div class="w-[256px] max-w-[calc(100vw-72px)]">
+                    <img src="{{ asset('images/logo.svg') }}" alt="{{ $seoSettings->logoAlt() }}" class="block h-auto w-full">
+                </div>
+            @else
+                <a href="{{ home_route() }}" class="block w-[256px] max-w-[calc(100vw-72px)]">
+                    <img src="{{ asset('images/logo.svg') }}" alt="{{ $seoSettings->logoAlt() }}" class="block h-auto w-full">
+                </a>
+            @endif
+
+            <button @click="toggle" type="button" class="flex h-8 w-8 shrink-0 items-center justify-center !overflow-visible text-interactive"
+                    :aria-expanded="active ? 'true' : 'false'"
+                    aria-controls="mobile-header-navigation"
+                    :title="active ? 'Скрыть навигацию' : 'Показать навигацию'">
+                <span v-if="active" class="block h-8 w-8"><x-icon-cancel/></span>
+                <span v-else class="block h-[27px] w-8"><x-icon-bars-3/></span>
+            </button>
+        </div>
+
+        <div class="relative hidden max-w-[100vw] border-b border-black-subdued p-4 md:container lg:block">
             <div class="flex items-center justify-between w-full">
-                <button @click="toggle" class="lg:hidden"
-                        :title="active ? 'Скрыть навигацию' : 'Показать навигацию'">
-                    <span class="inline-flex text-interactive">
-                        <span v-if="active"
-                              class="pt-1 w-5 h-4 lg:w-[33px] lg:h-[27px] lg:pr-2">
-                            <x-icon-cancel/>
-                        </span>
-                        <span v-else
-                              class="pt-1 w-5 h-4 lg:w-[33px] lg:h-[27px]">
-                            <x-icon-bars-2/>
-                        </span>
-                    </span>
-                </button>
-                @if (Request::is('/'))
-                    <div
-                        class="flex-none w-full max-w-[125px] lg:max-w-48 overflow-hidden lg:hidden">
-                        <x-brand :settings="$seoSettings"/>
-                    </div>
-                @else
-                    <a class="flex-none block w-full max-w-[125px] lg:max-w-48 overflow-hidden lg:hidden"
-                        href="{{ home_route() }}">
-                        <x-brand :settings="$seoSettings"/>
-                    </a>
-                @endif
                 <div class="hidden lg:flex items-center gap-4">
                     @if(isset($cities) && count($cities) > 1)
                     <x-city-switcher :cities="$cities" :currentCity="$currentCity" />
@@ -47,7 +43,7 @@
                 </div>
             </div>
         </div>
-        <div :class="navClassNameNew">
+        <div id="mobile-header-navigation" :class="navClassNameNew">
             <div class="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 lg:gap-12 w-full">
                 @if (Request::is('/'))
                     <div

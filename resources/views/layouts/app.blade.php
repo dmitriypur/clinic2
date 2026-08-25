@@ -56,7 +56,7 @@
 </head>
 
 <body
-    class="bg-surface-subdued antialiased text-interactive pt-[72px] lg:pt-40 [&_*]:[-webkit-tap-highlight-color]:transparent">
+    class="bg-surface-subdued antialiased text-interactive pt-[70px] lg:pt-40 {{ $showHeader ? 'pb-[calc(60px+env(safe-area-inset-bottom))] lg:pb-0' : '' }} [&_*]:[-webkit-tap-highlight-color]:transparent">
 <div id="app" v-cloak class="overflow-x-clip">
     @if (isset($seoSettings->scripts) && count($seoSettings->scripts))
         @foreach ($seoSettings->scripts as $script)
@@ -86,6 +86,10 @@
     @endif
 
     {!! $slot !!}
+
+    @if($showHeader)
+        <x-mobile-bottom-navigation :items="$mobileNavigation" />
+    @endif
 
     @if($showFooter)
         @include('parts.footer')
