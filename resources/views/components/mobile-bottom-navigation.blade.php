@@ -79,7 +79,7 @@
                         <span class="h-6 w-6"><x-mobile-nav.icon-booking /></span>
                     </span>
                 </span>
-                <span class="absolute bottom-0.5">Записаться</span>
+                <span class="absolute bottom-[5px]">Записаться</span>
             </button>
 
             @isset($items['prices'])

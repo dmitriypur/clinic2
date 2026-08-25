@@ -17,8 +17,8 @@
                     :aria-expanded="active ? 'true' : 'false'"
                     aria-controls="mobile-header-navigation"
                     :title="active ? 'Скрыть навигацию' : 'Показать навигацию'">
-                <span v-if="active" class="block h-8 w-8"><x-icon-cancel/></span>
-                <span v-else class="block h-[27px] w-8"><x-icon-bars-3/></span>
+                <span v-if="active" class="block h-8 w-8"><x-icon-cancel-rounded /></span>
+                <span v-else class="block h-[27px] w-8"><x-icon-bars-rounded /></span>
             </button>
         </div>
 
@@ -44,7 +44,7 @@
             </div>
         </div>
         <div id="mobile-header-navigation" :class="navClassNameNew">
-            <div class="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 lg:gap-12 w-full">
+            <div class="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 lg:gap-12 w-full h-full">
                 @if (Request::is('/'))
                     <div
                         class="hidden lg:block flex-none overflow-hidden">
@@ -93,23 +93,26 @@
                         <accessibility-toggle></accessibility-toggle>
                     </div>
                 </div>
-                <div class="font-medium flex lg:hidden items-center justify-center gap-2">
-                    <div class="w-5 h-5">
-                        <a href="tel:{{ $phone }}"
-                            class="inline-flex w-5 h-5 text-icon-interactive">
-                            <x-icon-phone-new class="lg:fill-current"></x-icon-phone-new>
-                        </a>
+                <div class="mt-auto flex flex-col gap-4">
+                    <div class="font-medium flex lg:hidden items-center justify-center gap-2">
+                        <div class="w-5 h-5">
+                            <a href="tel:{{ $phone }}"
+                                class="inline-flex w-5 h-5 text-icon-interactive">
+                                <x-icon-phone-new class="lg:fill-current"></x-icon-phone-new>
+                            </a>
+                        </div>
+                        <div class=" font-medium flex flex-col items-end">
+                            <a href="tel:{{ $phone }}"
+                            class="text-lg/6 font-semibold">{{ $phone }}</a>
+                        </div>
                     </div>
-                    <div class=" font-medium flex flex-col items-end">
-                        <a href="tel:{{ $phone }}"
-                        class="text-lg/6 font-semibold">{{ $phone }}</a>
-                    </div>
+                    <button
+                        class="accessibility:hidden lg:hidden text-base/6 font-semibold text-action-primary ml-4 border-b hover:border-action-primary border-transparent"
+                        @click="showCallbackFormNew(null, 'otpravka-formy')">
+                        Перезвоните мне
+                    </button>
                 </div>
-                <button
-                    class="accessibility:hidden lg:hidden text-base/6 font-semibold text-action-primary ml-4 border-b hover:border-action-primary border-transparent"
-                    @click="showCallbackFormNew(null, 'otpravka-formy')">
-                    Перезвоните мне
-                </button>
+                
 
             </div>
         </div>
