@@ -1194,32 +1194,6 @@ class BlockResource extends Resource
                 ),
 
                 Forms\Components\Section::make([
-                    Forms\Components\Repeater::make('payload.grid')
-                        ->label('Сетка карточек')
-                        ->schema([
-                            Forms\Components\TextInput::make('text')
-                                ->label('Текст')
-                                ->columnSpan('full'),
-                            Forms\Components\FileUpload::make('document')
-                                ->label('Документ')
-                                ->reactive()
-                                ->directory('docs')
-                                ->hidden(
-                                    fn (Forms\Get $get) => ! empty($get('link'))
-                                ),
-                            Forms\Components\TextInput::make('link')
-                                ->label('Ссылка')
-                                ->reactive()
-                                ->columnSpan('full')
-                                ->hidden(fn (Forms\Get $get) => ! empty($get('document'))),
-                        ]),
-                ])->hidden(
-                    fn (Forms\Get $get) => ! in_array(BlockType::from($get('type')), [
-                        BlockType::LIST_TEXT_WITH_LINK,
-                    ])
-                ),
-
-                Forms\Components\Section::make([
                     Forms\Components\Repeater::make('payload.tasks')
                         ->label('Пункты')
                         ->schema([

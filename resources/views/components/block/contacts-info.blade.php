@@ -1,12 +1,14 @@
 <div class="container">
-    @if(! $block->title_hidden && filled($block->title))
-        <h2 class="mb-6 text-center text-3xl font-semibold leading-tight text-heading md:mb-8 md:text-4xl">
-            {{ $block->title }}
-        </h2>
+     @if(!$block->title_hidden)
+        <div class="mx-auto p-4 md:rounded-2xl md:p-6">
+            <h2 class="text-center text-2xl font-semibold text-heading md:text-3xl">
+                {{ $block->title }}
+            </h2>
+        </div>
     @endif
 
     @if(! empty($contacts) || $imageUrl)
-        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2 mt-3 md:mt-5">
             @foreach($contacts as $contact)
                 <article class="overflow-hidden rounded-3xl bg-white p-6 text-heading md:p-10">
                     @if(filled($contact['title']))

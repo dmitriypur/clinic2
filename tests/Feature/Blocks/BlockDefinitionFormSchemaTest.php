@@ -59,6 +59,14 @@ class BlockDefinitionFormSchemaTest extends TestCase
         );
     }
 
+    public function test_list_text_with_link_definition_preserves_its_form_state_paths(): void
+    {
+        $this->assertSame(
+            ['payload.grid', 'text', 'document', 'link'],
+            $this->componentNames(BlockType::LIST_TEXT_WITH_LINK),
+        );
+    }
+
     private function componentNames(BlockType $type): array
     {
         $definition = app(BlockRegistry::class)->find($type);

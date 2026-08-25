@@ -302,10 +302,6 @@
             <x-block.universal-block :block="$block"/>
             @break
 
-        @case(\App\Enums\BlockType::LIST_TEXT_WITH_LINK)
-            <x-block.list-text-with-link :block="$block"/>
-            @break
-
         @case(\App\Enums\BlockType::BANNER_SELECTION_GLASSES)
             <x-banner.selection-glasses :block="$block"/>
             @break

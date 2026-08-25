@@ -63,14 +63,11 @@
                         </div>
                     </div>
 
-                    <a
-                        href="{{ $activityMediaUrl ?? asset('licenzii-i-iuridiceskaia-informaciia') }}"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        class="flex w-full items-center justify-center rounded-[10px] border border-heading px-[30px] py-4 text-center text-base font-semibold leading-[1.22] md:w-auto"
-                    >
-                        Открыть документ
-                    </a>
+                    <x-document-link
+                        :href="$activityMediaUrl ?? asset('licenzii-i-iuridiceskaia-informaciia')"
+                        mobile="button"
+                        desktop-at="md"
+                    />
                 </div>
 
                 <div class="mt-4 flex items-center gap-4 rounded-[10px] bg-[#FBEDDF] px-4 py-3 text-xs font-semibold leading-[1.2] md:mt-6 md:py-6 md:text-sm md:font-normal md:leading-[1.4]">
