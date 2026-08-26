@@ -146,6 +146,7 @@ class Doctor extends Model implements HasMedia
     public function registerMediaConversions(Media $media = null): void
     {
         $this->addMediaConversion('main')
+            ->nonQueued()
             ->withResponsiveImages()
             ->width(400)
             ->height(400)

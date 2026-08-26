@@ -37,7 +37,7 @@
         </ul>
         <div class="flex w-full gap-2 relative mt-2.5">
             <div class="absolute max-w-48 bottom-0 -right-4 md:right-0 accessibility:hidden">
-                {{ $doctor->avatar_image }}
+                {{ $doctor->avatar_image?->lazy() }}
             </div>
         </div>
     </div>

@@ -3,9 +3,12 @@
 namespace App\Filament\Resources\DoctorResource\Pages;
 
 use App\Filament\Resources\DoctorResource;
+use App\Models\Doctor;
+use Filament\Facades\Filament;
 use Filament\Pages\Actions;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Notifications\Notification;
+use Illuminate\Support\Facades\Artisan;
 use Throwable;
 
 class ListDoctors extends ListRecords
@@ -20,6 +23,50 @@ class ListDoctors extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
+            Actions\Action::make('optimize_doctor_images')
+                ->label('Оптимизировать фото врачей')
+                ->icon('heroicon-o-photo')
+                ->color('gray')
+                ->visible(fn (): bool => Filament::auth()->user()?->hasRole('super_admin') ?? false)
+                ->requiresConfirmation()
+                ->modalHeading('Оптимизировать фотографии врачей')
+                ->modalSubheading('Будут созданы только отсутствующие WebP-версии фотографий. Оригиналы не удаляются. Обработка может занять несколько минут.')
+                ->modalButton('Запустить оптимизацию')
+                ->action(function (): void {
+                    abort_unless(
+                        Filament::auth()->user()?->hasRole('super_admin') ?? false,
+                        403,
+                    );
+
+                    try {
+                        set_time_limit(300);
+
+                        $exitCode = Artisan::call('media-library:regenerate', [
+                            'modelType' => Doctor::class,
+                            '--only' => ['main'],
+                            '--only-missing' => true,
+                            '--with-responsive-images' => true,
+                            '--force' => true,
+                        ]);
+
+                        if ($exitCode !== 0) {
+                            throw new \RuntimeException('Команда оптимизации завершилась с ошибкой.');
+                        }
+
+                        Notification::make()
+                            ->title('Фотографии врачей оптимизированы')
+                            ->success()
+                            ->send();
+                    } catch (Throwable $e) {
+                        report($e);
+
+                        Notification::make()
+                            ->title('Ошибка оптимизации фотографий')
+                            ->body($e->getMessage())
+                            ->danger()
+                            ->send();
+                    }
+                }),
             Actions\Action::make('import_doctors_from_api')
                 ->label('Импорт врачей из API')
                 ->icon('heroicon-o-arrow-down-tray')
