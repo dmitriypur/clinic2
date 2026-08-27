@@ -47,7 +47,7 @@
             <div class="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 lg:gap-12 w-full h-full">
                 @if (Request::is('/'))
                     <div
-                        class="hidden lg:block flex-none overflow-hidden">
+                        class="hidden lg:block flex-none overflow-hidden lg:max-w-64">
                         <x-brand :settings="$seoSettings"/>
                     </div>
                 @else
