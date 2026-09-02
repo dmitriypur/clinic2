@@ -41,7 +41,7 @@ export default {
       </a>
 
       <div v-if="post.body_html" class="text-sm my-2" v-html="post.body_html"></div>
-      <span class="flex items-center gap-1 font-medium text-interactive/50 mt-auto text-xs">
+      <span class="hidden items-center gap-1 font-medium text-interactive/50 mt-auto text-xs">
         <span>Записей на диагностику:</span> <span>{{ Number(post.booking_conversions_count || 0).toLocaleString('ru-RU') }}</span>
     </span>
     </div>
