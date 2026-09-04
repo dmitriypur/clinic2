@@ -40,6 +40,10 @@ final class DetailsDefinition extends AbstractBlockDefinition
                 ->darkModeTheme('basic-dark')
                 ->columnSpanFull(),
 
+            Forms\Components\TextInput::make('payload.number_license')
+                        ->label('Номер лицензии')
+                        ->columnSpanFull(),
+
             CuratorUrlPicker::make('payload.activity_media_id')
                 ->label('Изображение или PDF из медиатеки')
                 ->buttonLabel('Выбрать файл')

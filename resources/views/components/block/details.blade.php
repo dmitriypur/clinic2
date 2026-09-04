@@ -59,7 +59,13 @@
                         >
                         <div class="min-w-0 text-base leading-[1.3]">
                             <div class="font-bold">Лицензия на осуществление медицинской деятельности</div>
-                            <div>Л041-01160-43/00321662 от 23.05.2018</div>
+                            
+                            @if(filled($block->payload['number_license'] ?? null))
+                            <div>
+                                {!! $block->payload['number_license'] !!}
+                            </div>
+                            @endif
+                            
                         </div>
                     </div>
 
