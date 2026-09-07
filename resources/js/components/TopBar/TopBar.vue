@@ -90,9 +90,6 @@ export default {
 
   methods: {
     toggle() {
-      if (!this.active) {
-        eventBus.$emit('hideMobileServices', false)
-      }
       this.active = !this.active
     },
 

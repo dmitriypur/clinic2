@@ -1,4 +1,4 @@
-<li class="group {{ $item['is_simple'] ? 'relative' : '' }} {{ !empty($item['mobile_navigation_slot']) ? 'hidden lg:block' : '' }}"
+<li class="group {{ $item['is_simple'] ? 'relative' : '' }}"
     @mouseenter="setActiveTop('{{ $menuIndex }}', '{{ findActivePath($item['children'])['parent'] ?? 0 }}', '{{ findActivePath($item['children'])['image'] ?? ($item['data']['image'] ?? '') }}')"
     @mouseleave="clearActive()">
     <span class="flex items-center lg:[&_span]:hover:rotate-180">

@@ -33,7 +33,11 @@
       </Dialog>
     </transition>
 
-    <Backdrop v-if="open && showBackdrop" @handleClick="onClose" />
+    <Backdrop
+      v-if="open && showBackdrop"
+      :zIndexOverride="backdropZIndex"
+      @handleClick="onClose"
+    />
   </div>
 </template>
 
@@ -97,6 +101,9 @@ export default {
           ? "p-0"
           : "px-4 py-6 lg:p-8"
       );
+    },
+    backdropZIndex() {
+      return (this.zIndexOverride || 50) - 1;
     },
   },
   methods: {

@@ -1,6 +1,7 @@
 <div is="top-bar" inline-template>
     <header id="AppHeader"
-            class="w-full top-0 z-40 bg-surface fixed group">
+            class="w-full top-0 bg-surface fixed group"
+            :class="active ? 'z-[47]' : 'z-40'">
 
         <div class="flex h-[70px] items-center justify-between border-b-2 border-[#EBF0F3] bg-white px-4 lg:hidden">
             @if (Request::is('/'))

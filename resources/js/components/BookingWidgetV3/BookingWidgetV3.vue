@@ -2,7 +2,7 @@
   <BookingWidgetModal
     :open="open"
     :mode="mode"
-    :zIndexOverride="49"
+    :zIndexOverride="50"
     :layoutMode="widgetLayoutMode"
     :showBackdrop="mode !== 'vk'"
     :showCloseButton="mode !== 'vk' && !showBookingServiceUnavailable"

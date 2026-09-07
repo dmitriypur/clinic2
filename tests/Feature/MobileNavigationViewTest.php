@@ -7,7 +7,7 @@ use Tests\TestCase;
 class MobileNavigationViewTest extends TestCase
 {
     /** @test */
-    public function bottom_navigation_renders_city_links_booking_action_and_service_children(): void
+    public function bottom_navigation_renders_city_links_and_a_direct_services_link(): void
     {
         $items = [
             'services' => $this->item('Услуги', '/kirov/services', [
@@ -21,17 +21,18 @@ class MobileNavigationViewTest extends TestCase
         $view = $this->view('components.mobile-bottom-navigation', compact('items'));
 
         $view->assertSee('aria-label="Основная мобильная навигация"', false);
+        $view->assertSee('href="/kirov/services"', false);
         $view->assertSee('href="/kirov/doctors"', false);
         $view->assertSee('href="/kirov/uslugi-i-ceny"', false);
         $view->assertSee('href="/kirov/kontakty"', false);
-        $view->assertSee('Подбор ночных линз');
-        $view->assertSee('href="/kirov/podbor-nochnyh-linz-rebenku"', false);
         $view->assertSee('Записаться');
         $view->assertSee('@click="openBookingWidget"', false);
         $view->assertSee('mobile-bottom-navigation__booking', false);
         $view->assertSee('lg:hidden', false);
-        $view->assertSee('role="dialog"', false);
-        $view->assertSee('aria-modal="true"', false);
+        $view->assertDontSee('role="dialog"', false);
+        $view->assertDontSee('aria-modal="true"', false);
+        $view->assertDontSee('servicesOpen', false);
+        $view->assertDontSee('Подбор ночных линз');
         $view->assertSee('aria-current="page"', false);
     }
 
@@ -108,7 +109,7 @@ class MobileNavigationViewTest extends TestCase
             'menuIndex' => 1,
         ]);
 
-        $transferredView->assertSee('hidden lg:block', false);
+        $transferredView->assertDontSee('hidden lg:block', false);
         $transferredView->assertSee('Специалисты');
         $aboutView->assertSee('О клинике');
         $aboutView->assertSee('О нас');

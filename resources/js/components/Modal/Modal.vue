@@ -46,7 +46,7 @@
       </Dialog>
     </transition>
 
-    <Backdrop v-if="open" @handleClick="onClose"/>
+    <Backdrop v-if="open" :zIndexOverride="backdropZIndex" @handleClick="onClose"/>
     <!-- </portal> -->
   </div>
 </template>
@@ -125,6 +125,10 @@ export default {
 
     labelledBy() {
       return this.title ? this.headerId : undefined
+    },
+
+    backdropZIndex() {
+      return (this.zIndexOverride || 50) - 1
     },
   },
 

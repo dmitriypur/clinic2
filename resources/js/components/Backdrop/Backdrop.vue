@@ -1,7 +1,7 @@
 <template>
   <div>
     <ScrollLock />
-    <div :class="className" @click="onClick" @touchStart="onTouchStart" />
+    <div :class="className" :style="zIndexStyle" @click="onClick" @touchStart="onTouchStart" />
   </div>
 </template>
 
@@ -14,8 +14,9 @@ export default {
     ScrollLock,
   },
 
-  prop: {
+  props: {
     transparent: Boolean,
+    zIndexOverride: Number,
   },
 
   computed: {
@@ -24,6 +25,12 @@ export default {
         'fixed z-40 inset-0 block will-change-[opacity] opacity-0 animate-backdrop',
         this.transparent ? 'bg-transparent' : 'bg-backdrop',
       )
+    },
+
+    zIndexStyle() {
+      return {
+        zIndex: this.zIndexOverride || 49,
+      }
     },
   },
 

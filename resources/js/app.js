@@ -160,6 +160,7 @@ new Vue({
     });
 
     eventBus.$on("showVideoModal", function (url) {
+      self.closeMobileNavigation();
       self.videoUrl = url;
     });
 
@@ -341,6 +342,7 @@ new Vue({
     },
 
     openBookingWidgetV3(target = null, options = null) {
+      this.closeMobileNavigation();
       const launchContext = normalizeBookingLaunchContext(
         options?.launchContext || options
       );
@@ -363,6 +365,7 @@ new Vue({
         return;
       }
 
+      this.closeMobileNavigation();
       this.bookingWidgetV3Active = false;
       this.bookingWidgetV3Target = null;
       this.bookingWidgetV3Mode = null;
@@ -371,6 +374,7 @@ new Vue({
     },
 
     showCallbackFormNew(phone = null, target = null) {
+      this.closeMobileNavigation();
       this.callbackModalPhone = phone || window.config.state.user?.phone || "";
       this.callbackModalName = window.config.state.user?.name || "";
       this.callbackModalTarget = target;
@@ -404,11 +408,18 @@ new Vue({
     },
 
     showLoginModal() {
+      this.closeMobileNavigation();
       this.loginModalActive = true;
     },
 
     closeLoginModal() {
       this.loginModalActive = false;
+    },
+
+    closeMobileNavigation() {
+      if (window.innerWidth < 1024) {
+        eventBus.$emit("hideTopBar");
+      }
     },
 
     setActiveElementModal(
