@@ -8,9 +8,13 @@
   >
     <div
       role="dialog"
+      aria-modal="true"
       :aria-labelledby="labelledBy"
+      :aria-label="labelledBy ? null : label"
       :tabIndex="-1"
       class="focus:outline-none"
+      ref="dialog"
+      @keydown="onKeydown"
     >
       <div :class="wrapperClassName">
         <div :class="className">
@@ -33,6 +37,10 @@ export default {
 
   props: {
     labelledBy: String,
+    label: {
+      type: String,
+      default: "Диалог",
+    },
     instant: Boolean,
     large: Boolean,
     small: Boolean,
@@ -68,7 +76,78 @@ export default {
     },
   },
 
+  data() {
+    return {
+      openingElement: null,
+    };
+  },
+
+  mounted() {
+    this.openingElement = document.activeElement;
+
+    this.$nextTick(() => {
+      this.focusInitialElement();
+    });
+  },
+
+  beforeDestroy() {
+    if (this.openingElement && typeof this.openingElement.focus === "function") {
+      this.openingElement.focus();
+    }
+  },
+
   methods: {
+    getFocusableElements() {
+      if (this.$refs.dialog == null) {
+        return [];
+      }
+
+      return Array.from(
+        this.$refs.dialog.querySelectorAll(
+          'a[href], area[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        )
+      ).filter((element) => element.getAttribute("aria-hidden") !== "true");
+    },
+
+    focusInitialElement() {
+      const [firstFocusableElement] = this.getFocusableElements();
+      const elementToFocus = firstFocusableElement || this.$refs.dialog;
+
+      if (elementToFocus && typeof elementToFocus.focus === "function") {
+        elementToFocus.focus();
+      }
+    },
+
+    onKeydown(event) {
+      if (event.key !== "Tab") {
+        return;
+      }
+
+      const focusableElements = this.getFocusableElements();
+      const [firstFocusableElement] = focusableElements;
+      const lastFocusableElement = focusableElements[focusableElements.length - 1];
+
+      if (firstFocusableElement == null || lastFocusableElement == null) {
+        event.preventDefault();
+        this.$refs.dialog.focus();
+        return;
+      }
+
+      const isFocusOutsideDialog = !this.$refs.dialog.contains(event.target);
+      const shouldFocusLast = event.shiftKey && (isFocusOutsideDialog || event.target === firstFocusableElement);
+      const shouldFocusFirst = !event.shiftKey && (isFocusOutsideDialog || event.target === lastFocusableElement);
+
+      if (shouldFocusLast) {
+        event.preventDefault();
+        lastFocusableElement.focus();
+      }
+
+      if (shouldFocusFirst) {
+        event.preventDefault();
+        firstFocusableElement.focus();
+      }
+    },
+
     onClose() {
       this.$emit("close");
     },

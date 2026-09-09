@@ -11,10 +11,13 @@
     >
       <Dialog
         v-if="open"
+        :labelled-by="dialogTitleId"
         :zIndexOverride="zIndexOverride"
         :flat="flat"
         @close="onClose"
       >
+        <h2 :id="dialogTitleId" class="sr-only">Запись на приём</h2>
+
         <CloseButton
           v-if="showCloseButton"
           :hiddenOnMobile="closeButtonHiddenOnMobile"
@@ -84,6 +87,9 @@ export default {
     },
   },
   computed: {
+    dialogTitleId() {
+      return `BookingWidgetModal-title-${this._uid}`;
+    },
     fadeUpClasses() {
       return {
         appear: classNames("animateFadeUp", "entering"),
