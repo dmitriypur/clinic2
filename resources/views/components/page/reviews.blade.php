@@ -135,6 +135,10 @@
             </div>
 
             <div class="container">
+                <p v-if="errorMessage"
+                   v-text="errorMessage"
+                   role="alert"
+                   class="mb-6 rounded-lg bg-red-50 px-4 py-3 text-center text-sm font-medium text-red-700"></p>
                 <div class="md:grid md:grid-cols-2 lg:grid-cols-3 gap-7" v-if="!reviewArr.length">
                     @foreach($reviews as $review)
                         <x-review-card :page="$page" :review="$review" class="max-w-1/3 gap-10"></x-review-card>
@@ -160,4 +164,3 @@
         </div>
     </app-filter>
 </section>
-

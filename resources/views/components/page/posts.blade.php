@@ -92,6 +92,10 @@
                         @endforeach
                     </div>
                 @endif
+                <p v-if="errorMessage"
+                   v-text="errorMessage"
+                   role="alert"
+                   class="mt-6 rounded-lg bg-red-50 px-4 py-3 text-center text-sm font-medium text-red-700"></p>
                 <div v-if="!reviewArr.length"
                      class="flex flex-col md:grid md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-14 py-10">
                     @foreach($posts as $post)
@@ -119,4 +123,3 @@
 
 
 </section>
-

@@ -23,6 +23,8 @@ export default {
       loading: false,
       isVisible: false,
       activeTags: [],
+      latestRequestId: 0,
+      errorMessage: null,
     }
   },
 
@@ -34,9 +36,15 @@ export default {
       this.perpage++
       this.sendFilter(this.$refs.handle.role)
     },
+    applyFilter(){
+      this.perpage = 1
+      this.sendFilter(this.$refs.handle.role)
+    },
 
     sendFilter(handle) {
+      const requestId = ++this.latestRequestId
       this.loading = true;
+      this.errorMessage = null
       axios.get(handle, {
         params: {
           'doctors': this.filters.doctors,
@@ -48,7 +56,10 @@ export default {
         },
       })
         .then(res => {
-          console.log(res.data)
+          if (requestId !== this.latestRequestId) {
+            return
+          }
+
           this.totalCountItems = res.data.meta.total
           this.currentCountItems = res.data.meta.per_page
 
@@ -58,28 +69,35 @@ export default {
             this.reviewArr = [1]
           }
         })
+        .catch(() => {
+          if (requestId === this.latestRequestId) {
+            this.errorMessage = 'Не удалось загрузить результаты. Попробуйте ещё раз.'
+          }
+        })
         .finally(() => {
           setTimeout(() => {
-            this.loading = false;
+            if (requestId === this.latestRequestId) {
+              this.loading = false;
+            }
           },300)
         })
     },
 
     addResource(id) {
       this.toggleItem(this.filters.resources, id)
-      this.sendFilter(this.$refs.handle.role)
+      this.applyFilter()
     },
     addDoctor(id) {
       this.toggleItem(this.filters.doctors, id)
-      this.sendFilter(this.$refs.handle.role)
+      this.applyFilter()
     },
     addService(id) {
       this.toggleItem(this.filters.services, id)
-      this.sendFilter(this.$refs.handle.role)
+      this.applyFilter()
     },
     addTag(id) {
       this.toggleItem(this.filters.tags, id)
-      this.sendFilter(this.$refs.handle.role)
+      this.applyFilter()
     },
     toggleTag(index) {
       const i = this.activeTags.indexOf(index);
@@ -91,7 +109,7 @@ export default {
     },
     clearFilterTag(){
       this.filters.tags = []
-      this.sendFilter(this.$refs.handle.role)
+      this.applyFilter()
       this.activeTags = [];
     },
     toggleItem(arr, value) {
