@@ -27,6 +27,8 @@ export default {
       bottomShadow: false,
       scrollPosition: 0,
       canScroll: false,
+      scrollListener: null,
+      resizeListener: null,
     }
   },
 
@@ -48,16 +50,27 @@ export default {
       return
     }
 
-    this.$refs.scrollArea.addEventListener('scroll', () => {
+    this.scrollListener = () => {
       window.requestAnimationFrame(this.handleScroll)
-    })
-    window.addEventListener('resize', this.handleResize)
+    }
+    this.resizeListener = this.handleResize
+
+    this.$refs.scrollArea.addEventListener('scroll', this.scrollListener)
+    window.addEventListener('resize', this.resizeListener)
     window.requestAnimationFrame(() => {
       this.handleScroll()
     })
   },
 
   beforeDestroy() {
+    if (this.$refs.scrollArea && this.scrollListener) {
+      this.$refs.scrollArea.removeEventListener('scroll', this.scrollListener)
+    }
+
+    if (this.resizeListener) {
+      window.removeEventListener('resize', this.resizeListener)
+    }
+
     if (
       this.scrollPosition &&
       this.$refs.scrollArea &&
