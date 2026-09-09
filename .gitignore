@@ -29,3 +29,7 @@ forge.sh
 .DS_Store
 /.DS_Store
 docs/site-admin-api-v1-plan.md
+
+# Локальный технический аудит и рабочий контекст сопровождения
+/.maintenance/
+/TECHNICAL_AUDIT.md

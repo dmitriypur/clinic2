@@ -5,6 +5,7 @@
     "scripts": {
         "dev": "vite",
         "build": "vite build",
+        "test:frontend": "node --test tests/bookingCache.test.mjs tests/doctorPrice.test.mjs tests/js/mobileBottomNavigation.test.mjs",
         "test:mobile-navigation": "node --test tests/js/mobileBottomNavigation.test.mjs"
     },
     "devDependencies": {
