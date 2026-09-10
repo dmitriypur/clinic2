@@ -20,6 +20,7 @@ class SearchAnalyticsTest extends TestCase
         parent::setUp();
 
         app(CityService::class)->setCurrentCity(null);
+        $this->createCity();
     }
 
     protected function tearDown(): void
@@ -31,7 +32,7 @@ class SearchAnalyticsTest extends TestCase
 
     public function test_full_search_records_the_normalized_query_current_city_and_total(): void
     {
-        $city = $this->createCity();
+        $city = City::query()->firstOrFail();
         $this->createPage(['title' => 'лазерная коррекция зрения']);
 
         $this->get('/search?q=%20%20лазерная%20%20коррекция%20%20')
@@ -121,6 +122,12 @@ class SearchAnalyticsTest extends TestCase
             'slug' => 'kirov',
             'is_default' => true,
             'active' => true,
+            'details' => [
+                [
+                    'name' => 'Тестовая клиника',
+                    'fullname' => 'ООО «Тестовая клиника»',
+                ],
+            ],
         ]);
     }
 

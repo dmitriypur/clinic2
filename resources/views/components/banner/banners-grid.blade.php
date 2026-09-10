@@ -5,10 +5,15 @@
 
                 <div class="swiper-slide md:col-span-6 row-span-2 rounded-xl lg:rounded-[30px] relative overflow-hidden">
                     <span itemprop="name" class="hidden">{{ $block->images[0]['title'] }}</span>
+                    @php
+                        $desktopDimensions = $block->getSafeFirstMediaDimensions($block->images[0]['uuid']);
+                        $mobileDimensions = $block->getSafeFirstMediaDimensions('mobile_' . $block->images[0]['uuid']);
+                    @endphp
                     <picture itemscope itemtype="http://schema.org/ImageObject"
                              class="block justify-center w-full h-full pointer-events-none">
                         @if ($block->hasMedia('mobile_' . $block->images[0]['uuid']))
-                            <source srcset="{{ $block->getImageUrl('mobile_' . $block->images[0]['uuid']) }}" media="(max-width: 767px)">
+                            <source srcset="{{ $block->getImageUrl('mobile_' . $block->images[0]['uuid']) }}" media="(max-width: 767px)"
+                                    @if($mobileDimensions) width="{{ $mobileDimensions['width'] }}" height="{{ $mobileDimensions['height'] }}" @endif>
                         @endif
                         <img
                             src="{{ $block->getImageUrl($block->images[0]['uuid']) }}"
@@ -16,6 +21,7 @@
                             title="{{ $block->getImageTitleText($block->images[0]['title']) }}"
                             itemprop="contentUrl"
                             class="w-full h-full"
+                            @if($desktopDimensions) width="{{ $desktopDimensions['width'] }}" height="{{ $desktopDimensions['height'] }}" @endif
                         >
                     </picture>
                     
@@ -35,10 +41,15 @@
                 </div>
                 <div class="swiper-slide md:col-span-5 row-span-1 relative rounded-xl lg:rounded-20 overflow-hidden">
                     <span itemprop="name" class="hidden">{{ $block->images[1]['title'] }}</span>
+                    @php
+                        $desktopDimensions = $block->getSafeFirstMediaDimensions($block->images[1]['uuid']);
+                        $mobileDimensions = $block->getSafeFirstMediaDimensions('mobile_' . $block->images[1]['uuid']);
+                    @endphp
                     <picture itemscope itemtype="http://schema.org/ImageObject"
                              class="block justify-center w-full h-full pointer-events-none">
                         @if ($block->hasMedia('mobile_' . $block->images[1]['uuid']))
-                            <source srcset="{{ $block->getImageUrl('mobile_' . $block->images[1]['uuid']) }}" media="(max-width: 767px)">
+                            <source srcset="{{ $block->getImageUrl('mobile_' . $block->images[1]['uuid']) }}" media="(max-width: 767px)"
+                                    @if($mobileDimensions) width="{{ $mobileDimensions['width'] }}" height="{{ $mobileDimensions['height'] }}" @endif>
                         @endif
                         <img
                             src="{{ $block->getImageUrl($block->images[1]['uuid']) }}"
@@ -46,6 +57,7 @@
                             title="{{ $block->getImageTitleText($block->images[1]['title']) }}"
                             itemprop="contentUrl"
                             class="w-full h-full"
+                            @if($desktopDimensions) width="{{ $desktopDimensions['width'] }}" height="{{ $desktopDimensions['height'] }}" @endif
                         >
                     </picture>
                     @if($block->images[1]['url'])
@@ -64,10 +76,15 @@
                 </div>
                 <div class="swiper-slide md:col-span-5 row-span-1 relative rounded-xl lg:rounded-20 overflow-hidden">
                     <span itemprop="name" class="hidden">{{ $block->images[2]['title'] }}</span>
+                    @php
+                        $desktopDimensions = $block->getSafeFirstMediaDimensions($block->images[2]['uuid']);
+                        $mobileDimensions = $block->getSafeFirstMediaDimensions('mobile_' . $block->images[2]['uuid']);
+                    @endphp
                     <picture itemscope itemtype="http://schema.org/ImageObject"
                              class="block justify-center w-full h-full pointer-events-none">
                         @if ($block->hasMedia('mobile_' . $block->images[2]['uuid']))
-                            <source srcset="{{ $block->getImageUrl('mobile_' . $block->images[2]['uuid']) }}" media="(max-width: 767px)">
+                            <source srcset="{{ $block->getImageUrl('mobile_' . $block->images[2]['uuid']) }}" media="(max-width: 767px)"
+                                    @if($mobileDimensions) width="{{ $mobileDimensions['width'] }}" height="{{ $mobileDimensions['height'] }}" @endif>
                         @endif
                         <img
                             src="{{ $block->getImageUrl($block->images[2]['uuid']) }}"
@@ -75,6 +92,7 @@
                             title="{{ $block->getImageTitleText($block->images[2]['title']) }}"
                             itemprop="contentUrl"
                             class="w-full h-full"
+                            @if($desktopDimensions) width="{{ $desktopDimensions['width'] }}" height="{{ $desktopDimensions['height'] }}" @endif
                         >
                     </picture>
                     @if($block->images[2]['url'])

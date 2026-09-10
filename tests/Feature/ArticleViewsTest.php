@@ -89,6 +89,19 @@ class ArticleViewsTest extends TestCase
 
     public function test_article_show_increments_local_view_counter(): void
     {
+        City::query()->create([
+            'name' => 'Москва',
+            'slug' => 'moskva',
+            'is_default' => true,
+            'active' => true,
+            'details' => [
+                [
+                    'name' => 'Тестовая клиника',
+                    'fullname' => 'ООО «Тестовая клиника»',
+                ],
+            ],
+        ]);
+
         $category = Category::query()->create([
             'title' => 'Статьи',
             'handle' => 'stati',

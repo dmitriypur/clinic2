@@ -28,6 +28,29 @@ trait HasSafeMediaConversions
         return $media?->getUrl($this->safeConversionName($media, $conversionName)) ?? '';
     }
 
+    public function getSafeFirstMediaDimensions(string $collectionName = 'default', string $conversionName = ''): ?array
+    {
+        $media = $this->getFirstMedia($collectionName);
+
+        if (! $media) {
+            return null;
+        }
+
+        $responsiveImage = $media
+            ->responsiveImages($this->safeConversionName($media, $conversionName))
+            ->files
+            ->first();
+
+        if (! $responsiveImage) {
+            return null;
+        }
+
+        return [
+            'width' => $responsiveImage->width(),
+            'height' => $responsiveImage->height(),
+        ];
+    }
+
     protected function safeMediaImage(?Media $media, ?string $conversionName = ''): ?HtmlableMedia
     {
         return $media?->img($this->safeConversionName($media, $conversionName));

@@ -25,6 +25,18 @@ class PageSearchTest extends TestCase
         parent::setUp();
 
         app(CityService::class)->setCurrentCity(null);
+        City::create([
+            'name' => 'Москва',
+            'slug' => 'moskva',
+            'is_default' => true,
+            'active' => true,
+            'details' => [
+                [
+                    'name' => 'Тестовая клиника',
+                    'fullname' => 'ООО «Тестовая клиника»',
+                ],
+            ],
+        ]);
     }
 
     public function test_live_search_exposes_the_shared_page_result_contract(): void
@@ -345,6 +357,12 @@ class PageSearchTest extends TestCase
             'slug' => 'spb',
             'is_default' => false,
             'active' => true,
+            'details' => [
+                [
+                    'name' => 'Тестовая клиника',
+                    'fullname' => 'ООО «Тестовая клиника»',
+                ],
+            ],
         ]);
         $invalidQuery = str_repeat('а', 101);
 
