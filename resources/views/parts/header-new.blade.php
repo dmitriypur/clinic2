@@ -14,7 +14,7 @@
                 </a>
             @endif
 
-            <button @click="toggle" type="button" class="flex h-8 w-8 shrink-0 items-center justify-center !overflow-visible text-interactive"
+            <button ref="menuTrigger" @click="toggle" type="button" class="flex h-8 w-8 shrink-0 items-center justify-center !overflow-visible text-interactive"
                     :aria-expanded="active ? 'true' : 'false'"
                     aria-controls="mobile-header-navigation"
                     :title="active ? 'Скрыть навигацию' : 'Показать навигацию'">

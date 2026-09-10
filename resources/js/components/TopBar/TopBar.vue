@@ -61,6 +61,7 @@ export default {
     // window.removeEventListener('scroll', this.handleScroll)
     // this.scrollLockManager.unregisterScrollLock()
     document.removeEventListener('click', this.handleDocumentClick)
+    document.removeEventListener('keydown', this.handleKeydown)
     eventBus.$off('hideTopBar', this.hideTopBarHandler)
     this.desktopMediaQuery?.removeEventListener('change', this.handleBreakpointChange)
     if (this.active) {
@@ -70,6 +71,12 @@ export default {
 
   watch: {
     active(val) {
+      if (val) {
+        document.addEventListener('keydown', this.handleKeydown)
+      } else {
+        document.removeEventListener('keydown', this.handleKeydown)
+      }
+
       if (val && !this.isSticky) {
         this.$el.classList.add(['lg:bg-white'])
       }
@@ -91,6 +98,15 @@ export default {
   methods: {
     toggle() {
       this.active = !this.active
+    },
+
+    handleKeydown(event) {
+      if (!this.active || event.key !== 'Escape') {
+        return
+      }
+
+      this.active = false
+      this.$nextTick(() => this.$refs.menuTrigger?.focus())
     },
 
     handleBreakpointChange(event) {
