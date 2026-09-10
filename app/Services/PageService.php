@@ -5,9 +5,10 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Enums\PageType;
+use App\Models\Block;
 use App\Models\Category;
-use App\Models\Page;
 use App\Models\Doctor;
+use App\Models\Page;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Cache;
@@ -188,9 +189,14 @@ class PageService
             }
         }
 
-        if (in_array($page->type, [PageType::Posts, PageType::Blog], true)) {
+        $postTypes = [PageType::Posts, PageType::Blog];
+        $wasOrIsPost = in_array($page->type, $postTypes, true)
+            || in_array($page->getOriginal('type'), $postTypes, true);
+
+        if ($wasOrIsPost) {
             Cache::forget('posts_filter');
             Cache::forget('blog_posts_for_slider');
+            Cache::forget(Block::blogSliderCacheKey());
         }
     }
 }

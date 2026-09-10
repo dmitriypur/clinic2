@@ -38,6 +38,7 @@ class PageServiceTest extends TestCase
         Cache::put('page_reviews_index', true, 60);
         Cache::put('posts_filter', true, 60);
         Cache::put('blog_posts_for_slider', true, 60);
+        Cache::put('blog_posts_for_slider_limit_12_newest', true, 60);
         Cache::put('unrelated-cache-key', true, 60);
 
         $page = new Page([
@@ -55,6 +56,7 @@ class PageServiceTest extends TestCase
         $this->assertFalse(Cache::has('page_reviews_index'));
         $this->assertFalse(Cache::has('posts_filter'));
         $this->assertFalse(Cache::has('blog_posts_for_slider'));
+        $this->assertFalse(Cache::has('blog_posts_for_slider_limit_12_newest'));
         $this->assertTrue(Cache::has('unrelated-cache-key'));
     }
 
@@ -83,5 +85,31 @@ class PageServiceTest extends TestCase
         $this->assertFalse(Cache::has('doctors-page-moscow-1'));
         $this->assertFalse(Cache::has('doctors-page-global-1'));
         $this->assertTrue(Cache::has('unrelated-cache-key'));
+    }
+
+    /** @test */
+    public function it_clears_post_caches_when_a_page_stops_being_a_post(): void
+    {
+        $this->mock(CityService::class, function ($mock): void {
+            $mock->shouldReceive('getActiveCities')
+                ->andReturn(new Collection([
+                    new City(['slug' => 'moscow']),
+                ]));
+        });
+
+        Cache::put('posts_filter', true, 60);
+        Cache::put('blog_posts_for_slider_limit_12_newest', true, 60);
+
+        $page = new Page([
+            'handle' => 'former-post',
+            'type' => PageType::Posts,
+        ]);
+        $page->syncOriginal();
+        $page->type = PageType::Default;
+
+        app(PageService::class)->clearPageCache($page);
+
+        $this->assertFalse(Cache::has('posts_filter'));
+        $this->assertFalse(Cache::has('blog_posts_for_slider_limit_12_newest'));
     }
 }

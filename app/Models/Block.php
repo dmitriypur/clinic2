@@ -44,6 +44,8 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
  */
 class Block extends Model implements HasMedia, Sortable
 {
+    public const BLOG_SLIDER_LIMIT = 12;
+
     use HasCityScope, HasFactory, HasSafeMediaConversions, InteractsWithMedia, SortableTrait;
 
     protected $fillable = [
@@ -599,13 +601,22 @@ class Block extends Model implements HasMedia, Sortable
             return null;
         }
 
-        return Cache::remember('blog_posts_for_slider', 3600, function () {
+        return Cache::remember(self::blogSliderCacheKey(), 3600, function () {
             return Page::query()
+                ->withoutGlobalScope('city')
                 ->where('type', '=', PageType::Posts)
                 ->where('active', '=', 1)
+                ->orderByDesc('created_at')
+                ->orderByDesc('id')
+                ->limit(self::BLOG_SLIDER_LIMIT)
                 ->with(['tags', 'media', 'category'])
                 ->get();
         });
+    }
+
+    public static function blogSliderCacheKey(): string
+    {
+        return 'blog_posts_for_slider_limit_'.self::BLOG_SLIDER_LIMIT.'_newest';
     }
 
     public function getPromotionsAttribute(): ?Collection
