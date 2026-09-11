@@ -9,6 +9,9 @@ module.exports = {
     "./resources/**/*.vue",
     "./vendor/awcodes/filament-curator/resources/**/*.blade.php",
   ],
+  // CMS utilities must match complete class names. Unbounded patterns also match
+  // top-* via p-*, directional radii and every colour/opacity suffix.
+  // Other classes used explicitly in Blade/Vue/JS are still picked up by content.
   safelist: [
     "swiper-pagination-bullet",
     "flex",
@@ -25,23 +28,23 @@ module.exports = {
     "grow",
     "shrink-0",
     {
-      pattern: /grid-cols-(1|2|3|4|5|6|7|8|9|10|11|12)/,
+      pattern: /^grid-cols-(1|2|3|4|5|6|7|8|9|10|11|12)$/,
       variants: ["sm", "md", "lg", "xl"],
     },
     {
-      pattern: /(gap|p|px|py|pt|pr|pb|pl)-(0|1|2|3|4|5|6|8|10|12|16|20|24)/,
+      pattern: /^(gap|p|px|py|pt|pr|pb|pl)-(0|1|2|3|4|5|6|8|10|12|16|20|24)$/,
       variants: ["sm", "md", "lg", "xl"],
     },
     {
-      pattern: /(w|h|min-w|min-h|max-w|max-h)-(0|4|6|8|10|12|16|20|24|32|40|48|56|64|72|80|96|auto|full|screen|min|max|fit)/,
+      pattern: /^(w|h|min-w|min-h|max-w|max-h)-(0|4|6|8|10|12|16|20|24|32|40|48|56|64|72|80|96|auto|full|screen|min|max|fit)$/,
       variants: ["sm", "md", "lg", "xl"],
     },
     {
-      pattern: /rounded(-none|-sm|-md|-lg|-xl|-2xl|-3xl|-full|-20)?/,
+      pattern: /^rounded(-none|-sm|-md|-lg|-xl|-2xl|-3xl|-full|-20)?$/,
       variants: ["sm", "md", "lg", "xl"],
     },
     {
-      pattern: /(bg|text|border)-(transparent|white|surface|surface-subdued|heading|interactive|interactive-hovered|action-primary|action-primary-light|action-primary-hovered|action-secondary)/,
+      pattern: /^(bg|text|border)-(transparent|white|surface|surface-subdued|heading|interactive|interactive-hovered|action-primary|action-primary-light|action-primary-hovered|action-secondary)$/,
       variants: ["hover", "sm", "md", "lg", "xl"],
     },
   ],
