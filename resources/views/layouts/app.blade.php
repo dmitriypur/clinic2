@@ -111,6 +111,7 @@
 
     @unless(request()->routeIs('booking.widget.v3.demo'))
         <booking-widget-v3
+            v-if="bookingWidgetV3Mounted"
             :open="bookingWidgetV3Active"
             :mode="bookingWidgetV3Mode"
             :launch-context="bookingWidgetV3LaunchContext"

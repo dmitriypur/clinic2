@@ -22,6 +22,9 @@ import {
   InfiniteDoctorsList,
   StickyTags,
 } from "./components";
+import {
+  createBookingWidgetV3AsyncComponent,
+} from "./components/BookingWidgetV3/bookingWidgetAsyncComponent";
 
 const CallbackForm = () => import("./components/CallbackForm/CallbackForm.vue");
 const CallbackModal = () =>
@@ -34,8 +37,9 @@ const VideoNew = () => import("./components/VideoNew/VideoNew.vue");
 const VideoModal = () => import("./components/VideoModal/VideoModal.vue");
 const Faq = () => import("./components/Faq/Faq.vue");
 const AppFilter = () => import("./components/AppFilter/AppFilter.vue");
-const BookingWidgetV3 = () =>
-  import("./components/BookingWidgetV3/BookingWidgetV3.vue");
+const BookingWidgetV3 = createBookingWidgetV3AsyncComponent(() =>
+  import("./components/BookingWidgetV3/BookingWidgetV3.vue")
+);
 const MobileBottomNavigation = () =>
   import("./components/MobileBottomNavigation/MobileBottomNavigation.vue");
 const DoctorCard = () => import("./components/DoctorCard/DoctorCard.vue");
@@ -54,6 +58,11 @@ import {
   buildBookingLaunchContextFromSearchParams,
   normalizeBookingLaunchContext,
 } from "./utilities/bookingLaunchContext";
+import {
+  activateBookingWidgetV3,
+  closeBookingWidgetV3 as resetBookingWidgetV3,
+  createBookingWidgetLifecycleState,
+} from "./utilities/bookingWidgetLifecycle";
 import VueObserveVisibility from "vue-observe-visibility";
 import VueLazyload from "vue-lazyload";
 
@@ -118,10 +127,7 @@ new Vue({
     callbackModalTarget: null,
     loginModalActive: false,
     bookingWidgetV2Active: false,
-    bookingWidgetV3Active: false,
-    bookingWidgetV3Target: null,
-    bookingWidgetV3Mode: null,
-    bookingWidgetV3LaunchContext: null,
+    ...createBookingWidgetLifecycleState(),
     currentCityId: null,
     showToTopButton: false,
   },
@@ -347,11 +353,12 @@ new Vue({
         options?.launchContext || options
       );
       this.callbackModalActive = false;
-      this.bookingWidgetV3Target = target;
-      this.bookingWidgetV3LaunchContext = launchContext;
-      this.bookingWidgetV3Mode =
-        launchContext?.entry || this.normalizeBookingWidgetStartMode(options);
-      this.bookingWidgetV3Active = true;
+      activateBookingWidgetV3(this, {
+        target,
+        launchContext,
+        mode:
+          launchContext?.entry || this.normalizeBookingWidgetStartMode(options),
+      });
     },
 
     showCallbackModal(phone = null, target = null, options = null) {
@@ -366,10 +373,7 @@ new Vue({
       }
 
       this.closeMobileNavigation();
-      this.bookingWidgetV3Active = false;
-      this.bookingWidgetV3Target = null;
-      this.bookingWidgetV3Mode = null;
-      this.bookingWidgetV3LaunchContext = null;
+      resetBookingWidgetV3(this);
       this.callbackModalActive = true;
     },
 
@@ -380,10 +384,7 @@ new Vue({
       this.callbackModalTarget = target;
       this.callbackModalActive = false;
       this.callbackModalNewActive = true;
-      this.bookingWidgetV3Active = false;
-      this.bookingWidgetV3Target = null;
-      this.bookingWidgetV3Mode = null;
-      this.bookingWidgetV3LaunchContext = null;
+      resetBookingWidgetV3(this);
     },
 
     closeCallbackModal() {
@@ -401,10 +402,7 @@ new Vue({
     },
 
     closeBookingWidgetV3() {
-      this.bookingWidgetV3Active = false;
-      this.bookingWidgetV3Target = null;
-      this.bookingWidgetV3Mode = null;
-      this.bookingWidgetV3LaunchContext = null;
+      resetBookingWidgetV3(this);
     },
 
     showLoginModal() {
