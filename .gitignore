@@ -33,3 +33,6 @@ docs/site-admin-api-v1-plan.md
 # Локальный технический аудит и рабочий контекст сопровождения
 /.maintenance/
 /TECHNICAL_AUDIT.md
+
+# Локальные артефакты генерации
+/output/

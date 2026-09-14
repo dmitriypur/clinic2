@@ -54,7 +54,7 @@
                         <x-brand :settings="$seoSettings"/>
                     </div>
                 @else
-                    <a class="hidden lg:block flex-none w-48 lg:w-80 overflow-hidden"
+                    <a class="hidden lg:block flex-none overflow-hidden lg:max-w-64"
                         href="{{ home_route() }}">
                         <x-brand :settings="$seoSettings"/>
                     </a>
