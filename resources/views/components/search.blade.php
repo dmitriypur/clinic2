@@ -16,7 +16,7 @@
                 </button>
             </div>
         </form>
-        <div class="w-full absolute bg-white z-10 py-2 shadow-lg" v-if="showResults" @mousedown.prevent="cancelHideResults">
+        <div v-cloak class="w-full absolute bg-white z-10 py-2 shadow-lg" v-if="showResults" @mousedown.prevent="cancelHideResults">
             <p v-if="isLoading" class="px-3 py-2 text-sm text-interactive/70" role="status">Ищем…</p>
             <p v-else-if="searchError" class="px-3 py-2 text-sm text-red-700" role="alert">Не удалось выполнить поиск. Попробуйте ещё раз.</p>
             <p v-else-if="hasSearched && searchResults.length === 0" class="px-3 py-2 text-sm text-interactive/70">Ничего не найдено.</p>

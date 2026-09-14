@@ -14,7 +14,7 @@
                 </a>
             @endif
 
-            <button ref="menuTrigger" @click="toggle" type="button" class="flex h-8 w-8 shrink-0 items-center justify-center !overflow-visible text-interactive"
+            <button v-cloak ref="menuTrigger" @click="toggle" type="button" class="flex h-8 w-8 shrink-0 items-center justify-center !overflow-visible text-interactive"
                     :aria-expanded="active ? 'true' : 'false'"
                     aria-controls="mobile-header-navigation"
                     :title="active ? 'Скрыть навигацию' : 'Показать навигацию'">
@@ -44,7 +44,9 @@
                 </div>
             </div>
         </div>
-        <div id="mobile-header-navigation" :class="navClassNameNew">
+        <div id="mobile-header-navigation"
+             class="relative hidden max-w-[100vw] px-5 py-[18px] pb-[calc(82px+env(safe-area-inset-bottom))] md:container lg:block lg:h-auto lg:overflow-visible lg:px-4 lg:py-2 lg:pb-2"
+             :class="navClassNameNew">
             <div class="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 lg:gap-12 w-full h-full">
                 @if (Request::is('/'))
                     <div
@@ -78,7 +80,7 @@
                     @if ($mainMenu)
                         <x-mega-menu :menu="$mainMenu"/>
                     @endif
-                    <x-search-new class="absolute inset-0" v-show="searchOpen"></x-search-new>
+                    <x-search-new class="absolute inset-0" v-cloak v-show="searchOpen"></x-search-new>
                 </nav>
                 <div class="hidden lg:flex gap-4 items-center">
                     <div class="w-12 h-12 flex items-center justify-center bg-surface-subdued rounded-lg">

@@ -57,7 +57,7 @@
 
 <body
     class="bg-surface-subdued antialiased text-interactive pt-[70px] lg:pt-40 {{ $showHeader ? 'pb-[calc(60px+env(safe-area-inset-bottom))] lg:pb-0' : '' }} [&_*]:[-webkit-tap-highlight-color]:transparent">
-<div id="app" v-cloak class="overflow-x-clip">
+<div id="app" class="overflow-x-clip">
     @if (isset($seoSettings->scripts) && count($seoSettings->scripts))
         @foreach ($seoSettings->scripts as $script)
             {!! $script['value'] !!}
@@ -70,7 +70,8 @@
         @endforeach
     @endif
 
-    <button @click="toTop"
+    <button v-cloak
+            @click="toTop"
             class="fixed z-40 bottom-28 right-4 md:right-10 bg-surface hover:bg-surface-subdued/50 border rounded-full shadow-md overflow-clip"
             v-show="showToTopButton">
         <x-icon.chevron-up class="h-10 w-10"/>
@@ -96,14 +97,16 @@
     @endif
 
     @if($usesLegacyBookingForm)
-        <online-appointment-form :open="callbackModalActive"
+        <online-appointment-form v-cloak
+                                 :open="callbackModalActive"
                                  :phone="callbackModalPhone"
                                  :name="callbackModalName"
                                  :target="callbackModalTarget"
                                  @close="closeCallbackModal"></online-appointment-form>
     @endif
 
-    <callback-modal-new :open="callbackModalNewActive"
+    <callback-modal-new v-cloak
+                        :open="callbackModalNewActive"
                         :phone="callbackModalPhone"
                         :name="callbackModalName"
                         :target="callbackModalTarget"
@@ -111,6 +114,7 @@
 
     @unless(request()->routeIs('booking.widget.v3.demo'))
         <booking-widget-v3
+            v-cloak
             v-if="bookingWidgetV3Mounted"
             :open="bookingWidgetV3Active"
             :mode="bookingWidgetV3Mode"
@@ -121,13 +125,15 @@
     @endunless
 
     @guest
-        <login-modal :open="loginModalActive"
+        <login-modal v-cloak
+                     :open="loginModalActive"
                      @close="closeLoginModal"></login-modal>
     @endguest
 
-    <city-confirmation-modal></city-confirmation-modal>
+    <city-confirmation-modal v-cloak></city-confirmation-modal>
 
     <cookie-toast
+        v-cloak
         cookie-domain="{{ config('session.domain') ?? request()->getHost() }}"
         cookie-name="{{ $cookieConsentName }}" cookie-lifetime="{{ 365 * 20 }}"
         secure="{{ config('session.secure') }}"

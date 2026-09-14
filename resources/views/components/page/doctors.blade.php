@@ -51,11 +51,11 @@
                     {{ $doctors->links() }}
                 </div>
 
-                <div v-if="isLoading" class="py-4 text-center text-sm text-interactive">
+                <div v-cloak v-if="isLoading" class="py-4 text-center text-sm text-interactive">
                     Загружаем врачей...
                 </div>
 
-                <div v-if="loadError" class="py-4 text-center">
+                <div v-cloak v-if="loadError" class="py-4 text-center">
                     <button
                         type="button"
                         class="text-action-primary hover:text-action-primary-hovered hover:underline"
@@ -64,7 +64,7 @@
                     </button>
                 </div>
 
-                <div v-if="!supportsIntersectionObserver && hasMorePages" class="py-4 text-center">
+                <div v-cloak v-if="!supportsIntersectionObserver && hasMorePages" class="py-4 text-center">
                     <button
                         type="button"
                         class="text-action-primary hover:text-action-primary-hovered hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
@@ -75,6 +75,7 @@
                 </div>
 
                 <div
+                    v-cloak
                     v-show="hasMorePages"
                     ref="sentinel"
                     class="h-px w-full"

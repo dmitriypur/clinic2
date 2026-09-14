@@ -68,6 +68,16 @@ function createTopBarInstance(component, document) {
   return { instance, menuTrigger, scrollLockManager }
 }
 
+test('TopBar only adds the mobile navigation override while the menu is open', async () => {
+  const component = await loadTopBarComponent()
+
+  assert.equal(component.computed.navClassNameNew.call({ active: false }), '')
+  assert.equal(
+    component.computed.navClassNameNew.call({ active: true }),
+    '!block h-[calc(100dvh-70px)] overflow-y-auto',
+  )
+})
+
 test('TopBar closes an open mobile menu with Escape, unlocks scrolling, and restores focus', async () => {
   const listeners = new Map()
   const previousDocument = globalThis.document

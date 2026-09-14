@@ -1,4 +1,4 @@
-<div class="transition-all duration-300 z-50"
+<div v-cloak class="transition-all duration-300 z-50"
      :class="{
         'dropdown-in': isMobile ? mobileSubIndex === '{{ $menuIndex }}' : activeTop === '{{ $menuIndex }}',
         'hidden': isMobile ? mobileSubIndex !== '{{ $menuIndex }}' : activeTop !== '{{ $menuIndex }}',

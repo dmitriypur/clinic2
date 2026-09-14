@@ -22,6 +22,7 @@
                     </button>
                     @if(!empty($branches))
                         <div
+                            v-cloak
                             class="absolute left-0 top-8 w-full bg-white rounded-xl shadow-lg ring-1 ring-black ring-opacity-5 z-50 overflow-hidden"
                             v-show="branchesOpen"
                         >

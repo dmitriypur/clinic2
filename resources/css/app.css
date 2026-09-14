@@ -379,7 +379,7 @@
     }
 
     [v-cloak] {
-        @apply hidden;
+        display: none !important;
     }
 
     .animateFadeUp {

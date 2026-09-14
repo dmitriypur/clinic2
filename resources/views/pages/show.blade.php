@@ -73,6 +73,7 @@
                                                     class="rounded-lg border pb-0 max-w-full scroll-mt-20 scroll-smooth lg:scroll-mt-32"
                                                     id="{{ $service->uuid }}">
                                                     <div
+                                                        class="flex gap-4 items-center group p-4 lg:p-7"
                                                         :class="mainCardClassName"
                                                         @click="toggle">
                                                         <div
@@ -95,13 +96,14 @@
                                                             </h2>
                                                         </div>
                                                         <div
+                                                            v-cloak
                                                             class="p-4 -mr-4 text-interactive">
                                                                 <span
                                                                     v-if="active"><x-icon-minus/></span>
                                                             <span v-else><x-icon-plus/></span>
                                                         </div>
                                                     </div>
-                                                    <div :class="className">
+                                                    <div class="px-4 lg:px-6" :class="className">
                                                         @foreach($service->children as $child)
                                                             @push('scripts')
                                                                 {!! Clinic::schema()->offer($child->title, $child->current_price?->price ?? 0) !!}
@@ -152,7 +154,7 @@
                                         </div>
                                     </div>
                                     @if ($page->paragraph_count > 1)
-                                        <a href="javascript:;"
+                                        <a v-cloak href="javascript:;"
                                            class="py-1 block text-action-primary hover:text-action-primary-hovered hover:underline"
                                            @click="toggle">
                                                 <span

@@ -33,7 +33,7 @@
                 <span data-mobile-nav-slot="doctors-placeholder" aria-hidden="true"></span>
             @endisset
 
-            <button type="button" class="mobile-bottom-navigation__booking" @click="openBookingWidget">
+            <button v-cloak type="button" class="mobile-bottom-navigation__booking" @click="openBookingWidget">
                 <span class="absolute -top-[22px] flex h-16 w-16 items-center justify-center rounded-full bg-white">
                     <span class="flex h-[46px] w-[46px] items-center justify-center rounded-full bg-[#3981F1] text-white">
                         <span class="h-6 w-6"><x-mobile-nav.icon-booking /></span>

@@ -49,6 +49,7 @@
             <div class="container">
                 @if($filter !== null && $filter['tags']->count())
                     <div
+                        v-cloak
                         class="relative hidden md:flex md:flex-wrap md:gap-4 md:mt-10 md:px-8 md:py-6 md:bg-interactive md:rounded-2xl">
                         <div v-if="loading" class="flex justify-center items-center absolute inset-0 bg-white/80 z-20">
                             <svg
@@ -92,7 +93,7 @@
                         @endforeach
                     </div>
                 @endif
-                <p v-if="errorMessage"
+                <p v-cloak v-if="errorMessage"
                    v-text="errorMessage"
                    role="alert"
                    class="mt-6 rounded-lg bg-red-50 px-4 py-3 text-center text-sm font-medium text-red-700"></p>
@@ -103,12 +104,12 @@
                     @endforeach
                     @if($posts->currentPage() < $posts->lastPage())
                         @if($posts->perPage() * $posts->currentPage() <= $posts->total())
-                            <x-button-primary class="w-full lg:col-start-2 lg:col-span-1" @click="readMore">Открыть ещё
+                            <x-button-primary v-cloak class="w-full lg:col-start-2 lg:col-span-1" @click="readMore">Открыть ещё
                             </x-button-primary>
                         @endif
                     @endif
                 </div>
-                <div v-else class="flex flex-col md:grid md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-14 py-10">
+                <div v-cloak v-else class="flex flex-col md:grid md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-14 py-10">
                     <div v-if="reviewArr == 1" class="md:text-lg text-center">Ничего не
                         нашли...
                     </div>

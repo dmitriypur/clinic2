@@ -95,3 +95,22 @@ test('public stylesheet retains the existing CMS class fixture and dynamic step 
   css.root.walkRules('.content-block p', () => { contentParagraphRule = true })
   assert.ok(contentParagraphRule, 'rich CMS text must retain its paragraph styling')
 })
+
+test('Vue cloak overrides display utilities until a component is mounted', async () => {
+  const source = new URL('../../resources/css/app.css', import.meta.url)
+  const css = await postcss([tailwind(config)]).process(await readFile(source, 'utf8'), {
+    from: fileURLToPath(source),
+  })
+  let cloakDisplay
+
+  css.root.walkRules('[v-cloak]', rule => {
+    rule.walkDecls('display', declaration => {
+      cloakDisplay = {
+        value: declaration.value,
+        important: declaration.important,
+      }
+    })
+  })
+
+  assert.deepEqual(cloakDisplay, { value: 'none', important: true })
+})

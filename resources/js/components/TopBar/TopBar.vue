@@ -35,10 +35,7 @@ export default {
       )
     },
     navClassNameNew() {
-      return classNames(
-        'relative md:container px-5 py-[18px] pb-[calc(82px+env(safe-area-inset-bottom))] lg:px-4 lg:py-2 lg:pb-2 max-w-[100vw] h-[calc(100dvh-70px)] overflow-y-auto lg:overflow-visible lg:h-auto',
-        this.active ? '' : 'hidden lg:block',
-      )
+      return this.active ? '!block h-[calc(100dvh-70px)] overflow-y-auto' : ''
     },
   },
 

@@ -29,7 +29,7 @@
     </div>
     <app-filter inline-template>
         <div ref="handle" role="reviews">
-            <div class="md:bg-white w-full py-4 md:py-10 mb-2 md:mb-6 relative">
+            <div v-cloak class="md:bg-white w-full py-4 md:py-10 mb-2 md:mb-6 relative">
                 <div v-if="loading" class="flex justify-center items-center absolute inset-0 bg-white/80 z-20">
                     <svg
                         class="mr-3 -ml-1 size-8 animate-spin text-action-primary"
@@ -135,7 +135,7 @@
             </div>
 
             <div class="container">
-                <p v-if="errorMessage"
+                <p v-cloak v-if="errorMessage"
                    v-text="errorMessage"
                    role="alert"
                    class="mb-6 rounded-lg bg-red-50 px-4 py-3 text-center text-sm font-medium text-red-700"></p>
@@ -145,13 +145,13 @@
                     @endforeach
                     @if($reviews->currentPage() < $reviews->lastPage())
                         @if($reviews->perPage() * $reviews->currentPage() <= $reviews->total())
-                            <x-button-primary class="w-full lg:col-start-2 lg:col-span-1" @click="readMore">Открыть
+                            <x-button-primary v-cloak class="w-full lg:col-start-2 lg:col-span-1" @click="readMore">Открыть
                                 ещё
                             </x-button-primary>
                         @endif
                     @endif
                 </div>
-                <div v-else class="md:grid md:grid-cols-2 lg:grid-cols-3 gap-7">
+                <div v-cloak v-else class="md:grid md:grid-cols-2 lg:grid-cols-3 gap-7">
                     <div v-if="reviewArr == 1" class="md:col-start-2 md:col-span-1 md:text-lg text-center">Ничего не
                         нашли...
                     </div>
