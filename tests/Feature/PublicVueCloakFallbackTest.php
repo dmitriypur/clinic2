@@ -47,4 +47,31 @@ class PublicVueCloakFallbackTest extends TestCase
             $html,
         );
     }
+
+    public function test_public_booking_configuration_uses_the_server_booking_api_url(): void
+    {
+        config()->set('zrenie-clinic.booking_api_base_url', 'https://booking.test/api/v2');
+
+        City::query()->create([
+            'name' => 'Москва',
+            'slug' => 'moskva',
+            'is_default' => true,
+            'active' => true,
+            'details' => [
+                [
+                    'name' => 'Тестовая клиника',
+                    'fullname' => 'ООО «Тестовая клиника»',
+                ],
+            ],
+        ]);
+        Page::query()->create([
+            'title' => 'Главная',
+            'handle' => '/',
+            'active' => true,
+        ]);
+
+        $response = $this->get('/')->assertOk();
+
+        $response->assertSee('"apiBaseUrl":"https:\/\/booking.test\/api\/v2"', false);
+    }
 }

@@ -1,17 +1,31 @@
 import axios from "axios";
 import { getBranchSortOrders } from "./bookingOrdering";
 
+const BOOKING_API_TIMEOUT_MS = 30000;
+
+function getBookingApiBaseUrl() {
+  const baseURL = String(window.config?.booking?.apiBaseUrl || "")
+    .trim()
+    .replace(/\/+$/, "");
+
+  if (!baseURL) {
+    throw new Error("Booking API base URL is not configured");
+  }
+
+  return baseURL;
+}
+
 /**
  * API сервис для работы с виджетом онлайн-записи
  * Интеграция с adminzrenie.ru API
  */
 class BookingApiService {
   constructor() {
-    this.baseURL = "https://adminzrenie.ru/api/v1";
+    this.baseURL = getBookingApiBaseUrl();
 
     this.client = axios.create({
       baseURL: this.baseURL,
-      timeout: 30000,
+      timeout: BOOKING_API_TIMEOUT_MS,
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
@@ -396,6 +410,10 @@ class BookingApiService {
    * Обработка ошибок API
    */
   handleError(error) {
+    if (error.code === "ECONNABORTED" || error.code === "ETIMEDOUT") {
+      return new Error("Сервис записи не ответил вовремя. Попробуйте ещё раз.");
+    }
+
     if (error.response) {
       const { status, data } = error.response;
 

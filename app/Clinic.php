@@ -163,6 +163,7 @@ class Clinic
             'detectedCity' => $detectedCity,
             'cities' => $preparedCities,
             'booking' => [
+                'apiBaseUrl' => rtrim((string) config('zrenie-clinic.booking_api_base_url'), '/'),
                 'siteCityId' => $currentCity?->id,
                 'allowedClinicIds' => config('zrenie-clinic.booking_allowed_clinic_ids', []),
                 'formVariant' => $generalSettings->booking_form_variant ?? 'old',
