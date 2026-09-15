@@ -13,6 +13,32 @@ class BookingDoctorsByDateApiTest extends TestCase
 {
     use RefreshDatabase;
 
+    /**
+     * @dataProvider invalidNumericBookingRouteProvider
+     */
+    public function test_booking_numeric_identifiers_are_rejected_at_the_routing_boundary(string $url): void
+    {
+        $this->getJson($url)->assertNotFound();
+    }
+
+    public static function invalidNumericBookingRouteProvider(): array
+    {
+        return [
+            'booking city' => [
+                '/api/booking/cities/not-a-number/doctors-by-date?site_city_id=1&date=2026-04-10',
+            ],
+            'booking city calendar' => [
+                '/api/booking/cities/not-a-number/doctors-by-date/calendar?site_city_id=1&date_from=2026-04-10&date_to=2026-04-11',
+            ],
+            'booking clinic' => [
+                '/api/booking/clinics/not-a-number/branches?site_city_id=1',
+            ],
+            'booking doctor' => [
+                '/api/booking/doctors/not-a-number/branches-availability?site_city_id=1&date=2026-04-10',
+            ],
+        ];
+    }
+
     public function test_booking_doctor_launch_endpoint_returns_one_enriched_doctor(): void
     {
         $city = $this->createCity(name: 'Москва', slug: 'moskva');
