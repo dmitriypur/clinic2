@@ -23,10 +23,14 @@ Route::get('review-filter', App\Http\Controllers\Api\ReviewController::class);
 Route::get('doctors/{doctor:ulid}', DoctorController::class);
 Route::get('booking/doctors', BookingDoctorsController::class);
 Route::get('booking/doctors/{doctor}/launch', BookingDoctorLaunchController::class);
-Route::get('booking/doctors/{doctor}/branches-availability', BookingDoctorBranchesAvailabilityController::class);
-Route::get('booking/cities/{city}/doctors-by-date', BookingCityDoctorsByDateController::class);
-Route::get('booking/cities/{city}/doctors-by-date/calendar', BookingCityDoctorsByDateCalendarController::class);
-Route::get('booking/clinics/{clinic}/branches', BookingClinicBranchesController::class);
+Route::get('booking/doctors/{doctor}/branches-availability', BookingDoctorBranchesAvailabilityController::class)
+    ->whereNumber('doctor');
+Route::get('booking/cities/{city}/doctors-by-date', BookingCityDoctorsByDateController::class)
+    ->whereNumber('city');
+Route::get('booking/cities/{city}/doctors-by-date/calendar', BookingCityDoctorsByDateCalendarController::class)
+    ->whereNumber('city');
+Route::get('booking/clinics/{clinic}/branches', BookingClinicBranchesController::class)
+    ->whereNumber('clinic');
 Route::get('schedule', ScheduleController::class);
 
 Route::post('/making-an-appointment', MakingAnAppointmentController::class);

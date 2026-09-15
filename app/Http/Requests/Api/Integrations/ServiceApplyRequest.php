@@ -18,6 +18,7 @@ class ServiceApplyRequest extends FormRequest
             'dry_run' => ['nullable', 'boolean'],
             'compact' => ['nullable', 'boolean'],
             'operations' => ['required', 'array', 'min:1'],
+            'operations.*' => ['array'],
             'operations.*.type' => ['required', 'string', 'in:create_service,update_service,delete_service,upsert_price,delete_price'],
             'operations.*.ref' => ['nullable', 'string', 'max:100'],
             'operations.*.service_uuid' => ['nullable', 'uuid'],
@@ -40,7 +41,17 @@ class ServiceApplyRequest extends FormRequest
     public function withValidator(Validator $validator): void
     {
         $validator->after(function (Validator $validator) {
-            foreach ($this->input('operations', []) as $index => $operation) {
+            $operations = $this->input('operations', []);
+
+            if (! is_array($operations)) {
+                return;
+            }
+
+            foreach ($operations as $index => $operation) {
+                if (! is_array($operation)) {
+                    continue;
+                }
+
                 $path = "operations.{$index}";
                 $type = $operation['type'] ?? null;
 

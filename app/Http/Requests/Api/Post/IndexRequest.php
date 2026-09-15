@@ -22,9 +22,10 @@ class IndexRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'tags' => 'nullable|array',
-            'handle' => 'nullable|string',
-            'perpage' => 'nullable|numeric',
+            'tags' => ['nullable', 'array'],
+            'tags.*' => ['integer'],
+            'handle' => ['nullable', 'string'],
+            'perpage' => ['nullable', 'integer', 'min:1', 'max:100'],
         ];
     }
 }

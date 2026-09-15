@@ -27,6 +27,26 @@ class ServiceIntegrationApiTest extends TestCase
             ->assertUnauthorized();
     }
 
+    public function test_apply_endpoint_rejects_non_array_operations_with_validation_error(): void
+    {
+        $this->withToken('test-token')
+            ->postJson('/api/integrations/services/apply', [
+                'operations' => 'not-an-array',
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('operations');
+    }
+
+    public function test_apply_endpoint_rejects_non_array_operation_items_with_validation_error(): void
+    {
+        $this->withToken('test-token')
+            ->postJson('/api/integrations/services/apply', [
+                'operations' => ['not-an-array'],
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('operations.0');
+    }
+
     public function test_tree_endpoint_returns_services_children_and_prices(): void
     {
         $city = City::create([
