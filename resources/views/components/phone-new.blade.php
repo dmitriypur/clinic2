@@ -1,7 +1,7 @@
 <div class="hidden lg:flex gap-2">
      @if ($socials['vk'] ?? false)
         <div class="mr-2">
-            <a href="{{ $socials['vk'] }}" target="_blank" rel="nofollow"
+            <a href="{{ $socials['vk'] }}" target="_blank" rel="nofollow noopener"
                 class="">
                 <x-icon-vk-dark/>
             </a>

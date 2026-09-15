@@ -168,7 +168,7 @@
                                                     @continue
                                                 @endif
 
-                                                <a href="{{ $service['url'] }}" target="_blank" class="block">
+                                                <a href="{{ $service['url'] }}" target="_blank" rel="noopener" class="block">
                                                     {{ $media->img()->attributes(['class' => 'h-5 md:h-6']) }}
                                                 </a>
                                             @endforeach

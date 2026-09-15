@@ -78,7 +78,7 @@
                     <li><a href="/documents" class="text-interactive no-underline hover:text-interactive/60">Политика конфиденциальности</a></li>
                     <li><a href="/sitemap.html" class="text-interactive no-underline hover:text-interactive/60">Карта сайта</a></li>
                     @if(filled($settings->promotion_company) && filled($settings->promotion_company_url))
-                        <li class="block"><a href="{{ $settings->promotion_company_url }}" rel="noindex nofollow" target="_blank" class="text-interactive no-underline hover:text-interactive/60">Продвижение сайта - {{ $settings->promotion_company  }}</a></li>
+                        <li class="block"><a href="{{ $settings->promotion_company_url }}" rel="noindex nofollow noopener" target="_blank" class="text-interactive no-underline hover:text-interactive/60">Продвижение сайта - {{ $settings->promotion_company  }}</a></li>
                     @endif
                 </ul>
             </nav>

@@ -44,7 +44,7 @@
                     </ul>
 
                     @if(filled($settings->promotion_company) && filled($settings->promotion_company_url))
-                        <a href="{{ $settings->promotion_company_url }}" rel="noindex nofollow" target="_blank" class="md:hidden text-interactive text-es absolute right-0 bottom-2 font-medium">Продвижение сайта - {{ $settings->promotion_company  }}</a>
+                        <a href="{{ $settings->promotion_company_url }}" rel="noindex nofollow noopener" target="_blank" class="md:hidden text-interactive text-es absolute right-0 bottom-2 font-medium">Продвижение сайта - {{ $settings->promotion_company  }}</a>
                     @endif
                 </nav>
             @endif
@@ -76,7 +76,7 @@
                     <li><a href="{{ city_route('pages.show', ['handle' => 'documents']) }}" class="text-interactive no-underline hover:text-interactive/60">Политика конфиденциальности</a></li>
                     <li><a href="{{ city_route('pages.show', ['handle' => 'sitemap.html']) }}" class="text-interactive no-underline hover:text-interactive/60">Карта сайта</a></li>
                     @if(filled($settings->promotion_company) && filled($settings->promotion_company_url))
-                        <li class="hidden md:block"><a href="{{ $settings->promotion_company_url }}" rel="noindex nofollow" target="_blank" class="text-interactive no-underline hover:text-interactive/60">Продвижение сайта - {{ $settings->promotion_company  }}</a></li>
+                        <li class="hidden md:block"><a href="{{ $settings->promotion_company_url }}" rel="noindex nofollow noopener" target="_blank" class="text-interactive no-underline hover:text-interactive/60">Продвижение сайта - {{ $settings->promotion_company  }}</a></li>
                     @endif
                 </ul>
             </nav>

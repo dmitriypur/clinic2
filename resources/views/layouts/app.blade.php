@@ -58,6 +58,11 @@
 <body
     class="bg-surface-subdued antialiased text-interactive pt-[70px] lg:pt-40 {{ $showHeader ? 'pb-[calc(60px+env(safe-area-inset-bottom))] lg:pb-0' : '' }} [&_*]:[-webkit-tap-highlight-color]:transparent">
 <div id="app" class="overflow-x-clip">
+    <a href="#main-content"
+       class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded focus:bg-white focus:px-4 focus:py-2 focus:text-interactive focus:shadow">
+        Перейти к основному содержимому
+    </a>
+
     @if (isset($seoSettings->scripts) && count($seoSettings->scripts))
         @foreach ($seoSettings->scripts as $script)
             {!! $script['value'] !!}
@@ -86,7 +91,9 @@
         @include($headerView)
     @endif
 
-    {!! $slot !!}
+    <main id="main-content" tabindex="-1">
+        {!! $slot !!}
+    </main>
 
     @if($showHeader)
         <x-mobile-bottom-navigation :items="$mobileNavigation" />
@@ -140,7 +147,7 @@
         samesite="{{ config('session.same_site') }}">
         Мы используем файлы cookie, чтобы улучшить сайт для Вас.
         Подробнее:
-        <a class="text-interactive underline hover:no-underline" target="_blank"
+        <a class="text-interactive underline hover:no-underline" target="_blank" rel="noopener"
            href="/documents">
             политика конфиденциальности
         </a>

@@ -29,7 +29,7 @@
     </div>
     <div class="accessibility:hidden flex items-center justify-center gap-3">
         @if ($socials['youtube'] ?? false)
-            <a href="{{ $socials['youtube'] }}" target="_blank" rel="nofollow"
+            <a href="{{ $socials['youtube'] }}" target="_blank" rel="nofollow noopener"
                class="flex items-center bg-gradient-to-b from-[#FF7E7A] to-[#B3221D] w-12 h-12 rounded-full pl-1">
                 <span class="text-white [&_svg]:h-10 [&_svg]:w-10">
                     <x-icon-youtube/>
@@ -38,7 +38,7 @@
         @endif
 
         @if ($socials['telegram'] ?? false)
-            <a href="{{ $socials['telegram'] }}" target="_blank" rel="nofollow"
+            <a href="{{ $socials['telegram'] }}" target="_blank" rel="nofollow noopener"
                class="flex items-center bg-gradient-to-b from-[#9ADDFF] to-[#00A8FC] w-12 h-12 rounded-full pl-2">
                 <span class="text-white [&_svg]:h-7 [&_svg]:w-7">
                     <x-icon-telegram/>
@@ -47,7 +47,7 @@
         @endif
 
         @if ($socials['vk'] ?? false)
-            <a href="{{ $socials['vk'] }}" target="_blank" rel="nofollow"
+            <a href="{{ $socials['vk'] }}" target="_blank" rel="nofollow noopener"
                class="flex items-center bg-gradient-to-b from-[#B3D2FF] to-[#3D80E0] w-12 h-12 rounded-full pl-2">
                 <span class="text-white [&_svg]:h-7 [&_svg]:w-7">
                     <x-icon-vk/>
@@ -56,7 +56,7 @@
         @endif
 
         @if ($socials['rutube'] ?? false)
-            <a href="{{ $socials['rutube'] }}" target="_blank" rel="nofollow"
+            <a href="{{ $socials['rutube'] }}" target="_blank" rel="nofollow noopener"
                class="flex items-center w-12 h-12 rounded-full">
                 <span class="text-white [&_svg]:h-12 [&_svg]:w-12">
                     <x-icon-rutube/>
@@ -64,7 +64,7 @@
             </a>
         @endif
         @if ($socials['vk_video'] ?? false)
-            <a href="{{ $socials['vk_video'] }}" target="_blank" rel="nofollow"
+            <a href="{{ $socials['vk_video'] }}" target="_blank" rel="nofollow noopener"
                class="flex items-center w-12 h-12 rounded-full">
                 <span class="text-white [&_svg]:h-12 [&_svg]:w-12">
                     <x-icon-vkvideo/>

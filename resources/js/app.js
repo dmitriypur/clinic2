@@ -306,6 +306,10 @@ new Vue({
         behavior: "smooth",
       });
 
+      if (target.id === "main-content") {
+        target.focus({ preventScroll: true });
+      }
+
       if (window.innerWidth < 1024) {
         eventBus.$emit("hideTopBar");
       }
