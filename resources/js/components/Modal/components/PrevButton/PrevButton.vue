@@ -1,5 +1,5 @@
 <template>
-  <button :class="className" aria-label="Закрыть" @click="onClick">
+  <button :class="className" aria-label="Предыдущий элемент" @click="onClick">
     <span class="block max-h-full max-w-full m-auto">
       <svg viewBox="0 0 19 34"
            class="h-8 stroke-interactive group-hover:stroke-interactive-hovered lg:stroke-white lg:group-hover:stroke-white/60 fill-none"

@@ -118,7 +118,7 @@
                                 @if ($showSpecialSchedule ?? false)
                                     <a href="/storage/{{ $specialSchedule }}"
                                        class="py-2 block after:absolute after:bottom-0 after:left-0 after:h-[3px] after:w-full font-medium text-interactive hover:after:bg-interactive"
-                                       target="_blank"><span>{{ $specialScheduleTitle }}</span></a>
+                                       target="_blank" rel="noopener"><span>{{ $specialScheduleTitle }}</span></a>
                                 @endif
                             </div>
                         </div>

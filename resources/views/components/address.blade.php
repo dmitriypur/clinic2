@@ -14,7 +14,7 @@
         @if($showSpecialSchedule ?? false)
             <a href="/storage/{{ $specialSchedule }}"
                class="text-lg pt-1 block font-medium text-interactive"
-               target="_blank"><span>{{ $specialScheduleTitle }}</span></a>
+               target="_blank" rel="noopener"><span>{{ $specialScheduleTitle }}</span></a>
         @endif
     </div>
 </div>

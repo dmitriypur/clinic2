@@ -44,7 +44,7 @@
         </div>
 
         <div class="flex flex-col space-y-4 mb-4 mt-2 relative">
-            <a href="{{ $review->link_resource }}" target="_blank" itemProp="author" itemType="http://schema.org/Person" itemscope>
+            <a href="{{ $review->link_resource }}" target="_blank" rel="noopener" itemProp="author" itemType="http://schema.org/Person" itemscope>
                 <span class="text-2xl font-semibold" itemProp="name">{{ $review->name }}</span>
             </a>
             <div
