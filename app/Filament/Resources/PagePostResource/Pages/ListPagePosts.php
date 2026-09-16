@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\PagePostResource\Pages;
 
 use App\Filament\Resources\ArticleImportResource;
+use App\Filament\Resources\BlockResource;
 use App\Filament\Resources\PagePostResource;
 use App\Jobs\ImportArticle;
 use App\Models\ArticleImport;
@@ -27,7 +28,7 @@ class ListPagePosts extends ListRecords
                 ->label('Импорт статьи')
                 ->icon('heroicon-o-arrow-down-tray')
                 ->modalWidth('4xl')
-                ->disabled(auth()->user()->hasRole('demo'))
+                ->authorize(fn (): bool => static::canImportArticles())
                 ->form([
                     Forms\Components\TextInput::make('document_url')
                         ->label('Ссылка на Google Docs')
@@ -120,5 +121,11 @@ class ListPagePosts extends ListRecords
                     $this->redirect(ArticleImportResource::getUrl('index'));
                 }),
         ];
+    }
+
+    private static function canImportArticles(): bool
+    {
+        return PagePostResource::canCreate()
+            && BlockResource::canCreate();
     }
 }
