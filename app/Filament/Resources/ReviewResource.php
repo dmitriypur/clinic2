@@ -110,6 +110,7 @@ class ReviewResource extends Resource
                 Tables\Columns\TextColumn::make('cities.name')->label('Города'),
                 Tables\Columns\TextColumn::make('pages.title')->label('Услуги'),
                 SelectColumn::make('resource')
+                    ->disabled(fn (Review $record): bool => ! static::canEdit($record))
                     ->options(ResourcesForReviews::toArray()
                     ),
                ])
@@ -133,6 +134,7 @@ class ReviewResource extends Resource
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\BulkAction::make('detach_service')
                         ->label('Отвязать от услуги')
+                        ->authorize(fn (): bool => static::canEdit(new Review))
                         ->form([
                             Forms\Components\Select::make('page_id')
                                 ->label('Услуга')
@@ -148,6 +150,7 @@ class ReviewResource extends Resource
                         ->icon('heroicon-o-link-slash'),
                     Tables\Actions\BulkAction::make('assign_cities')
                         ->label('Назначить города')
+                        ->authorize(fn (): bool => static::canEdit(new Review))
                         ->form([
                             Forms\Components\Select::make('city_ids')
                                 ->label('Города')

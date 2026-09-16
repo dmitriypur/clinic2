@@ -345,6 +345,7 @@ class DoctorResource extends Resource
                     ->step(1)
                     ->rules(['nullable', 'integer'])
                     ->extraInputAttributes(['class' => 'w-24'])
+                    ->disabled(fn (Doctor $record): bool => ! static::canEdit($record))
                     ->updateStateUsing(function (Doctor $record, $state): ?int {
                         $value = is_numeric($state) ? (int) $state : null;
                         $record->update(['page_sort_order' => $value]);
@@ -368,6 +369,7 @@ class DoctorResource extends Resource
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\BulkAction::make('activate')
                         ->label('Активировать')
+                        ->authorize(fn (): bool => static::canEdit(new Doctor))
                         ->icon('heroicon-o-check-circle')
                         ->requiresConfirmation()
                         ->action(function (Collection $records): void {
@@ -379,6 +381,7 @@ class DoctorResource extends Resource
                         }),
                     Tables\Actions\BulkAction::make('deactivate')
                         ->label('Отключить')
+                        ->authorize(fn (): bool => static::canEdit(new Doctor))
                         ->icon('heroicon-o-x-circle')
                         ->requiresConfirmation()
                         ->action(function (Collection $records): void {
