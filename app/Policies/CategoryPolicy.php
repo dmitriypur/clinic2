@@ -2,13 +2,14 @@
 
 namespace App\Policies;
 
-use App\Models\Staff;
 use App\Models\Category;
+use App\Models\Staff;
+use App\Policies\Concerns\DeniesDemoMutations;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class CategoryPolicy
 {
-    use HandlesAuthorization;
+    use DeniesDemoMutations, HandlesAuthorization;
 
     /**
      * Determine whether the staff can view any models.

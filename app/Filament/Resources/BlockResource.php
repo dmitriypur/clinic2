@@ -5,8 +5,8 @@ namespace App\Filament\Resources;
 use App\Blocks\BlockRegistry;
 use App\Enums\BlockBackgroundType;
 use App\Enums\BlockType;
-use App\Filament\Forms\Components\ReplaceableCuratorPicker;
 use App\Enums\PageType;
+use App\Filament\Forms\Components\ReplaceableCuratorPicker;
 use App\Filament\Resources\BlockResource\Pages;
 use App\Models\Block;
 use App\Models\Doctor;
@@ -1453,6 +1453,7 @@ class BlockResource extends Resource
                     ->icon('heroicon-o-arrows-right-left')
                     ->color('primary')
                     ->visible(fn (): bool => auth()->user()->hasRole('super_admin'))
+                    ->authorize(fn (): bool => static::canEdit(new Block))
                     ->requiresConfirmation()
                     ->modalHeading('Заменить старые формы на новый баннер')
                     ->modalDescription('У выбранных блоков типа "Форма заявки" будет изменён тип на "Запись или обратный звонок". Payload старой формы будет очищен, чтобы не тащить неиспользуемые данные в новый статичный баннер.')
@@ -1470,6 +1471,7 @@ class BlockResource extends Resource
                     ->label('Исключить врачей')
                     ->icon('heroicon-o-user-minus')
                     ->color('warning')
+                    ->authorize(fn (): bool => static::canEdit(new Block))
                     ->requiresConfirmation()
                     ->form([
                         Forms\Components\Select::make('city_ids')
@@ -1529,6 +1531,7 @@ class BlockResource extends Resource
                     ->label('Очистить выбранных врачей')
                     ->icon('heroicon-o-users')
                     ->color('warning')
+                    ->authorize(fn (): bool => static::canEdit(new Block))
                     ->requiresConfirmation()
                     ->modalHeading('Очистить список врачей')
                     ->modalDescription('У выбранных блоков типа "Специалисты (альтернативный)" будет очищен старый список `payload.doctors`. После этого блок начнет работать по новой схеме: все врачи текущего города минус исключенные.')

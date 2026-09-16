@@ -6,6 +6,7 @@ use App\Jobs\RegenerateSitemap;
 use App\Settings\SeoSettings;
 use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Actions\Action;
+use Filament\Facades\Filament;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Pages\SettingsPage;
@@ -30,7 +31,14 @@ class ManageSeoSettings extends SettingsPage
 
     public function getSaveFormAction(): Action
     {
-        return parent::getSaveFormAction()->disabled(auth()->user()->hasRole('demo'));
+        return parent::getSaveFormAction()->disabled(! static::canManageSettings());
+    }
+
+    public function save(): void
+    {
+        $this->authorizeSettingsMutation();
+
+        parent::save();
     }
 
     public function form(Form $form): Form
@@ -50,7 +58,7 @@ class ManageSeoSettings extends SettingsPage
                         ]),
                 ]),
 
-                Forms\Components\Section::make("Скрипты перед </body>")->schema([
+                Forms\Components\Section::make('Скрипты перед </body>')->schema([
                     Forms\Components\Repeater::make('scripts')->label('Скрипты (метрика и т.д.)')
                         ->schema([
                             Forms\Components\TextInput::make('name')->required(),
@@ -79,7 +87,7 @@ class ManageSeoSettings extends SettingsPage
                     Forms\Components\TextInput::make('image_title_template')
                         ->label('Шаблон для Title')
                         ->helperText('Допустимые значения: {h1}'),
-                ])
+                ]),
             ]);
     }
 
@@ -90,12 +98,15 @@ class ManageSeoSettings extends SettingsPage
             Action::make('regenerateSitemap')
                 ->label('Сохранить и обновить sitemap.xml')
                 ->action('regenerateSitemap')
+                ->disabled(! static::canManageSettings())
                 ->color('secondary'),
         ];
     }
 
     public function regenerateSitemap(): void
     {
+        $this->authorizeSettingsMutation();
+
         $this->callHook('beforeValidate');
 
         $data = $this->form->getState();
@@ -120,5 +131,19 @@ class ManageSeoSettings extends SettingsPage
         if ($redirectUrl = $this->getRedirectUrl()) {
             $this->redirect($redirectUrl);
         }
+    }
+
+    private static function canManageSettings(): bool
+    {
+        $staff = Filament::auth()->user();
+
+        return $staff !== null
+            && static::canAccess()
+            && ! $staff->hasRole('demo');
+    }
+
+    private function authorizeSettingsMutation(): void
+    {
+        abort_unless(static::canManageSettings(), 403);
     }
 }

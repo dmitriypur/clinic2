@@ -2,13 +2,14 @@
 
 namespace App\Policies;
 
-use App\Models\Staff;
 use App\Models\Review;
+use App\Models\Staff;
+use App\Policies\Concerns\DeniesDemoMutations;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class ReviewPolicy
 {
-    use HandlesAuthorization;
+    use DeniesDemoMutations, HandlesAuthorization;
 
     /**
      * Determine whether the staff can view any models.
