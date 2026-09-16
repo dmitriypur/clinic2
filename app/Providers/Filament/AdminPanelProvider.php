@@ -2,12 +2,13 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Forms\Components\SafeFileUpload;
 use App\Filament\Resources\NavigationResource;
 use App\Models\City;
 use App\Models\Doctor;
 use App\Models\Page;
+use Awcodes\Curator\Components\Forms\Uploader;
 use Awcodes\Curator\CuratorPlugin;
-use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Http\Middleware\Authenticate;
@@ -30,6 +31,15 @@ use RyanChandler\FilamentNavigation\FilamentNavigation;
 
 class AdminPanelProvider extends PanelProvider
 {
+    public function boot(): void
+    {
+        Uploader::configureUsing(
+            fn (Uploader $uploader): Uploader => $uploader->rules([
+                'extensions:jpg,jpeg,jfif,png,webp,pdf',
+            ])
+        );
+    }
+
     public function panel(Panel $panel): Panel
     {
         return $panel
@@ -73,7 +83,8 @@ class AdminPanelProvider extends PanelProvider
                         ->label('Города')
                         ->multiple()
                         ->options(fn () => City::pluck('name', 'id')),
-                    FileUpload::make('image')
+                    SafeFileUpload::make('image')
+                        ->safeImages()
                         ->label('Изображение')
                         ->directory('megamenu')
                         ->dehydrateStateUsing(fn ($state) => is_array($state) ? (array_values($state)[0] ?? null) : $state),
@@ -88,14 +99,16 @@ class AdminPanelProvider extends PanelProvider
                         ->label('Города')
                         ->multiple()
                         ->options(fn () => City::pluck('name', 'id')),
-                    FileUpload::make('image')
+                    SafeFileUpload::make('image')
+                        ->safeImages()
                         ->label('Изображение')
                         ->directory('megamenu')
                         ->dehydrateStateUsing(fn ($state) => is_array($state) ? (array_values($state)[0] ?? null) : $state),
                     TextInput::make('target')->hidden(),
                 ], 'doctor')
                 ->itemType('Файл', [
-                    FileUpload::make('file')
+                    SafeFileUpload::make('file')
+                        ->safeDocuments()
                         ->label('Файл')
                         ->directory('menu-files')
                         ->required()

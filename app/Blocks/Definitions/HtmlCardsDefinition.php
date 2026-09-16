@@ -104,7 +104,7 @@ final class HtmlCardsDefinition extends AbstractBlockDefinition
                         ->buttonLabel('Выбрать изображение')
                         ->listDisplay()
                         ->directory('html-cards')
-                        ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'])
+                        ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
                         ->helperText('После выбора скопируйте URL и вставьте его в src тега <img>.')
                         ->columnSpanFull(),
                 ])

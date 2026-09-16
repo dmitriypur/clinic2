@@ -2,13 +2,12 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Forms\Components\SafeMediaLibraryFileUpload;
 use App\Filament\Resources\DoctorResource\Pages;
-use App\Filament\Resources\DoctorResource\RelationManagers;
 use App\Models\Doctor;
 use App\Support\DoctorAge;
 use Filament\Forms;
 use Filament\Forms\Components\Section;
-use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
@@ -157,7 +156,7 @@ class DoctorResource extends Resource
                                         Forms\Components\TextInput::make('year')->label('Год'),
                                         Forms\Components\TextInput::make('specialty')->label('Специальность'),
                                         Forms\Components\TextInput::make('level')->label('Уровень образования'),
-                                    ])
+                                    ]),
                             ]),
 
                         Forms\Components\Repeater::make('extra.professional_development')
@@ -189,9 +188,9 @@ class DoctorResource extends Resource
                             ->default(false),
                     ]),
 
-
                 Forms\Components\Section::make('Документы, подтверждающие квалификацию')->schema([
-                    SpatieMediaLibraryFileUpload::make('documents')
+                    SafeMediaLibraryFileUpload::make('documents')
+                        ->safeImages()
                         ->collection('documents')
                         ->multiple()
                         ->label('Фото')
@@ -209,7 +208,7 @@ class DoctorResource extends Resource
                                 ->hiddenLabel()
                                 ->columnSpan('full')
                                 ->default(
-                                    fn(Forms\Get $get) => $get('uuid') ??
+                                    fn (Forms\Get $get) => $get('uuid') ??
                                         Str::uuid()->toString()
                                 )
                                 ->reactive()
@@ -217,15 +216,17 @@ class DoctorResource extends Resource
                                 ->dehydrated()
                                 ->extraAttributes(['class' => 'hidden']),
                             Forms\Components\TextInput::make('url')->label('Ссылка'),
-                            SpatieMediaLibraryFileUpload::make('review_icon')
-                                ->collection(fn(Forms\Get $get) => $get('uuid'))
+                            SafeMediaLibraryFileUpload::make('review_icon')
+                                ->safeImages()
+                                ->collection(fn (Forms\Get $get) => $get('uuid'))
                                 ->label('Иконка')
                                 ->openable(),
                         ]),
                 ]),
 
                 Forms\Components\Section::make()->schema([
-                    SpatieMediaLibraryFileUpload::make('default')
+                    SafeMediaLibraryFileUpload::make('default')
+                        ->safeImages()
                         ->label('Фото')
                         ->openable(),
                 ]),
@@ -235,8 +236,8 @@ class DoctorResource extends Resource
 
                     Forms\Components\TextInput::make('handle')
                         ->label('URL псевдоним')
-                        ->prefix(config('app.url') . '/doctors/')
-                        ->unique(ignorable: fn($record) => $record)
+                        ->prefix(config('app.url').'/doctors/')
+                        ->unique(ignorable: fn ($record) => $record)
                         ->afterStateUpdated(function (Get $get, Set $set, $record) {
                             if ($record) {
                                 $set('show_redirect', true);
@@ -251,24 +252,24 @@ class DoctorResource extends Resource
 
                     Forms\Components\Checkbox::make('redirect')
                         ->label(function (Get $get, $record) {
-                            if (!$record) {
-                                return "Создать редирект";
+                            if (! $record) {
+                                return 'Создать редирект';
                             }
 
                             return "Создать редирект {$record->handle} → {$get('handle')}";
                         })
 //                        ->afterStateHydrated(fn(Forms\Components\Checkbox $component) => $component->state(true))
-                        ->hidden(fn(Get $get) => !$get('show_redirect')),
+                        ->hidden(fn (Get $get) => ! $get('show_redirect')),
 
                     Forms\Components\TextInput::make('seo.canonical')
                         ->label('Канонический URL')
-                        ->prefix(config('app.url') . '/doctors/'),
+                        ->prefix(config('app.url').'/doctors/'),
 
                     Forms\Components\Textarea::make('seo.description')
                         ->helperText(function (?string $state): string {
-                            return (string)Str::of(strlen($state))
+                            return (string) Str::of(strlen($state))
                                 ->append(' / ')
-                                ->append(160 . ' ')
+                                ->append(160 .' ')
                                 ->append('символов');
                         })
                         ->reactive(),
@@ -331,12 +332,12 @@ class DoctorResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn(Builder $query) => $query->with('cities'))
+            ->modifyQueryUsing(fn (Builder $query) => $query->with('cities'))
             ->columns([
                 Tables\Columns\TextColumn::make('full_name')->label('Имя'),
                 Tables\Columns\TextColumn::make('cities_list')
                     ->label('Города')
-                    ->getStateUsing(fn(Doctor $record): string => $record->cities->pluck('name')->implode(', '))
+                    ->getStateUsing(fn (Doctor $record): string => $record->cities->pluck('name')->implode(', '))
                     ->placeholder('Все'),
                 Tables\Columns\TextInputColumn::make('page_sort_order')
                     ->label('Порядок страницы')
@@ -353,7 +354,7 @@ class DoctorResource extends Resource
                 Tables\Columns\IconColumn::make('is_active')
                     ->label('Активен')
                     ->boolean()
-                    ->getStateUsing(fn(Doctor $record): bool => !((bool) data_get($record->seo ?? [], 'noindex', false))),
+                    ->getStateUsing(fn (Doctor $record): bool => ! ((bool) data_get($record->seo ?? [], 'noindex', false))),
             ])
             ->filters([
                 SelectFilter::make('cities')

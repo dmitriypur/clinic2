@@ -2,24 +2,19 @@
 
 namespace App\Filament\Resources;
 
-use App\Enums\BlockType;
 use App\Enums\PageType;
-use App\Enums\ResourcesForReviews;
+use App\Filament\Forms\Components\SafeMediaLibraryFileUpload;
 use App\Filament\Resources\Concerns\HasCitySeoVariablesHint;
-use App\Filament\Resources\PageServiceResource\Pages;
 use App\Filament\Resources\PageServiceResource\RelationManagers;
-use App\Models\Category;
 use App\Models\Page;
 use App\Models\Tag;
 use Filament\Forms;
 use Filament\Forms\Components\Section;
-use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
 use Filament\Resources\Resource;
 use Filament\Tables;
-use Filament\Tables\Columns\SelectColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Str;
@@ -63,7 +58,8 @@ class PagePostResource extends Resource
                         ->label('Заголовок для хлебных крошек')
                         ->helperText('По-умолчанию берется заголовок'),
 
-                    SpatieMediaLibraryFileUpload::make('default')
+                    SafeMediaLibraryFileUpload::make('default')
+                        ->safeImages()
                         ->label('Изображение')
                         ->imageEditor()
                         ->responsiveImages()
@@ -112,8 +108,8 @@ class PagePostResource extends Resource
 
                     Forms\Components\TextInput::make('handle')
                         ->label('URL псевдоним')
-                        ->prefix(config('app.url') . '/')
-                        ->unique(ignorable: fn($record) => $record)
+                        ->prefix(config('app.url').'/')
+                        ->unique(ignorable: fn ($record) => $record)
                         ->afterStateUpdated(function (Get $get, Set $set, $record) {
                             if ($record) {
                                 $set('show_redirect', true);
@@ -128,24 +124,24 @@ class PagePostResource extends Resource
 
                     Forms\Components\Checkbox::make('redirect')
                         ->label(function (Get $get, $record) {
-                            if (!$record) {
-                                return "Создать редирект";
+                            if (! $record) {
+                                return 'Создать редирект';
                             }
 
                             return "Создать редирект {$record->handle} → {$get('handle')}";
                         })
 //                        ->afterStateHydrated(fn(Forms\Components\Checkbox $component) => $component->state(true))
-                        ->hidden(fn(Get $get) => !$get('show_redirect')),
+                        ->hidden(fn (Get $get) => ! $get('show_redirect')),
 
                     Forms\Components\TextInput::make('seo.canonical')
                         ->label('Канонический URL')
-                        ->prefix(config('app.url') . '/'),
+                        ->prefix(config('app.url').'/'),
 
                     Forms\Components\Textarea::make('seo.description')
                         ->helperText(function (?string $state): string {
-                            return (string)Str::of(strlen($state))
+                            return (string) Str::of(strlen($state))
                                 ->append(' / ')
-                                ->append(160 . ' ')
+                                ->append(160 .' ')
                                 ->append('символов. ')
                                 ->append(self::citySeoVariablesHintText());
                         })

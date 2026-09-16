@@ -6,6 +6,7 @@ namespace App\Blocks\Definitions;
 
 use App\Blocks\AbstractBlockDefinition;
 use App\Enums\BlockType;
+use App\Filament\Forms\Components\SafeFileUpload;
 use App\Models\Block;
 use DOMDocument;
 use DOMElement;
@@ -33,7 +34,8 @@ final class GridContactsDefinition extends AbstractBlockDefinition
     {
         return [
             Forms\Components\Section::make([
-                Forms\Components\FileUpload::make('payload.image')
+                SafeFileUpload::make('payload.image')
+                    ->safeImages()
                     ->label('Изображение')
                     ->directory('corgi'),
 
