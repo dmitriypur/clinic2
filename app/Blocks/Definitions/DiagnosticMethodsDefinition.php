@@ -6,8 +6,8 @@ namespace App\Blocks\Definitions;
 
 use App\Blocks\AbstractBlockDefinition;
 use App\Enums\BlockType;
+use App\Filament\Forms\Components\SafeMediaLibraryFileUpload;
 use Filament\Forms;
-use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Illuminate\Support\Str;
 
 final class DiagnosticMethodsDefinition extends AbstractBlockDefinition
@@ -34,7 +34,8 @@ final class DiagnosticMethodsDefinition extends AbstractBlockDefinition
                 ->label('Текст')
                 ->columnSpanFull(),
 
-            SpatieMediaLibraryFileUpload::make('default')
+            SafeMediaLibraryFileUpload::make('default')
+                ->safeImages()
                 ->label('Изображение')
                 ->imageEditor()
                 ->responsiveImages()
@@ -71,7 +72,8 @@ final class DiagnosticMethodsDefinition extends AbstractBlockDefinition
                             ->reactive()
                             ->extraAttributes(['class' => 'hidden']),
 
-                        SpatieMediaLibraryFileUpload::make('image')
+                        SafeMediaLibraryFileUpload::make('image')
+                            ->safeImages()
                             ->collection(fn (Forms\Get $get) => $get('media_collection'))
                             ->label('Мини-изображение')
                             ->imageEditor()

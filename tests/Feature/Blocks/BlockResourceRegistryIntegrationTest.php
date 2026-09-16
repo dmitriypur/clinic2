@@ -2,13 +2,16 @@
 
 namespace Tests\Feature\Blocks;
 
+use App\Blocks\BlockRegistry;
 use App\Enums\BlockType;
+use App\Filament\Forms\Components\SafeFileUpload;
 use App\Filament\Resources\BlockResource\Pages\CreateBlock;
 use App\Filament\Resources\BlockResource\Pages\EditBlock;
 use App\Models\Block;
 use App\Models\Page;
 use App\Models\Staff;
 use Filament\Facades\Filament;
+use Filament\Forms\Components\Component;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -183,6 +186,46 @@ class BlockResourceRegistryIntegrationTest extends TestCase
         $this->assertSame($media->getKey(), $block->getFirstMedia($mediaCollection)?->getKey());
     }
 
+    public function test_spatie_media_image_field_rejects_svg_uploads(): void
+    {
+        Livewire::test(CreateBlock::class)
+            ->fillForm([
+                'page_id' => $this->page->id,
+                'anchor' => 'unsafe-media-block',
+                'title' => 'Unsafe media block',
+                'settings' => [
+                    'title_hidden' => false,
+                    'show_page_title' => false,
+                    'breadcrumbs' => false,
+                    'show_on_mobile' => true,
+                    'hide_on_desctop' => false,
+                ],
+            ])
+            ->set('data.type', BlockType::TEXT_WITH_IMAGE->value)
+            ->set('data.default', [UploadedFile::fake()->createWithContent(
+                'active.svg',
+                '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>',
+            )])
+            ->call('create')
+            ->assertHasFormErrors(['default']);
+
+        $this->assertDatabaseMissing('blocks', ['anchor' => 'unsafe-media-block']);
+    }
+
+    public function test_grid_contacts_uses_the_safe_public_image_profile(): void
+    {
+        $definition = app(BlockRegistry::class)->find(BlockType::GRID_CONTACTS);
+        $this->assertNotNull($definition);
+
+        $upload = $this->findComponent($definition->formSchema(), 'payload.image');
+
+        $this->assertInstanceOf(SafeFileUpload::class, $upload);
+        $this->assertSame(
+            ['image/jpeg', 'image/png', 'image/webp'],
+            $upload->getAcceptedFileTypes(),
+        );
+    }
+
     private function createBlock(array $state, array $uploads = []): void
     {
         $type = $state['type'];
@@ -222,5 +265,27 @@ class BlockResourceRegistryIntegrationTest extends TestCase
             ->assertStatus(200)
             ->call('save')
             ->assertHasNoFormErrors();
+    }
+
+    /**
+     * @param  array<Component>  $components
+     */
+    private function findComponent(array $components, string $name): ?Component
+    {
+        foreach ($components as $component) {
+            if (method_exists($component, 'getName') && $component->getName() === $name) {
+                return $component;
+            }
+
+            if (method_exists($component, 'getChildComponents')) {
+                $match = $this->findComponent($component->getChildComponents(), $name);
+
+                if ($match !== null) {
+                    return $match;
+                }
+            }
+        }
+
+        return null;
     }
 }

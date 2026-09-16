@@ -6,6 +6,7 @@ namespace App\Blocks\Definitions;
 
 use App\Blocks\AbstractBlockDefinition;
 use App\Enums\BlockType;
+use App\Filament\Forms\Components\SafeFileUpload;
 use Dotswan\FilamentCodeEditor\Fields\CodeEditor;
 use Filament\Forms;
 
@@ -44,7 +45,8 @@ final class UniversalTextBlockDefinition extends AbstractBlockDefinition
                         ->label('Текст')
                         ->columnSpanFull(),
 
-                    Forms\Components\FileUpload::make('document')
+                    SafeFileUpload::make('document')
+                        ->safeDocuments()
                         ->label('Документ')
                         ->directory('docs')
                         ->columnSpanFull(),

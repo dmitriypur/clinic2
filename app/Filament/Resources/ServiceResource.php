@@ -2,13 +2,11 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Forms\Components\SafeMediaLibraryFileUpload;
 use App\Filament\Resources\ServiceResource\Pages;
 use App\Filament\Resources\ServiceResource\RelationManagers;
-use App\Models\City;
 use App\Models\Service;
 use Filament\Forms;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -46,7 +44,7 @@ class ServiceResource extends Resource
                     ->label('Внешний идентификатор')
                     ->placeholder('н-р: 215e537e-f097-11ed-b52e-fc3cbccb3d9b')
                     ->columnSpanFull()
-                    ->default(fn(?Service $record) => $record?->uuid ?? Str::uuid()->toString())
+                    ->default(fn (?Service $record) => $record?->uuid ?? Str::uuid()->toString())
                     ->disabled()
                     ->dehydrated()
                     ->required(),
@@ -65,7 +63,8 @@ class ServiceResource extends Resource
                     ->columnSpanFull()
                     ->helperText('Если пусто - услуга доступна везде'),
 
-                Forms\Components\SpatieMediaLibraryFileUpload::make('default')
+                SafeMediaLibraryFileUpload::make('default')
+                    ->safeImages()
                     ->label('Изображение')
                     ->columnSpanFull()
                     ->required(),
@@ -80,7 +79,7 @@ class ServiceResource extends Resource
                     ->label('Название (заголовок)')
                     ->searchable()
                     ->sortable(),
-                
+
                 Tables\Columns\TextColumn::make('prices_count')
                     ->label('Кол-во цен')
                     ->counts('prices')

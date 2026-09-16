@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Enums\BlockType;
+use App\Filament\Pages\ManageGeneralSettings;
 use App\Filament\Pages\ManageSeoSettings;
 use App\Filament\Resources\ArticleImportResource;
 use App\Filament\Resources\BlockResource\Pages\ListBlocks;
@@ -18,13 +19,16 @@ use App\Models\Element;
 use App\Models\Page;
 use App\Models\Review;
 use App\Models\Staff;
+use App\Settings\GeneralSettings;
 use App\Settings\SeoSettings;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -102,6 +106,88 @@ class ManagedContentAuthorizationTest extends TestCase
         $staff->givePermissionTo('page_ManageSeoSettings');
 
         $this->assertTrue(ManageSeoSettings::canAccess());
+    }
+
+    public function test_demo_role_cannot_call_general_settings_save_directly(): void
+    {
+        $this->createGeneralSettings();
+        $staff = $this->createStaffWithPermissions(['page_ManageGeneralSettings']);
+        Role::findOrCreate('demo', 'staff');
+        $staff->assignRole('demo');
+        $this->actingAs($staff, 'staff');
+
+        Livewire::test(ManageGeneralSettings::class)
+            ->set('data.site_name', 'Injected clinic name')
+            ->call('save')
+            ->assertForbidden();
+
+        $this->assertSame('Clinic', app(GeneralSettings::class)->site_name);
+    }
+
+    public function test_authorized_staff_can_save_general_settings(): void
+    {
+        $this->createGeneralSettings();
+        $staff = $this->createStaffWithPermissions(['page_ManageGeneralSettings']);
+        $this->actingAs($staff, 'staff');
+
+        Livewire::test(ManageGeneralSettings::class)
+            ->set('data.site_name', 'Updated clinic name')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertSame('Updated clinic name', app(GeneralSettings::class)->site_name);
+    }
+
+    public function test_general_settings_rejects_a_new_svg_favicon(): void
+    {
+        Storage::fake('public');
+        $this->createGeneralSettings();
+        $staff = $this->createStaffWithPermissions(['page_ManageGeneralSettings']);
+        $this->actingAs($staff, 'staff');
+
+        Livewire::test(ManageGeneralSettings::class)
+            ->set('data.favicon', [UploadedFile::fake()->createWithContent(
+                'active.svg',
+                '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>',
+            )])
+            ->call('save')
+            ->assertHasFormErrors(['favicon']);
+
+        Storage::disk('public')->assertMissing('active.svg');
+    }
+
+    public function test_general_settings_accepts_a_new_png_favicon(): void
+    {
+        Storage::fake('public');
+        $this->createGeneralSettings();
+        $staff = $this->createStaffWithPermissions(['page_ManageGeneralSettings']);
+        $this->actingAs($staff, 'staff');
+
+        Livewire::test(ManageGeneralSettings::class)
+            ->set('data.favicon', [UploadedFile::fake()->image('favicon.png')])
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $favicon = app(GeneralSettings::class)->favicon;
+        $this->assertNotNull($favicon);
+        $this->assertStringEndsWith('.png', $favicon);
+        Storage::disk('public')->assertExists($favicon);
+    }
+
+    public function test_general_settings_keeps_an_existing_svg_favicon(): void
+    {
+        Storage::fake('public');
+        Storage::disk('public')->put('legacy-favicon.svg', '<svg xmlns="http://www.w3.org/2000/svg"/>');
+        $this->createGeneralSettings(['favicon' => 'legacy-favicon.svg']);
+        $staff = $this->createStaffWithPermissions(['page_ManageGeneralSettings']);
+        $this->actingAs($staff, 'staff');
+
+        Livewire::test(ManageGeneralSettings::class)
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $this->assertSame('legacy-favicon.svg', app(GeneralSettings::class)->favicon);
+        Storage::disk('public')->assertExists('legacy-favicon.svg');
     }
 
     public function test_demo_role_cannot_call_seo_settings_save_directly(): void
@@ -330,6 +416,36 @@ class ManagedContentAuthorizationTest extends TestCase
                 'payload' => json_encode($payload, JSON_THROW_ON_ERROR),
                 'created_at' => now(),
                 'updated_at' => now(),
+            ]);
+        }
+    }
+
+    private function createGeneralSettings(array $overrides = []): void
+    {
+        if (DB::getDriverName() === 'sqlite') {
+            Schema::table('settings', function (Blueprint $table): void {
+                $table->boolean('locked')->default(false)->change();
+            });
+        }
+
+        $properties = array_replace([
+            'site_name' => 'Clinic',
+            'yandex_map_api_key' => 'test-map-key',
+            'booking_form_variant' => 'old',
+            'vk_mini_app_secret' => '',
+            'favicon' => '',
+            'licenses' => [],
+            'promotion_company' => '',
+            'promotion_company_url' => '',
+        ], $overrides);
+
+        foreach ($properties as $name => $payload) {
+            DB::table('settings')->updateOrInsert([
+                'group' => 'general',
+                'name' => $name,
+            ], [
+                'locked' => false,
+                'payload' => json_encode($payload, JSON_THROW_ON_ERROR),
             ]);
         }
     }

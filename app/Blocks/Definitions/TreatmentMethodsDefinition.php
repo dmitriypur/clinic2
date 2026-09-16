@@ -6,8 +6,8 @@ namespace App\Blocks\Definitions;
 
 use App\Blocks\AbstractBlockDefinition;
 use App\Enums\BlockType;
+use App\Filament\Forms\Components\SafeMediaLibraryFileUpload;
 use Filament\Forms;
-use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Illuminate\Support\Str;
 
 final class TreatmentMethodsDefinition extends AbstractBlockDefinition
@@ -62,7 +62,8 @@ final class TreatmentMethodsDefinition extends AbstractBlockDefinition
                             ->extraAttributes(['class' => 'hidden'])
                             ->required(),
 
-                        SpatieMediaLibraryFileUpload::make('image')
+                        SafeMediaLibraryFileUpload::make('image')
+                            ->safeImages()
                             ->collection(fn (Forms\Get $get) => $get('media_collection'))
                             ->label('Мини-изображение')
                             ->imageEditor()

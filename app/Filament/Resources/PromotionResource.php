@@ -2,9 +2,8 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Forms\Components\SafeMediaLibraryFileUpload;
 use App\Filament\Resources\PromotionResource\Pages;
-use App\Filament\Resources\PromotionResource\RelationManagers;
-use App\Models\Page;
 use App\Models\Promotion;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -54,14 +53,16 @@ class PromotionResource extends Resource
                     ->label('Ссылка')
                     ->columnSpanFull(),
 
-                Forms\Components\SpatieMediaLibraryFileUpload::make('default')
+                SafeMediaLibraryFileUpload::make('default')
+                    ->safeImages()
                     ->label('Изображение для блока')
                     ->openable()
                     ->columnSpanFull()
                     ->required()
                     ->afterStateUpdated(fn () => static::forgetPromotionsCache()),
 
-                Forms\Components\SpatieMediaLibraryFileUpload::make('block_mobile')
+                SafeMediaLibraryFileUpload::make('block_mobile')
+                    ->safeImages()
                     ->label('Изображение для блока (мобильное)')
                     ->collection('block_mobile')
                     ->openable()

@@ -2,9 +2,11 @@
 
 namespace App\Filament\Pages;
 
+use App\Filament\Forms\Components\SafeFileUpload;
 use App\Settings\GeneralSettings;
 use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Actions\Action;
+use Filament\Facades\Filament;
 use Filament\Forms;
 use Filament\Forms\Components\Tabs;
 use Filament\Forms\Components\TextInput;
@@ -35,13 +37,20 @@ class ManageGeneralSettings extends SettingsPage
 
     public function getSaveFormAction(): Action
     {
-        return parent::getSaveFormAction()->disabled(auth()->user()->hasRole('demo'));
+        return parent::getSaveFormAction()->disabled(! static::canManageSettings());
+    }
+
+    public function save(): void
+    {
+        $this->authorizeSettingsMutation();
+
+        parent::save();
     }
 
     public function form(Form $form): Form
     {
         return $form
-            ->disabled(auth()->user()->hasRole('demo'))
+            ->disabled(! static::canManageSettings())
             ->schema([
                 Tabs::make('Tabs')
                     ->tabs([
@@ -78,15 +87,15 @@ class ManageGeneralSettings extends SettingsPage
                                 ]),
 
                                 Forms\Components\Section::make('Лицензии')->schema([
-                                    Forms\Components\FileUpload::make('licenses')
-                                        ->acceptedFileTypes(['application/pdf', 'image/*',])
+                                    SafeFileUpload::make('licenses')
+                                        ->safeImagesAndDocuments()
                                         ->multiple()
                                         ->label('Файл'),
                                 ]),
 
                                 Forms\Components\Section::make('Favicon')->schema([
-                                    Forms\Components\FileUpload::make('favicon')
-                                        ->acceptedFileTypes(['image/png', 'image/svg+xml'])
+                                    SafeFileUpload::make('favicon')
+                                        ->safePng()
                                         ->imageResizeMode('cover')
                                         ->imageCropAspectRatio('1:1')
                                         ->imageResizeTargetWidth('120')
@@ -102,7 +111,7 @@ class ManageGeneralSettings extends SettingsPage
                                         ->required(),
                                 ]),
                             ]),
-                    ])->columnSpanFull()
+                    ])->columnSpanFull(),
 
             ]);
     }
@@ -111,30 +120,44 @@ class ManageGeneralSettings extends SettingsPage
     {
         $data['licenses'] = collect($data['licenses'])
             ->map(function ($item) {
-                $file = new File(storage_path('app/public/' . $item));
+                $file = new File(storage_path('app/public/'.$item));
 
                 if ($file->getMimeType() !== 'application/pdf') {
                     return $item;
                 }
 
                 $name = Str::before($item, '.pdf');
-                $pdf = new Pdf(storage_path('app/public/' . $item));
+                $pdf = new Pdf(storage_path('app/public/'.$item));
                 $numberOfPages = $pdf->getNumberOfPages();
                 $images = [];
 
                 foreach (range(1, $numberOfPages) as $index) {
-                    $fileName = $name . $index . ' .jpg';
+                    $fileName = $name.$index.' .jpg';
                     $pdf->setPage($index)
-                        ->saveImage(storage_path('app/public/' . $fileName));
+                        ->saveImage(storage_path('app/public/'.$fileName));
                     $images[] = $fileName;
                 }
 
                 return $images;
             })
             ->flatten()
-            ->filter(fn($item) => !Str::endsWith($item, '.pdf'))
+            ->filter(fn ($item) => ! Str::endsWith($item, '.pdf'))
             ->toArray();
 
         return $data;
+    }
+
+    private static function canManageSettings(): bool
+    {
+        $staff = Filament::auth()->user();
+
+        return $staff !== null
+            && static::canAccess()
+            && ! $staff->hasRole('demo');
+    }
+
+    private function authorizeSettingsMutation(): void
+    {
+        abort_unless(static::canManageSettings(), 403);
     }
 }

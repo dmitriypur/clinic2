@@ -7,6 +7,8 @@ use App\Enums\BlockBackgroundType;
 use App\Enums\BlockType;
 use App\Enums\PageType;
 use App\Filament\Forms\Components\ReplaceableCuratorPicker;
+use App\Filament\Forms\Components\SafeFileUpload;
+use App\Filament\Forms\Components\SafeMediaLibraryFileUpload;
 use App\Filament\Resources\BlockResource\Pages;
 use App\Models\Block;
 use App\Models\Doctor;
@@ -15,7 +17,6 @@ use App\Models\Review;
 use App\Models\Service;
 use Filament\Forms;
 use Filament\Forms\Components\ColorPicker;
-use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Resources\Resource;
@@ -396,7 +397,8 @@ class BlockResource extends Resource
                             Forms\Components\Section::make([
                                 Forms\Components\RichEditor::make('body_html')
                                     ->label('Текст'),
-                                Forms\Components\FileUpload::make('picture')
+                                SafeFileUpload::make('picture')
+                                    ->safeImages()
                                     ->label('Изображение'),
                             ]),
 
@@ -459,7 +461,8 @@ class BlockResource extends Resource
                                 BlockType::EXPERT_OPINION
                         ),
 
-                    SpatieMediaLibraryFileUpload::make('default')
+                    SafeMediaLibraryFileUpload::make('default')
+                        ->safeImages()
                         ->label('Изображение')
                         ->imageEditor()
                         ->responsiveImages()
@@ -559,7 +562,8 @@ class BlockResource extends Resource
                             ])
                         ),
 
-                    SpatieMediaLibraryFileUpload::make('video')
+                    SafeMediaLibraryFileUpload::make('video')
+                        ->safeVideos()
                         ->collection('video')
                         ->label('Видео')
                         ->openable()
@@ -567,7 +571,8 @@ class BlockResource extends Resource
                             fn (Forms\Get $get) => ! in_array(BlockType::from($get('type')), [BlockType::VIDEO, BlockType::VIDEO_NEW])
                         ),
 
-                    SpatieMediaLibraryFileUpload::make('cover')
+                    SafeMediaLibraryFileUpload::make('cover')
+                        ->safeImages()
                         ->collection('cover')
                         ->label('Обложка видео')
                         ->imageEditor()
@@ -605,7 +610,8 @@ class BlockResource extends Resource
                             fn (Forms\Get $get) => BlockType::from($get('type')) !=
                                 BlockType::TEXT_WITH_CHART
                         ),
-                    SpatieMediaLibraryFileUpload::make('payload.bg_chart')
+                    SafeMediaLibraryFileUpload::make('payload.bg_chart')
+                        ->safeImages()
                         ->label('Изображение графика')
                         ->collection('bg_chart')
                         ->imageEditor()
@@ -627,7 +633,8 @@ class BlockResource extends Resource
                             ->label('Ответ')
                             ->required(),
 
-                        Forms\Components\FileUpload::make('icon')
+                        SafeFileUpload::make('icon')
+                            ->safeImages()
                             ->label('Иконка'),
                     ])
                     ->required(
@@ -642,7 +649,8 @@ class BlockResource extends Resource
 
                 Forms\Components\Repeater::make('payload.advantages')
                     ->schema([
-                        Forms\Components\FileUpload::make('icon')
+                        SafeFileUpload::make('icon')
+                            ->safeImages()
                             ->label('Иконка'),
                         Forms\Components\TextInput::make('alt_image')
                             ->label('Alt для изображения')
@@ -717,7 +725,8 @@ class BlockResource extends Resource
                                 ->required()
                                 ->extraAttributes(['class' => 'hidden']),
 
-                            SpatieMediaLibraryFileUpload::make('image')
+                            SafeMediaLibraryFileUpload::make('image')
+                                ->safeImages()
                                 ->collection(fn (Forms\Get $get) => $get('media_collection'))
                                 ->label('Изображение')
                                 ->imageEditor()
@@ -782,7 +791,8 @@ class BlockResource extends Resource
                                 BlockType::BANNER_SELECTION_GLASSES,
                                 BlockType::BANNER_APPARATUS_HERO,
                             ])),
-                    SpatieMediaLibraryFileUpload::make('bg')
+                    SafeMediaLibraryFileUpload::make('bg')
+                        ->safeImages()
                         ->label('Фон (desktop)')
                         ->collection('bg')
                         ->imageEditor()
@@ -798,7 +808,8 @@ class BlockResource extends Resource
                                 BlockType::BANNER_SELECTION_GLASSES,
                                 BlockType::BANNER_APPARATUS_HERO,
                             ])),
-                    SpatieMediaLibraryFileUpload::make('pic')
+                    SafeMediaLibraryFileUpload::make('pic')
+                        ->safeImages()
                         ->label('Изображение (mobile)')
                         ->collection('pic')
                         ->responsiveImages()
@@ -892,13 +903,15 @@ class BlockResource extends Resource
                                         $get('show_callback_button') === true
                                 ),
 
-                            SpatieMediaLibraryFileUpload::make('image')
+                            SafeMediaLibraryFileUpload::make('image')
+                                ->safeImages()
                                 ->collection(fn (Forms\Get $get) => $get('uuid'))
                                 ->label('Изображение')
                                 ->responsiveImages()
                                 ->required(),
 
-                            SpatieMediaLibraryFileUpload::make('mobile_image')
+                            SafeMediaLibraryFileUpload::make('mobile_image')
+                                ->safeImages()
                                 ->collection(
                                     fn (Forms\Get $get) => 'mobile_'.$get('uuid')
                                 )
@@ -950,7 +963,8 @@ class BlockResource extends Resource
                                 ->columnSpan('full')
                                 ->required(),
 
-                            SpatieMediaLibraryFileUpload::make('image')
+                            SafeMediaLibraryFileUpload::make('image')
+                                ->safeImages()
                                 ->collection(fn (Forms\Get $get) => $get('uuid'))
                                 ->label('Изображение')
                                 ->responsiveImages()
@@ -987,7 +1001,8 @@ class BlockResource extends Resource
                 ])->hidden(fn (Forms\Get $get) => BlockType::from($get('type')) != BlockType::CARD_COATING),
 
                 Forms\Components\Section::make([
-                    SpatieMediaLibraryFileUpload::make('videos')
+                    SafeMediaLibraryFileUpload::make('videos')
+                        ->safeVideos()
                         ->collection('videos')
                         ->label('Вертикальные видео')
                         ->multiple()
@@ -1036,7 +1051,8 @@ class BlockResource extends Resource
                                 ->extraAttributes(['class' => 'hidden'])
                                 ->required(),
 
-                            SpatieMediaLibraryFileUpload::make('image')
+                            SafeMediaLibraryFileUpload::make('image')
+                                ->safeImages()
                                 ->collection(
                                     fn (Forms\Get $get) => $get('media_collection')
                                 )
@@ -1160,7 +1176,8 @@ class BlockResource extends Resource
                                 )
                                 ->columnSpan('full'),
 
-                            SpatieMediaLibraryFileUpload::make('image')
+                            SafeMediaLibraryFileUpload::make('image')
+                                ->safeImages()
                                 ->collection(
                                     fn (Forms\Get $get) => $get('media_collection')
                                 )
@@ -1255,7 +1272,8 @@ class BlockResource extends Resource
                                 ->required()
                                 ->extraAttributes(['class' => 'hidden']),
 
-                            SpatieMediaLibraryFileUpload::make('image')
+                            SafeMediaLibraryFileUpload::make('image')
+                                ->safeImages()
                                 ->collection(fn (Forms\Get $get) => $get('media_collection'))
                                 ->label('Изображение')
                                 ->imageEditor()
@@ -1303,7 +1321,8 @@ class BlockResource extends Resource
                                 ->required()
                                 ->extraAttributes(['class' => 'hidden']),
 
-                            SpatieMediaLibraryFileUpload::make('image')
+                            SafeMediaLibraryFileUpload::make('image')
+                                ->safeImages()
                                 ->collection(
                                     fn (Forms\Get $get) => $get('media_collection')
                                 )

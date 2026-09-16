@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Forms\Components\SafeMediaLibraryFileUpload;
 use App\Filament\Resources\ElementResource\Pages;
 use App\Models\Element;
 use Filament\Forms;
@@ -25,7 +26,6 @@ class ElementResource extends Resource
     protected static ?int $navigationSort = 3;
 
     protected static bool $shouldRegisterNavigation = false;
-
 
     public static function form(Form $form): Form
     {
@@ -54,15 +54,16 @@ class ElementResource extends Resource
                     ->label('Внешний идентификатор')
                     ->placeholder('н-р: 215e537e-f097-11ed-b52e-fc3cbccb3d9b')
                     ->columnSpanFull()
-                    ->hidden(fn(Forms\Get $get) => !$get('has_price'))
-                    ->required(fn(Forms\Get $get) => !!$get('has_price')),
+                    ->hidden(fn (Forms\Get $get) => ! $get('has_price'))
+                    ->required(fn (Forms\Get $get) => (bool) $get('has_price')),
 
                 Forms\Components\Checkbox::make('has_an_appointment')
                     ->label('Есть запись на приём')
                     ->reactive()
                     ->columnSpanFull(),
 
-                Forms\Components\SpatieMediaLibraryFileUpload::make('default')
+                SafeMediaLibraryFileUpload::make('default')
+                    ->safeImages()
                     ->label('Изображение')
                     ->columnSpanFull()
                     ->required(),

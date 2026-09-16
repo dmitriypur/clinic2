@@ -6,6 +6,7 @@ namespace App\Blocks\Definitions;
 
 use App\Blocks\AbstractBlockDefinition;
 use App\Enums\BlockType;
+use App\Filament\Forms\Components\SafeFileUpload;
 use App\Models\Block;
 use Filament\Forms;
 use Illuminate\Support\Arr;
@@ -38,7 +39,8 @@ final class ListTextWithLinkDefinition extends AbstractBlockDefinition
                             ->label('Текст')
                             ->columnSpan('full'),
 
-                        Forms\Components\FileUpload::make('document')
+                        SafeFileUpload::make('document')
+                            ->safeDocuments()
                             ->label('Документ')
                             ->reactive()
                             ->directory('docs')
