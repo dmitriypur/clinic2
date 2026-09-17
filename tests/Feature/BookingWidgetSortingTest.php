@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Clinic;
 use App\Models\BookingWidgetBranchOrder;
 use App\Models\City;
 use App\Models\Doctor;
@@ -131,6 +132,47 @@ class BookingWidgetSortingTest extends TestCase
     public function test_doctor_order_map_is_empty_without_city(): void
     {
         $this->assertSame([], app(BookingWidgetOrderingService::class)->getDoctorOrderMapForCity(null));
+    }
+
+    public function test_script_variables_fetches_the_shared_doctor_order_map_once(): void
+    {
+        $city = $this->createCity();
+        $doctor = $this->createDoctor(
+            '00000000-0000-0000-0000-000000000021',
+            'Иванов',
+            'Иван',
+        );
+        DB::table('city_doctor')->insert([
+            'city_id' => $city->id,
+            'doctor_id' => $doctor->id,
+            'sort_order' => 1,
+            'clinic_sort_order' => 2,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        app(\App\Services\CityService::class)->setCurrentCity($city);
+
+        DB::flushQueryLog();
+        DB::enableQueryLog();
+
+        try {
+            $variables = Clinic::scriptVariables();
+
+            $doctorOrderQueries = collect(DB::getQueryLog())
+                ->filter(static function (array $query): bool {
+                    return str_contains($query['query'], 'city_doctor')
+                        && str_contains($query['query'], 'sort_order')
+                        && ! str_contains($query['query'], 'clinic_sort_order');
+                })
+                ->count();
+        } finally {
+            DB::disableQueryLog();
+        }
+
+        $expectedMap = [strtolower($doctor->uuid) => 1];
+        $this->assertSame($expectedMap, $variables['booking']['doctorSortOrders']);
+        $this->assertSame($expectedMap, $variables['booking']['doctorSelectSortOrders']);
+        $this->assertSame(1, $doctorOrderQueries);
     }
 
     public function test_branch_sync_creates_local_branch_rows_for_city(): void

@@ -20,7 +20,7 @@ trait HasCityScope
 
             // Если pivot-таблица еще не создана (например, миграция не применена),
             // не накладываем city-scope, чтобы избежать SQL ошибок.
-            if (!Schema::hasTable($pivotTable)) {
+            if (!self::cityPivotTableExists($pivotTable)) {
                 return;
             }
 
@@ -64,5 +64,18 @@ trait HasCityScope
         // Убираем 's' в конце, если есть
         $singular = str_ends_with($table, 's') ? substr($table, 0, -1) : $table;
         return 'city_' . $singular;
+    }
+
+    private static function cityPivotTableExists(string $pivotTable): bool
+    {
+        $cacheKey = 'city_scope.pivot_table_presence';
+        $presence = request()->attributes->get($cacheKey, []);
+
+        if (!array_key_exists($pivotTable, $presence)) {
+            $presence[$pivotTable] = Schema::hasTable($pivotTable);
+            request()->attributes->set($cacheKey, $presence);
+        }
+
+        return $presence[$pivotTable];
     }
 }
