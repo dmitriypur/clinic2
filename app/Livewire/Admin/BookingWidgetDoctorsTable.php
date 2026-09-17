@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin;
 
+use App\Livewire\Admin\Concerns\AuthorizesBookingWidgetSettings;
 use App\Models\Doctor;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
@@ -11,18 +12,24 @@ use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 
 class BookingWidgetDoctorsTable extends Component implements HasForms, HasTable
 {
+    use AuthorizesBookingWidgetSettings;
     use InteractsWithForms;
-    use Tables\Concerns\InteractsWithTable;
+    use Tables\Concerns\InteractsWithTable {
+        updateTableColumnState as private updateFilamentTableColumnState;
+    }
 
+    #[Locked]
     public int $cityId;
 
     public function mount(int $cityId): void
     {
         $this->cityId = $cityId;
+        $this->authorizeBookingWidgetSettingsAccess();
         $this->mountInteractsWithTable();
     }
 
@@ -51,6 +58,7 @@ class BookingWidgetDoctorsTable extends Component implements HasForms, HasTable
                     ->type('number')
                     ->step(1)
                     ->rules(['nullable', 'integer'])
+                    ->disabled(fn (): bool => ! $this->canMutateBookingWidgetSettings())
                     ->extraInputAttributes(['class' => 'w-24'])
                     ->updateStateUsing(function (Doctor $record, $state): mixed {
                         return $this->updateSortOrder($record->id, 'sort_order', $state);
@@ -60,6 +68,7 @@ class BookingWidgetDoctorsTable extends Component implements HasForms, HasTable
                     ->type('number')
                     ->step(1)
                     ->rules(['nullable', 'integer'])
+                    ->disabled(fn (): bool => ! $this->canMutateBookingWidgetSettings())
                     ->extraInputAttributes(['class' => 'w-24'])
                     ->updateStateUsing(function (Doctor $record, $state): mixed {
                         return $this->updateSortOrder($record->id, 'clinic_sort_order', $state);
@@ -71,6 +80,13 @@ class BookingWidgetDoctorsTable extends Component implements HasForms, HasTable
                     ->orderBy('doctors.name');
             })
             ->emptyStateHeading('Для выбранного города нет врачей');
+    }
+
+    public function updateTableColumnState(string $column, string $record, mixed $input): mixed
+    {
+        $this->authorizeBookingWidgetSettingsAccess(mutation: true);
+
+        return $this->updateFilamentTableColumnState($column, $record, $input);
     }
 
     private function getTableQuery(): Builder
@@ -91,6 +107,8 @@ class BookingWidgetDoctorsTable extends Component implements HasForms, HasTable
 
     private function updateSortOrder(int $doctorId, string $column, mixed $state): ?int
     {
+        $this->authorizeBookingWidgetSettingsAccess(mutation: true);
+
         $value = is_numeric($state) ? (int) $state : null;
 
         DB::table('city_doctor')
