@@ -1,4 +1,9 @@
-<div class="space-y-4" wire:init="syncBranchesIfNeeded">
+<div
+    class="space-y-4"
+    @if ($canSyncBranches)
+        wire:init="syncBranchesIfNeeded"
+    @endif
+>
     <div wire:loading.flex wire:target="syncBranchesIfNeeded" class="text-sm text-gray-500">
         Обновляем список филиалов из booking API...
     </div>
