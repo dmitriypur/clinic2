@@ -77,6 +77,8 @@ To rollback to the previous release (in case of failure):
 php vendor/bin/envoy run rollback
 ```
 
+The Envoy rollback switches the application symlink to an earlier release; it does not reverse database migrations. Treat the production schema as forward-only and do not run `php artisan migrate:rollback` there. In particular, the historical migrations `2023_06_06_092522_add_uuid_and_phone_to_users_table` and `2023_12_01_091544_rename_review_body_to_body_html` have non-reversible `down()` methods. Recover an incompatible schema from a verified backup or with a separately reviewed forward-only repair migration.
+
 ## Dependency Policy
 
 - `composer.lock` and `package-lock.json` must always stay in the repository.
