@@ -143,6 +143,8 @@ enum BlockType: int
 
     case KIDS_OPTICS_FRAME_CATALOG = 81;
 
+    case KIDS_OPTICS_PACKAGES = 82;
+
     // <block-generator-cases>
 
     public function getLabel(): string
@@ -231,6 +233,7 @@ enum BlockType: int
             self::HTML_CARDS => 'HTML-карточки',
             self::KIDS_OPTICS_HERO => 'Hero-баннер «Детская оптика»',
             self::KIDS_OPTICS_FRAME_CATALOG => 'Каталог оправ «Детская оптика»',
+            self::KIDS_OPTICS_PACKAGES => 'Выбор очков «Детская оптика»',
         };
     }
 

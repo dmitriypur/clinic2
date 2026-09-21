@@ -12,6 +12,7 @@ return [
         App\Blocks\Definitions\ListTextWithLinkDefinition::class,
         App\Blocks\Definitions\KidsOpticsHeroDefinition::class,
         App\Blocks\Definitions\KidsOpticsFrameCatalogDefinition::class,
+        App\Blocks\Definitions\KidsOpticsPackagesDefinition::class,
         // <block-generator-definitions>
     ],
 ];
