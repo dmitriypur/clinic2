@@ -791,6 +791,33 @@ new Vue({
         },
       });
 
+      document.querySelectorAll(".school-frames-swiper").forEach((slider) => {
+        const controls = slider.parentElement;
+        const frameCount = Number(slider.dataset.schoolFramesCount) || 0;
+
+        new Swiper(slider, {
+          modules: [Navigation, Pagination],
+          slidesPerView: "auto",
+          centeredSlides: true,
+          spaceBetween: 16,
+          loop: frameCount > 4,
+          breakpoints: {
+            768: {
+              centeredSlides: false,
+              spaceBetween: 16,
+            },
+          },
+          pagination: {
+            el: controls.querySelector(".school-frames-swiper-pagination"),
+            clickable: true,
+          },
+          navigation: {
+            nextEl: controls.querySelector(".school-frames-swiper-next"),
+            prevEl: controls.querySelector(".school-frames-swiper-prev"),
+          },
+        });
+      });
+
       new Swiper(".advantages-swiper", {
         modules: [Navigation, Pagination, Autoplay],
         slidesPerView: 1,

@@ -27,20 +27,7 @@ class FrameCatalogService
         $offset = max(0, $offset);
         $limit = max(1, min(self::MAX_LIMIT, $limit));
 
-        $query = Frame::query()
-            ->publicCatalog()
-            ->where(function (Builder $query): Builder {
-                return $query
-                    ->whereNull('brand_id')
-                    ->orWhereHas('brand', fn (Builder $brandQuery): Builder => $brandQuery->where('is_active', true));
-            })
-            ->whereHas('ageGroups', fn (Builder $query): Builder => $query->where('is_active', true))
-            ->with([
-                'brand',
-                'curatorMedia',
-                'colors' => fn ($query) => $query->activeOrdered(),
-                'ageGroups' => fn ($query) => $query->activeOrdered(),
-            ]);
+        $query = $this->publicCatalogQuery();
 
         if ($ages !== []) {
             $query->whereHas('ageGroups', function (Builder $query) use ($ages): Builder {
@@ -76,6 +63,37 @@ class FrameCatalogService
         return FrameAgeGroup::query()->activeOrdered()->pluck('name', 'id')->all();
     }
 
+    /** @return list<array<string, mixed>> */
+    public function schoolSlider(int $limit = self::INITIAL_LIMIT): array
+    {
+        $limit = max(1, min(self::MAX_LIMIT, $limit));
+        $frames = collect();
+        $selectedIds = [];
+
+        foreach ([
+            static fn (Builder $query): Builder => $query->where('is_school_choice', true),
+            static fn (Builder $query): Builder => $query->where('is_hit', true),
+            static fn (Builder $query): Builder => $query,
+        ] as $priority) {
+            if ($frames->count() >= $limit) {
+                break;
+            }
+
+            $batch = $priority($this->publicCatalogQuery())
+                ->when($selectedIds !== [], fn (Builder $query): Builder => $query->whereNotIn('id', $selectedIds))
+                ->take($limit - $frames->count())
+                ->get();
+
+            $frames = $frames->concat($batch);
+            $selectedIds = $frames->pluck('id')->all();
+        }
+
+        return $frames
+            ->map(fn (Frame $frame): array => $this->present($frame))
+            ->values()
+            ->all();
+    }
+
     /** @param list<array<string, mixed>> $frames */
     public function renderCards(array $frames): string
     {
@@ -106,6 +124,24 @@ class FrameCatalogService
             'isSchoolChoice' => $frame->is_school_choice,
             'image' => $this->imageSources($frame->curatorMedia, $frame->getKey()),
         ];
+    }
+
+    private function publicCatalogQuery(): Builder
+    {
+        return Frame::query()
+            ->publicCatalog()
+            ->where(function (Builder $query): Builder {
+                return $query
+                    ->whereNull('brand_id')
+                    ->orWhereHas('brand', fn (Builder $brandQuery): Builder => $brandQuery->where('is_active', true));
+            })
+            ->whereHas('ageGroups', fn (Builder $query): Builder => $query->where('is_active', true))
+            ->with([
+                'brand',
+                'curatorMedia',
+                'colors' => fn ($query) => $query->activeOrdered(),
+                'ageGroups' => fn ($query) => $query->activeOrdered(),
+            ]);
     }
 
     /** @return array{avif: ?string, webp: ?string, webpSrcset: ?string, src: string, srcset: ?string} */

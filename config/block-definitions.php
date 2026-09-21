@@ -13,6 +13,7 @@ return [
         App\Blocks\Definitions\KidsOpticsHeroDefinition::class,
         App\Blocks\Definitions\KidsOpticsFrameCatalogDefinition::class,
         App\Blocks\Definitions\KidsOpticsPackagesDefinition::class,
+        App\Blocks\Definitions\KidsOpticsSchoolSliderDefinition::class,
         // <block-generator-definitions>
     ],
 ];

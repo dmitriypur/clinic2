@@ -1,43 +1,59 @@
 @php
+    $isSchoolSlider = ($variant ?? 'catalog') === 'school-slider';
     $genderClasses = match ($frame['gender']) {
         'boy' => 'border-[#3981f1]/30 bg-[#d8e8ff]/30',
         'girl' => 'border-[#d627cd]/30 bg-[#ffd8f0]/30',
         default => 'border-heading bg-white',
     };
+    $cardClasses = $isSchoolSlider
+        ? 'min-h-96 w-72 md:w-[300px]'
+        : '';
+    $imageClasses = $isSchoolSlider
+        ? 'h-64'
+        : 'h-56 md:h-auto md:aspect-[400/313]';
+    $contentClasses = $isSchoolSlider
+        ? 'flex flex-1 flex-col gap-4 p-4'
+        : 'space-y-5 p-4 md:p-6';
+    $metaClasses = $isSchoolSlider
+        ? 'mt-auto flex items-center justify-between gap-2'
+        : 'flex items-center justify-between gap-2';
+    $imageSizes = $isSchoolSlider
+        ? '(min-width: 768px) 300px, 320px'
+        : '(min-width: 1536px) 400px, (min-width: 768px) calc((100vw - 64px) / 2), calc(100vw - 32px)';
 @endphp
 
 <article
-    class="overflow-hidden rounded-3xl bg-white"
+    class="{{ $cardClasses }} flex h-full flex-col overflow-hidden rounded-3xl bg-white"
     data-frame-catalog-card
     data-frame-catalog-id="{{ $frame['id'] }}"
     data-frame-catalog-ages="{{ implode(',', $frame['ageGroups']) }}"
     data-frame-catalog-genders="{{ implode(',', $frame['genders']) }}"
 >
-    <div class="h-56 overflow-hidden md:h-auto md:aspect-[400/313]">
+    <div class="{{ $imageClasses }} overflow-hidden">
         <picture>
             @if($frame['image']['avif'])
                 <source srcset="{{ $frame['image']['avif'] }}" type="image/avif">
             @endif
             @if($frame['image']['webpSrcset'])
-                <source srcset="{{ $frame['image']['webpSrcset'] }}" type="image/webp" sizes="(min-width: 1536px) 400px, (min-width: 768px) calc((100vw - 64px) / 2), calc(100vw - 32px)">
+                <source srcset="{{ $frame['image']['webpSrcset'] }}" type="image/webp" sizes="{{ $imageSizes }}">
             @elseif($frame['image']['webp'])
                 <source srcset="{{ $frame['image']['webp'] }}" type="image/webp">
             @endif
             <img
                 src="{{ $frame['image']['src'] }}"
                 @if($frame['image']['srcset']) srcset="{{ $frame['image']['srcset'] }}" @endif
-                sizes="(min-width: 1536px) 400px, (min-width: 768px) calc((100vw - 64px) / 2), calc(100vw - 32px)"
+                sizes="{{ $imageSizes }}"
                 class="h-full w-full object-cover"
                 alt="{{ $frame['title'] }} — детская оправа"
-                width="400"
-                height="313"
+                width="{{ $isSchoolSlider ? 300 : 400 }}"
+                height="{{ $isSchoolSlider ? 260 : 313 }}"
                 loading="lazy"
                 decoding="async"
             >
         </picture>
     </div>
 
-    <div class="space-y-5 p-4 md:p-6">
+    <div class="{{ $contentClasses }}">
         <div class="space-y-1">
             <h3 class="text-xl font-semibold leading-tight text-heading">
                 {{ $frame['title'] }}
@@ -49,7 +65,7 @@
             @endif
         </div>
 
-        <div class="flex items-center justify-between gap-2">
+        <div class="{{ $metaClasses }}">
             <div class="flex min-w-0 items-center gap-2 text-sm font-normal leading-snug text-heading">
                 <span>Цвет:</span>
                 <span class="flex items-center gap-1" aria-label="Доступные цвета">
