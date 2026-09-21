@@ -10,13 +10,13 @@
     $plusIcon = $premium ? 'plus-white.svg' : 'plus-blue.svg';
 @endphp
 
-<div {{ $attributes->class(['absolute left-[15px] right-[15px] z-20 flex flex-col items-center gap-1 md:left-[29px] md:right-auto md:flex-row']) }}>
+<div {{ $attributes->class(['absolute left-4 right-4 z-20 flex flex-col items-center gap-1 md:left-7 md:right-auto md:flex-row']) }}>
     @foreach([
         ['icon' => 'frame.svg', 'label' => 'Оправа'],
         ['icon' => 'lenses.svg', 'label' => 'Линзы'],
         ['icon' => 'manufacturing.svg', 'label' => 'Изготовление'],
     ] as $part)
-        <div class="flex w-full items-center justify-center gap-1 rounded-[12px] border px-2 py-1.5 text-sm font-bold leading-[1.4] md:w-auto {{ $itemClasses }}">
+        <div class="flex w-full items-center justify-center gap-1 rounded-xl border px-2 py-1.5 text-sm font-bold leading-snug md:w-auto {{ $itemClasses }}">
             <span
                 aria-hidden="true"
                 class="size-6 shrink-0 bg-current"

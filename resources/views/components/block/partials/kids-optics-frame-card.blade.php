@@ -7,13 +7,13 @@
 @endphp
 
 <article
-    class="overflow-hidden rounded-[24px] bg-white"
+    class="overflow-hidden rounded-3xl bg-white"
     data-frame-catalog-card
     data-frame-catalog-id="{{ $frame['id'] }}"
     data-frame-catalog-ages="{{ implode(',', $frame['ageGroups']) }}"
     data-frame-catalog-genders="{{ implode(',', $frame['genders']) }}"
 >
-    <div class="h-[230px] overflow-hidden md:h-auto md:aspect-[400/313]">
+    <div class="h-56 overflow-hidden md:h-auto md:aspect-[400/313]">
         <picture>
             @if($frame['image']['avif'])
                 <source srcset="{{ $frame['image']['avif'] }}" type="image/avif">
@@ -39,18 +39,18 @@
 
     <div class="space-y-5 p-4 md:p-6">
         <div class="space-y-1">
-            <h3 class="text-xl font-semibold leading-[1.2] text-heading">
+            <h3 class="text-xl font-semibold leading-tight text-heading">
                 {{ $frame['title'] }}
             </h3>
             @if($frame['description'] !== '')
-                <p class="text-sm font-normal leading-[1.4] text-heading">
+                <p class="text-sm font-normal leading-snug text-heading">
                     {{ $frame['description'] }}
                 </p>
             @endif
         </div>
 
         <div class="flex items-center justify-between gap-2">
-            <div class="flex min-w-0 items-center gap-2 text-sm font-normal leading-[1.4] text-heading">
+            <div class="flex min-w-0 items-center gap-2 text-sm font-normal leading-snug text-heading">
                 <span>Цвет:</span>
                 <span class="flex items-center gap-1" aria-label="Доступные цвета">
                     @foreach($frame['colors'] as $color)
@@ -59,7 +59,7 @@
                 </span>
             </div>
 
-            <span class="shrink-0 rounded-full border px-3 pb-1 pt-1.5 text-center text-xs font-semibold leading-[1.2] text-heading {{ $genderClasses }}">
+            <span class="shrink-0 rounded-full border px-3 pb-1 pt-1.5 text-center text-xs font-semibold leading-tight text-heading {{ $genderClasses }}">
                 {{ $frame['genderLabel'] }}
             </span>
         </div>

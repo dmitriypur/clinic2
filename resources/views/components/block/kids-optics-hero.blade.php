@@ -21,22 +21,22 @@
     </picture>
 
     <div class="container relative z-10 h-full">
-        <div class="mx-auto flex h-full max-w-[358px] flex-col items-center pt-[60px] text-center md:mx-0 md:max-w-[440px] md:items-start md:pl-8 md:pt-[90px] md:text-left lg:max-w-[540px] lg:pt-[105px] xl:max-w-[695px] xl:pl-[13px] xl:pt-[127px]">
+        <div class="mx-auto flex h-full max-w-sm flex-col items-center pt-16 text-center md:mx-0 md:max-w-md md:items-start md:pl-8 md:pt-24 md:text-left lg:max-w-lg lg:pt-28 xl:max-w-2xl xl:pl-3 xl:pt-32">
             <h1
                 id="{{ $heroId }}-title"
-                class="text-[32px] font-extrabold leading-[0.9] text-heading md:text-[46px] lg:text-[60px] xl:text-[86px]"
+                class="text-3xl font-extrabold leading-none text-heading md:text-5xl lg:text-6xl xl:text-[86px]"
             >
                 {{ $heroTitle }}
             </h1>
 
-            <p class="mt-3 text-base font-normal leading-[1.3] text-heading md:mt-4 md:max-w-[390px] md:font-semibold md:leading-[1.2] xl:max-w-[624px]">
+            <p class="mt-3 text-base font-normal leading-snug text-heading md:mt-4 md:max-w-sm md:font-semibold md:leading-tight xl:max-w-2xl">
                 {{ $heroDescription }}
             </p>
 
             <x-button-blue
                 type="button"
                 @click="showCallbackModal(null, 'otpravka-formy')"
-                class="relative z-10 mb-8 mt-auto w-full !rounded-[10px] !px-[30px] !py-4 text-base leading-[1.22] md:mb-0 md:mt-5 md:w-auto xl:mt-6"
+                class="relative z-10 mb-8 mt-auto w-full !rounded-lg !px-8 !py-4 text-base leading-tight md:mb-0 md:mt-5 md:w-auto xl:mt-6"
             >
                 {{ $heroButtonText }}
             </x-button-blue>
