@@ -28,7 +28,10 @@ class CuratorMedia extends Media
 
         return Block::query()
             ->withoutGlobalScopes()
-            ->where('type', BlockType::HTML_CARDS->value)
+            ->whereIn('type', [
+                BlockType::HTML_CARDS->value,
+                BlockType::KIDS_OPTICS_FRAME_CATALOG->value,
+            ])
             ->get(['payload'])
             ->contains(fn (Block $block): bool => collect($block->payload['items'] ?? [])
                 ->contains(fn ($item): bool => is_array($item)

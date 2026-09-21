@@ -11,6 +11,7 @@ return [
         App\Blocks\Definitions\GridContactsDefinition::class,
         App\Blocks\Definitions\ListTextWithLinkDefinition::class,
         App\Blocks\Definitions\KidsOpticsHeroDefinition::class,
+        App\Blocks\Definitions\KidsOpticsFrameCatalogDefinition::class,
         // <block-generator-definitions>
     ],
 ];
