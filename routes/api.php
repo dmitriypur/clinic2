@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\DoctorController;
+use App\Http\Controllers\Api\FrameCatalogController;
 use App\Http\Controllers\Api\ArticleBookingConversionController;
 use App\Http\Controllers\Api\BookingDoctorLaunchController;
 use App\Http\Controllers\Api\BookingDoctorBranchesAvailabilityController;
@@ -20,6 +21,7 @@ use Illuminate\Support\Facades\Route;
 
 
 Route::get('review-filter', App\Http\Controllers\Api\ReviewController::class);
+Route::get('frame-catalog', FrameCatalogController::class)->name('api.frame-catalog.index');
 Route::get('doctors/{doctor:ulid}', DoctorController::class);
 Route::get('booking/doctors', BookingDoctorsController::class);
 Route::get('booking/doctors/{doctor}/launch', BookingDoctorLaunchController::class);

@@ -1,59 +1,89 @@
+const FRAME_GENDERS = ["boy", "girl"];
+
+export function toggleFrameCatalogFilter(values, value) {
+  return values.includes(value)
+    ? values.filter((item) => item !== value)
+    : [...values, value];
+}
+
+export function normalizeGenderFilters(genders) {
+  const normalized = genders.filter(
+    (gender, index) => FRAME_GENDERS.includes(gender) && genders.indexOf(gender) === index
+  );
+
+  return normalized.length === FRAME_GENDERS.length ? [] : normalized;
+}
+
+export function frameCatalogPageSize(isTabletOrDesktop) {
+  return isTabletOrDesktop ? 6 : 4;
+}
+
+export function isLatestFrameCatalogRequest(requestId, latestRequestId) {
+  return requestId === latestRequestId;
+}
+
+export function buildFrameCatalogQuery({ ages, genders, offset, limit }) {
+  const params = new URLSearchParams();
+
+  ages.forEach((age) => params.append("ages[]", String(age)));
+  normalizeGenderFilters(genders).forEach((gender) => {
+    params.append("genders[]", gender);
+  });
+  params.set("offset", String(offset));
+  params.set("limit", String(limit));
+
+  return params.toString();
+}
+
 export default {
+  props: {
+    endpoint: {
+      type: String,
+      required: true,
+    },
+    initialTotal: {
+      type: Number,
+      required: true,
+    },
+    initialCount: {
+      type: Number,
+      required: true,
+    },
+  },
+
   data() {
     return {
-      activeAge: null,
-      activeGender: null,
-      allItems: [],
-      filteredItems: [],
-      visibleCount: 0,
-      isDesktop: false,
+      activeAges: [],
+      activeGenders: [],
+      total: this.initialTotal,
+      loadedCount: this.initialCount,
+      isTabletOrDesktop: false,
       isLoading: false,
+      errorMessage: "",
+      latestRequestId: 0,
       mediaQuery: null,
     };
   },
 
   computed: {
-    hasResults() {
-      return this.filteredItems.length > 0;
+    batchSize() {
+      return frameCatalogPageSize(this.isTabletOrDesktop);
     },
 
     hasMoreFrames() {
-      return this.visibleCount < this.filteredItems.length;
-    },
-
-    batchSize() {
-      return this.isDesktop ? 6 : 4;
-    },
-
-    initialVisibleCount() {
-      return this.isDesktop ? 6 : 4;
+      return this.loadedCount < this.total;
     },
 
     nextBatchCount() {
-      return Math.min(this.filteredItems.length - this.visibleCount, this.batchSize);
+      return Math.min(Math.max(this.total - this.loadedCount, 0), this.batchSize);
     },
   },
 
   mounted() {
-    const deferredTemplate = document.createElement("template");
-    const deferredMarkup = this.$refs.deferredItems
-      ? this.$refs.deferredItems.value.trim()
-      : "";
-
-    deferredTemplate.innerHTML = deferredMarkup;
-    this.allItems = [
-      ...Array.from(this.$refs.items.children),
-      ...Array.from(deferredTemplate.content.children),
-    ];
-
-    if (this.$refs.deferredItems) {
-      this.$refs.deferredItems.value = "";
-    }
-
     this.mediaQuery = window.matchMedia("(min-width: 768px)");
-    this.isDesktop = this.mediaQuery.matches;
+    this.isTabletOrDesktop = this.mediaQuery.matches;
+    this.normalizeInitialCards();
     this.addBreakpointListener();
-    this.applyFilters();
   },
 
   beforeDestroy() {
@@ -62,61 +92,87 @@ export default {
 
   methods: {
     toggleAge(age) {
-      this.activeAge = this.activeAge === age ? null : age;
-      this.applyFilters();
+      this.activeAges = toggleFrameCatalogFilter(this.activeAges, age);
+      this.loadFrames(false);
     },
 
     toggleGender(gender) {
-      this.activeGender = this.activeGender === gender ? null : gender;
-      this.applyFilters();
+      this.activeGenders = toggleFrameCatalogFilter(this.activeGenders, gender);
+      this.loadFrames(false);
     },
 
     resetFilters() {
-      this.activeAge = null;
-      this.activeGender = null;
-      this.applyFilters();
-    },
-
-    applyFilters() {
-      this.filteredItems = this.allItems.filter((item) => {
-        const matchesAge = !this.activeAge || item.dataset.frameCatalogAge === this.activeAge;
-        const matchesGender = !this.activeGender
-          || item.dataset.frameCatalogGender === this.activeGender
-          || item.dataset.frameCatalogGender === "unisex";
-
-        return matchesAge && matchesGender;
-      });
-      this.visibleCount = Math.min(this.initialVisibleCount, this.filteredItems.length);
-      this.renderVisibleItems();
+      this.activeAges = [];
+      this.activeGenders = [];
+      this.loadFrames(false);
     },
 
     showMore() {
-      if (this.isLoading || !this.hasMoreFrames) {
-        return;
+      if (!this.isLoading && this.hasMoreFrames) {
+        this.loadFrames(true);
       }
-
-      this.isLoading = true;
-      this.visibleCount = Math.min(
-        this.visibleCount + this.batchSize,
-        this.filteredItems.length
-      );
-      this.renderVisibleItems();
-      this.isLoading = false;
     },
 
-    renderVisibleItems() {
-      const fragment = document.createDocumentFragment();
-
-      this.filteredItems.slice(0, this.visibleCount).forEach((item) => {
-        fragment.appendChild(item);
+    async loadFrames(append) {
+      const requestId = ++this.latestRequestId;
+      const offset = append ? this.loadedCount : 0;
+      const query = buildFrameCatalogQuery({
+        ages: this.activeAges,
+        genders: this.activeGenders,
+        offset,
+        limit: this.batchSize,
       });
 
-      this.$refs.items.replaceChildren(fragment);
+      this.isLoading = true;
+      this.errorMessage = "";
+
+      try {
+        const response = await fetch(`${this.endpoint}?${query}`, {
+          headers: { Accept: "application/json" },
+        });
+
+        if (!response.ok) {
+          throw new Error(`Frame catalog request failed with ${response.status}`);
+        }
+
+        const result = await response.json();
+
+        if (!isLatestFrameCatalogRequest(requestId, this.latestRequestId)) {
+          return;
+        }
+
+        if (append) {
+          this.$refs.items.insertAdjacentHTML("beforeend", result.html);
+        } else {
+          this.$refs.items.innerHTML = result.html;
+        }
+
+        this.total = Number(result.total) || 0;
+        this.loadedCount = Number(result.nextOffset) || 0;
+        this.$refs.items.dataset.frameCatalogReady = "";
+      } catch (error) {
+        if (isLatestFrameCatalogRequest(requestId, this.latestRequestId)) {
+          this.errorMessage = "Не удалось загрузить оправы. Попробуйте ещё раз.";
+        }
+      } finally {
+        if (isLatestFrameCatalogRequest(requestId, this.latestRequestId)) {
+          this.isLoading = false;
+        }
+      }
+    },
+
+    normalizeInitialCards() {
+      const cards = Array.from(this.$refs.items.children);
+      const visibleCount = Math.min(cards.length, this.batchSize);
+
+      cards.slice(visibleCount).forEach((card) => card.remove());
+      this.loadedCount = visibleCount;
+      this.$refs.items.dataset.frameCatalogReady = "";
     },
 
     handleBreakpointChange(event) {
-      this.isDesktop = event.matches;
-      this.applyFilters();
+      this.isTabletOrDesktop = event.matches;
+      this.loadFrames(false);
     },
 
     addBreakpointListener() {

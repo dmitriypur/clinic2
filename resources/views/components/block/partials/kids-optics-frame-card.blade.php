@@ -9,8 +9,9 @@
 <article
     class="overflow-hidden rounded-[24px] bg-white"
     data-frame-catalog-card
-    data-frame-catalog-age="{{ $frame['ageGroup'] }}"
-    data-frame-catalog-gender="{{ $frame['gender'] }}"
+    data-frame-catalog-id="{{ $frame['id'] }}"
+    data-frame-catalog-ages="{{ implode(',', $frame['ageGroups']) }}"
+    data-frame-catalog-genders="{{ implode(',', $frame['genders']) }}"
 >
     <div class="h-[230px] overflow-hidden md:h-auto md:aspect-[400/313]">
         <picture>
@@ -41,9 +42,11 @@
             <h3 class="text-xl font-semibold leading-[1.2] text-heading">
                 {{ $frame['title'] }}
             </h3>
-            <p class="text-sm font-normal leading-[1.4] text-heading">
-                {{ $frame['description'] }}
-            </p>
+            @if($frame['description'] !== '')
+                <p class="text-sm font-normal leading-[1.4] text-heading">
+                    {{ $frame['description'] }}
+                </p>
+            @endif
         </div>
 
         <div class="flex items-center justify-between gap-2">

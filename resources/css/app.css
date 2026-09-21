@@ -382,6 +382,12 @@
         display: none !important;
     }
 
+    @media (max-width: 767px) {
+        [data-frame-catalog-list]:not([data-frame-catalog-ready]) > [data-frame-catalog-card]:nth-child(n + 5) {
+            display: none;
+        }
+    }
+
     .animateFadeUp {
         -webkit-backface-visibility: hidden;
         backface-visibility: hidden;

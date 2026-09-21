@@ -5,7 +5,7 @@
     "scripts": {
         "dev": "vite",
         "build": "vite build",
-    "test:frontend": "node --test tests/bookingCache.test.mjs tests/doctorPrice.test.mjs tests/js/bookingApi.test.mjs tests/js/bookingWidgetAsyncComponent.test.mjs tests/js/bookingWidgetLifecycle.test.mjs tests/js/mobileBottomNavigation.test.mjs tests/js/scrollableListeners.test.mjs tests/js/dialogFocus.test.mjs tests/js/modalNavigationLabels.test.mjs tests/js/skipLink.test.mjs tests/js/topBar.test.mjs tests/js/appFilter.test.mjs tests/js/publicCss.test.mjs",
+    "test:frontend": "node --test tests/bookingCache.test.mjs tests/doctorPrice.test.mjs tests/js/bookingApi.test.mjs tests/js/bookingWidgetAsyncComponent.test.mjs tests/js/bookingWidgetLifecycle.test.mjs tests/js/mobileBottomNavigation.test.mjs tests/js/scrollableListeners.test.mjs tests/js/dialogFocus.test.mjs tests/js/modalNavigationLabels.test.mjs tests/js/skipLink.test.mjs tests/js/topBar.test.mjs tests/js/appFilter.test.mjs tests/js/frameCatalog.test.mjs tests/js/publicCss.test.mjs",
         "test:mobile-navigation": "node --test tests/js/mobileBottomNavigation.test.mjs"
     },
     "devDependencies": {

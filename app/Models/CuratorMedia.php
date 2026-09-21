@@ -16,6 +16,10 @@ class CuratorMedia extends Media
 
     public function isUsedByBlocks(): bool
     {
+        if (Frame::query()->where('curator_media_id', $this->getKey())->exists()) {
+            return true;
+        }
+
         $usedByExpertOpinion = Block::query()
             ->withoutGlobalScopes()
             ->where('type', BlockType::EXPERT_OPINION->value)
