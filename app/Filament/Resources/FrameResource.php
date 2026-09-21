@@ -8,6 +8,7 @@ use App\Enums\FrameGender;
 use App\Filament\Forms\Components\CuratorUrlPicker;
 use App\Filament\Resources\FrameResource\Pages;
 use App\Models\Frame;
+use App\Models\FrameColor;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -49,7 +50,7 @@ class FrameResource extends Resource
                             )
                             ->searchable()
                             ->preload()
-                            ->required(),
+                            ->placeholder('Без бренда'),
 
                         Forms\Components\TextInput::make('model')
                             ->label('Модель')
@@ -80,6 +81,13 @@ class FrameResource extends Resource
                                 titleAttribute: 'name',
                                 modifyQueryUsing: fn (Builder $query): Builder => $query->activeOrdered(),
                             )
+                            ->getOptionLabelFromRecordUsing(
+                                fn (FrameColor $record): string => view(
+                                    'filament.forms.components.frame-color-option',
+                                    ['color' => $record],
+                                )->render(),
+                            )
+                            ->allowHtml()
                             ->multiple()
                             ->searchable()
                             ->preload(),

@@ -70,6 +70,22 @@ class FrameCatalogApiTest extends TestCase
         $this->assertStringNotContainsString('Flex Other age', $html);
     }
 
+    public function test_api_returns_an_unbranded_frame_with_its_model_as_the_title(): void
+    {
+        $age = FrameAgeGroup::query()->orderBy('sort_order')->firstOrFail();
+        $frame = Frame::query()->create([
+            'model' => 'Model without brand',
+            'description' => 'Описание',
+            'genders' => ['girl'],
+        ]);
+        $frame->ageGroups()->attach($age);
+
+        $response = $this->getJson('/api/frame-catalog?limit=12');
+
+        $response->assertOk()->assertJsonPath('total', 1);
+        $this->assertStringContainsString('Model without brand', $response->json('html'));
+    }
+
     public function test_api_rejects_oversized_pages_and_unknown_filter_values(): void
     {
         $this->getJson('/api/frame-catalog?limit=13')

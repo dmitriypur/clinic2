@@ -11,6 +11,7 @@ use App\Filament\Resources\FrameResource\Pages\CreateFrame;
 use App\Models\Staff;
 use App\Models\Frame;
 use App\Models\FrameBrand;
+use App\Models\FrameColor;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\Select;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -121,6 +122,23 @@ class FrameCatalogAdminTest extends TestCase
             ->assertFormFieldDoesNotExist('size')
             ->assertFormFieldDoesNotExist('sizes')
             ->assertFormFieldDoesNotExist('payload.items');
+    }
+
+    public function test_frame_color_selector_renders_a_color_swatch_in_its_labels(): void
+    {
+        $color = FrameColor::query()->create([
+            'name' => 'Розовый',
+            'hex' => '#F83072',
+        ]);
+
+        Livewire::test(CreateFrame::class)
+            ->assertFormFieldExists(
+                'colors',
+                fn ($field): bool => $field instanceof Select
+                    && $field->isHtmlAllowed()
+                    && str_contains($field->getOptionLabelFromRecord($color), 'background-color: #F83072')
+                    && str_contains($field->getOptionLabelFromRecord($color), 'Розовый'),
+            );
     }
 
     public function test_demo_role_cannot_mutate_frames_or_dictionaries_even_with_permissions(): void

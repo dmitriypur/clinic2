@@ -31,6 +31,13 @@ class FrameCatalogModelTest extends TestCase
         );
     }
 
+    public function test_frame_brand_is_optional(): void
+    {
+        $brandColumn = collect(Schema::getColumns('frames'))->firstWhere('name', 'brand_id');
+
+        $this->assertTrue($brandColumn['nullable']);
+    }
+
     public function test_frame_persists_one_brand_and_multiple_colors_ages_and_genders(): void
     {
         $brand = FrameBrand::query()->create(['name' => 'Ray-Ban Kids']);

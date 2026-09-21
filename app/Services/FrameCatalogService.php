@@ -29,7 +29,11 @@ class FrameCatalogService
 
         $query = Frame::query()
             ->publicCatalog()
-            ->whereHas('brand', fn (Builder $query): Builder => $query->where('is_active', true))
+            ->where(function (Builder $query): Builder {
+                return $query
+                    ->whereNull('brand_id')
+                    ->orWhereHas('brand', fn (Builder $brandQuery): Builder => $brandQuery->where('is_active', true));
+            })
             ->whereHas('ageGroups', fn (Builder $query): Builder => $query->where('is_active', true))
             ->with([
                 'brand',
@@ -87,10 +91,11 @@ class FrameCatalogService
     private function present(Frame $frame): array
     {
         $genders = $frame->genders;
+        $brandName = trim((string) $frame->brand?->name);
 
         return [
             'id' => $frame->getKey(),
-            'title' => trim("{$frame->brand->name} {$frame->model}"),
+            'title' => trim("{$brandName} {$frame->model}"),
             'description' => trim((string) $frame->description),
             'ageGroups' => $frame->ageGroups->modelKeys(),
             'genders' => $genders,
