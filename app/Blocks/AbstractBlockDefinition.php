@@ -9,6 +9,11 @@ use App\Models\Block;
 
 abstract class AbstractBlockDefinition implements BlockDefinition
 {
+    public function wrapperClassName(Block $block): ?string
+    {
+        return null;
+    }
+
     public function viewData(Block $block): array
     {
         return [];

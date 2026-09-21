@@ -2,6 +2,7 @@
 
 namespace App\View\Components;
 
+use App\Blocks\BlockRegistry;
 use App\Enums\BlockBackgroundType;
 use App\Enums\BlockType;
 use App\Models\Block as PageBlock;
@@ -58,6 +59,15 @@ class Block extends Component
 
     public function className(): string
     {
+        $definition = app(BlockRegistry::class)->find($this->block->type);
+        $definitionClassName = $definition !== null && method_exists($definition, 'wrapperClassName')
+            ? $definition->wrapperClassName($this->block)
+            : null;
+
+        if ($definitionClassName !== null) {
+            return $definitionClassName;
+        }
+
         $bg = '';
         switch (data_get($this->block->settings, 'background')) {
             case strval(BlockBackgroundType::SUBDUED->value):
