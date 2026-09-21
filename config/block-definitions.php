@@ -10,6 +10,7 @@ return [
         App\Blocks\Definitions\UniversalTextBlockDefinition::class,
         App\Blocks\Definitions\GridContactsDefinition::class,
         App\Blocks\Definitions\ListTextWithLinkDefinition::class,
+        App\Blocks\Definitions\KidsOpticsHeroDefinition::class,
         // <block-generator-definitions>
     ],
 ];
