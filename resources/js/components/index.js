@@ -23,4 +23,5 @@ export {default as OnlineAppointmentForm} from "./OnlineAppointmentForm";
 export {default as CitySwitcher} from "./CitySwitcher";
 export {default as InfiniteDoctorsList} from "./InfiniteDoctorsList";
 export {default as StickyTags} from "./StickyTags";
+export {default as FrameCatalog} from "./FrameCatalog";
 // Компоненты SearchLive и AccessibilityToggle импортируются динамически в TopBar.vue

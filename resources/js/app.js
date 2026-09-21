@@ -21,6 +21,7 @@ import {
   CitySwitcher,
   InfiniteDoctorsList,
   StickyTags,
+  FrameCatalog,
 } from "./components";
 import {
   createBookingWidgetV3AsyncComponent,
@@ -110,6 +111,7 @@ new Vue({
     CityConfirmationModal,
     InfiniteDoctorsList,
     StickyTags,
+    FrameCatalog,
     MobileBottomNavigation,
   },
 
