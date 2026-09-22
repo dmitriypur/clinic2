@@ -16,7 +16,7 @@
                         <button
                             type="button"
                             class="flex h-12 md:h-14 min-w-0 items-center justify-center rounded-full border-4 md:border-[6px] border-[#1f3462]/[0.12] bg-white px-1 text-center text-xs font-bold leading-snug text-heading lg:w-32 lg:px-2 lg:text-base lg:leading-snug"
-                            :class="{ 'border-[#efd9c2] bg-[#F77C27] text-white': activeAges.includes({{ $ageId }}) }"
+                            :class="{ '!border-[#efd9c2] !bg-[#F77C27] !text-white': activeAges.includes({{ $ageId }}) }"
                             :aria-pressed="activeAges.includes({{ $ageId }})"
                             @click="toggleAge({{ $ageId }})"
                             data-frame-catalog-age-filter="{{ $ageId }}"
@@ -31,7 +31,7 @@
                         <button
                             type="button"
                             class="relative flex h-12 md:h-14 min-w-0 items-center justify-center overflow-hidden rounded-full border-4 md:border-[6px] border-[#1f3462]/[0.12] bg-white pl-12 pr-1 text-left text-xs font-bold leading-snug text-heading lg:w-56 lg:pl-16 lg:pr-2 lg:text-base lg:leading-snug"
-                            :class="{ 'border-[#efd9c2] bg-[#F77C27] text-white': activeGenders.includes('{{ $gender }}') }"
+                            :class="{ '!border-[#efd9c2] !bg-[#F77C27] !text-white': activeGenders.includes('{{ $gender }}') }"
                             :aria-pressed="activeGenders.includes('{{ $gender }}')"
                             @click="toggleGender('{{ $gender }}')"
                             data-frame-catalog-gender-filter="{{ $gender }}"
