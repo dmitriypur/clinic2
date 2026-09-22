@@ -11,11 +11,11 @@
             </h2>
 
             <div class="mt-5 flex flex-col gap-4 lg:mt-8 lg:flex-row lg:items-center lg:justify-between">
-                <div class="grid grid-cols-4 gap-4 lg:flex">
+                <div class="grid grid-cols-4 gap-1 lg:flex">
                     @foreach($ageFilters as $ageId => $ageFilter)
                         <button
                             type="button"
-                            class="flex h-12 min-w-0 items-center justify-center rounded-full border-[6px] border-[#1f3462]/[0.12] bg-white px-1 text-center text-sm font-bold leading-snug text-heading lg:w-32 lg:px-2 lg:text-base lg:leading-snug"
+                            class="flex h-12 min-w-0 items-center justify-center rounded-full border-4 border-[#1f3462]/[0.12] bg-white px-1 text-center text-xs font-bold leading-snug text-heading lg:w-32 lg:px-2 lg:text-base lg:leading-snug"
                             :class="{ 'border-[#1f3462]/[0.24] bg-[#eff5ff]': activeAges.includes({{ $ageId }}) }"
                             :aria-pressed="activeAges.includes({{ $ageId }})"
                             @click="toggleAge({{ $ageId }})"
@@ -26,20 +26,20 @@
                     @endforeach
                 </div>
 
-                <div class="grid grid-cols-2 gap-4 lg:flex">
+                <div class="grid grid-cols-2 gap-1 lg:flex">
                     @foreach(\App\Enums\FrameGender::options() as $gender => $label)
                         <button
                             type="button"
-                            class="relative flex h-12 min-w-0 items-center overflow-hidden rounded-full border-[6px] border-[#1f3462]/[0.12] bg-white pl-14 pr-2 text-left text-sm font-bold leading-snug text-heading lg:w-56 lg:pl-20 lg:pr-2 lg:text-base lg:leading-snug"
+                            class="relative flex h-14 min-w-0 items-center justify-center overflow-hidden rounded-full border-4 border-[#1f3462]/[0.12] bg-white pl-12 pr-1 text-left text-sm font-bold leading-snug text-heading lg:w-56 lg:pl-16 lg:pr-2 lg:text-base lg:leading-snug"
                             :class="{ 'border-[#1f3462]/[0.24] bg-[#eff5ff]': activeGenders.includes('{{ $gender }}') }"
                             :aria-pressed="activeGenders.includes('{{ $gender }}')"
                             @click="toggleGender('{{ $gender }}')"
                             data-frame-catalog-gender-filter="{{ $gender }}"
                         >
-                            <span class="absolute inset-y-0 left-0 w-10 overflow-hidden lg:w-14" aria-hidden="true">
+                            <span class="absolute inset-y-0 left-0 w-10  lg:w-14" aria-hidden="true">
                                 <img
                                     src="{{ asset("images/kids-optics/frame-catalog/filter-{$gender}.png") }}"
-                                    class="h-12 max-w-none object-cover {{ $gender === 'girl' ? 'w-14 -translate-x-2' : 'w-14 -translate-x-1' }}"
+                                    class="h-full max-w-none object-contain {{ $gender === 'girl' ? 'w-auto -translate-x-1 md:translate-x-0' : 'w-auto -translate-x-1  md:translate-x-0' }}"
                                     alt=""
                                     width="55"
                                     height="49"

@@ -536,33 +536,37 @@ new Vue({
         },
       });
 
-      new Swiper(".reviews-swiper", {
-        modules: [Navigation, Pagination],
-        loop: true,
-        cssMode: true,
-        slidesPerView: 1,
-        spaceBetween: 16,
-        breakpoints: {
-          640: {
-            cssMode: false,
-            slidesPerView: 2,
-            spaceBetween: 24,
-          },
-          920: {
-            cssMode: false,
-            slidesPerView: 3,
-            spaceBetween: 32,
-          },
-        },
+      document.querySelectorAll(".reviews-alt-swiper").forEach((slider) => {
+        const controls = slider.closest(".reviews-alt-slider");
 
-        pagination: {
-          el: ".review-swiper-pagination",
-          clickable: true,
-        },
-        navigation: {
-          nextEl: ".review-swiper-next",
-          prevEl: ".review-swiper-prev",
-        },
+        new Swiper(slider, {
+          modules: [Navigation, Pagination],
+          loop: true,
+          cssMode: true,
+          slidesPerView: 1,
+          spaceBetween: 16,
+          breakpoints: {
+            640: {
+              cssMode: false,
+              slidesPerView: 2,
+              spaceBetween: 24,
+            },
+            920: {
+              cssMode: false,
+              slidesPerView: 3,
+              spaceBetween: 32,
+            },
+          },
+
+          pagination: {
+            el: controls.querySelector(".reviews-alt-swiper-pagination"),
+            clickable: true,
+          },
+          navigation: {
+            nextEl: controls.querySelector(".reviews-alt-swiper-next"),
+            prevEl: controls.querySelector(".reviews-alt-swiper-prev"),
+          },
+        });
       });
 
       new Swiper(".gallery-swiper", {
