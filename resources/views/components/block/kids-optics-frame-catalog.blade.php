@@ -11,12 +11,12 @@
             </h2>
 
             <div class="mt-5 flex flex-col gap-4 lg:mt-8 lg:flex-row lg:items-center lg:justify-between">
-                <div class="grid grid-cols-4 gap-1 lg:flex">
+                <div class="grid grid-cols-4 gap-1 md:gap-3 lg:flex">
                     @foreach($ageFilters as $ageId => $ageFilter)
                         <button
                             type="button"
-                            class="flex h-12 min-w-0 items-center justify-center rounded-full border-4 border-[#1f3462]/[0.12] bg-white px-1 text-center text-xs font-bold leading-snug text-heading lg:w-32 lg:px-2 lg:text-base lg:leading-snug"
-                            :class="{ 'border-[#1f3462]/[0.24] bg-[#eff5ff]': activeAges.includes({{ $ageId }}) }"
+                            class="flex h-12 md:h-14 min-w-0 items-center justify-center rounded-full border-4 md:border-[6px] border-[#1f3462]/[0.12] bg-white px-1 text-center text-xs font-bold leading-snug text-heading lg:w-32 lg:px-2 lg:text-base lg:leading-snug"
+                            :class="{ 'border-[#efd9c2] bg-[#F77C27] text-white': activeAges.includes({{ $ageId }}) }"
                             :aria-pressed="activeAges.includes({{ $ageId }})"
                             @click="toggleAge({{ $ageId }})"
                             data-frame-catalog-age-filter="{{ $ageId }}"
@@ -26,12 +26,12 @@
                     @endforeach
                 </div>
 
-                <div class="grid grid-cols-2 gap-1 lg:flex">
+                <div class="grid grid-cols-2 gap-1 md:gap-3 lg:flex">
                     @foreach(\App\Enums\FrameGender::options() as $gender => $label)
                         <button
                             type="button"
-                            class="relative flex h-14 min-w-0 items-center justify-center overflow-hidden rounded-full border-4 border-[#1f3462]/[0.12] bg-white pl-12 pr-1 text-left text-sm font-bold leading-snug text-heading lg:w-56 lg:pl-16 lg:pr-2 lg:text-base lg:leading-snug"
-                            :class="{ 'border-[#1f3462]/[0.24] bg-[#eff5ff]': activeGenders.includes('{{ $gender }}') }"
+                            class="relative flex h-12 md:h-14 min-w-0 items-center justify-center overflow-hidden rounded-full border-4 md:border-[6px] border-[#1f3462]/[0.12] bg-white pl-12 pr-1 text-left text-xs font-bold leading-snug text-heading lg:w-56 lg:pl-16 lg:pr-2 lg:text-base lg:leading-snug"
+                            :class="{ 'border-[#efd9c2] bg-[#F77C27] text-white': activeGenders.includes('{{ $gender }}') }"
                             :aria-pressed="activeGenders.includes('{{ $gender }}')"
                             @click="toggleGender('{{ $gender }}')"
                             data-frame-catalog-gender-filter="{{ $gender }}"
