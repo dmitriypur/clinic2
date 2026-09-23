@@ -27,11 +27,6 @@
                 </div>
 
                 <div class="w-full mt-4 md:mt-6 px-4 md:px-0">
-                    <x-button-primary
-                        class="hidden h-14 w-full md:w-[225px]"
-                        @click="$refs.lightbox.showImage(0)">
-                        Посмотреть лицензии
-                    </x-button-primary>
                     <a href="{{ asset('licenzii-i-iuridiceskaia-informaciia') }}" class="flex items-center justify-center text-white font-semibold rounded-xl h-14 w-full md:w-[225px] btn-gradient">
                         Посмотреть лицензии
                     </a>
@@ -40,9 +35,3 @@
         </div>
     </div>
 </div>
-
-@if($block->licenses)
-    <light-box ref="lightbox" :media="{{ json_encode($block->licenses) }}"
-               :show-light-box="false"
-               :show-thumbs="false"></light-box>
-@endif
