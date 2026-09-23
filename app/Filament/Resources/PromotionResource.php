@@ -5,12 +5,12 @@ namespace App\Filament\Resources;
 use App\Filament\Forms\Components\SafeMediaLibraryFileUpload;
 use App\Filament\Resources\PromotionResource\Pages;
 use App\Models\Promotion;
+use App\Services\PromotionBlockService;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Support\Facades\Cache;
 
 class PromotionResource extends Resource
 {
@@ -24,11 +24,9 @@ class PromotionResource extends Resource
 
     protected static ?string $pluralLabel = 'Акции';
 
-    protected const PROMOTIONS_CACHE_KEY = 'active_promotions';
-
     public static function forgetPromotionsCache(): void
     {
-        Cache::forget(static::PROMOTIONS_CACHE_KEY);
+        app(PromotionBlockService::class)->forgetAll();
     }
 
     public static function form(Form $form): Form

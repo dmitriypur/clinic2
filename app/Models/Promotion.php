@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\PromotionBlockService;
 use App\Settings\SeoSettings;
 use App\Models\Traits\HasCityScope;
 use App\Models\Traits\HasSafeMediaConversions;
@@ -53,14 +54,7 @@ class Promotion extends Model implements HasMedia, Sortable
 
     private static function clearPromotionsCache(): void
     {
-        \Illuminate\Support\Facades\Cache::forget('active_promotions');
-        
-        $cityService = app(\App\Services\CityService::class);
-        $slugs = $cityService->getActiveCities()->pluck('slug')->push('global');
-        
-        foreach ($slugs as $slug) {
-            \Illuminate\Support\Facades\Cache::forget("active_promotions_{$slug}");
-        }
+        app(PromotionBlockService::class)->forgetAll();
     }
 
     public function cities(): \Illuminate\Database\Eloquent\Relations\BelongsToMany

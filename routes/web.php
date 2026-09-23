@@ -26,7 +26,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/clear-price', function (){
     Cache::forget('prices');
     Cache::forget('services_with_media_and_prices');
-    Cache::forget('active_promotions');
+    app(\App\Services\PromotionBlockService::class)->forgetAll();
     return 'Good boy';
 });
 

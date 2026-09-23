@@ -198,10 +198,6 @@
             <x-block.guarantee :block="$block"/>
             @break
 
-        @case(\App\Enums\BlockType::PROMOTIONS)
-            <x-block.promotions :block="$block"/>
-            @break
-
         @case(\App\Enums\BlockType::SERVICES_BLOCK)
             <x-block.services-block :block="$block"/>
             @break

@@ -623,8 +623,6 @@ new Vue({
         },
         slidesPerView: 1,
         spaceBetween: 10,
-        lazyLoading: true, // breakpoints: {
-
         pagination: {
           el: ".promotions-swiper-pagination",
           clickable: true,

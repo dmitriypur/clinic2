@@ -619,23 +619,6 @@ class Block extends Model implements HasMedia, Sortable
         return 'blog_posts_for_slider_limit_'.self::BLOG_SLIDER_LIMIT.'_newest';
     }
 
-    public function getPromotionsAttribute(): ?Collection
-    {
-        if ($this->type !== BlockType::PROMOTIONS) {
-            return null;
-        }
-
-        $cityService = app(\App\Services\CityService::class);
-        $slug = $cityService->getCurrentCity()?->slug ?? 'global';
-
-        return Cache::remember('active_promotions_'.$slug, 3600, function () {
-            return Promotion::query()
-                ->where('archived', 0)
-                ->with('media')
-                ->get();
-        });
-    }
-
     public function paragraphs(): Attribute
     {
         return Attribute::make(function () {

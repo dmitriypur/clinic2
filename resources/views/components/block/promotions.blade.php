@@ -9,25 +9,34 @@
     <div class="relative">
         <div class="swiper promotions-swiper">
             <div class="swiper-wrapper">
-                @foreach($block->promotions as $item)
-                    @if(!$item->hasMedia())
+                @foreach($promotions as $item)
+                    @php
+                        $desktop = $item->getFirstMedia('default');
+                        $mobile = $item->getFirstMedia('block_mobile') ?? $desktop;
+                    @endphp
+                    @if(!$desktop)
                         @continue
                     @endif
-                    <image-lazy inline-template>
-                        <div class="swiper-slide group rounded-3xl overflow-hidden relative" ref="container">
-                            <a href="{{ $item->description_html }}" class="absolute inset-0 z-10"></a>
-                            <div class="bg-transparent [&_img]:w-full">
-                                <picture itemscope itemtype="http://schema.org/ImageObject">
-                                    <span itemprop="name" class="hidden">{{ $item->title }}</span>
-                                    <source media="(min-width: 768px)"
-                                            :srcset="isLoaded ? '{{$item->getFirstMediaUrl('default')}}' : ''"/>
-                                    <img :src="isLoaded ? '{{$item->getFirstMediaUrl('block_mobile')}}' : ''"
-                                         alt="{{ $item->title }}"
-                                         title="{{ $item->title }} фото" width="593" height="263">
-                                </picture>
-                            </div>
-                        </div>
-                    </image-lazy>
+                    @php
+                        $desktopWebp = \App\Support\PromotionImageSource::webpSrcset($desktop);
+                        $mobileWebp = \App\Support\PromotionImageSource::webpSrcset($mobile);
+                    @endphp
+                    <div class="swiper-slide group rounded-3xl overflow-hidden relative" itemscope itemtype="http://schema.org/ImageObject">
+                        <a href="{{ $item->description_html }}" aria-label="Переход к акции: {{ $item->title }}" class="absolute inset-0 z-10"></a>
+                        <span itemprop="name" class="hidden">{{ $item->title }}</span>
+                        <picture class="block">
+                            @if($desktopWebp)
+                                <source media="(min-width: 768px)" type="image/webp" srcset="{{ $desktopWebp }}" sizes="(min-width: 1280px) 593px, 46vw">
+                            @endif
+                            <source media="(min-width: 768px)" srcset="{{ $desktop->getUrl() }}">
+                            @if($mobileWebp)
+                                <source media="(max-width: 767px)" type="image/webp" srcset="{{ $mobileWebp }}" sizes="100vw">
+                            @endif
+                            <img src="{{ $mobile->getUrl() }}" alt="{{ $item->title }}" title="{{ $item->title }} фото"
+                                 width="361" height="361" loading="lazy" decoding="async"
+                                 class="block w-full h-auto aspect-[auto_1/1] md:aspect-[auto_593/263]">
+                        </picture>
+                    </div>
                 @endforeach
 
             </div>

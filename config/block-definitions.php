@@ -15,6 +15,7 @@ return [
         App\Blocks\Definitions\KidsOpticsPackagesDefinition::class,
         App\Blocks\Definitions\KidsOpticsSchoolSliderDefinition::class,
         App\Blocks\Definitions\KidsOpticsCallbackDefinition::class,
+        App\Blocks\Definitions\PromotionsDefinition::class,
         // <block-generator-definitions>
     ],
 ];
