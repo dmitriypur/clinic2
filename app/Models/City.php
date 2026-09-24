@@ -169,7 +169,7 @@ class City extends Model
                 return [
                     'name' => $detail['name'] ?? null,
                     'rows' => $rows,
-                    'columns' => array_chunk($rows, (int) ceil(count($rows) / 2)),
+                    'columns' => $rows === [] ? [] : array_chunk($rows, (int) ceil(count($rows) / 2)),
                 ];
             })
             ->filter(fn (array $detail) => filled($detail['name']) || count($detail['rows']) > 0)

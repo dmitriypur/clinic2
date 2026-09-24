@@ -1,4 +1,5 @@
 @php($details = $currentCity->details_items)
+@php($detail = $details[0] ?? ['name' => null, 'rows' => []])
 
 <div class="container">
     <div class="flex flex-col md:flex-row md:gap-x-8">
@@ -10,17 +11,17 @@
             @endif
             <div class="bg-white rounded-2xl md:rounded-3xl p-6 md:p-10 flex-auto">
                 <article>
-                    @if($details[0]['name'])
+                    @if($detail['name'])
                         <h3 class="text-2xl font-semibold leading-7">
-                            {{ $details[0]['name'] }}
+                            {{ $detail['name'] }}
                         </h3>
                     @endif
 
-                    @if(count($details[0]['rows']))
+                    @if(count($detail['rows']))
                         <div @class([
                             'mt-6 text-base grid gap-x-16 gap-y-4 space-y-4'
                         ])>
-                            @foreach([$details[0]['rows']] as $column)
+                            @foreach([$detail['rows']] as $column)
                                 <div class="space-y-4">
                                     @foreach($column as $row)
                                         <div @class([
@@ -85,7 +86,7 @@
                         class="size-6 shrink-0"
                     >
                     <p>
-                        @if($details[0]['name']) {{ $details[0]['name'] }} @endif (Центр детского зрения «Ангелы зрения») НЕ ОКАЗЫВАЕТ УСЛУГ в рамках программы государственных гарантий бесплатного оказания гражданам медицинской помощи и территориальной программы государственных гарантий бесплатного оказания гражданам медицинской помощи.
+                        @if($detail['name']) {{ $detail['name'] }} @endif (Центр детского зрения «Ангелы зрения») НЕ ОКАЗЫВАЕТ УСЛУГ в рамках программы государственных гарантий бесплатного оказания гражданам медицинской помощи и территориальной программы государственных гарантий бесплатного оказания гражданам медицинской помощи.
                     </p>
                 </div>
             </div>
