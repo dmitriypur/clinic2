@@ -12,7 +12,6 @@ use App\Models\Doctor;
 use App\Models\Page;
 use App\Models\Tag;
 use App\Services\ArticleOrderingService;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\ItemNotFoundException;
 
 
@@ -113,9 +112,15 @@ class PostController extends Controller
         }
 
         $filter = [
-            'tags' => Cache::remember('posts_filter', 2592000, function() use ($posts) {
-                return $posts->pluck('tags')->flatten()->unique('id')->pluck('title', 'id');
-            }),
+            'tags' => Page::query()
+                ->where('pages.category_id', $categoryCurrent->id)
+                ->where('pages.type', PageType::Posts)
+                ->where('pages.active', true)
+                ->join('page_tag', 'pages.id', '=', 'page_tag.page_id')
+                ->join('tags', 'tags.id', '=', 'page_tag.tag_id')
+                ->distinct()
+                ->orderBy('tags.title')
+                ->pluck('tags.title', 'tags.id'),
         ];
 
         return view('posts.show')->with([
