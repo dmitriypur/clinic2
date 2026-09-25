@@ -83,7 +83,6 @@ class CallbackController extends Controller
             Log::warning('Callback request failed in 1C.', [
                 'fail' => $fail,
                 'status' => $response->status(),
-                'body' => $response->body(),
             ]);
 
             return response()->json([
@@ -94,7 +93,6 @@ class CallbackController extends Controller
 
         Log::warning('Callback request returned unexpected 1C response.', [
             'status' => $response->status(),
-            'body' => $response->body(),
         ]);
 
         return response()->json([

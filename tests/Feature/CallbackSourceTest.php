@@ -7,6 +7,8 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+use Mockery;
 use Tests\TestCase;
 
 class CallbackSourceTest extends TestCase
@@ -181,6 +183,52 @@ class CallbackSourceTest extends TestCase
                 'message' => 'Не удалось отправить заявку. Попробуйте позже.',
                 'fail' => 'UnexpectedResponse',
             ]);
+    }
+
+    public function test_callback_technical_failure_log_excludes_upstream_response_body(): void
+    {
+        $sensitiveMarker = 'patient-name-phone-token-marker';
+
+        Log::spy();
+        $this->fakeClinicCallback([
+            'fail' => 'Internal',
+            'details' => $sensitiveMarker,
+        ]);
+
+        $this->postJson('/api/callback', $this->callbackPayload())
+            ->assertStatus(502);
+
+        Log::shouldHaveReceived('warning')
+            ->once()
+            ->with('Callback request failed in 1C.', Mockery::on(function (array $context) use ($sensitiveMarker): bool {
+                $this->assertSame('Internal', $context['fail']);
+                $this->assertSame(200, $context['status']);
+                $this->assertArrayNotHasKey('body', $context);
+                $this->assertStringNotContainsString($sensitiveMarker, json_encode($context, JSON_THROW_ON_ERROR));
+
+                return true;
+            }));
+    }
+
+    public function test_callback_unexpected_response_log_excludes_upstream_response_body(): void
+    {
+        $sensitiveMarker = 'unexpected-patient-token-marker';
+
+        Log::spy();
+        $this->fakeClinicCallback($sensitiveMarker);
+
+        $this->postJson('/api/callback', $this->callbackPayload())
+            ->assertStatus(502);
+
+        Log::shouldHaveReceived('warning')
+            ->once()
+            ->with('Callback request returned unexpected 1C response.', Mockery::on(function (array $context) use ($sensitiveMarker): bool {
+                $this->assertSame(200, $context['status']);
+                $this->assertArrayNotHasKey('body', $context);
+                $this->assertStringNotContainsString($sensitiveMarker, json_encode($context, JSON_THROW_ON_ERROR));
+
+                return true;
+            }));
     }
 
     public static function technicalFailureProvider(): array

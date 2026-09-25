@@ -432,17 +432,21 @@ class BookingWidgetApiService
         array $context = [],
         ?\Throwable $previous = null
     ): never {
-        $baseUrl = rtrim((string) config('zrenie-clinic.booking_api_base_url', ''), '/');
-
         $payload = [
-            'base_url' => $baseUrl,
             'path' => $path,
-            'query' => $query,
-        ] + $context;
+        ];
 
-        Log::error($message, $payload + [
-            'exception' => $previous?->getMessage(),
-        ]);
+        foreach (['status', 'attempt', 'attempts', 'duration_ms'] as $key) {
+            if (isset($context[$key]) && is_int($context[$key])) {
+                $payload[$key] = $context[$key];
+            }
+        }
+
+        if ($previous !== null) {
+            $payload['exception_class'] = $previous::class;
+        }
+
+        Log::error($message, $payload);
 
         throw new BookingWidgetApiException($message, $payload, previous: $previous);
     }
