@@ -12,6 +12,8 @@ class UserController extends Controller
     {
         $user = User::query()->find($request->uid);
 
+        abort_if(is_null($user), 404);
+
         $user->update(['uuid' => $request->contact]);
 
         return response()->json();
