@@ -50,7 +50,7 @@
                 @if($filter !== null && $filter['tags']->count())
                     <div
                         v-cloak
-                        class="relative flex flex-wrap gap-2 mt-6 md:gap-4 md:mt-10 px-8 py-6 bg-interactive rounded-2xl">
+                        class="relative flex flex-wrap gap-2 mt-6 md:gap-4 md:mt-10 p-4 md:px-8 md:py-6 bg-interactive rounded-2xl">
                         <div v-if="loading" class="flex justify-center items-center absolute inset-0 bg-white/80 z-20">
                             <svg
                                 class="mr-3 -ml-1 size-8 animate-spin text-action-primary"
