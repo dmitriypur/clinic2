@@ -290,7 +290,9 @@ class Block extends Model implements HasMedia, Sortable
 
     public function getPriceListItemsAttribute(): array
     {
-        return collect($this->prices ?? [])
+        $prices = $this->prices;
+
+        return collect($prices ?? [])
             ->map(function (array $price) {
                 [$title, $description] = $this->splitPriceListItem($price['item'] ?? '');
 
