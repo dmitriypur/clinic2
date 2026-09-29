@@ -69,7 +69,7 @@ class MenuService
                         'position' => $doctor->position,
                         'avatar' => $doctor->getFirstMediaUrl(),
                         'video_url' => $doctor->actual_video_url,
-                        'url' => route('doctor.show', $doctor->id),
+                        'url' => url($cityService->addCityPrefix('doctors/' . $doctor->id)),
                         'receives_display' => $doctor->receives_display,
                         'age_min_months' => $doctor->age_min_months,
                         'age_max_months' => $doctor->age_max_months,
