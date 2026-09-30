@@ -5,6 +5,7 @@ namespace App\Filament\Resources\ReviewResource\Pages;
 use App\Filament\Resources\ReviewResource;
 use App\Models\Review;
 use Filament\Actions;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Support\Facades\Cache;
 
@@ -23,7 +24,20 @@ class EditReview extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\DeleteAction::make(),
+            Actions\DeleteAction::make()
+                ->before(function (Review $record, Actions\DeleteAction $action): void {
+                    if (! $record->pages()->exists()) {
+                        return;
+                    }
+
+                    Notification::make()
+                        ->danger()
+                        ->title('Нельзя удалить отзыв')
+                        ->body('Отзыв привязан к странице. Сначала удалите эту связь.')
+                        ->send();
+
+                    $action->halt();
+                }),
         ];
     }
 

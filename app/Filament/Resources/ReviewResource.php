@@ -12,6 +12,7 @@ use App\Models\Review;
 use Filament\Forms;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Actions\ReplicateAction;
@@ -184,7 +185,20 @@ class ReviewResource extends Resource
                         })
                         ->requiresConfirmation()
                         ->icon('heroicon-o-map-pin'),
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()
+                        ->before(function (Collection $records, Tables\Actions\DeleteBulkAction $action): void {
+                            if (! $records->contains(fn (Review $review): bool => $review->pages()->exists())) {
+                                return;
+                            }
+
+                            Notification::make()
+                                ->danger()
+                                ->title('Нельзя удалить выбранные отзывы')
+                                ->body('Среди выбранных отзывов есть привязанные к страницам. Сначала удалите эти связи.')
+                                ->send();
+
+                            $action->halt();
+                        }),
                 ]),
             ])
             ->emptyStateActions([

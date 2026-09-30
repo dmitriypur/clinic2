@@ -11,10 +11,12 @@ use Filament\Forms\Components\Section;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Str;
 
@@ -106,11 +108,37 @@ class TagResource extends Resource
                     Tables\Actions\ViewAction::make(),
                     Tables\Actions\EditAction::make(),
                     Tables\Actions\DeleteAction::make()
+                        ->before(function (Tag $record, Tables\Actions\DeleteAction $action): void {
+                            if (! $record->pages()->exists()) {
+                                return;
+                            }
+
+                            Notification::make()
+                                ->danger()
+                                ->title('Нельзя удалить тег')
+                                ->body('Тег привязан к странице. Сначала удалите эту связь.')
+                                ->send();
+
+                            $action->halt();
+                        }),
                 ]),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()
+                        ->before(function (Collection $records, Tables\Actions\DeleteBulkAction $action): void {
+                            if (! $records->contains(fn (Tag $tag): bool => $tag->pages()->exists())) {
+                                return;
+                            }
+
+                            Notification::make()
+                                ->danger()
+                                ->title('Нельзя удалить выбранные теги')
+                                ->body('Среди выбранных тегов есть привязанные к страницам. Сначала удалите эти связи.')
+                                ->send();
+
+                            $action->halt();
+                        }),
                 ]),
             ]);
     }
