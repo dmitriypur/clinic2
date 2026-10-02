@@ -32,6 +32,8 @@ class SearchAnalytics extends Page
 
     public ?string $cityId = null;
 
+    public bool $includeSuspicious = false;
+
     public static function canAccess(): bool
     {
         return Filament::auth()->user()?->hasRole('super_admin') ?? false;
@@ -57,7 +59,7 @@ class SearchAnalytics extends Page
 
     public function updated(string $property): void
     {
-        if (in_array($property, ['dateFrom', 'dateTo', 'cityId'], true)) {
+        if (in_array($property, ['dateFrom', 'dateTo', 'cityId', 'includeSuspicious'], true)) {
             $this->resetPage();
         }
     }
@@ -108,13 +110,31 @@ class SearchAnalytics extends Page
         $to = $this->validDate($this->dateTo)
             ?? now()->startOfDay()->toDateTimeImmutable();
 
-        return SiteSearchQuery::query()
+        $searches = SiteSearchQuery::query()
             ->where('created_at', '>=', $from)
             ->where('created_at', '<', $to->modify('+1 day'))
             ->when(
                 $this->cityId !== null && ctype_digit($this->cityId),
                 fn (Builder $query) => $query->where('city_id', (int) $this->cityId),
             );
+
+        if (! $this->includeSuspicious) {
+            foreach ([
+                '%union select%',
+                '%union all select%',
+                '%extractvalue(%',
+                '%order by%--%',
+                '%order by%#%',
+            ] as $pattern) {
+                $searches->whereRaw('LOWER(`query`) NOT LIKE ?', [$pattern]);
+            }
+
+            foreach (['%or1=1%--%', '%and1=1%--%'] as $pattern) {
+                $searches->whereRaw("REPLACE(LOWER(`query`), ' ', '') NOT LIKE ?", [$pattern]);
+            }
+        }
+
+        return $searches;
     }
 
     private function validDate(?string $date): ?DateTimeImmutable

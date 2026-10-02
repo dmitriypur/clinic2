@@ -196,8 +196,60 @@ class SearchAnalyticsPageTest extends TestCase
         $page->call('setPage', 2);
         $this->assertSame(['запрос 01'], $page->viewData('recentQueries')->pluck('query')->all());
 
+        $page->set('includeSuspicious', true);
+        $this->assertSame(1, $page->viewData('recentQueries')->currentPage());
+
+        $page->call('setPage', 2);
         $page->set('cityId', (string) $city->id);
         $this->assertSame(1, $page->viewData('recentQueries')->currentPage());
         $this->assertSame(['запрос 01'], $page->viewData('recentQueries')->pluck('query')->all());
+    }
+
+    public function test_obvious_sql_probes_are_hidden_by_default_but_can_be_shown(): void
+    {
+        Role::findOrCreate('super_admin', 'staff');
+        $staff = Staff::query()->create([
+            'name' => 'Администратор',
+            'email' => 'search-probes@example.test',
+            'password' => 'password',
+        ]);
+        $staff->assignRole('super_admin');
+        $this->actingAs($staff, 'staff');
+
+        foreach ([
+            ['Линзы', 3],
+            ['felaris.ru', 0],
+            ['union of patients select lenses', 2],
+            ["' UNION ALL SELECT NULL-- -", 0],
+            ['UNION SELECT NULL', 0],
+            ["' ORDER BY 1000-- -", 0],
+            ["'))) AND EXTRACTVALUE(1,CONCAT(0x7e))-- -", 0],
+            ["' OR 1=1 -- -", 0],
+            ["' OR 1 = 1 -- -", 0],
+            ["' AND 1=1 -- -", 0],
+            ["' AND 1 = 1 -- -", 0],
+            ["' ORDER BY 1000#", 0],
+        ] as [$query, $resultsCount]) {
+            SiteSearchQuery::forceCreate([
+                'query' => $query,
+                'results_count' => $resultsCount,
+                'created_at' => now()->subDay(),
+            ]);
+        }
+
+        $page = Livewire::test(SearchAnalytics::class);
+
+        $this->assertSame(3, $page->viewData('totalSearches'));
+        $this->assertSame(1, $page->viewData('withoutResults'));
+        $this->assertEqualsCanonicalizing(['Линзы', 'felaris.ru', 'union of patients select lenses'], $page->viewData('topQueries')->pluck('query')->all());
+        $this->assertSame(['felaris.ru'], $page->viewData('zeroResultQueries')->pluck('query')->all());
+        $this->assertCount(3, $page->viewData('recentQueries'));
+
+        $page->set('includeSuspicious', true);
+
+        $this->assertSame(12, $page->viewData('totalSearches'));
+        $this->assertSame(10, $page->viewData('withoutResults'));
+        $this->assertCount(12, $page->viewData('recentQueries'));
+        $page->assertSee('Показать все запросы');
     }
 }

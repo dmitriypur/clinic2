@@ -20,6 +20,11 @@
                     </select>
                 </label>
             </div>
+            <label class="mt-4 flex items-center gap-2 text-sm">
+                <input type="checkbox" wire:model.live="includeSuspicious" class="rounded border-gray-300" />
+                <span>Показать все запросы (включая автоматические SQL-пробы)</span>
+            </label>
+            <p class="mt-1 text-xs text-gray-500">По умолчанию скрыты только очевидные SQL-пробы. Записи не удаляются.</p>
         </x-filament::section>
 
         <x-filament::section>
