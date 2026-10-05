@@ -122,7 +122,7 @@ php8.1 artisan livewire:publish --assets --no-interaction
 @task('backupDatabase', ['on' => 'remote'])
 {{ logMessage("📀  Backing up database...") }}
 cd {{ $newReleaseDir }}
-php8.1 artisan backup:run
+php8.1 artisan backup:run && php8.1 artisan backup:clean
 @endtask
 
 @task('migrateDatabase', ['on' => 'remote'])
