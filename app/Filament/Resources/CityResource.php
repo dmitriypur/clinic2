@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\CityResource\Pages;
+use App\Filament\Forms\Components\BookingPriceFields;
 use App\Models\City;
 use Filament\Forms;
 use Filament\Forms\Components\Section;
@@ -91,6 +92,7 @@ class CityResource extends Resource
                     ->schema([
                         Repeater::make('branches')
                             ->label('Филиалы города')
+                            ->mutateDehydratedStateUsing(fn (?array $state): array => $state ?? [])
                             ->schema([
                                 TextInput::make('name')
                                     ->label('Название филиала')
@@ -110,10 +112,9 @@ class CityResource extends Resource
                                     ->label('Координаты (lat, lng)'),
                                 TextInput::make('schedule')
                                     ->label('Режим работы'),
-                                TextInput::make('price')
-                                    ->label('Акционная цена с 18 лет'),
-                                TextInput::make('price_child')
-                                    ->label('Акционная цена до 18 лет'),
+                                Forms\Components\Hidden::make('_booking_price_source'),
+                                BookingPriceFields::make('price', 'Акционная цена с 18 лет'),
+                                BookingPriceFields::make('price_child', 'Акционная цена до 18 лет'),
                                 TextInput::make('external_id')
                                     ->label('External ID'),
                             ])

@@ -456,7 +456,7 @@ export default {
         doctor,
         this.doctorBranch(doctor),
         this.patientBirthDate,
-        { priority: "branch-first" }
+        { priority: "branch-first", appointmentDate: this.selectedDate }
       );
     },
     doctorHasVideo(doctor) {

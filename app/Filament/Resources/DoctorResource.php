@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Forms\Components\SafeMediaLibraryFileUpload;
+use App\Filament\Forms\Components\BookingPriceFields;
 use App\Filament\Resources\DoctorResource\Pages;
 use App\Models\Doctor;
 use App\Support\DoctorAge;
@@ -178,10 +179,10 @@ class DoctorResource extends Resource
                         Forms\Components\TextInput::make('extra.rating')
                             ->columnSpanFull()
                             ->label('Текст рейтига'),
-                        Forms\Components\TextInput::make('extra.price')
-                            ->label('Взрослый прием цена'),
-                        Forms\Components\TextInput::make('extra.price_child')
-                            ->label('Детский прием цена'),
+                        Forms\Components\Group::make([
+                            BookingPriceFields::make('price', 'Взрослый приём — цена'),
+                            BookingPriceFields::make('price_child', 'Детский приём — цена'),
+                        ])->statePath('extra')->columns(2)->columnSpanFull(),
                         Forms\Components\Toggle::make('extra.exclude_from_branch_promo_price')
                             ->label('Не применять акционные цены филиалов')
                             ->helperText('Виджет записи будет показывать только цену врача.')

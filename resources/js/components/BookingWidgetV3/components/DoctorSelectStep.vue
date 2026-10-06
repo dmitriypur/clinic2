@@ -119,6 +119,10 @@ export default {
       type: String,
       default: "",
     },
+    selectedDate: {
+      type: Date,
+      default: null,
+    },
     stepChipText: {
       type: String,
       default: "Шаг №2",
@@ -140,6 +144,7 @@ export default {
     doctorDisplayPrice(doctor) {
       return getDoctorDisplayPrice(doctor, null, this.patientBirthDate, {
         priority: "doctor-first",
+        appointmentDate: this.selectedDate,
       });
     },
     doctorVideoUrl(doctor) {

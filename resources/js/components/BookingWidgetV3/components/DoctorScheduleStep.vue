@@ -352,7 +352,7 @@ export default {
         this.doctor,
         this.selectedBranch,
         this.patientBirthDate,
-        { priority: "branch-first" }
+        { priority: "branch-first", appointmentDate: this.selectedDate }
       );
     },
     branchSkeletonCount() {

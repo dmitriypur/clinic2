@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\DoctorResource\Pages;
 
 use App\Filament\Resources\DoctorResource;
+use App\Support\BookingPriceSchedule;
 use Filament\Pages\Actions;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Support\Facades\Cache;
@@ -12,13 +13,18 @@ class EditDoctor extends EditRecord
 {
     protected static string $resource = DoctorResource::class;
 
+    protected ?bool $hasDatabaseTransactions = true;
+
     protected function mutateFormDataBeforeFill(array $data): array
     {
+        $data['extra'] = BookingPriceSchedule::hydrate($data['extra'] ?? []);
         return DoctorResource::hydrateAgeFields($data);
     }
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
+        $current = $this->record->newQueryWithoutScopes()->whereKey($this->record->getKey())->lockForUpdate()->firstOrFail();
+        $data['extra'] = BookingPriceSchedule::save($data['extra'] ?? [], $current->extra ?? [], 'data.extra', true);
         return DoctorResource::dehydrateAgeFields($data);
     }
 
@@ -50,6 +56,7 @@ class EditDoctor extends EditRecord
     protected function afterSave()
     {
         Cache::forget('doctors');
+        $this->fillForm();
         $this->data['show_redirect'] = false;
         $this->data['redirect'] = false;
     }

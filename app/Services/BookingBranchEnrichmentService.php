@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\City;
+use App\Support\BookingPriceSchedule;
 
 class BookingBranchEnrichmentService
 {
@@ -68,6 +69,23 @@ class BookingBranchEnrichmentService
 
                 if (filled($value)) {
                     $branch[$field] = $value;
+                }
+            }
+
+            // Once a field is managed locally, even an empty/expired value must
+            // override the external API. The widget resolves these periods by date.
+            foreach (BookingPriceSchedule::FIELDS as $field) {
+                if (array_key_exists($field, $localBranch['price_periods'] ?? [])) {
+                    $apiPrice = $branch[$field] ?? null;
+                    $branch[$field] = null;
+                    $branch['price_periods'][$field] = array_map(function (array $period) use ($apiPrice): array {
+                        if (($period['use_api'] ?? false) === true) {
+                            $period['price'] = $apiPrice;
+                        }
+                        unset($period['use_api']);
+
+                        return $period;
+                    }, $localBranch['price_periods'][$field]);
                 }
             }
 

@@ -44,6 +44,7 @@
           v-else-if="currentStep === 'doctor-select'"
           :doctors="doctors"
           :selectedDoctorId="selectedDoctor?.id"
+          :selectedDate="selectedDate"
           :loading="loadingDoctors"
           :patientBirthDate="patientBirthDateIso"
           :stepChipText="doctorSelectStepChipText"
