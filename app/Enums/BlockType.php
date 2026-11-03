@@ -149,6 +149,8 @@ enum BlockType: int
 
     case KIDS_OPTICS_CALLBACK = 84;
 
+    case SERVICE_HERO = 85;
+
     // <block-generator-cases>
 
     public function getLabel(): string
@@ -240,6 +242,7 @@ enum BlockType: int
             self::KIDS_OPTICS_PACKAGES => 'Выбор очков «Детская оптика»',
             self::KIDS_OPTICS_SCHOOL_SLIDER => 'Отличный выбор для школы «Детская оптика»',
             self::KIDS_OPTICS_CALLBACK => 'Блок «Подбор очков и обратный звонок»',
+            self::SERVICE_HERO => 'Hero-баннер услуги',
         };
     }
 

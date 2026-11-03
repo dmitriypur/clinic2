@@ -226,6 +226,20 @@ class BlockResourceRegistryIntegrationTest extends TestCase
         );
     }
 
+    public function test_service_hero_saves_button_link_and_converts_uploaded_image(): void
+    {
+        $this->createBlock([
+            'title' => 'Услуга',
+            'type' => BlockType::SERVICE_HERO->value,
+            'payload' => ['button_text' => 'Подробнее', 'button_url' => '/services'],
+        ], ['data.payload.image' => [UploadedFile::fake()->image('hero.jpg', 80, 40)]]);
+
+        $block = Block::query()->latest('id')->firstOrFail();
+        $this->assertSame('/services', $block->payload['button_url']);
+        $image = $block->payload['image'];
+        Storage::disk('public')->assertExists([$image, app(\App\Services\ServiceHeroImageService::class)->webpPath($image)]);
+    }
+
     private function createBlock(array $state, array $uploads = []): void
     {
         $type = $state['type'];
