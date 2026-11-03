@@ -1,5 +1,5 @@
 <x-app-layout title="Результаты поиска по '{{ $search }}'" description="Результаты поиска по '{{ $search }}'">
-    <section class="flex flex-col scroll-mt-16 scroll-smooth lg:scroll-mt-28 bg-white">
+    <section v-pre class="flex flex-col scroll-mt-16 scroll-smooth lg:scroll-mt-28 bg-white">
         <div class="py-10">
             <div class="container">
                 <ol class="flex space-x-2 font-medium" itemscope
@@ -25,7 +25,7 @@
         </div>
     </section>
 
-    <section class="flex flex-col scroll-mt-16 scroll-smooth lg:scroll-mt-28">
+    <section v-pre class="flex flex-col scroll-mt-16 scroll-smooth lg:scroll-mt-28">
         <div class="container py-10">
             <div class="mb-4">
                 <form action="{{ city_route('search') }}" method="GET">
