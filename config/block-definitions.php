@@ -17,6 +17,7 @@ return [
         App\Blocks\Definitions\KidsOpticsCallbackDefinition::class,
         App\Blocks\Definitions\PromotionsDefinition::class,
         App\Blocks\Definitions\ServiceHeroDefinition::class,
+        App\Blocks\Definitions\TextWithImageNewDefinition::class,
         // <block-generator-definitions>
     ],
 ];

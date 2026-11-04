@@ -270,7 +270,7 @@ class BlockResource extends Resource
                         ->hidden(
                             fn (Forms\Get $get) => ! in_array(
                                 BlockType::from($get('type')),
-                                [BlockType::HTML, BlockType::TEXT_WITH_IMAGE, BlockType::TEXT_WITH_IMAGE_NEW,
+                                [BlockType::HTML, BlockType::TEXT_WITH_IMAGE,
                                     BlockType::TEXT_SUBDUED, BlockType::WELCOME, BlockType::POST_TEXT, BlockType::APPARATUS_DISEASES, BlockType::APPARATUS_METHODS, BlockType::APPARATUS_CONTRAINDICATIONS, BlockType::EXPERT_OPINION, ]
                             )
                         )
@@ -471,7 +471,6 @@ class BlockResource extends Resource
                             fn (Forms\Get $get) => ! in_array(BlockType::from($get('type')),
                                 [
                                     BlockType::TEXT_WITH_IMAGE,
-                                    BlockType::TEXT_WITH_IMAGE_NEW,
                                     BlockType::WELCOME,
                                     BlockType::TEXT_WITH_IMAGE_ALT,
                                     BlockType::PICTURE,

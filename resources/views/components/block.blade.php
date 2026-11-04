@@ -306,10 +306,6 @@
             <x-new-block.tags-new :block="$block"/>
             @break
 
-        @case(\App\Enums\BlockType::TEXT_WITH_IMAGE_NEW)
-            <x-new-block.text-with-image-new :block="$block"/>
-            @break
-
         @case(\App\Enums\BlockType::APPARATUS_TASKS)
             <x-block.apparatus-tasks :block="$block"/>
             @break

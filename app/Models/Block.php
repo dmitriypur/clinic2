@@ -101,6 +101,16 @@ class Block extends Model implements HasMedia, Sortable
 
     public function registerMediaConversions(?Media $media = null): void
     {
+        if ($media !== null && $media->collection_name === 'default'
+            && static::withoutGlobalScopes()->whereKey($media->model_id)->where('type', BlockType::TEXT_WITH_IMAGE_NEW->value)->exists()) {
+            $this->addMediaConversion('text-image')
+                ->fit(Manipulations::FIT_MAX, 1280, 1280)
+                ->format(Manipulations::FORMAT_WEBP)
+                ->withResponsiveImages()
+                ->performOnCollections('default')
+                ->nonQueued();
+        }
+
         $this->addMediaConversion('main')
             ->width(400)
             ->height(400)

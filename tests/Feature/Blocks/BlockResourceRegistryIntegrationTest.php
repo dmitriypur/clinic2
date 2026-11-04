@@ -226,6 +226,53 @@ class BlockResourceRegistryIntegrationTest extends TestCase
         );
     }
 
+    public function test_text_with_image_saves_service_layout_and_image_side(): void
+    {
+        $this->createBlock([
+            'title' => 'Услуга',
+            'type' => BlockType::TEXT_WITH_IMAGE_NEW->value,
+            'body_html' => '<p>Текст</p>',
+            'payload' => ['layout_variant' => 'service', 'image_position' => 'left'],
+        ]);
+
+        $block = Block::query()->latest('id')->firstOrFail();
+        $this->assertSame('service', $block->payload['layout_variant']);
+        $this->assertSame('left', $block->payload['image_position']);
+        $this->assertSame('<p>Текст</p>', $block->body_html);
+        $media = $block->addMedia(UploadedFile::fake()->image('example.jpg'))->toMediaCollection('default');
+        $this->saveExistingBlock($block);
+        $this->assertSame('left', $block->fresh()->payload['image_position']);
+        $this->assertSame($media->id, $block->fresh()->getFirstMedia('default')?->id);
+    }
+
+    public function test_text_with_image_upload_creates_responsive_webp(): void
+    {
+        $block = Block::query()->create([
+            'page_id' => $this->page->id,
+            'title' => 'Изображение',
+            'type' => BlockType::TEXT_WITH_IMAGE_NEW,
+            'payload' => ['layout_variant' => 'service'],
+        ]);
+
+        $media = $block->addMedia(UploadedFile::fake()->image('photo.png', 1600, 1200))
+            ->toMediaCollection('default');
+        $media->refresh();
+
+        $this->assertTrue($media->hasGeneratedConversion('text-image'));
+        $this->assertTrue($media->hasResponsiveImages('text-image'));
+        $this->assertSame('image/webp', mime_content_type($media->getPath('text-image')));
+        $this->assertFileExists($media->getPath());
+        $this->assertStringContainsString('.webp', $media->getSrcset('text-image'));
+        $rendered = $block->fresh()->getResponsiveImage('default', 'Изображение', 'text-image')->lazy()->toHtml();
+        $this->assertStringContainsString('srcset=', $rendered);
+        $this->assertStringContainsString('.webp', $rendered);
+        $this->assertStringContainsString('loading="lazy"', $rendered);
+
+        $media->unsetRelation('model');
+        $media->preventsLazyLoading = true;
+        $this->assertSame('text-image', \Spatie\MediaLibrary\Conversions\ConversionCollection::createForMedia($media)->getByName('text-image')->getName());
+    }
+
     public function test_service_hero_saves_button_link_and_converts_uploaded_image(): void
     {
         $this->createBlock([
