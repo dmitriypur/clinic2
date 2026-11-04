@@ -1,6 +1,6 @@
 <div class="container">
     @if (!$block->title_hidden)
-        <div class="max-w-2xl mx-auto mb-5 md:mb-10">
+        <div class="mx-auto mb-5 md:mb-10">
             <h2 class="font-semibold text-2xl md:text-4xl text-center text-heading">
                 {{ $block->title }}
             </h2>
@@ -8,7 +8,7 @@
     @endif
 
     <div
-        class="flex flex-wrap gap-4 md:gap-x-8 md:gap-y-2.5">
+        class="flex flex-wrap justify-center gap-2.5 md:gap-5">
         @foreach($block->elements as $index => $item)
             <div
                 class="w-full md:w-[calc(50%-1rem)] flex items-center gap-x-3 md:gap-x-8 rounded-xl py-4 px-2.5 md:px-6 md:py-3 bg-white"
