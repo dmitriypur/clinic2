@@ -1084,7 +1084,7 @@ class BlockResource extends Resource
                 Forms\Components\Section::make([
                     Forms\Components\Repeater::make('payload.elements')
                         ->label('Элементы')
-                        ->schema([
+                        ->schema(fn (Forms\Get $get): array => app(BlockRegistry::class)->has(BlockType::from($get('type'))) ? [] : [
                             Forms\Components\TextInput::make('title')
                                 ->label('Заголовок')
                                 ->columnSpan('full')
@@ -1109,7 +1109,6 @@ class BlockResource extends Resource
                                 ->reactive()
                                 ->hidden(
                                     fn (Forms\Get $get) => in_array(BlockType::from($get('../../../type')), [
-                                        BlockType::CARDS_ITEM_ROW,
                                         BlockType::CARDS_BORDER,
                                         BlockType::NIGHT_LENSES_PICTURES,
                                         BlockType::SEVERAL_COLS,
@@ -1123,7 +1122,6 @@ class BlockResource extends Resource
                                 ->reactive()
                                 ->hidden(
                                     fn (Forms\Get $get) => in_array(BlockType::from($get('../../../type')), [
-                                        BlockType::CARDS_ITEM_ROW,
                                         BlockType::CARDS_BORDER,
                                         BlockType::NIGHT_LENSES_PICTURES,
                                         BlockType::SEVERAL_COLS,
@@ -1155,7 +1153,6 @@ class BlockResource extends Resource
                                 ->label('Отображать кнопку «Записаться на приём»')
                                 ->hidden(
                                     fn (Forms\Get $get) => in_array(BlockType::from($get('../../../type')), [
-                                        BlockType::CARDS_ITEM_ROW,
                                         BlockType::CARDS_BORDER,
                                         BlockType::NIGHT_LENSES_PICTURES,
                                         BlockType::SEVERAL_COLS,
@@ -1168,7 +1165,6 @@ class BlockResource extends Resource
                                 ->label('Белые карточки на прозрачном фоне')
                                 ->hidden(
                                     fn (Forms\Get $get) => in_array(BlockType::from($get('../../../type')), [
-                                        BlockType::CARDS_ITEM_ROW,
                                         BlockType::CARDS_BORDER,
                                         BlockType::LIST_WITH_IMAGE,
                                     ])
@@ -1190,18 +1186,12 @@ class BlockResource extends Resource
 
                             ColorPicker::make('card_color')
                                 ->label('Цвет карточки')
-                                ->hidden(
-                                    fn (Forms\Get $get) => in_array(BlockType::from($get('../../../type')), [
-                                        BlockType::CARDS_ITEM_ROW,
-                                    ])
-                                )
                                 ->rgba(),
                         ]),
                 ])->hidden(
                     fn (Forms\Get $get) => ! in_array(BlockType::from($get('type')), [
                         BlockType::ELEMENTS_ITEM_COLUMN,
                         BlockType::ELEMENTS_ITEM_ROW,
-                        BlockType::CARDS_ITEM_ROW,
                         BlockType::CARDS_BORDER,
                         BlockType::NIGHT_LENSES_PICTURES,
                         BlockType::SEVERAL_COLS,

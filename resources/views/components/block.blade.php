@@ -202,10 +202,6 @@
             <x-block.services-block :block="$block"/>
             @break
 
-        @case(\App\Enums\BlockType::CARDS_ITEM_ROW)
-            <x-block.cards-row :block="$block" :subdued="$subdued"/>
-            @break
-
         @case(\App\Enums\BlockType::BANNER_WITH_BUTTON)
             <x-banner.with-btn :block="$block"/>
             @break

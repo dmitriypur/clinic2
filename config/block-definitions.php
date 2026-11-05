@@ -19,6 +19,7 @@ return [
         App\Blocks\Definitions\ServiceHeroDefinition::class,
         App\Blocks\Definitions\TextWithImageNewDefinition::class,
         App\Blocks\Definitions\DiagnosticAssessmentDefinition::class,
+        App\Blocks\Definitions\HorizontalCardsDefinition::class,
         // <block-generator-definitions>
     ],
 ];

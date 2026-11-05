@@ -12,14 +12,18 @@ use App\Models\Page;
 use App\Models\Staff;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\Component;
+use Filament\Forms\Components\Select;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
+use Spatie\MediaLibrary\Conversions\FileManipulator;
+use Spatie\MediaLibrary\Conversions\Jobs\PerformConversionsJob;
 use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
 
@@ -314,6 +318,172 @@ class BlockResourceRegistryIntegrationTest extends TestCase
         $this->assertSame('/services', $block->payload['button_url']);
         $image = $block->payload['image'];
         Storage::disk('public')->assertExists([$image, app(\App\Services\ServiceHeroImageService::class)->webpPath($image)]);
+    }
+
+    public function test_horizontal_cards_render_responsive_webp_after_image_conversion(): void
+    {
+        config(['media-library.queue_conversions_by_default' => true]);
+
+        $this->createBlock([
+            'title' => 'Ключевые задачи занятий',
+            'type' => BlockType::CARDS_ITEM_ROW->value,
+            'payload' => [
+                'columns' => 3,
+                'elements' => ['first' => [
+                    'title' => 'Тренировать память и внимание',
+                    'media_collection' => 'horizontal-card',
+                    'body_html' => null,
+                ]],
+            ],
+        ], ['data.payload.elements.first.image' => [UploadedFile::fake()->image('card.png', 800, 800)]]);
+
+        $block = Block::query()->latest('id')->firstOrFail();
+        $media = $block->getFirstMedia('horizontal-card');
+        $this->assertNotNull($media);
+
+        $media->refresh();
+
+        $this->assertFalse($media->hasGeneratedConversion('main'));
+        $definition = app(BlockRegistry::class)->find(BlockType::CARDS_ITEM_ROW);
+        $htmlBefore = view($definition->view(), ['block' => $block, ...$definition->viewData($block)])->render();
+        $this->assertStringContainsString('src="'.$media->getUrl().'"', $htmlBefore);
+        $this->assertStringNotContainsString($media->getUrl('main'), $htmlBefore);
+        $sharedPage = Page::query()->create(['title' => 'Shared page', 'handle' => 'shared-page', 'active' => true]);
+        $block->pages()->attach($sharedPage);
+        Cache::put('page-global-block-test-page', $this->page->load('blocks.media'), 3600);
+        Cache::put('page-global-shared-page', 'cached', 3600);
+        Cache::put('page-global-unrelated', 'cached', 3600);
+        Queue::assertPushed(PerformConversionsJob::class);
+        Queue::pushed(PerformConversionsJob::class)->each(
+            fn (PerformConversionsJob $job) => $job->handle(app(FileManipulator::class))
+        );
+        $media->refresh();
+
+        $this->assertNull(Cache::get('page-global-block-test-page'));
+        $this->assertNull(Cache::get('page-global-shared-page'));
+        $this->assertSame('cached', Cache::get('page-global-unrelated'));
+        $this->assertTrue($media->hasGeneratedConversion('main'));
+        $this->assertTrue($media->hasResponsiveImages('main'));
+        $this->assertSame('image/webp', mime_content_type($media->getPath('main')));
+        $this->assertFileExists($media->getPath());
+
+        foreach ([3 => '64px', 2 => '72px'] as $columns => $sizes) {
+            $block->refresh();
+            $block->payload = [...$block->payload, 'columns' => $columns];
+            $html = view($definition->view(), ['block' => $block, ...$definition->viewData($block)])->render();
+
+            $this->assertStringContainsString('src="'.$media->getUrl('main').'"', $html);
+            $this->assertStringContainsString('srcset=', $html);
+            $this->assertStringContainsString('400w', $html);
+            $this->assertStringContainsString('sizes="'.$sizes.'"', $html);
+            $this->assertStringContainsString('loading="lazy"', $html);
+            $this->assertStringContainsString('decoding="async"', $html);
+            $this->assertStringNotContainsString('data:image/', $html);
+            $this->assertStringNotContainsString('onload=', $html);
+            $this->assertStringNotContainsString($media->getUrl().'"', $html);
+        }
+    }
+
+    public function test_horizontal_cards_registry_preserves_existing_payload_media_and_markup(): void
+    {
+        $definition = app(BlockRegistry::class)->find(BlockType::CARDS_ITEM_ROW);
+        $this->assertNotNull($definition);
+        $this->assertSame('components.block.cards-row', $definition->view());
+
+        $block = Block::query()->create([
+            'page_id' => $this->page->id,
+            'title' => 'Ключевые задачи занятий',
+            'type' => BlockType::CARDS_ITEM_ROW,
+            'settings' => [
+                'title_hidden' => false,
+                'show_page_title' => false,
+                'breadcrumbs' => false,
+                'show_on_mobile' => true,
+                'hide_on_desctop' => false,
+                'background' => '1',
+            ],
+            'payload' => [
+                'columns' => 3,
+                'elements' => [[
+                    'title' => 'Тренировать память и внимание',
+                    'subtitle' => 'Подзаголовок',
+                    'body_html' => '<p>Подробное описание</p>',
+                    'media_collection' => 'horizontal-card',
+                    'legacy_note' => 'Сохранить при редактировании',
+                ]],
+            ],
+        ]);
+        $media = $block->addMedia(UploadedFile::fake()->image('existing-card.jpg'))
+            ->toMediaCollection('horizontal-card');
+        $media->markAsConversionNotGenerated('main');
+        $payloadBefore = $block->payload;
+        $render = fn (Block $record): string => Blade::render(
+            '<x-block :block="$block" breadcrumbs-title="" page-title="" page-description="" />',
+            ['block' => $record],
+        );
+        $htmlBefore = $render($block);
+        $this->assertStringContainsString(
+            trim(view($definition->view(), ['block' => $block, ...$definition->viewData($block)])->render()),
+            $htmlBefore,
+        );
+        $this->assertSame(1, substr_count($htmlBefore, '<h2'));
+        $this->assertStringContainsString('Тренировать память и внимание', $htmlBefore);
+        $this->assertStringContainsString($media->getUrl(), $htmlBefore);
+        $this->assertStringNotContainsString($media->getUrl('main'), $htmlBefore);
+
+        $this->saveExistingBlock($block);
+        $block->refresh();
+
+        $this->assertSame($payloadBefore, $block->payload);
+        $this->assertSame($media->id, $block->getFirstMedia('horizontal-card')?->id);
+        $this->assertSame($htmlBefore, $render($block));
+    }
+
+    public function test_horizontal_cards_default_to_two_columns_when_editing_a_legacy_block(): void
+    {
+        $block = Block::query()->create([
+            'page_id' => $this->page->id,
+            'title' => 'Горизонтальные карточки',
+            'type' => BlockType::CARDS_ITEM_ROW,
+            'payload' => ['elements' => []],
+        ]);
+
+        Livewire::test(EditBlock::class, ['record' => $block->getRouteKey()])
+            ->assertFormFieldExists('payload.columns', fn ($field): bool => $field instanceof Select)
+            ->assertFormFieldIsVisible('payload.columns')
+            ->assertFormSet(['payload.columns' => 2]);
+    }
+
+    public function test_horizontal_cards_preserve_three_columns_when_saved_again(): void
+    {
+        $this->createBlock([
+            'title' => 'Ключевые задачи занятий',
+            'type' => BlockType::CARDS_ITEM_ROW->value,
+            'payload' => ['columns' => 3, 'elements' => []],
+        ]);
+
+        $block = Block::query()->latest('id')->firstOrFail();
+
+        $this->assertSame(3, (int) $block->payload['columns']);
+        $this->saveExistingBlock($block);
+        $this->assertSame(3, (int) $block->fresh()->payload['columns']);
+    }
+
+    public function test_horizontal_cards_reject_unsupported_column_counts(): void
+    {
+        $block = Block::query()->create([
+            'page_id' => $this->page->id,
+            'title' => 'Горизонтальные карточки',
+            'type' => BlockType::CARDS_ITEM_ROW,
+            'payload' => ['columns' => 2, 'elements' => []],
+        ]);
+
+        Livewire::test(EditBlock::class, ['record' => $block->getRouteKey()])
+            ->fillForm(['payload.columns' => 4])
+            ->call('save')
+            ->assertHasFormErrors(['payload.columns']);
+
+        $this->assertSame(2, (int) $block->fresh()->payload['columns']);
     }
 
     private function createBlock(array $state, array $uploads = []): void

@@ -67,6 +67,14 @@ class BlockDefinitionFormSchemaTest extends TestCase
         );
     }
 
+    public function test_horizontal_cards_definition_preserves_its_form_state_paths(): void
+    {
+        $this->assertSame(
+            ['payload.columns', 'payload.elements', 'title', 'subtitle', 'body_html', 'media_collection', 'image'],
+            $this->componentNames(BlockType::CARDS_ITEM_ROW),
+        );
+    }
+
     private function componentNames(BlockType $type): array
     {
         $definition = app(BlockRegistry::class)->find($type);
