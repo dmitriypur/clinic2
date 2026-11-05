@@ -15,6 +15,7 @@ use Filament\Forms\Components\Component;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
@@ -100,6 +101,34 @@ class BlockResourceRegistryIntegrationTest extends TestCase
         $this->saveExistingBlock($block);
 
         $this->assertSame('<p>Legacy content</p>', $block->fresh()->body_html);
+    }
+
+    public function test_diagnostic_assessment_can_be_configured_and_rendered_as_a_page_block(): void
+    {
+        $this->createBlock([
+            'title' => 'Что мы оцениваем на диагностике',
+            'type' => BlockType::DIAGNOSTIC_ASSESSMENT->value,
+            'payload' => [
+                'assessment_items' => ['first' => ['text' => 'Внимание'], 'second' => ['text' => 'Понимание текста']],
+                'assessment_description' => 'Результаты <тестов> и план работы.',
+            ],
+        ]);
+
+        $block = Block::query()->latest('id')->firstOrFail();
+
+        $this->assertSame(['Внимание', 'Понимание текста'], $block->payload['assessment_items']);
+
+        $html = Blade::render(
+            '<x-block :block="$block" breadcrumbs-title="" page-title="" page-description="" />',
+            ['block' => $block],
+        );
+
+        $this->assertStringContainsString('Что мы оцениваем на диагностике', $html);
+        $this->assertStringContainsString('Понимание текста', $html);
+        $this->assertStringContainsString('Результаты &lt;тестов&gt; и план работы.', $html);
+        $this->assertStringContainsString('diagnostic-assessment/desktop.webp', $html);
+        $this->assertStringContainsString('diagnostic-assessment/mobile.webp', $html);
+        $this->assertStringContainsString('openBookingWidgetV3', $html);
     }
 
     public function test_registered_diagnostic_methods_schema_preserves_payload_and_existing_media(): void

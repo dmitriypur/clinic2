@@ -18,6 +18,7 @@ return [
         App\Blocks\Definitions\PromotionsDefinition::class,
         App\Blocks\Definitions\ServiceHeroDefinition::class,
         App\Blocks\Definitions\TextWithImageNewDefinition::class,
+        App\Blocks\Definitions\DiagnosticAssessmentDefinition::class,
         // <block-generator-definitions>
     ],
 ];
