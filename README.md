@@ -70,6 +70,8 @@ The Laravel framework is open-sourced software licensed under the [MIT license](
 To deploy the application:
 ```bash
 php vendor/bin/envoy run deploy
+
+php vendor/bin/envoy run deploy --path='/Users/dmitriypur/.codex/visualizations/2026/11/05/01a1ab19-01e4-7361-84ec-f0d9d101d085/zrenie-test-deploy/Envoy.blade.php'
 ```
 
 To rollback to the previous release (in case of failure):
