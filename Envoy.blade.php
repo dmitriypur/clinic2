@@ -1,7 +1,7 @@
 @setup
     $deployKey = getenv('ZRENIE_DEPLOY_KEY') ?: getenv('HOME').'/.ssh/zrenie-clinic-deploy';
     $key = escapeshellarg($deployKey);
-    $ssh = 'ssh -i '.$key.' -o IdentitiesOnly=yes -o BatchMode=yes -o ConnectTimeout=8 -o StrictHostKeyChecking=yes zrenietest@147.45.184.229';
+    $ssh = 'ssh -i '.$key.' -o IdentitiesOnly=yes -o BatchMode=yes -o ConnectTimeout=8 -o ServerAliveInterval=10 -o ServerAliveCountMax=3 -o StrictHostKeyChecking=yes zrenietest@147.45.184.229';
 @endsetup
 
 @servers(['local' => '127.0.0.1'])
@@ -102,7 +102,7 @@
 
 @task('unpackSource')
     unpack_source() {
-        local sha=$1 available
+        local sha=$1 source=$2 available
         [[ "$sha" =~ ^[a-f0-9]{40}$ ]] || fail 'Expected a commit SHA.'
         available=$(df -Pk "$base" | awk 'NR == 2 { print $4 }')
         test "$available" -ge 1800000 || fail 'Not enough disk space for a release and a database backup.'
@@ -110,8 +110,23 @@
         release=$(mktemp -d "$releases/$(date -u +%Y%m%d-%H%M%S)-${sha:0:12}-XXXXXX")
         chmod 755 "$release"
         version=${release##*/}
-        printf 'Unpacking main at %s into %s\n' "$sha" "$version"
-        tar -xf - -C "$release"
+        case "$source" in
+            github)
+                printf 'Fetching main at %s from GitHub into %s\n' "$sha" "$version"
+                git init --bare --quiet "$work/source.git"
+                GIT_TERMINAL_PROMPT=0 git -C "$work/source.git" -c credential.helper= \
+                    -c http.lowSpeedLimit=1024 -c http.lowSpeedTime=30 \
+                    fetch --depth=1 --no-tags --no-recurse-submodules https://github.com/dmitriypur/clinic2.git "$sha"
+                git -C "$work/source.git" archive --format=tar "$sha" | tar -xf - -C "$release"
+                ;;
+            archive)
+                printf 'Unpacking uploaded main at %s into %s\n' "$sha" "$version"
+                tar -xzf - -C "$release"
+                ;;
+            *)
+                fail "Unknown release source: $source"
+                ;;
+        esac
         cd "$release"
         test -f composer.lock && test -f package-lock.json || fail 'Dependency lock files are missing.'
         printf '%s\n' "$version" > public/release-name.txt
@@ -265,11 +280,17 @@
     test -r {{ $key }} || { echo 'SSH key for zrenie.clinic is missing.' >&2; exit 1; }
 
     sha=$(git rev-parse --verify 'refs/heads/main^{commit}')
-    archive=$(mktemp "${TMPDIR:-/tmp}/zrenie-envoy.XXXXXX")
-    trap 'rm -f -- "$archive"' EXIT
-    git archive --format=tar -o "$archive" "$sha"
+    source=github
+    archive=/dev/null
+    if [[ "$(git rev-parse --verify --quiet refs/remotes/origin/main || true)" != "$sha" ]]; then
+        source=archive
+        archive=$(mktemp "${TMPDIR:-/tmp}/zrenie-envoy.XXXXXX")
+        trap 'rm -f -- "$archive"' EXIT
+        git archive --format=tar.gz -o "$archive" "$sha"
+        printf 'Uploading compressed archive for unpublished main (%s bytes).\n' "$(wc -c < "$archive" | tr -d ' ')"
+    fi
 
-    remote_script=$(cat <<'ENVOY_REMOTE'
+    IFS= read -r -d '' remote_script <<'ENVOY_REMOTE' || test -n "$remote_script"
     @run('releaseEnvironment')
     @run('unpackSource')
     @run('updateSymlinks')
@@ -286,7 +307,7 @@
     @run('cleanOldReleases')
 
     initialize_release
-    unpack_source "$1"
+    unpack_source "$1" "$2"
     update_symlinks
     run_composer
     run_npm
@@ -301,8 +322,7 @@
     switch_release "$release"
     clean_old_releases
     ENVOY_REMOTE
-    )
-    printf -v remote_command 'bash -c %q bash %q' "$remote_script" "$sha"
+    printf -v remote_command 'bash -c %q bash %q %q' "$remote_script" "$sha" "$source"
     {{ $ssh }} "$remote_command" < "$archive"
     ENVOY_LOCAL
 @endtask

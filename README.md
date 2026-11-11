@@ -76,6 +76,8 @@ php vendor/bin/envoy run deploy
 
 Envoy fast-forwards from `origin/main` and deploys the resulting local `main` commit. It uses `~/.ssh/zrenie-clinic-deploy` by default. Set `ZRENIE_DEPLOY_KEY` to use a different key file.
 
+For a published `main` commit, the server fetches the exact commit directly from GitHub. If local `main` is ahead of `origin/main`, Envoy uploads a compressed archive of the local commit.
+
 The tasks in `Envoy.blade.php` install PHP and npm dependencies, build frontend assets, publish Livewire assets, verify a database backup, run migrations, refresh caches and generate the sitemap. Envoy then switches the active release, checks the home page over HTTPS and restarts the queue worker. If the switch fails, it restores the active release. The `deploy-code` command also runs the full deployment.
 
 To switch back to the previously active release, run:
