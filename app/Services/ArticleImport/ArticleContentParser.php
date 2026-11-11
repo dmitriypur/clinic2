@@ -131,7 +131,7 @@ class ArticleContentParser
             if ($mode === 'sections' && $tag === 'p') {
                 foreach ($xpath->query('.//a[starts-with(@href, "#cmnt")]', $node) as $reference) {
                     if (preg_match('/^\[([a-zа-я0-9]+)\]$/iu', trim($reference->textContent), $match)
-                        && preg_match('/оформить\s+как\s+блок\s*["«]?мнение\s+эксперта/iu', $commentAnnotations[Str::lower($match[1])] ?? '')) {
+                        && preg_match('/оформить\s+(?:как\s+блок|блок\s+как)\s*["«]?мнение\s+эксперта/iu', $commentAnnotations[Str::lower($match[1])] ?? '')) {
                         $expertOpinionParts[] = $this->sanitizeImportedHtml($node->ownerDocument->saveHTML($node));
                         continue 2;
                     }

@@ -122,6 +122,25 @@ class ArticleImportServiceTest extends TestCase
         $this->assertSame([], $result->warnings);
     }
 
+    public function test_google_doc_recognizes_expert_comment_with_block_before_as(): void
+    {
+        Http::fake(['docs.google.com/*' => Http::response(<<<'HTML'
+            <html><head><meta charset="utf-8"></head><body>
+                <h1>Article</h1><p>Вступление.</p>
+                <p>Мнение врача.<sup><a href="#cmnt8">[h]</a></sup></p>
+                <div><p><a href="#cmnt_ref8">[h]</a>Оформить блок как мнение эксперта</p></div>
+            </body></html>
+            HTML)]);
+
+        $result = app(ArticleImportService::class)->import($this->importData([
+            'document_url' => 'https://docs.google.com/document/d/test-document/edit',
+        ]));
+
+        $expert = $result->page->blocks->firstWhere('type', BlockType::EXPERT_OPINION);
+        $this->assertNotNull($expert);
+        $this->assertStringContainsString('Мнение врача', $expert->body_html);
+    }
+
     public function test_google_doc_expert_opinion_is_preserved_without_an_author(): void
     {
         Http::fake(['docs.google.com/*' => Http::response(<<<'HTML'
