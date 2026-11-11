@@ -68,7 +68,7 @@ class ArticleImportService
                     );
                     $warnings = array_merge(
                         $warnings,
-                        $this->createExpertOpinionBlock($page, $data),
+                        $this->createExpertOpinionBlock($page, $data, $parsed),
                     );
 
                     if (! empty($parsed['faq_items'])) {
@@ -76,6 +76,7 @@ class ArticleImportService
                             'page_id' => $page->id,
                             'type' => BlockType::FAQ,
                             'title' => 'Часто задаваемые вопросы',
+                            'anchor' => 'faq',
                             'order_column' => $order++,
                             'payload' => [
                                 'faq' => $parsed['faq_items'],
@@ -168,12 +169,17 @@ class ArticleImportService
             ->keyBy(fn (array $section) => mb_strtolower($section['title']));
 
         $tagLinks = collect($parsed['menu_items'] ?? [])
-            ->map(function (array $item) use ($sectionsByTitle) {
+            ->map(function (array $item) use ($sectionsByTitle, $parsed) {
                 $section = $sectionsByTitle->get(mb_strtolower($item['target_title']));
+                $faqNames = ['faq', 'вопрос-ответ', 'часто задаваемые вопросы'];
+                $isFaq = ! empty($parsed['faq_items']) && ! $section && (
+                    in_array(mb_strtolower(trim($item['target_title'])), $faqNames, true)
+                    || in_array(mb_strtolower(trim($item['title'])), $faqNames, true)
+                );
 
                 return [
                     'title' => $item['title'],
-                    'link' => '#'.($section['anchor'] ?? Str::slug($item['target_title'])),
+                    'link' => $isFaq ? '#faq' : '#'.($section['anchor'] ?? Str::slug($item['target_title'])),
                 ];
             })
             ->filter(fn (array $item) => ! empty($item['title']) && ! empty($item['link']))
@@ -201,6 +207,8 @@ class ArticleImportService
             ],
             'settings' => $this->defaultSettings([
                 'title_hidden' => true,
+                'remove_top_padding' => true,
+                'remove_bottom_padding' => true,
             ]),
         ]);
     }
@@ -235,14 +243,15 @@ class ArticleImportService
         return $blocks;
     }
 
-    private function createExpertOpinionBlock(Page $page, array $data): array
+    private function createExpertOpinionBlock(Page $page, array $data, array $parsed): array
     {
-        if (! ($data['include_expert_opinion'] ?? false)) {
+        $importedOpinion = trim((string) ($parsed['expert_opinion_html'] ?? ''));
+        if ($importedOpinion === '' && ! ($data['include_expert_opinion'] ?? false)) {
             return [];
         }
 
-        $expertId = $data['expert_id'] ?? null;
-        $bodyHtml = trim((string) ($data['expert_body_html'] ?? ''));
+        $expertId = $importedOpinion !== '' ? ($data['author_id'] ?? null) : ($data['expert_id'] ?? null);
+        $bodyHtml = $importedOpinion !== '' ? $importedOpinion : trim((string) ($data['expert_body_html'] ?? ''));
         $curatorImageId = $data['expert_curator_image_id'] ?? null;
 
         $doctor = Doctor::query()
@@ -251,7 +260,7 @@ class ArticleImportService
 
         $media = CuratorMedia::query()->find($curatorImageId);
 
-        if (! $doctor || $bodyHtml === '' || ! $media) {
+        if ($importedOpinion === '' && (! $doctor || $bodyHtml === '' || ! $media)) {
             return ['Не удалось добавить блок «Мнение эксперта»: проверьте врача, текст и фотографию.'];
         }
 
@@ -261,17 +270,25 @@ class ArticleImportService
             'title' => 'Мнение эксперта',
             'body_html' => $bodyHtml,
             'payload' => [
-                'author' => $doctor->id,
-                'fio_expert' => $doctor->full_name,
-                'position_expert' => $doctor->speciality,
-                'curator_image_id' => $media->getKey(),
+                'author' => $doctor?->id,
+                'fio_expert' => $doctor?->full_name,
+                'position_expert' => $doctor?->speciality,
+                'curator_image_id' => $media?->getKey(),
             ],
             'settings' => $this->defaultSettings([
                 'background' => '1',
             ]),
         ]);
 
-        return [];
+        $warnings = [];
+        if (! $doctor) {
+            $warnings[] = 'Для блока «Мнение эксперта» укажите автора статьи.';
+        }
+        if (! $media) {
+            $warnings[] = 'Для блока «Мнение эксперта» добавьте фотографию врача.';
+        }
+
+        return $warnings;
     }
 
     private function appendDefaultBlocks(Page $page, int $startOrder): void
@@ -286,18 +303,23 @@ class ArticleImportService
                 ],
             ],
             [
-                'type' => BlockType::CALL_TO_ACTION,
+                'type' => BlockType::BANNER_SPECIALIST_CALLBACK,
                 'title' => 'Запишитесь на прием онлайн',
-                'payload' => [
-                    'add_fox' => true,
-                    'add_fox2' => true,
-                    'subtitle' => 'Оставьте ваши контакты, мы перезвоним вам и подтвердим запись',
+                'payload' => [],
+                'settings' => [
+                    'remove_top_padding' => true,
+                    'remove_bottom_padding' => true,
                 ],
             ],
             [
                 'type' => BlockType::CONTACTS,
                 'title' => 'Контакты',
                 'payload' => [],
+                'settings' => [
+                    'title_hidden' => true,
+                    'remove_top_padding' => true,
+                    'remove_bottom_padding' => true,
+                ],
             ],
         ];
 
@@ -308,7 +330,7 @@ class ArticleImportService
                 'title' => $block['title'],
                 'order_column' => $startOrder + $offset,
                 'payload' => $block['payload'],
-                'settings' => $this->defaultSettings(),
+                'settings' => $this->defaultSettings($block['settings'] ?? []),
             ]);
         }
     }

@@ -613,22 +613,26 @@ class Block extends Model implements HasMedia, Sortable
             return null;
         }
 
-        return Cache::remember(self::blogSliderCacheKey(), 3600, function () {
+        $posts = Cache::remember(self::blogSliderCacheKey(), 3600, function () {
             return Page::query()
                 ->withoutGlobalScope('city')
                 ->where('type', '=', PageType::Posts)
                 ->where('active', '=', 1)
                 ->orderByDesc('created_at')
                 ->orderByDesc('id')
-                ->limit(self::BLOG_SLIDER_LIMIT)
+                ->limit(self::BLOG_SLIDER_LIMIT + 1)
                 ->with(['tags', 'media', 'category'])
                 ->get();
         });
+
+        return $posts->reject(fn (Page $post) => $this->page_id !== null && (string) $post->id === (string) $this->page_id)
+            ->take(self::BLOG_SLIDER_LIMIT)
+            ->values();
     }
 
     public static function blogSliderCacheKey(): string
     {
-        return 'blog_posts_for_slider_limit_'.self::BLOG_SLIDER_LIMIT.'_newest';
+        return 'blog_posts_for_slider_limit_'.(self::BLOG_SLIDER_LIMIT + 1).'_newest';
     }
 
     public function paragraphs(): Attribute

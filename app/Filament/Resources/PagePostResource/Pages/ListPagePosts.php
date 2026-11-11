@@ -61,7 +61,8 @@ class ListPagePosts extends ListRecords
                         ->label('Тема статьи')
                         ->helperText('Если в документе есть строка "Тема:", она подставится автоматически.'),
                     Forms\Components\Toggle::make('include_expert_opinion')
-                        ->label('Добавить блок «Мнение эксперта»')
+                        ->label('Заполнить блок «Мнение эксперта» вручную')
+                        ->helperText('Помеченное в Google Docs мнение добавляется автоматически с автором статьи.')
                         ->live()
                         ->default(false),
                     Forms\Components\Select::make('expert_id')
@@ -91,8 +92,7 @@ class ListPagePosts extends ListRecords
                             'image/webp',
                         ])
                         ->required(fn (Get $get): bool => (bool) $get('include_expert_opinion'))
-                        ->visible(fn (Get $get): bool => (bool) $get('include_expert_opinion'))
-                        ->helperText('Используется только в блоке «Мнение эксперта» и не заменяет фото профиля врача.'),
+                        ->helperText('Необязательно: можно выбрать сейчас или добавить в блок после импорта. Фото профиля врача не изменится.'),
                     Forms\Components\TextInput::make('breadcrumbs_title')
                         ->label('Заголовок для хлебных крошек'),
                     Forms\Components\Toggle::make('append_default_blocks')

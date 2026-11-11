@@ -95,6 +95,7 @@ class ArticleContentParser
 
         $sections = [];
         $faqItems = [];
+        $expertOpinionParts = [];
         $currentSection = [
             'title' => $meta['title'],
             'anchor' => null,
@@ -111,6 +112,10 @@ class ArticleContentParser
                 continue;
             }
 
+            if ($xpath->query('.//a[starts-with(@href, "#cmnt_ref")]', $node)->length > 0) {
+                continue;
+            }
+
             $tag = $this->resolveImportedTag($node, $commentAnnotations);
             $text = trim(preg_replace('/\s+/u', ' ', $node->textContent ?? ''));
             $text = $tag === 'h2' || $tag === 'h3' ? $this->cleanHeading($text) : $text;
@@ -121,6 +126,16 @@ class ArticleContentParser
 
             if ($this->shouldSkipPreContentNode($currentSection, $tag, $text)) {
                 continue;
+            }
+
+            if ($mode === 'sections' && $tag === 'p') {
+                foreach ($xpath->query('.//a[starts-with(@href, "#cmnt")]', $node) as $reference) {
+                    if (preg_match('/^\[([a-zа-я0-9]+)\]$/iu', trim($reference->textContent), $match)
+                        && preg_match('/оформить\s+как\s+блок\s*["«]?мнение\s+эксперта/iu', $commentAnnotations[Str::lower($match[1])] ?? '')) {
+                        $expertOpinionParts[] = $this->sanitizeImportedHtml($node->ownerDocument->saveHTML($node));
+                        continue 2;
+                    }
+                }
             }
 
             if ($tag === 'h2') {
@@ -202,10 +217,16 @@ class ArticleContentParser
             );
         }
 
+        foreach ($sections as $index => &$section) {
+            $section['image_position'] = $index % 2 === 0 ? 'right' : 'left';
+        }
+        unset($section);
+
         return [
             ...$meta,
             'sections' => $sections,
             'faq_items' => $faqItems,
+            'expert_opinion_html' => implode("\n", $expertOpinionParts),
         ];
     }
 

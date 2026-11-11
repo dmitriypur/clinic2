@@ -71,6 +71,32 @@ class BlogSliderBlockTest extends TestCase
         );
     }
 
+    public function test_it_excludes_current_article_without_affecting_other_pages_or_slider_limit(): void
+    {
+        $articles = [];
+        foreach (range(1, 14) as $day) {
+            $articles[$day] = $this->createPage("post-{$day}", sprintf('2026-08-%02d 10:00:00', $day));
+        }
+
+        $firstSlider = $this->blogSlider();
+        $firstSlider->page_id = $articles[14]->id;
+        $secondSlider = $this->blogSlider();
+        $secondSlider->page_id = $articles[13]->id;
+
+        $this->assertSame(
+            array_map(fn (int $day): string => "post-{$day}", range(13, 2)),
+            $firstSlider->posts->pluck('handle')->all(),
+        );
+        $this->assertSame(
+            array_merge(['post-14'], array_map(fn (int $day): string => "post-{$day}", range(12, 2))),
+            $secondSlider->posts->pluck('handle')->all(),
+        );
+        $this->assertSame(
+            array_map(fn (int $day): string => "post-{$day}", range(14, 3)),
+            $this->blogSlider()->posts->pluck('handle')->all(),
+        );
+    }
+
     public function test_it_uses_the_same_global_cached_results_for_every_city(): void
     {
         $moscow = $this->createCity('Москва', 'moskva', true);

@@ -14,6 +14,7 @@ use App\Services\ArticleImport\ArticleImportService;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use RuntimeException;
@@ -32,6 +33,136 @@ class ArticleImportServiceTest extends TestCase
                 $table->json('settings')->nullable();
             });
         }
+    }
+
+    public function test_import_removes_padding_above_and_below_tags_block(): void
+    {
+        $result = app(ArticleImportService::class)->import($this->importData());
+        $tagsBlock = $result->page->blocks->firstWhere('type', BlockType::TAGS);
+
+        $this->assertNotNull($tagsBlock);
+        $this->assertTrue($tagsBlock->settings['remove_top_padding']);
+        $this->assertTrue($tagsBlock->settings['remove_bottom_padding']);
+    }
+
+    public function test_google_doc_import_alternates_text_block_image_positions(): void
+    {
+        Http::fake(['docs.google.com/*' => Http::response(<<<'HTML'
+            <html><body>
+                <h1>Article</h1><p>Lead text.</p>
+                <h2>First section</h2><p>First text.</p>
+                <h2>Second section</h2><p>Second text.</p>
+                <h2>Third section</h2><p>Third text.</p>
+            </body></html>
+            HTML)]);
+
+        $result = app(ArticleImportService::class)->import($this->importData([
+            'document_url' => 'https://docs.google.com/document/d/test-document/edit',
+        ]));
+
+        $this->assertSame(
+            ['right', 'left', 'right', 'left'],
+            $result->page->blocks->where('type', BlockType::POST_TEXT)
+                ->map(fn ($block) => $block->payload['image_position'])->values()->all(),
+        );
+    }
+
+    public function test_google_doc_faq_menu_links_point_to_faq_block(): void
+    {
+        Http::fake(['docs.google.com/*' => Http::response(<<<'HTML'
+            <html><head><meta charset="utf-8"></head><body>
+                <h1>Article</h1><p>Lead text.</p>
+                <h2>Section</h2><p>Section text.</p>
+                <h2>Часто задаваемые вопросы</h2><h3>Question?</h3><p>Answer.</p>
+                <h3>Якорь-меню: Вопрос-ответ (заголовок «Часто задаваемые вопросы»), Часто задаваемые вопросы (заголовок «Часто задаваемые вопросы»)</h3>
+            </body></html>
+            HTML)]);
+
+        $result = app(ArticleImportService::class)->import($this->importData([
+            'document_url' => 'https://docs.google.com/document/d/test-document/edit',
+        ]));
+        $tags = $result->page->blocks->firstWhere('type', BlockType::TAGS);
+        $faq = $result->page->blocks->firstWhere('type', BlockType::FAQ);
+
+        $this->assertSame(['#faq', '#faq'], array_column($tags->payload['tags'], 'link'));
+        $this->assertNotNull($faq);
+        $this->assertSame('faq', $faq->anchor);
+    }
+
+    public function test_google_doc_expert_comment_creates_separate_block_with_article_author(): void
+    {
+        Http::fake(['docs.google.com/*' => Http::response(<<<'HTML'
+            <html><head><meta charset="utf-8"></head><body>
+                <h1>Article</h1><p>Вступление.</p>
+                <h2>Section</h2><p>До цитаты.</p>
+                <p><span>Текст <strong>мнения врача</strong>.</span><sup><a href="#cmnt6" id="cmnt_ref6">[f]</a></sup></p>
+                <p>После цитаты.</p>
+                <div><p><a href="#cmnt_ref6" id="cmnt6">[f]</a>Оформить как блок "Мнение эксперта"</p></div>
+            </body></html>
+            HTML)]);
+
+        $doctor = $this->createDoctor();
+        $media = $this->createCuratorMedia();
+        $result = app(ArticleImportService::class)->import($this->importData([
+            'document_url' => 'https://docs.google.com/document/d/test-document/edit',
+            'author_id' => $doctor->id,
+            'expert_curator_image_id' => $media->id,
+        ]));
+
+        $expert = $result->page->blocks->firstWhere('type', BlockType::EXPERT_OPINION);
+        $this->assertNotNull($expert);
+        $this->assertSame($doctor->id, $expert->payload['author']);
+        $this->assertSame($media->id, $expert->payload['curator_image_id']);
+        $this->assertStringContainsString('мнения врача', $expert->body_html);
+        $this->assertStringNotContainsString('[f]', $expert->body_html);
+        $text = $result->page->blocks->where('type', BlockType::POST_TEXT)->pluck('body_html')->implode(' ');
+        $this->assertStringNotContainsString('мнения врача', $text);
+        $this->assertStringContainsString('До цитаты', $text);
+        $this->assertStringContainsString('После цитаты', $text);
+        $this->assertSame([], $result->warnings);
+    }
+
+    public function test_google_doc_expert_opinion_is_preserved_without_an_author(): void
+    {
+        Http::fake(['docs.google.com/*' => Http::response(<<<'HTML'
+            <html><head><meta charset="utf-8"></head><body>
+                <h1>Article</h1><p>Вступление.</p>
+                <p>Мнение врача.<sup><a href="#cmnt6">[f]</a></sup></p>
+                <div><p><a href="#cmnt_ref6">[f]</a>Оформить как блок «Мнение эксперта»</p></div>
+            </body></html>
+            HTML)]);
+        $result = app(ArticleImportService::class)->import($this->importData([
+            'document_url' => 'https://docs.google.com/document/d/test-document/edit',
+        ]));
+
+        $expert = $result->page->blocks->firstWhere('type', BlockType::EXPERT_OPINION);
+        $this->assertNotNull($expert);
+        $this->assertStringContainsString('Мнение врача', $expert->body_html);
+        $this->assertNotEmpty($result->warnings);
+    }
+
+    public function test_import_adds_callback_block_without_padding_before_contacts(): void
+    {
+        $result = app(ArticleImportService::class)->import($this->importData([
+            'append_default_blocks' => true,
+        ]));
+        $blocks = $result->page->blocks->values();
+        $callback = $blocks->get($blocks->count() - 2);
+
+        $this->assertSame(BlockType::BANNER_SPECIALIST_CALLBACK, $callback->type);
+        $this->assertSame('Запишитесь на прием онлайн', $callback->title);
+        $this->assertSame([], $callback->payload);
+        $this->assertTrue($callback->settings['remove_top_padding']);
+        $this->assertTrue($callback->settings['remove_bottom_padding']);
+        $this->assertSame(BlockType::CONTACTS, $blocks->last()->type);
+        $this->assertTrue($blocks->last()->settings['title_hidden']);
+        $this->assertTrue($blocks->last()->settings['remove_top_padding']);
+        $this->assertTrue($blocks->last()->settings['remove_bottom_padding']);
+        $slider = $blocks->firstWhere('type', BlockType::CARDS_SLIDER);
+        $this->assertFalse($slider->settings['title_hidden']);
+        $this->assertFalse($slider->settings['remove_top_padding']);
+        $this->assertFalse($slider->settings['remove_bottom_padding']);
+        $this->assertFalse($blocks->contains(fn ($block) => $block->type === BlockType::CALL_TO_ACTION));
     }
 
     public function test_import_creates_expert_opinion_before_navigation_and_faq(): void
