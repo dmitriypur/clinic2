@@ -1,204 +1,319 @@
 @setup
-require __DIR__.'/vendor/autoload.php';
-
-$branch = "main";
-$server = "zrenie.clinic";
-$userAndServer = 'forge@'. $server;
-$repository = "dmitriypur/clinic2";
-$baseDir = "/home/forge/zrenie.clinic";
-$releasesDir = "{$baseDir}/releases";
-$currentDir = "{$baseDir}/current";
-$npmCacheDir = "{$baseDir}/.npm-cache";
-$newReleaseName = date('Ymd-His');
-$newReleaseDir = "{$releasesDir}/{$newReleaseName}";
-$user = get_current_user();
-
-function logMessage($message) {
-return "echo '\033[32m" .$message. "\033[0m';\n";
-}
+    $deployKey = getenv('ZRENIE_DEPLOY_KEY') ?: getenv('HOME').'/.ssh/zrenie-clinic-deploy';
+    $key = escapeshellarg($deployKey);
+    $ssh = 'ssh -i '.$key.' -o IdentitiesOnly=yes -o BatchMode=yes -o ConnectTimeout=8 -o StrictHostKeyChecking=yes zrenietest@147.45.184.229';
 @endsetup
 
-@servers(['local' => '127.0.0.1', 'remote' => $userAndServer])
+@servers(['local' => '127.0.0.1'])
 
 @macro('deploy')
-startDeployment
-cloneRepository
-runComposer
-runNpm
-generateAssets
-updateSymlinks
-optimizeInstallation
-publishLivewireAssets
-backupDatabase
-migrateDatabase
-blessNewRelease
-cleanOldReleases
-finishDeploy
+    startDeployment
+    deployRelease
 @endmacro
 
 @macro('deploy-code')
-deployOnlyCode
+    startDeployment
+    deployRelease
 @endmacro
 
+@task('requireMain')
+    if [ "$(git symbolic-ref --quiet --short HEAD)" != main ]; then
+        echo 'Deploy must be run from the checked-out main branch.' >&2
+        exit 1
+    fi
+@endtask
+
 @task('startDeployment', ['on' => 'local'])
-{{ logMessage("🏃  Starting deployment...") }}
-git checkout {{ $branch }}
-git pull origin {{ $branch }}
+    @run('requireMain')
+    git pull --ff-only origin main
 @endtask
 
-@task('cloneRepository', ['on' => 'remote'])
-{{ logMessage("🌀  Cloning repository...") }}
-[ -d {{ $releasesDir }} ] || mkdir {{ $releasesDir }};
-cd {{ $releasesDir }}
+{{-- The stage tasks run together in one SSH session under the server's deployment lock. --}}
+@task('releaseEnvironment')
+    set -euo pipefail
+    umask 022
 
-# Create the release dir
-mkdir {{ $newReleaseDir }}
+    base=/var/www/zrenie-test
+    releases="$base/releases"
+    php=/usr/local/bin/zrenie-test-php
+    host=zrenie.clinic
+    release=''
+    backup_tmp=''
+    switching=0
 
-# Clone the repo
-git clone --depth 1 --branch {{ $branch }} git@github.com:{{ $repository }} {{ $newReleaseName }}
+    fail() {
+        printf '%s\n' "$*" >&2
+        exit 1
+    }
 
-# Configure sparse checkout
-cd {{ $newReleaseDir }}
-git config core.sparsecheckout true
-echo "*" > .git/info/sparse-checkout
-echo "!storage" >> .git/info/sparse-checkout
-echo "!public/build" >> .git/info/sparse-checkout
-git read-tree -mu HEAD
+    atomic_link() {
+        local name=$1 target=$2
+        ln -s -- "$target" "$work/$name"
+        mv -Tf -- "$work/$name" "$base/$name"
+    }
 
-# Mark release
-cd {{ $newReleaseDir }}
-echo "{{ $newReleaseName }}" > public/release-name.txt
+    ready_release() {
+        local target=$1
+        [[ -n "$target" && "${target%/*}" == "$releases" && ! -L "$target" ]] &&
+            test -s "$target/.release-sha" &&
+            test -f "$target/vendor/autoload.php" &&
+            test -s "$target/public/build/manifest.json"
+    }
+
+    cleanup() {
+        local status=$?
+        trap - EXIT HUP INT TERM
+        set +e
+
+        if (( switching )) && [[ "$(readlink "$base/current")" != "$active" ]]; then
+            rm -f -- "$work/current"
+            if atomic_link current "$active"; then
+                (cd "$active" && "$php" artisan queue:restart --no-interaction) ||
+                    echo 'Could not signal the queue after restoring the previous release.' >&2
+                printf 'Restored %s\n' "$active" >&2
+            else
+                echo 'Could not restore current. Check the release links on the server.' >&2
+            fi
+        fi
+
+        if (( status != 0 )) && [[ -n "$release" && "$(readlink "$base/current")" != "$release" ]]; then
+            rm -rf -- "$release"
+        fi
+
+        if [[ -n "$backup_tmp" ]]; then
+            rm -f -- "$backup_tmp"
+        fi
+        rm -rf -- "$work"
+        exit "$status"
+    }
+
+    initialize_release() {
+        test "$(id -un)" = zrenietest || fail 'Unexpected deploy user.'
+        exec 9>"$base/.deploy.lock"
+        flock -x 9
+        active=$(readlink "$base/current") || fail 'Could not read the active release.'
+        ready_release "$active" || fail "Active release is incomplete: $active"
+        work=$(mktemp -d "$base/.envoy-XXXXXX")
+        trap cleanup EXIT
+        trap 'exit 1' HUP INT TERM
+    }
 @endtask
 
-@task('runComposer', ['on' => 'remote'])
-{{ logMessage("🚚  Running Composer...") }}
-cd {{ $newReleaseDir }}
-[ -f composer.lock ] || { echo "composer.lock отсутствует — прерываю деплой"; exit 1; }
-php8.1 $(which composer) install --prefer-dist --no-dev --no-progress --no-interaction --no-scripts --no-plugins -o
+@task('unpackSource')
+    unpack_source() {
+        local sha=$1 available
+        [[ "$sha" =~ ^[a-f0-9]{40}$ ]] || fail 'Expected a commit SHA.'
+        available=$(df -Pk "$base" | awk 'NR == 2 { print $4 }')
+        test "$available" -ge 1800000 || fail 'Not enough disk space for a release and a database backup.'
+
+        release=$(mktemp -d "$releases/$(date -u +%Y%m%d-%H%M%S)-${sha:0:12}-XXXXXX")
+        chmod 755 "$release"
+        version=${release##*/}
+        printf 'Unpacking main at %s into %s\n' "$sha" "$version"
+        tar -xf - -C "$release"
+        cd "$release"
+        test -f composer.lock && test -f package-lock.json || fail 'Dependency lock files are missing.'
+        printf '%s\n' "$version" > public/release-name.txt
+    }
 @endtask
 
-@task('runNpm', ['on' => 'remote'])
-{{ logMessage("📦  Running NPM...") }}
-cd {{ $newReleaseDir }}
-[ -f package-lock.json ] || { echo "package-lock.json отсутствует — прерываю деплой"; exit 1; }
-mkdir -p {{ $npmCacheDir }}
-NPM_CONFIG_UPDATE_NOTIFIER=false npm ci --prefer-offline --no-audit --no-fund --cache {{ $npmCacheDir }}
+@task('updateSymlinks')
+    update_symlinks() {
+        echo 'Linking shared configuration and storage.'
+        [[ ! -e .env && ! -L .env ]] || fail 'The release archive must not contain .env.'
+        test -r "$base/.env"
+        test -d "$base/persistent/storage/app/public"
+        rm -rf -- storage public/storage
+        ln -s -- "$base/persistent/storage" storage
+        ln -s -- "$base/persistent/storage/app/public" public/storage
+        ln -s -- "$base/.env" .env
+        mkdir -p bootstrap/cache
+    }
 @endtask
 
-@task('generateAssets', ['on' => 'remote'])
-{{ logMessage("🌅  Generating assets...") }}
-cd {{ $newReleaseDir }}
-npm run build
+@task('runComposer')
+    run_composer() {
+        echo 'Installing PHP dependencies.'
+        "$php" /usr/local/bin/composer install --prefer-dist --no-dev --no-interaction --no-progress --no-scripts --no-plugins --optimize-autoloader
+        "$php" /usr/local/bin/composer check-platform-reqs --no-dev
+        "$php" artisan clear-compiled --no-interaction
+        "$php" artisan package:discover --no-interaction
+    }
 @endtask
 
-@task('updateSymlinks', ['on' => 'remote'])
-{{ logMessage("🔗  Updating symlinks to persistent data...") }}
-# Remove the storage directory and replace with persistent data
-rm -rf {{ $newReleaseDir }}/storage;
-cd {{ $newReleaseDir }};
-ln -nfs {{ $baseDir }}/persistent/storage storage;
-
-rm -rf {{ $newReleaseDir }}/public/storage;
-cd {{ $newReleaseDir }}/public/;
-ln -nfs {{ $baseDir }}/persistent/storage/app/public storage;
-
-# Import the environment config
-cd {{ $newReleaseDir }}
-ln -nfs {{ $baseDir }}/.env .env
+@task('runNpm')
+    run_npm() {
+        echo 'Installing frontend dependencies.'
+        npm ci --no-audit --no-fund
+    }
 @endtask
 
-@task('optimizeInstallation', ['on' => 'remote'])
-{{ logMessage("✨  Optimizing installation...") }}
-cd {{ $newReleaseDir }}
-php8.1 artisan clear-compiled
+@task('generateAssets')
+    generate_assets() {
+        echo 'Building frontend assets.'
+        npm run build
+        test -s public/build/manifest.json
+    }
 @endtask
 
-@task('publishLivewireAssets', ['on' => 'remote'])
-{{ logMessage("📡  Publishing Livewire assets...") }}
-cd {{ $newReleaseDir }}
-php8.1 artisan livewire:publish --assets --no-interaction
+@task('publishLivewireAssets')
+    publish_livewire_assets() {
+        "$php" artisan livewire:publish --assets --no-interaction
+    }
 @endtask
 
-@task('backupDatabase', ['on' => 'remote'])
-{{ logMessage("📀  Backing up database...") }}
-cd {{ $newReleaseDir }}
-php8.1 artisan backup:run && php8.1 artisan backup:clean
+@task('backupDatabase')
+    backup_database() {
+        local database backup
+        database=$(sed -n 's/^DB_DATABASE=//p' "$base/.env")
+        [[ "$database" =~ ^zrenie_test(_restored_[0-9]{8})?$ ]] ||
+            fail 'The configured database does not match the production database for this site.'
+
+        echo 'Backing up the database.'
+        backup="$base/backups/$version.sql.gz"
+        backup_tmp="$backup.tmp"
+        (umask 077; mysqldump --defaults-extra-file="$base/.mysql.cnf" --single-transaction --quick \
+            --no-tablespaces --set-gtid-purged=OFF "$database" | gzip > "$backup_tmp")
+        gzip -t "$backup_tmp"
+        mv -T -- "$backup_tmp" "$backup"
+        backup_tmp=''
+    }
 @endtask
 
-@task('migrateDatabase', ['on' => 'remote'])
-{{ logMessage("🙈  Migrating database...") }}
-cd {{ $newReleaseDir }}
-php8.1 artisan migrate --force
+@task('migrateDatabase')
+    migrate_database() {
+        echo 'Running database migrations.'
+        "$php" artisan migrate --force --no-interaction
+    }
 @endtask
 
-@task('blessNewRelease', ['on' => 'remote'])
-{{ logMessage("🙏  Blessing new release...") }}
-ln -nfs {{ $newReleaseDir }} {{ $currentDir }}
-cd {{ $newReleaseDir }}
-
-php8.1 artisan sitemap:generate
-php8.1 artisan view:clear
-php8.1 artisan config:clear
-php8.1 artisan cache:clear
-php8.1 artisan config:cache
-php8.1 artisan event:cache
-
-sudo service php8.1-fpm restart
-sudo service supervisor restart all
+@task('optimizeInstallation')
+    optimize_installation() {
+        "$php" artisan view:clear --no-interaction
+        "$php" artisan config:cache --no-interaction
+        "$php" artisan event:cache --no-interaction
+    }
 @endtask
 
-@task('cleanOldReleases', ['on' => 'remote'])
-{{ logMessage("🚾  Cleaning up old releases...") }}
-# Delete all but the 3 most recent.
-cd {{ $releasesDir }}
-ls -dt {{ $releasesDir }}/* | tail -n +4 | xargs -d "\n" sudo chown -R forge .
-ls -dt {{ $releasesDir }}/* | tail -n +4 | xargs -d "\n" rm -rf
+@task('generateSitemap')
+    generate_sitemap() {
+        "$php" artisan sitemap:generate --no-interaction
+    }
 @endtask
 
-@task('finishDeploy', ['on' => 'local'])
-{{ logMessage("🚀  Application deployed!") }}
+@task('switchRelease')
+    switch_release() {
+        local target=$1 http
+        switching=1
+        atomic_link current "$target"
+        cd "$target"
+
+        # This site has its own Redis cache database. Clearing it flushes that database.
+        if grep -Fxq 'CACHE_DRIVER=redis' "$base/.env" && grep -Fxq 'REDIS_CACHE_DB=15' "$base/.env"; then
+            "$php" artisan cache:clear --no-interaction
+        fi
+
+        http=$(curl --noproxy '*' --max-time 20 --resolve "$host:443:127.0.0.1" \
+            -sS -o /dev/null -w '%{http_code}' "https://$host/") ||
+            fail "Could not check https://$host/ after switching releases."
+        [[ "$http" == 200 ]] || fail "Home page check returned HTTP $http."
+
+        "$php" artisan queue:restart --no-interaction
+        atomic_link previous "$active"
+        switching=0
+        printf 'Active release: %s, HTTPS %s\n' "${target##*/}" "$http"
+    }
 @endtask
 
-@task('deployOnlyCode',['on' => 'remote'])
-{{ logMessage("💻  Deploying code changes...") }}
-cd {{ $currentDir }}
-git pull origin {{ $branch }}
-php8.1 artisan livewire:publish --assets --no-interaction
-php8.1 artisan view:clear
-php8.1 artisan config:clear
-php8.1 artisan cache:clear
-php8.1 artisan config:cache
-php8.1 artisan event:cache
-sudo service php8.1-fpm restart
-sudo service supervisor restart all
+@task('cleanOldReleases')
+    clean_old_releases() {
+        local name target kept=0
+        local pattern='^[0-9]{8}-[0-9]{6}-[a-f0-9]{12}(-[a-zA-Z0-9]{6})?$'
+
+        while IFS= read -r name; do
+            target="$releases/$name"
+            [[ "$name" =~ $pattern && "$target" != "$release" && "$target" != "$active" ]] || continue
+            ready_release "$target" || continue
+            if (( kept < 1 )); then
+                kept=$((kept + 1))
+            else
+                rm -rf -- "$target" || echo "Could not remove $target." >&2
+            fi
+        done < <(find "$releases" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | LC_ALL=C sort -r)
+
+        kept=0
+        while IFS= read -r name; do
+            [[ "${name%.sql.gz}" =~ $pattern && "$name" != "$version.sql.gz" ]] || continue
+            if (( kept < 2 )); then
+                kept=$((kept + 1))
+            else
+                rm -f -- "$base/backups/$name" || echo "Could not remove backup $name." >&2
+            fi
+        done < <(find "$base/backups" -maxdepth 1 -type f -name '*.sql.gz' -printf '%f\n' | LC_ALL=C sort -r)
+    }
 @endtask
 
-@task('rollback', ['on' => 'remote'])
-{{ logMessage("⏮  Rolling back to the previous release...") }}
-cd {{ $releasesDir }}
-# Get current release path
-CURRENT=$(readlink -f {{ $currentDir }})
-# Find previous release (newest folder that is NOT current)
-PREVIOUS=$(ls -dt {{ $releasesDir }}/* | grep -vFx "$CURRENT" | head -n 1)
+@task('deployRelease', ['on' => 'local'])
+    exec bash -se <<'ENVOY_LOCAL'
+    set -euo pipefail
+    @run('requireMain')
+    test -r {{ $key }} || { echo 'SSH key for zrenie.clinic is missing.' >&2; exit 1; }
 
-if [ -z "$PREVIOUS" ]; then
-    echo "❌  No previous release found!"; exit 1;
-fi
+    sha=$(git rev-parse --verify 'refs/heads/main^{commit}')
+    archive=$(mktemp "${TMPDIR:-/tmp}/zrenie-envoy.XXXXXX")
+    trap 'rm -f -- "$archive"' EXIT
+    git archive --format=tar -o "$archive" "$sha"
 
-echo "Rolling back from $CURRENT to $PREVIOUS"
-ln -nfs $PREVIOUS {{ $currentDir }}
+    remote_script=$(cat <<'ENVOY_REMOTE'
+    @run('releaseEnvironment')
+    @run('unpackSource')
+    @run('updateSymlinks')
+    @run('runComposer')
+    @run('runNpm')
+    @run('generateAssets')
+    @run('publishLivewireAssets')
+    @run('backupDatabase')
+    @run('migrateDatabase')
+    @run('optimizeInstallation')
+    @run('generateSitemap')
+    @run('switchRelease')
+    @run('cleanOldReleases')
 
-# Reset caches for the restored version
-cd $PREVIOUS
-php8.1 artisan view:clear
-php8.1 artisan config:clear
-php8.1 artisan cache:clear
-php8.1 artisan config:cache
-php8.1 artisan event:cache
+    initialize_release
+    unpack_source "$1"
+    update_symlinks
+    run_composer
+    run_npm
+    generate_assets
+    publish_livewire_assets
+    backup_database
+    migrate_database
+    optimize_installation
+    generate_sitemap
+    printf '%s\n' "$1" > .release-sha
+    switch_release "$release"
+    clean_old_releases
+    ENVOY_REMOTE
+    )
+    printf -v remote_command 'bash -c %q bash %q' "$remote_script" "$sha"
+    {{ $ssh }} "$remote_command" < "$archive"
+    ENVOY_LOCAL
+@endtask
 
-# Restart services
-sudo service php8.1-fpm restart
-sudo service supervisor restart all
+@task('rollback', ['on' => 'local'])
+    test -r {{ $key }} || { echo 'SSH key for zrenie.clinic is missing.' >&2; exit 1; }
+    {{ $ssh }} 'bash -se' <<'ENVOY_REMOTE'
+    @run('releaseEnvironment')
+    @run('optimizeInstallation')
+    @run('switchRelease')
 
-{{ logMessage("✅  Rollback successful!") }}
+    initialize_release
+    previous=$(readlink "$base/previous") || fail 'There is no previous release to roll back to.'
+    [[ "$previous" != "$active" ]] && ready_release "$previous" ||
+        fail "Previous release is incomplete or already active: $previous"
+    printf 'Rolling back from %s to %s\n' "${active##*/}" "${previous##*/}"
+    cd "$previous"
+    optimize_installation
+    switch_release "$previous"
+    ENVOY_REMOTE
 @endtask

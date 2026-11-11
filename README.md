@@ -67,19 +67,24 @@ The Laravel framework is open-sourced software licensed under the [MIT license](
 
 ## Deployment
 
-To deploy the application:
-```bash
-php vendor/bin/envoy run deploy
+Run the deployment from the project root on the local `main` branch.
 
-php vendor/bin/envoy run deploy --path='/Users/dmitriypur/.codex/visualizations/2026/11/05/01a1ab19-01e4-7361-84ec-f0d9d101d085/zrenie-test-deploy/Envoy.blade.php'
+```bash
+git switch main
+php vendor/bin/envoy run deploy
 ```
 
-To rollback to the previous release (in case of failure):
+Envoy fast-forwards from `origin/main` and deploys the resulting local `main` commit. It uses `~/.ssh/zrenie-clinic-deploy` by default. Set `ZRENIE_DEPLOY_KEY` to use a different key file.
+
+The tasks in `Envoy.blade.php` install PHP and npm dependencies, build frontend assets, publish Livewire assets, verify a database backup, run migrations, refresh caches and generate the sitemap. Envoy then switches the active release, checks the home page over HTTPS and restarts the queue worker. If the switch fails, it restores the active release. The `deploy-code` command also runs the full deployment.
+
+To switch back to the previously active release, run:
+
 ```bash
 php vendor/bin/envoy run rollback
 ```
 
-The Envoy rollback switches the application symlink to an earlier release; it does not reverse database migrations. Treat the production schema as forward-only and do not run `php artisan migrate:rollback` there. In particular, the historical migrations `2023_06_06_092522_add_uuid_and_phone_to_users_table` and `2023_12_01_091544_rename_review_body_to_body_html` have non-reversible `down()` methods. Recover an incompatible schema from a verified backup or with a separately reviewed forward-only repair migration.
+The rollback uses the built release at `/var/www/zrenie-test/previous` and checks it over HTTPS after switching. It leaves the database at its current version. Treat the production schema as forward-only. In particular, the historical migrations `2023_06_06_092522_add_uuid_and_phone_to_users_table` and `2023_12_01_091544_rename_review_body_to_body_html` have non-reversible `down()` methods. Recover an incompatible schema from a verified backup or with a separately reviewed forward-only repair migration.
 
 ## Dependency Policy
 
@@ -92,7 +97,6 @@ The Envoy rollback switches the application symlink to an earlier release; it do
 
 ## Deployment Notes
 
-- `Envoy` opens a separate SSH connection per task. To avoid repeated password prompts, configure SSH keys for `forge@zrenie.clinic` and enable your local ssh-agent.
-- If needed, add SSH multiplexing in your local `~/.ssh/config` for this host (`ControlMaster auto`, `ControlPersist`, `ControlPath`).
-- Backup notifications use the regular Laravel mailer. Set `BACKUP_NOTIFICATION_MAIL_TO` on the server `.env` to the address that should receive backup status emails.
-- If backups complete but log `Sending notification failed`, verify the production `MAIL_*` SMTP settings first.
+- Envoy connects as `zrenietest` and runs all release steps under one lock. Deploy and rollback use the same lock.
+- Envoy stores its pre-migration database dumps in `/var/www/zrenie-test/backups`. It keeps the three latest deployment backups after a successful deployment.
+- Backups created with Laravel's `backup:run` use the regular Laravel mailer. Set `BACKUP_NOTIFICATION_MAIL_TO` in the server `.env` for those notifications. If a backup logs `Sending notification failed`, verify the production `MAIL_*` SMTP settings.
