@@ -141,6 +141,35 @@ class ArticleImportServiceTest extends TestCase
         $this->assertStringContainsString('Мнение врача', $expert->body_html);
     }
 
+    public function test_google_doc_moves_the_whole_expert_quote_out_of_the_text_block(): void
+    {
+        Http::fake(['docs.google.com/*' => Http::response(<<<'HTML'
+            <html><head><meta charset="utf-8"></head><body>
+                <h1>Article</h1><p>Вступление.</p>
+                <h2>Section</h2><p>До цитаты.</p>
+                <p>«Первый абзац цитаты.</p>
+                <p>Второй абзац цитаты.</p>
+                <p>Последний абзац цитаты».<sup><a href="#cmnt8">[h]</a></sup></p>
+                <p>После цитаты.</p>
+                <div><p><a href="#cmnt_ref8">[h]</a>Оформить блок как мнение эксперта</p></div>
+            </body></html>
+            HTML)]);
+
+        $result = app(ArticleImportService::class)->import($this->importData([
+            'document_url' => 'https://docs.google.com/document/d/test-document/edit',
+        ]));
+
+        $expert = $result->page->blocks->firstWhere('type', BlockType::EXPERT_OPINION);
+        $this->assertNotNull($expert);
+        $text = $result->page->blocks->where('type', BlockType::POST_TEXT)->pluck('body_html')->implode(' ');
+        foreach (['Первый', 'Второй', 'Последний'] as $part) {
+            $this->assertStringContainsString("$part абзац цитаты", $expert->body_html);
+            $this->assertStringNotContainsString("$part абзац цитаты", $text);
+        }
+        $this->assertStringContainsString('До цитаты', $text);
+        $this->assertStringContainsString('После цитаты', $text);
+    }
+
     public function test_google_doc_expert_opinion_is_preserved_without_an_author(): void
     {
         Http::fake(['docs.google.com/*' => Http::response(<<<'HTML'

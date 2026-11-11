@@ -132,7 +132,7 @@ class ArticleContentParser
                 foreach ($xpath->query('.//a[starts-with(@href, "#cmnt")]', $node) as $reference) {
                     if (preg_match('/^\[([a-zа-я0-9]+)\]$/iu', trim($reference->textContent), $match)
                         && preg_match('/оформить\s+(?:как\s+блок|блок\s+как)\s*["«]?мнение\s+эксперта/iu', $commentAnnotations[Str::lower($match[1])] ?? '')) {
-                        $expertOpinionParts[] = $this->sanitizeImportedHtml($node->ownerDocument->saveHTML($node));
+                        array_push($expertOpinionParts, ...$this->extractExpertQuote($node, $currentSection['html_parts']));
                         continue 2;
                     }
                 }
@@ -456,6 +456,45 @@ class ArticleContentParser
 
         $question = null;
         $parts = [];
+    }
+
+    private function extractExpertQuote(\DOMElement $markedParagraph, array &$sectionParts): array
+    {
+        $document = $markedParagraph->ownerDocument;
+        $markedPart = $this->sanitizeImportedHtml($document->saveHTML($markedParagraph));
+        $text = $markedParagraph->textContent;
+        $unmatchedClosings = substr_count($text, '»') - substr_count($text, '«');
+
+        if ($unmatchedClosings <= 0) {
+            return [$markedPart];
+        }
+
+        $precedingParts = [];
+        for ($paragraph = $markedParagraph->previousElementSibling; $paragraph?->tagName === 'p'; $paragraph = $paragraph->previousElementSibling) {
+            $text = $paragraph->textContent;
+            if (preg_match('/^\s*$/u', $text)) {
+                continue;
+            }
+
+            $precedingParts[] = $this->sanitizeImportedHtml($document->saveHTML($paragraph));
+            $unmatchedClosings += substr_count($text, '»') - substr_count($text, '«');
+            if ($unmatchedClosings > 0) {
+                continue;
+            }
+
+            $precedingParts = array_reverse($precedingParts);
+            $partCount = count($precedingParts);
+            if ($unmatchedClosings === 0 && preg_match('/^\s*«/u', $text)
+                && array_slice($sectionParts, -$partCount) === $precedingParts) {
+                array_splice($sectionParts, -$partCount);
+
+                return [...$precedingParts, $markedPart];
+            }
+
+            break;
+        }
+
+        return [$markedPart];
     }
 
     private function sanitizeImportedHtml(string $html): string
