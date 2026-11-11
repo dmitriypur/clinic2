@@ -463,7 +463,12 @@ class ArticleContentParser
         $document = $markedParagraph->ownerDocument;
         $markedPart = $this->sanitizeImportedHtml($document->saveHTML($markedParagraph));
         $text = $markedParagraph->textContent;
-        $unmatchedClosings = substr_count($text, '»') - substr_count($text, '«');
+        foreach (['«' => '»', '“' => '”'] as $opening => $closing) {
+            $unmatchedClosings = substr_count($text, $closing) - substr_count($text, $opening);
+            if ($unmatchedClosings > 0) {
+                break;
+            }
+        }
 
         if ($unmatchedClosings <= 0) {
             return [$markedPart];
@@ -477,14 +482,14 @@ class ArticleContentParser
             }
 
             $precedingParts[] = $this->sanitizeImportedHtml($document->saveHTML($paragraph));
-            $unmatchedClosings += substr_count($text, '»') - substr_count($text, '«');
+            $unmatchedClosings += substr_count($text, $closing) - substr_count($text, $opening);
             if ($unmatchedClosings > 0) {
                 continue;
             }
 
             $precedingParts = array_reverse($precedingParts);
             $partCount = count($precedingParts);
-            if ($unmatchedClosings === 0 && preg_match('/^\s*«/u', $text)
+            if ($unmatchedClosings === 0 && preg_match('/^\s*' . $opening . '/u', $text)
                 && array_slice($sectionParts, -$partCount) === $precedingParts) {
                 array_splice($sectionParts, -$partCount);
 

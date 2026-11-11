@@ -141,15 +141,16 @@ class ArticleImportServiceTest extends TestCase
         $this->assertStringContainsString('Мнение врача', $expert->body_html);
     }
 
-    public function test_google_doc_moves_the_whole_expert_quote_out_of_the_text_block(): void
+    /** @dataProvider expertQuoteDelimiters */
+    public function test_google_doc_moves_the_whole_expert_quote_out_of_the_text_block(string $opening, string $closing): void
     {
-        Http::fake(['docs.google.com/*' => Http::response(<<<'HTML'
+        Http::fake(['docs.google.com/*' => Http::response(<<<HTML
             <html><head><meta charset="utf-8"></head><body>
                 <h1>Article</h1><p>Вступление.</p>
                 <h2>Section</h2><p>До цитаты.</p>
-                <p>«Первый абзац цитаты.</p>
+                <p>{$opening}Первый абзац цитаты.</p>
                 <p>Второй абзац цитаты.</p>
-                <p>Последний абзац цитаты».<sup><a href="#cmnt8">[h]</a></sup></p>
+                <p>Последний абзац цитаты{$closing}.<sup><a href="#cmnt8">[h]</a></sup></p>
                 <p>После цитаты.</p>
                 <div><p><a href="#cmnt_ref8">[h]</a>Оформить блок как мнение эксперта</p></div>
             </body></html>
@@ -168,6 +169,14 @@ class ArticleImportServiceTest extends TestCase
         }
         $this->assertStringContainsString('До цитаты', $text);
         $this->assertStringContainsString('После цитаты', $text);
+    }
+
+    public static function expertQuoteDelimiters(): array
+    {
+        return [
+            'guillemets' => ['«', '»'],
+            'curly double quotes' => ['“', '”'],
+        ];
     }
 
     public function test_google_doc_expert_opinion_is_preserved_without_an_author(): void
