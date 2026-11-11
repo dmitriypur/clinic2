@@ -50,8 +50,8 @@ class GenerateSitemap extends Command
                 } else {
                     $filename = "sitemap-{$city->slug}.xml";
                     $prefix = '/' . $city->slug;
-                    $expectedCitySitemapFiles[] = $filename;
                 }
+                $expectedCitySitemapFiles[] = $filename;
 
                 $this->info("Генерация {$filename} для города {$city->name}...");
 
@@ -180,6 +180,10 @@ class GenerateSitemap extends Command
     private function deleteStaleCitySitemaps(array $expectedCitySitemapFiles): void
     {
         $existingCitySitemaps = glob(public_path('sitemap-*.xml')) ?: [];
+        $defaultSitemap = public_path('sitemap.xml');
+        if (is_file($defaultSitemap)) {
+            $existingCitySitemaps[] = $defaultSitemap;
+        }
 
         foreach ($existingCitySitemaps as $existingCitySitemap) {
             $filename = basename($existingCitySitemap);
@@ -188,7 +192,9 @@ class GenerateSitemap extends Command
                 continue;
             }
 
-            @unlink($existingCitySitemap);
+            if (!unlink($existingCitySitemap)) {
+                throw new \RuntimeException("Не удалось удалить устаревший файл {$filename}.");
+            }
             $this->info("Удален устаревший файл {$filename}.");
         }
     }

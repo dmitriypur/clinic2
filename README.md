@@ -98,5 +98,5 @@ The rollback uses the built release at `/var/www/zrenie-test/previous` and check
 ## Deployment Notes
 
 - Envoy connects as `zrenietest` and runs all release steps under one lock. Deploy and rollback use the same lock.
-- Envoy stores its pre-migration database dumps in `/var/www/zrenie-test/backups`. It keeps the three latest deployment backups after a successful deployment.
+- Envoy stores its pre-migration database dumps in `/var/www/zrenie-test/backups`. Once it verifies a new backup, it keeps the three latest deployment backups before running migrations.
 - Backups created with Laravel's `backup:run` use the regular Laravel mailer. Set `BACKUP_NOTIFICATION_MAIL_TO` in the server `.env` for those notifications. If a backup logs `Sending notification failed`, verify the production `MAIL_*` SMTP settings.

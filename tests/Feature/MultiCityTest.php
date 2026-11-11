@@ -11,6 +11,8 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Route;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class MultiCityTest extends TestCase
@@ -75,6 +77,40 @@ class MultiCityTest extends TestCase
 
         foreach ($activeCities as $city) {
             $this->assertTrue($city->active, "Город {$city->slug} должен быть активным");
+        }
+    }
+
+    public function test_sitemap_generation_keeps_one_map_per_active_city(): void
+    {
+        $publicPath = $this->app->publicPath();
+        $directory = sys_get_temp_dir().'/city-sitemaps-'.Str::uuid();
+        File::makeDirectory($directory);
+        $this->app->usePublicPath($directory);
+
+        try {
+            City::query()->create([
+                'name' => 'Киров',
+                'slug' => 'kirov',
+                'active' => true,
+            ]);
+
+            $this->artisan('sitemap:generate')->assertExitCode(0);
+            $this->assertEqualsCanonicalizing(
+                ['sitemap.xml', 'sitemap-spb.xml', 'sitemap-kirov.xml'],
+                array_map('basename', File::glob($directory.'/sitemap*.xml')),
+            );
+
+            City::where('slug', 'moskva')->firstOrFail()->update(['active' => false]);
+            City::where('slug', 'spb')->firstOrFail()->update(['active' => false]);
+
+            $this->artisan('sitemap:generate')->assertExitCode(0);
+            $this->assertSame(
+                ['sitemap-kirov.xml'],
+                array_map('basename', File::glob($directory.'/sitemap*.xml')),
+            );
+        } finally {
+            $this->app->usePublicPath($publicPath);
+            File::deleteDirectory($directory);
         }
     }
 

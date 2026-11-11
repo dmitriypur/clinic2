@@ -35,6 +35,7 @@
 
     base=/var/www/zrenie-test
     releases="$base/releases"
+    release_name_pattern='^[0-9]{8}-[0-9]{6}-[a-f0-9]{12}(-[a-zA-Z0-9]{6})?$'
     php=/usr/local/bin/zrenie-test-php
     host=zrenie.clinic
     release=''
@@ -180,6 +181,21 @@
     }
 @endtask
 
+@task('cleanOldBackups')
+    clean_old_backups() {
+        local names name kept=0
+        names=$(find "$base/backups" -maxdepth 1 -type f -name '*.sql.gz' -printf '%f\n' | LC_ALL=C sort -r)
+        while IFS= read -r name; do
+            [[ "${name%.sql.gz}" =~ $release_name_pattern && "$name" != "$version.sql.gz" ]] || continue
+            if (( kept < 2 )); then
+                kept=$((kept + 1))
+            else
+                rm -f -- "$base/backups/$name"
+            fi
+        done <<< "$names"
+    }
+@endtask
+
 @task('migrateDatabase')
     migrate_database() {
         echo 'Running database migrations.'
@@ -228,11 +244,10 @@
 @task('cleanOldReleases')
     clean_old_releases() {
         local name target kept=0
-        local pattern='^[0-9]{8}-[0-9]{6}-[a-f0-9]{12}(-[a-zA-Z0-9]{6})?$'
 
         while IFS= read -r name; do
             target="$releases/$name"
-            [[ "$name" =~ $pattern && "$target" != "$release" && "$target" != "$active" ]] || continue
+            [[ "$name" =~ $release_name_pattern && "$target" != "$release" && "$target" != "$active" ]] || continue
             ready_release "$target" || continue
             if (( kept < 1 )); then
                 kept=$((kept + 1))
@@ -240,16 +255,6 @@
                 rm -rf -- "$target" || echo "Could not remove $target." >&2
             fi
         done < <(find "$releases" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | LC_ALL=C sort -r)
-
-        kept=0
-        while IFS= read -r name; do
-            [[ "${name%.sql.gz}" =~ $pattern && "$name" != "$version.sql.gz" ]] || continue
-            if (( kept < 2 )); then
-                kept=$((kept + 1))
-            else
-                rm -f -- "$base/backups/$name" || echo "Could not remove backup $name." >&2
-            fi
-        done < <(find "$base/backups" -maxdepth 1 -type f -name '*.sql.gz' -printf '%f\n' | LC_ALL=C sort -r)
     }
 @endtask
 
@@ -273,6 +278,7 @@
     @run('generateAssets')
     @run('publishLivewireAssets')
     @run('backupDatabase')
+    @run('cleanOldBackups')
     @run('migrateDatabase')
     @run('optimizeInstallation')
     @run('generateSitemap')
@@ -287,6 +293,7 @@
     generate_assets
     publish_livewire_assets
     backup_database
+    clean_old_backups
     migrate_database
     optimize_installation
     generate_sitemap
