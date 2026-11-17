@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'envoy_directory' => env('ENVOY_BACKUP_DIRECTORY', '/var/www/zrenie-test/backups'),
 
     'backup' => [
         /*

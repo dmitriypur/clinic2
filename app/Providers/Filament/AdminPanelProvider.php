@@ -4,6 +4,7 @@ namespace App\Providers\Filament;
 
 use App\Filament\Forms\Components\SafeFileUpload;
 use App\Filament\Resources\NavigationResource;
+use App\Http\Controllers\DownloadLatestEnvoyBackupController;
 use App\Models\City;
 use App\Models\Doctor;
 use App\Models\Page;
@@ -14,6 +15,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Navigation\NavigationItem;
 use Filament\Pages;
 use Filament\Panel;
 use Filament\PanelProvider;
@@ -26,6 +28,7 @@ use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Session\Middleware\StartSession;
+use Illuminate\Support\Facades\Route;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use RyanChandler\FilamentNavigation\FilamentNavigation;
 
@@ -48,6 +51,17 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->authGuard(env('FILAMENT_AUTH_GUARD', 'staff'))
             ->login()
+            ->authenticatedRoutes(function (): void {
+                Route::get('backups/latest', DownloadLatestEnvoyBackupController::class)->name('backups.latest');
+            })
+            ->navigationItems([
+                NavigationItem::make('Скачать последний бэкап БД')
+                    ->group('Настройки')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->sort(100)
+                    ->url(fn (): string => route('filament.admin.backups.latest'))
+                    ->visible(fn (): bool => DownloadLatestEnvoyBackupController::canDownload()),
+            ])
             ->colors([
                 'primary' => Color::Orange,
             ])

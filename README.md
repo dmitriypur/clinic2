@@ -101,4 +101,5 @@ The rollback uses the built release at `/var/www/zrenie-test/previous` and check
 
 - Envoy connects as `zrenietest` and runs all release steps under one lock. Deploy and rollback use the same lock.
 - Envoy stores its pre-migration database dumps in `/var/www/zrenie-test/backups`. Once it verifies a new backup, it keeps the three latest deployment backups before running migrations.
+- In Filament, users with the `super_admin` role can download the latest Envoy dump via **Настройки → Скачать последний бэкап БД**. The PHP-FPM pool user needs to be able to list the backup directory and read the dumps (Envoy creates them with mode `0600` as `zrenietest`). If the pool uses a separate account, grant it private access to existing and future dumps. Keep the directory outside the web root. Set `ENVOY_BACKUP_DIRECTORY` only if the deployment backup path differs from the default.
 - Backups created with Laravel's `backup:run` use the regular Laravel mailer. Set `BACKUP_NOTIFICATION_MAIL_TO` in the server `.env` for those notifications. If a backup logs `Sending notification failed`, verify the production `MAIL_*` SMTP settings.
