@@ -1232,30 +1232,6 @@
             this.expandedSources.tracking = Array.from(new Set([key, ...this.expandedSources.tracking]))
             this.syncState()
         },
-        deleteSource(sourceKey) {
-            this.state.sources = this.state.sources.filter((row) => row.key !== sourceKey)
-            this.state.campaigns = this.state.campaigns.filter((row) => row.source_key !== sourceKey)
-            this.state.archived_campaigns = this.state.archived_campaigns.filter((row) => row.source_key !== sourceKey)
-            this.syncState()
-        },
-        deleteMediumTree(sourceKey, medium) {
-            const mediumValue = String(medium || '')
-            const removedKeys = this.state.campaigns
-                .filter((row) => row.source_key === sourceKey && ['medium', 'campaign'].includes(row.type) && String(row.medium || '') === mediumValue)
-                .map((row) => row.key)
-
-            this.state.campaigns = this.state.campaigns.filter((row) => {
-                return ! (row.source_key === sourceKey && ['medium', 'campaign'].includes(row.type) && String(row.medium || '') === mediumValue)
-            })
-            this.selectedTrackingKeys = this.selectedTrackingKeys.filter((key) => ! removedKeys.includes(key))
-            this.expandedMediums.tracking = this.expandedMediums.tracking.filter((key) => key !== this.mediumTreeKey(sourceKey, mediumValue))
-            this.syncState()
-        },
-        deleteCampaignRow(campaignKey) {
-            this.state.campaigns = this.state.campaigns.filter((row) => row.key !== campaignKey)
-            this.selectedTrackingKeys = this.selectedTrackingKeys.filter((key) => key !== campaignKey)
-            this.syncState()
-        },
         syncSourceOnlyCampaignRows(state) {
             let campaigns = [...state.campaigns]
             const archivedCampaigns = [...state.archived_campaigns]
@@ -1266,7 +1242,7 @@
                 const activeSourceRows = campaigns.filter((row) => row.type === 'source' && row.source_key === sourceKey)
                 const archivedSourceExists = archivedCampaigns.some((row) => row.type === 'source' && row.source_key === sourceKey)
                 const sourceDefaultNeedsRule = !! defaultPhoneKey
-                const activeSourceHasPayload = activeSourceRows.some((row) => row.phone_key || row.cabinet || row.is_organic_overridden)
+                const activeSourceHasPayload = activeSourceRows.some((row) => row.phone_key || row.cabinet || row.is_organic_overridden || row.restarted_from_id)
                 const shouldHaveRow = (sourceDefaultNeedsRule || activeSourceHasPayload) && (activeSourceRows.length > 0 || ! archivedSourceExists)
 
                 if (! shouldHaveRow) {
@@ -1452,6 +1428,10 @@
                 return
             }
 
+            if (mode === 'stop' && ! window.confirm(`Перенести запущенные записи ветки в архив? Количество: ${keys.length}.`)) {
+                return
+            }
+
             this.syncState()
             await this.runAction(() => mode === 'stop'
                 ? this.$wire.stopCampaigns(keys, this.state)
@@ -1482,20 +1462,27 @@
 
             await this.requestToggleBranch(keys, mode)
         },
-        async requestDeleteSourceTree(sourceKey) {
-            this.deleteSource(sourceKey)
-            await this.runAction(() => this.$wire.saveState(this.state), 'tracking')
-            this.showToast('Source удалён')
+        branchArchiveKeys(sourceKey, medium = null) {
+            return this.state.campaigns
+                .filter((row) => row.source_key === sourceKey && (medium === null || row.medium === medium))
+                .map((row) => row.key)
         },
-        async requestDeleteMediumTree(sourceKey, medium) {
-            this.deleteMediumTree(sourceKey, medium)
-            await this.runAction(() => this.$wire.saveState(this.state), 'tracking')
-            this.showToast('Medium удалён')
+        async requestArchiveBranch(sourceKey, medium = null) {
+            const keys = this.branchArchiveKeys(sourceKey, medium)
+            const branch = [this.sourceLabel(sourceKey), medium].filter(Boolean).join(' / ')
+
+            if (! keys.length && medium !== null) {
+                return
+            }
+
+            const count = keys.length || 1
+            if (window.confirm(`Перенести «${branch}» в архив? Количество записей: ${count}.`)) {
+                await this.requestArchiveCampaigns(keys, keys.length ? null : sourceKey)
+            }
         },
-        async requestDeleteCampaignRow(campaignKey) {
-            this.deleteCampaignRow(campaignKey)
-            await this.runAction(() => this.$wire.saveState(this.state), 'tracking')
-            this.showToast('Campaign удалён')
+        async requestArchiveCampaigns(keys, emptySourceKey = null) {
+            this.syncState()
+            await this.runAction(() => this.$wire.archiveCampaigns(keys, this.state, emptySourceKey), 'tracking')
         },
         async requestStopSelectedCampaigns() {
             const selectedKeys = [...this.selectedTrackingKeys]
@@ -1514,17 +1501,16 @@
         async requestResumeCampaign(campaignKey) {
             this.syncState()
             await this.runAction(() => this.$wire.resumeCampaign(campaignKey, this.state), 'archive')
-            this.showToast('Кампания возобновлена')
         },
-        async requestDeleteCampaign(campaignKey) {
+        async requestDeleteArchivedCampaign(row) {
+            const label = [this.sourceLabel(row.source_key), row.medium, row.campaign, row.campaign_name].filter(Boolean).join(' / ')
+
+            if (! window.confirm(`Удалить «${label}» навсегда? Восстановить запись из архива будет невозможно.`)) {
+                return
+            }
+
             this.syncState()
-            await this.runAction(() => this.$wire.deleteCampaign(campaignKey, this.state), 'tracking')
-            this.showToast('Кампания остановлена')
-        },
-        async requestDeleteArchivedCampaign(campaignKey) {
-            this.syncState()
-            await this.runAction(() => this.$wire.deleteArchivedCampaign(campaignKey, this.state), 'archive')
-            this.showToast('Кампания удалена из архива')
+            await this.runAction(() => this.$wire.deleteArchivedCampaign(row.key, this.state), 'archive')
         },
         isPhoneBusyInActiveCampaigns(phoneKey, context = {}) {
             if (! phoneKey) {

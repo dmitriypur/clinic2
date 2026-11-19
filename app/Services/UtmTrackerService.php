@@ -124,9 +124,39 @@ class UtmTrackerService
 
     public function saveEditorState(City $city, array $state): array
     {
-        $this->sync($city, $state);
+        return $this->persistEditorState($city, $state);
+    }
 
-        return $this->getEditorState($city->fresh());
+    private function persistEditorState(City $city, array $state, ?int $deletedArchiveId = null, ?int $deletedSourceId = null): array
+    {
+        return $city->getConnection()->transaction(function () use ($city, $state, $deletedArchiveId, $deletedSourceId): array {
+            $city = $city->newQuery()->whereKey($city->id)->lockForUpdate()->firstOrFail();
+            $state = $this->prepareState($state);
+            $sourceIds = collect(array_column($state['sources'], 'id'))->filter();
+            $archiveIds = collect(array_column($state['archived_campaigns'], 'id'))->filter();
+            $ruleIds = $archiveIds->merge(array_column($state['campaigns'], 'id'))->filter();
+            $currentSourceIds = $city->utmSources()->pluck('id');
+            $currentRules = $city->utmCampaigns()->get(['id', 'medium', 'archived_at']);
+            $currentArchiveIds = $currentRules->whereNotNull('archived_at')->pluck('id');
+            $currentActiveIds = $currentRules->whereNull('archived_at')->whereNotNull('medium')->pluck('id');
+
+            if (
+                $currentSourceIds->diff([...$sourceIds, $deletedSourceId])->isNotEmpty()
+                || $currentActiveIds->diff($ruleIds)->isNotEmpty()
+                || $currentArchiveIds->diff([...$archiveIds, $deletedArchiveId])->isNotEmpty()
+                || $sourceIds->diff($currentSourceIds)->isNotEmpty()
+                || $ruleIds->diff($currentRules->pluck('id'))->isNotEmpty()
+                || ($deletedArchiveId !== null && ! $currentArchiveIds->contains($deletedArchiveId))
+            ) {
+                throw ValidationException::withMessages([
+                    'data.utm_tracker' => 'Список UTM изменился. Обновите страницу и повторите действие.',
+                ]);
+            }
+
+            $this->sync($city, $state);
+
+            return $this->getEditorState($city->fresh());
+        });
     }
 
     public function stopCampaign(City $city, array $state, string $campaignKey): array
@@ -181,6 +211,34 @@ class UtmTrackerService
 
     public function stopCampaigns(City $city, array $state, array $campaignKeys): array
     {
+        return $this->moveCampaignsToArchive($city, $state, $campaignKeys, includeDrafts: false);
+    }
+
+    public function archiveCampaigns(City $city, array $state, array $campaignKeys, ?string $emptySourceKey = null): array
+    {
+        if ($campaignKeys === [] && $emptySourceKey !== null) {
+            $state = $this->prepareState($state);
+            if (
+                ! collect($state['sources'])->contains('key', $emptySourceKey)
+                || collect([...$state['campaigns'], ...$state['archived_campaigns']])->contains('source_key', $emptySourceKey)
+            ) {
+                return $this->getEditorState($city);
+            }
+
+            $state['archived_campaigns'][] = [
+                'type' => 'source',
+                'source_key' => $emptySourceKey,
+                'archived_at' => now()->format(self::DATE_TIME_FORMAT),
+            ];
+
+            return $this->saveEditorState($city, $state);
+        }
+
+        return $this->moveCampaignsToArchive($city, $state, $campaignKeys, includeDrafts: true);
+    }
+
+    private function moveCampaignsToArchive(City $city, array $state, array $campaignKeys, bool $includeDrafts): array
+    {
         $state = $this->prepareState($state);
         $campaignKeys = array_values(array_unique(array_filter($campaignKeys)));
 
@@ -193,13 +251,13 @@ class UtmTrackerService
         $archivedRows = [];
 
         foreach ($state['campaigns'] as $row) {
-            if (! isset($selectedKeys[$row['key']]) || ! filled($row['started_at'])) {
+            if (! isset($selectedKeys[$row['key']]) || (! $includeDrafts && ! filled($row['started_at']))) {
                 continue;
             }
 
             $stoppedAt = $this->maxDateTimeValue($now, $row['started_at']);
 
-            $archivedRows[] = [
+            $archivedRows[$row['key']] = [
                 ...$row,
                 'stopped_at' => $stoppedAt,
                 'archived_at' => $stoppedAt,
@@ -212,10 +270,10 @@ class UtmTrackerService
 
         $state['campaigns'] = array_values(array_filter(
             $state['campaigns'],
-            fn (array $row): bool => ! isset($selectedKeys[$row['key']])
+            fn (array $row): bool => ! isset($archivedRows[$row['key']])
         ));
         $state['archived_campaigns'] = array_values([
-            ...$archivedRows,
+            ...array_values($archivedRows),
             ...$state['archived_campaigns'],
         ]);
 
@@ -247,7 +305,7 @@ class UtmTrackerService
             ]);
         }
 
-        $startedAt = CarbonImmutable::now()->format(self::DATE_TIME_FORMAT);
+        $startedAt = $archivedRow['started_at'] === null ? null : now()->format(self::DATE_TIME_FORMAT);
         $phoneKey = $archivedRow['phone_key'];
 
         if ($phoneKey && $this->phoneKeyIsBusyInState($state['campaigns'], $phoneKey)) {
@@ -286,19 +344,11 @@ class UtmTrackerService
             fn (array $row): bool => $row['key'] !== $campaignKey
         ));
 
-        if (($deletedRow['type'] ?? 'source') === 'source') {
-            $state['sources'] = array_values(array_map(function (array $row) use ($deletedRow): array {
-                if (($row['key'] ?? null) === $deletedRow['source_key']) {
-                    $row['default_phone_key'] = null;
-                }
+        $source = collect($state['sources'])->firstWhere('key', $deletedRow['source_key']);
+        $state = $this->pruneEmptySourceRows($state, $deletedRow['source_key'], $deletedRow['type'] === 'source');
+        $deletedSourceId = collect($state['sources'])->contains('key', $deletedRow['source_key']) ? null : ($source['id'] ?? null);
 
-                return $row;
-            }, $state['sources']));
-        }
-
-        $state = $this->pruneEmptySourceRows($state);
-
-        return $this->saveEditorState($city, $state);
+        return $this->persistEditorState($city, $state, $deletedRow['id'], $deletedSourceId);
     }
 
     public function buildLegacyRules(City $city): array
@@ -1093,7 +1143,7 @@ class UtmTrackerService
         return match ($row['type'] ?? 'source') {
             'campaign' => filled($row['medium']) || filled($row['campaign']),
             'medium' => filled($row['medium']),
-            default => false,
+            default => filled($row['archived_at']) || filled($row['restarted_from_id']),
         };
     }
 
@@ -1343,6 +1393,7 @@ class UtmTrackerService
             $sourceDefaultNeedsRule = filled($defaultPhoneKey);
             $activeSourceHasPayload = $sourceRows->contains(fn (array $row): bool => filled($row['phone_key'] ?? null)
                 || filled($row['cabinet'] ?? null)
+                || filled($row['restarted_from_id'] ?? null)
                 || (bool) ($row['is_organic_overridden'] ?? false));
             $shouldHaveRow = ($sourceDefaultNeedsRule || $activeSourceHasPayload) && ($sourceRows->isNotEmpty() || ! $archivedSourceExists);
 
@@ -1402,7 +1453,7 @@ class UtmTrackerService
         return $state;
     }
 
-    private function pruneEmptySourceRows(array $state): array
+    private function pruneEmptySourceRows(array $state, string $sourceKey, bool $explicitSourceDeletion): array
     {
         $usedSourceKeys = collect(data_get($state, 'campaigns', []))
             ->merge(data_get($state, 'archived_campaigns', []))
@@ -1412,14 +1463,16 @@ class UtmTrackerService
             ->values();
 
         $state['sources'] = collect(data_get($state, 'sources', []))
-            ->filter(function (array $row) use ($usedSourceKeys): bool {
-                if ($usedSourceKeys->contains($row['key'] ?? null)) {
+            ->filter(function (array $row) use ($usedSourceKeys, $sourceKey, $explicitSourceDeletion): bool {
+                if ($row['key'] !== $sourceKey || $usedSourceKeys->contains($sourceKey)) {
                     return true;
                 }
 
-                return filled($row['default_phone_key'] ?? null)
+                return ! $explicitSourceDeletion && (
+                    filled($row['default_phone_key'] ?? null)
                     || (bool) ($row['open_booking_widget'] ?? false)
-                    || (bool) ($row['is_organic'] ?? false);
+                    || (bool) ($row['is_organic'] ?? false)
+                );
             })
             ->values()
             ->all();
