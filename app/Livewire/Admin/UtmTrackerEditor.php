@@ -70,19 +70,11 @@ class UtmTrackerEditor extends Component
         );
     }
 
-    public function archiveCampaigns(array $campaignKeys, array $state, ?string $emptySourceKey = null): void
-    {
-        $this->runStateAction(
-            fn (City $city, UtmTrackerService $service): array => $service->archiveCampaigns($city, $state, $campaignKeys, $emptySourceKey),
-            'Записи перенесены в архив',
-        );
-    }
-
     public function resumeCampaign(string $campaignKey, array $state): void
     {
         $this->runStateAction(
             fn (City $city, UtmTrackerService $service): array => $service->resumeCampaign($city, $state, $campaignKey),
-            'Запись возвращена из архива',
+            'Кампания возобновлена',
         );
     }
 

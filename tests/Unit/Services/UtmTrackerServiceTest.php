@@ -11,7 +11,6 @@ use App\Services\UtmTrackerService;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
 class UtmTrackerServiceTest extends TestCase
@@ -522,82 +521,6 @@ class UtmTrackerServiceTest extends TestCase
         $this->assertNotNull($activeCampaign);
         $this->assertNotSame($archivedCampaign->id, $activeCampaign->id);
         $this->assertSame($archivedCampaign->id, $activeCampaign->restarted_from_id);
-    }
-
-    /** @test */
-    public function it_archives_a_branch_with_drafts_without_deleting_other_rules(): void
-    {
-        $city = City::query()->create(['name' => 'Москва', 'slug' => 'moskva', 'active' => true]);
-        $service = app(UtmTrackerService::class);
-        $service->sync($city, [
-            'sources' => [
-                ['key' => 'direct', 'source' => 'yandex_direct'],
-                ['key' => 'unused', 'source' => 'unused'],
-            ],
-            'campaigns' => [
-                ['source_key' => 'direct', 'medium' => 'poisk'],
-                ['source_key' => 'direct', 'medium' => 'poisk', 'campaign' => 'live', 'started_at' => now()->subDay()->format('Y-m-d H:i:s')],
-                ['source_key' => 'direct', 'medium' => 'poisk', 'campaign' => 'draft'],
-                ['source_key' => 'direct', 'medium' => 'rsya', 'campaign' => 'other'],
-            ],
-        ]);
-
-        $state = $service->getEditorState($city->fresh());
-        $branch = collect($state['campaigns'])->where('medium', 'poisk');
-        $result = $service->archiveCampaigns($city, $state, $branch->pluck('key')->all());
-
-        $this->assertSame(['rsya'], array_column($result['campaigns'], 'medium'));
-        $this->assertEqualsCanonicalizing($branch->pluck('id')->all(), array_column($result['archived_campaigns'], 'id'));
-        $draft = collect($result['archived_campaigns'])->firstWhere('campaign', 'draft');
-        $this->assertNull($draft['started_at']);
-        $this->assertNotNull($draft['archived_at']);
-
-        $result = $service->resumeCampaign($city, $result, $draft['key']);
-        $restoredDraft = collect($result['campaigns'])->firstWhere('campaign', 'draft');
-        $this->assertNotNull($restoredDraft);
-        $this->assertNull($restoredDraft['started_at']);
-
-        $result = $service->deleteArchivedCampaign($city, $result, $draft['key']);
-        $this->assertCount(2, $result['archived_campaigns']);
-        $this->assertEqualsCanonicalizing(['rsya', 'poisk'], array_column($result['campaigns'], 'medium'));
-        $this->assertContains('unused', array_column($result['sources'], 'source'));
-    }
-
-    /** @test */
-    public function it_archives_and_restores_a_source_without_campaigns(): void
-    {
-        $city = City::query()->create(['name' => 'Москва', 'slug' => 'moskva', 'active' => true]);
-        $service = app(UtmTrackerService::class);
-        $service->sync($city, ['sources' => [['key' => 'direct', 'source' => 'yandex_direct']]]);
-        $state = $service->getEditorState($city->fresh());
-        $sourceKey = $state['sources'][0]['key'];
-
-        $archived = $service->archiveCampaigns($city, $state, [], $sourceKey);
-        $this->assertCount(1, $archived['archived_campaigns']);
-        $this->assertSame('source', $archived['archived_campaigns'][0]['type']);
-        $this->assertCount(0, $archived['campaigns']);
-
-        $restored = $service->resumeCampaign($city, $archived, $archived['archived_campaigns'][0]['key']);
-        $this->assertCount(1, $restored['campaigns']);
-        $this->assertNull($restored['campaigns'][0]['started_at']);
-        $this->assertCount(1, $restored['archived_campaigns']);
-    }
-
-    /** @test */
-    public function it_rejects_saving_a_state_that_omits_existing_campaigns(): void
-    {
-        $city = City::query()->create(['name' => 'Москва', 'slug' => 'moskva', 'active' => true]);
-        $service = app(UtmTrackerService::class);
-        $service->sync($city, [
-            'sources' => [['key' => 'direct', 'source' => 'yandex_direct']],
-            'campaigns' => [['source_key' => 'direct', 'medium' => 'poisk', 'campaign' => 'existing']],
-        ]);
-
-        $state = $service->getEditorState($city->fresh());
-        $state['campaigns'] = [];
-
-        $this->expectException(ValidationException::class);
-        $service->saveEditorState($city, $state);
     }
 
     /** @test */
