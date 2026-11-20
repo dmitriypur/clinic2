@@ -4,6 +4,7 @@ const UTM_KEYS = [
   "utm_campaign",
   "utm_content",
   "utm_term",
+  "utm_place",
 ];
 
 export function getUtmParameters() {

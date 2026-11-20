@@ -28,6 +28,7 @@ class Clinic
         'utm_campaign',
         'utm_content',
         'utm_term',
+        'utm_place',
     ];
 
     public static function setHttp(): void

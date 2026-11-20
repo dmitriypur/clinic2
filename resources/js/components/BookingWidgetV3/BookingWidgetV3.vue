@@ -603,6 +603,7 @@ export default {
         "utm_campaign",
         "utm_content",
         "utm_term",
+        "utm_place",
       ].reduce((utm, key) => {
         const value = params.get(key) || configuredUtm[key];
 

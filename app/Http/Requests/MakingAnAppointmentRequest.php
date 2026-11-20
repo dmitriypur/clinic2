@@ -18,6 +18,7 @@ use Illuminate\Foundation\Http\FormRequest;
  * @property ?string $utm_campaign
  * @property ?string $utm_content
  * @property ?string $utm_term
+ * @property ?string $utm_place
  */
 class MakingAnAppointmentRequest extends FormRequest
 {

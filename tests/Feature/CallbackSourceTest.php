@@ -15,7 +15,7 @@ class CallbackSourceTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_callback_sends_source_to_clinic_payload(): void
+    public function test_callback_sends_source_and_utm_place_to_clinic_payload(): void
     {
         config()->set('zrenie-clinic.base_url', 'https://unf.test/');
 
@@ -40,6 +40,7 @@ class CallbackSourceTest extends TestCase
             'city' => 'Москва',
             'privacy' => true,
             'source' => 'vk_mini_app',
+            'utm_place' => 'example.org',
             'type' => 'Заявка на звонок',
         ])
             ->assertOk()
@@ -50,6 +51,7 @@ class CallbackSourceTest extends TestCase
 
         Http::assertSent(fn($request) => $request->url() === 'https://unf.test/events?action=callback'
             && $request['source'] === 'vk_mini_app'
+            && ($request['utm_place'] ?? null) === 'example.org'
             && $request['type'] === 'Заявка на звонок'
             && $request['name'] === 'Test'
         );
@@ -83,6 +85,7 @@ class CallbackSourceTest extends TestCase
 
         Http::assertSent(fn($request) => $request->url() === 'https://unf.test/events?action=callback'
             && $request['source'] === 'site'
+            && ! array_key_exists('utm_place', $request->data())
         );
     }
 

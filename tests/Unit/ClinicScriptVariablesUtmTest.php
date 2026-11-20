@@ -18,11 +18,12 @@ class ClinicScriptVariablesUtmTest extends TestCase
     /** @test */
     public function it_exposes_real_utm_parameters_without_adding_organic_marker(): void
     {
-        $this->get('/?utm_source=yandex_direct&utm_medium=night');
+        $this->get('/?utm_source=yandex_direct&utm_medium=night&utm_place=example.org');
 
         $this->assertSame([
             'utm_source' => 'yandex_direct',
             'utm_medium' => 'night',
+            'utm_place' => 'example.org',
         ], Clinic::frontendUtmParameters());
     }
 }

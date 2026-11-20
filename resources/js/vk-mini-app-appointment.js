@@ -18,6 +18,7 @@ const FORWARDED_HASH_KEYS = [
   "utm_campaign",
   "utm_content",
   "utm_term",
+  "utm_place",
   "booking_doctor_id",
   "booking_branch_id",
 ];

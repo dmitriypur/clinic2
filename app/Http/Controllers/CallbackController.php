@@ -31,6 +31,8 @@ class CallbackController extends Controller
             ['name' => $request->name],
         );
 
+        $utmPlace = data_get($request, 'utm_place', Session::get('utm_place'));
+
         $response = Clinic::callback([
             'uid' => $user->id,
             'name' => $user->name,
@@ -44,6 +46,7 @@ class CallbackController extends Controller
             'utm_campaign' => data_get($request, 'utm_campaign', Session::get('utm_campaign')),
             'utm_content' => data_get($request, 'utm_content', Session::get('utm_content')),
             'utm_term' => data_get($request, 'utm_term', Session::get('utm_term')),
+            ...(is_string($utmPlace) && filled($utmPlace) ? ['utm_place' => $utmPlace] : []),
         ]);
 
         return $this->callbackResponse($response);

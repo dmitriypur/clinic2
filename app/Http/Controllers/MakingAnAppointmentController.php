@@ -16,6 +16,8 @@ class MakingAnAppointmentController extends Controller
 
     public function __invoke(MakingAnAppointmentRequest $request): string
     {
+        $utmPlace = data_get($request, 'utm_place', Session::get('utm_place'));
+
         Clinic::makingAnAppointment([
             'doctor' => [
                 'id' => $request->doctorId,
@@ -36,6 +38,7 @@ class MakingAnAppointmentController extends Controller
             'utm_campaign' => data_get($request, 'utm_campaign', Session::get('utm_campaign')),
             'utm_content' => data_get($request, 'utm_content', Session::get('utm_content')),
             'utm_term' => data_get($request, 'utm_term', Session::get('utm_term')),
+            ...(is_string($utmPlace) && filled($utmPlace) ? ['utm_place' => $utmPlace] : []),
         ]);
 
         return now()->parse($request->date)->format('Y-m-d') . ' ' . $request->time . ':00';

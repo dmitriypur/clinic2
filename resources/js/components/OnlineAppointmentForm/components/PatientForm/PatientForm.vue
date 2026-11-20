@@ -148,6 +148,7 @@
 <script>
 import { classNames } from "../../../../utilities/css";
 import { Form } from "../../../../utilities/form";
+import { getUtmParameters } from "../../../../utilities/utmParameters";
 import {
   buildDoctorReceivesDisplay,
   calculateAgeMonthsFromBirthDate,
@@ -186,6 +187,7 @@ export default {
   },
 
   data() {
+    const { utm_place } = getUtmParameters();
     return {
       showSuccessMessage: false,
       showErrorMessages: false,
@@ -200,6 +202,7 @@ export default {
         phone: this.phone,
         birthdate: "",
         privacy: false,
+        ...(utm_place ? { utm_place } : {}),
       }),
     };
   },
