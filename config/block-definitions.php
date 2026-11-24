@@ -19,6 +19,9 @@ return [
         App\Blocks\Definitions\TextWithImageNewDefinition::class,
         App\Blocks\Definitions\DiagnosticAssessmentDefinition::class,
         App\Blocks\Definitions\HorizontalCardsDefinition::class,
+        App\Blocks\Definitions\ApparatusTasksDefinition::class,
+        App\Blocks\Definitions\TextSubduedDefinition::class,
+        App\Blocks\Definitions\HtmlCodeDefinition::class,
         // <block-generator-definitions>
     ],
 ];

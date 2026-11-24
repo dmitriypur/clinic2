@@ -91,6 +91,37 @@ class BlockResourceRegistryIntegrationTest extends TestCase
             ->assertDontSeeHtml('<li>Второстепенный текст</li>');
     }
 
+    public function test_migrated_blocks_preserve_existing_data_and_render(): void
+    {
+        $cases = [
+            [BlockType::APPARATUS_TASKS, null, ['tasks' => [['text' => 'Задача терапии']], 'note_text' => 'Примечание'], 'Задача терапии'],
+            [BlockType::TEXT_SUBDUED, '<p>Второстепенный контент</p>', [], 'Второстепенный контент'],
+            [BlockType::HTML_CODE, '<div>HTML контент</div>', [], 'HTML контент'],
+        ];
+
+        foreach ($cases as [$type, $body, $payload, $expected]) {
+            $this->assertTrue(app(BlockRegistry::class)->has($type));
+            $block = Block::query()->create([
+                'page_id' => $this->page->id, 'title' => 'Проверка', 'type' => $type,
+                'body_html' => $body, 'payload' => $payload,
+            ]);
+            $this->saveExistingBlock($block);
+            $block->refresh();
+            $this->assertSame($body, $block->body_html);
+            $this->assertSame($payload, $block->payload);
+            $html = Blade::render('<x-block :block="$block" breadcrumbs-title="" page-title="" page-description="" />', ['block' => $block]);
+            $this->assertStringContainsString($expected, $html);
+
+            $this->createBlock([
+                'title' => 'Новый блок', 'type' => $type->value,
+                'body_html' => $body, 'payload' => $payload,
+            ]);
+            $created = Block::query()->latest('id')->firstOrFail();
+            $this->assertSame($body, $created->body_html);
+            $this->assertSame($payload, $created->payload ?? []);
+        }
+    }
+
     public function test_registered_reception_steps_schema_is_hydrated_and_saved_by_block_resource(): void
     {
         $items = [

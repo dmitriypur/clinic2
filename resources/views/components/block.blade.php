@@ -111,16 +111,8 @@
             <x-block.author :block="$block"/>
             @break
 
-        @case(\App\Enums\BlockType::TEXT_SUBDUED)
-            <x-block.text-subdued :block="$block"/>
-            @break
-
         @case(\App\Enums\BlockType::PHOTO)
             <x-block.photo :block="$block"/>
-            @break
-
-        @case(\App\Enums\BlockType::HTML_CODE)
-            <x-block.html-code :block="$block"/>
             @break
 
         @case(\App\Enums\BlockType::WELCOME)
@@ -253,10 +245,6 @@
 
         @case(\App\Enums\BlockType::TAGS_NEW)
             <x-new-block.tags-new :block="$block"/>
-            @break
-
-        @case(\App\Enums\BlockType::APPARATUS_TASKS)
-            <x-block.apparatus-tasks :block="$block"/>
             @break
 
         @case(\App\Enums\BlockType::APPARATUS_DISEASES)

@@ -271,7 +271,7 @@ class BlockResource extends Resource
                             fn (Forms\Get $get) => ! in_array(
                                 BlockType::from($get('type')),
                                 [BlockType::HTML, BlockType::TEXT_WITH_IMAGE,
-                                    BlockType::TEXT_SUBDUED, BlockType::WELCOME, BlockType::POST_TEXT, BlockType::APPARATUS_DISEASES, BlockType::APPARATUS_METHODS, BlockType::EXPERT_OPINION, ]
+                                    BlockType::WELCOME, BlockType::POST_TEXT, BlockType::APPARATUS_DISEASES, BlockType::APPARATUS_METHODS, BlockType::EXPERT_OPINION, ]
                             )
                         )
                         ->columnSpan('full'),
@@ -310,13 +310,6 @@ class BlockResource extends Resource
                         ->hidden(
                             fn (Forms\Get $get) => BlockType::tryFrom((string) $get('type')) !== BlockType::POST_TEXT
                         ),
-
-                    Forms\Components\Textarea::make('body_html')
-                        ->label(fn (Forms\Get $get) => $get('type') === BlockType::HTML_CODE ? 'HTML-код' : 'Текст')
-                        ->hidden(
-                            fn (Forms\Get $get) => BlockType::tryFrom((string) $get('type')) !== BlockType::HTML_CODE
-                        )
-                        ->columnSpan('full'),
 
                     Forms\Components\Repeater::make('payload.tags')
                         ->schema([
@@ -1109,26 +1102,6 @@ class BlockResource extends Resource
                         BlockType::NIGHT_LENSES_PICTURES,
                         BlockType::LIST_WITH_IMAGE,
                     ])
-                ),
-
-                Forms\Components\Section::make([
-                    Forms\Components\Repeater::make('payload.tasks')
-                        ->label('Пункты')
-                        ->schema([
-                            Forms\Components\TextInput::make('text')
-                                ->label('Текст')
-                                ->columnSpanFull()
-                                ->required(),
-                        ])
-                        ->minItems(1)
-                        ->required(),
-
-                    Forms\Components\Textarea::make('payload.note_text')
-                        ->label('Текст нижнего блока')
-                        ->columnSpanFull()
-                        ->required(),
-                ])->hidden(
-                    fn (Forms\Get $get) => BlockType::from($get('type')) !== BlockType::APPARATUS_TASKS
                 ),
 
                 Forms\Components\Section::make([
