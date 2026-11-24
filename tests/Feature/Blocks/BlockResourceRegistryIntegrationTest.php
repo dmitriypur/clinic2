@@ -7,6 +7,7 @@ use App\Enums\BlockType;
 use App\Filament\Forms\Components\SafeFileUpload;
 use App\Filament\Resources\BlockResource\Pages\CreateBlock;
 use App\Filament\Resources\BlockResource\Pages\EditBlock;
+use App\Filament\Resources\BlockResource\Pages\ListBlocks;
 use App\Models\Block;
 use App\Models\Page;
 use App\Models\Staff;
@@ -66,6 +67,28 @@ class BlockResourceRegistryIntegrationTest extends TestCase
             'handle' => 'block-test-page',
             'active' => true,
         ]);
+    }
+
+    public function test_block_list_shows_types_unused_by_any_page_in_a_collapsed_list(): void
+    {
+        $inactivePage = Page::query()->create([
+            'title' => 'Inactive block test page',
+            'handle' => 'inactive-block-test-page',
+            'active' => false,
+        ]);
+
+        foreach ([$this->page, $inactivePage] as $page) {
+            $page->blocks()->create(['type' => BlockType::HTML, 'title' => 'Текст']);
+        }
+        $inactivePage->blocks()->create(['type' => BlockType::TEXT_SUBDUED, 'title' => 'Второстепенный текст']);
+
+        $unusedCount = count(BlockType::cases()) - 2;
+
+        Livewire::test(ListBlocks::class)
+            ->assertSee('Неиспользуемых типов блоков — '.$unusedCount)
+            ->assertSeeHtml('<details>')
+            ->assertSeeHtml('<li>Филиалы</li>')
+            ->assertDontSeeHtml('<li>Второстепенный текст</li>');
     }
 
     public function test_registered_reception_steps_schema_is_hydrated_and_saved_by_block_resource(): void
