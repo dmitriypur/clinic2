@@ -32,7 +32,6 @@ const CallbackModal = () =>
   import("./components/CallbackModal/CallbackModal.vue");
 const CallbackModalNew = () =>
   import("./components/CallbackModal/CallbackModalNew.vue");
-const CallToAction = () => import("./components/CallToAction/CallToAction.vue");
 const VideoComponent = () => import("./components/Video/Video.vue");
 const VideoNew = () => import("./components/VideoNew/VideoNew.vue");
 const VideoModal = () => import("./components/VideoModal/VideoModal.vue");
@@ -94,7 +93,6 @@ new Vue({
     VideoComponent,
     VideoNew,
     ReviewModal,
-    CallToAction,
     LightBox,
     Faq,
     AppFilter,
@@ -688,38 +686,6 @@ new Vue({
           clickable: true,
         },
       });
-
-      let gridCarouselSwiper;
-      if (window.innerWidth < 768) {
-        gridCarouselSwiper = new Swiper(".grid-carousel-swiper", {
-          modules: [Pagination],
-          slidesPerView: "1",
-          loop: true,
-          spaceBetween: 12,
-          pagination: {
-            el: ".grid-carousel-swiper-pagination",
-            clickable: true,
-          },
-        });
-      } else {
-        gridCarouselSwiper?.disable();
-      }
-
-      let pointsCarouselSwiper;
-      if (window.innerWidth < 768) {
-        pointsCarouselSwiper = new Swiper(".points-carousel-swiper", {
-          modules: [Pagination],
-          slidesPerView: 1.2,
-          loop: true,
-          spaceBetween: 40,
-          pagination: {
-            el: ".points-carousel-swiper-pagination",
-            clickable: true,
-          },
-        });
-      } else {
-        pointsCarouselSwiper?.disable();
-      }
 
       let nightLensesSelectionSwiper;
       if (window.innerWidth < 768 && document.querySelector(".night-lenses-selection-swiper")) {

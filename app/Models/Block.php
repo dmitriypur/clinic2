@@ -491,7 +491,6 @@ class Block extends Model implements HasMedia, Sortable
         return in_array($this->type, [
             BlockType::LIST_WITH_IMAGE,
             BlockType::ELEMENTS_ITEM_ROW,
-            BlockType::ELEMENTS_ITEM_COLUMN,
             BlockType::CARDS_ITEM_ROW,
             BlockType::CARDS_BORDER,
             BlockType::NIGHT_LENSES_PICTURES,

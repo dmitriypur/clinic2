@@ -219,7 +219,6 @@ class ArticleImportServiceTest extends TestCase
         $this->assertFalse($slider->settings['title_hidden']);
         $this->assertFalse($slider->settings['remove_top_padding']);
         $this->assertFalse($slider->settings['remove_bottom_padding']);
-        $this->assertFalse($blocks->contains(fn ($block) => $block->type === BlockType::CALL_TO_ACTION));
     }
 
     public function test_import_creates_expert_opinion_before_navigation_and_faq(): void

@@ -99,6 +99,15 @@ class BlockRegistryTest extends TestCase
         new BlockRegistry(app(), [InvalidTestDefinition::class]);
     }
 
+    public function test_removed_legacy_types_are_no_longer_available_in_the_admin_options(): void
+    {
+        $options = app(BlockRegistry::class)->options();
+
+        foreach ([5, 14, 19, 23, 25, 26, 28, 44, 48, 49, 71, 79] as $removedType) {
+            $this->assertArrayNotHasKey($removedType, $options);
+        }
+    }
+
     public function test_it_rejects_duplicate_block_types(): void
     {
         $this->expectException(InvalidArgumentException::class);

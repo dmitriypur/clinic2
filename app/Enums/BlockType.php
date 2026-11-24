@@ -14,8 +14,6 @@ enum BlockType: int
 
     case CONTACTS = 4;
 
-    case ELEMENTS_ITEM_COLUMN = 5;
-
     case ELEMENTS_ITEM_ROW = 6;
 
     case PROMOTIONS = 7;
@@ -30,8 +28,6 @@ enum BlockType: int
 
     case PRICE_LIST = 12;
 
-    case CALL_TO_ACTION = 14;
-
     case LICENSES = 15;
 
     case FAQ = 16;
@@ -40,25 +36,15 @@ enum BlockType: int
 
     case TEXT_SUBDUED = 18;
 
-    case MAIN_PAGE_STATIC_BLOCK = 19;
-
     case PHOTO = 20;
 
     case HTML_CODE = 21;
 
     case FULL_PRICE_LIST = 22;
 
-    case UTP = 23;
-
     case WELCOME = 24;
 
-    case GRID_CAROUSEL = 25;
-
-    case TEXT_WITH_IMAGE_ALT = 26;
-
     case VIDEO_CAROUSEL = 27;
-
-    case POINTS = 28;
 
     case BANNER_WITH_BUTTON = 29;
 
@@ -89,17 +75,11 @@ enum BlockType: int
     case NIGHT_LENSES_PICTURES = 42;
 
     case NIGHT_LENSES_SELECTION = 43;
-    case SEVERAL_COLS = 44;
-
     case BANNER_APPOINTMENT = 45;
 
     case CARDS_SLIDER = 46;
 
     case CARDS_FEATURE = 47;
-
-    case SELECT_LENSES_SELECTION = 48;
-
-    case PICTURE = 49;
 
     case POST_TEXT = 50;
 
@@ -128,7 +108,6 @@ enum BlockType: int
     case APPARATUS_TASKS = 68;
     case APPARATUS_DISEASES = 69;
     case APPARATUS_METHODS = 70;
-    case APPARATUS_CONTRAINDICATIONS = 71;
     case BANNER_SPECIALIST_CALLBACK = 72;
     case DETAILS_ALT = 73;
     case RECEPTION_STEPS = 74;
@@ -136,8 +115,6 @@ enum BlockType: int
     case TREATMENT_METHODS = 76;
     case EXPERT_OPINION = 77;
     case ARTICLE_NAVIGATION = 78;
-
-    case HTML_CARDS = 79;
 
     case KIDS_OPTICS_HERO = 80;
 
@@ -164,7 +141,6 @@ enum BlockType: int
     {
         return match ($this) {
             self::TEXT_WITH_IMAGE => 'Текст с изображением',
-            self::ELEMENTS_ITEM_COLUMN => 'Элементы (каждый элемент расположен вертикально)',
             self::ELEMENTS_ITEM_ROW => 'Элементы (каждый элемент расположен горизонтально)',
             self::CONTACTS => 'Контакты',
             self::PROMOTIONS => 'Акции',
@@ -176,20 +152,14 @@ enum BlockType: int
             self::VIDEO_NEW => 'Видео новый дизайн',
             self::PRICE_LIST => 'Прайс-лист на услугу',
             self::FULL_PRICE_LIST => 'Прайс-лист на все услуги',
-            self::CALL_TO_ACTION => 'Форма заявки',
             self::LICENSES => 'Лицензии и сертификаты',
             self::FAQ => 'FAQ',
             self::AUTHOR => 'Автор статьи',
             self::TEXT_SUBDUED => 'Второстепенный текст',
-            self::MAIN_PAGE_STATIC_BLOCK => 'Нередактируемый блок на главной странице',
             self::PHOTO => 'Фото',
             self::HTML_CODE => 'HTML-код',
-            self::UTP => 'Блок УТП',
             self::WELCOME => 'Блок "Обращение главного врача"',
-            self::GRID_CAROUSEL => 'Сетка (карусель на мобильных устройствах)',
-            self::TEXT_WITH_IMAGE_ALT => 'Текст с изображением (альтернативный)',
             self::VIDEO_CAROUSEL => 'Видео карусель',
-            self::POINTS => 'Пункты',
             self::BANNER_WITH_BUTTON => 'Блок "Баннер для страницы Stellest"',
             self::ADVANTAGES => 'Преимущества',
             self::TEXT_WITH_CHART => 'Текст с графиком',
@@ -204,12 +174,9 @@ enum BlockType: int
             self::BANNER_NIGHT_LENSES => 'Блок "Баннер для страницы Ночные линзы"',
             self::NIGHT_LENSES_PICTURES => 'Ночные линзы (иллюстрации)',
             self::NIGHT_LENSES_SELECTION => 'Блок "Подбор ночных линз"',
-            self::SELECT_LENSES_SELECTION => 'Блок "Подбор мягких линз"',
-            self::SEVERAL_COLS => 'Текстовый блок в несколько колонок',
             self::BANNER_APPOINTMENT => 'Блок "Баннер для страницы Приём детского офтальмолога"',
             self::CARDS_SLIDER => 'Слайдер карточек',
             self::CARDS_FEATURE => 'Блок "Особенности линз MiSight"',
-            self::PICTURE => 'Изображение',
             self::POST_TEXT => 'Текстовые блоки для статей',
             self::BANNER_CORRECTION => 'Блок "Баннер для страницы Коррекция астигматизма"',
             self::BANNER_MYOPIA => 'Блок "Баннер для страницы Лечение близорукости"',
@@ -230,7 +197,6 @@ enum BlockType: int
             self::APPARATUS_TASKS => 'Блок "Ключевые задачи терапии"',
             self::APPARATUS_DISEASES => 'Блок "Заболевания для аппаратных процедур"',
             self::APPARATUS_METHODS => 'Блок "Методики аппаратного лечения"',
-            self::APPARATUS_CONTRAINDICATIONS => 'Блок "Противопоказания аппаратного лечения"',
             self::BANNER_SPECIALIST_CALLBACK => 'Блок "Запись или обратный звонок"',
             self::DETAILS_ALT => 'Реквизиты карточки',
             self::RECEPTION_STEPS => 'Этапы приема',
@@ -238,7 +204,6 @@ enum BlockType: int
             self::TREATMENT_METHODS => 'Методы лечения',
             self::EXPERT_OPINION => 'Мнение эксперта',
             self::ARTICLE_NAVIGATION => 'Навигация по статьям',
-            self::HTML_CARDS => 'HTML-карточки',
             self::KIDS_OPTICS_HERO => 'Hero-баннер «Детская оптика»',
             self::KIDS_OPTICS_FRAME_CATALOG => 'Каталог оправ «Детская оптика»',
             self::KIDS_OPTICS_PACKAGES => 'Выбор очков «Детская оптика»',

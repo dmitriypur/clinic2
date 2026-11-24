@@ -100,7 +100,7 @@ class Schema implements Contract
             )
             ->name($page->seo['title'] ?? $page->title)
             ->headline($page->title)
-            ->image($page->pictureBlock ? $page->pictureBlock->getImageUrl('default') : asset('images/logo.svg'))
+            ->image(asset('images/logo.svg'))
             ->datePublished($page->created_at->format('d.m.Y'))
             ->author(
                 $author

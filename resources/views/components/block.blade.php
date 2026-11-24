@@ -41,26 +41,9 @@
         @include($blockDefinition->view(), $blockDefinition->viewData($block))
     @else
         @switch($block->type)
-        @case(\App\Enums\BlockType::MAIN_PAGE_STATIC_BLOCK)
-            <x-block.main/>
-            @break
-
         @case(\App\Enums\BlockType::TEXT_WITH_IMAGE)
             <div class="container">
                 <x-block.text-with-image :block="$block"/>
-            </div>
-            @break
-
-        @case(\App\Enums\BlockType::TEXT_WITH_IMAGE_ALT)
-            <div class="container">
-                <x-block.text-with-image-alt :block="$block"/>
-            </div>
-            @break
-
-        @case(\App\Enums\BlockType::ELEMENTS_ITEM_COLUMN)
-            <div class="container">
-                <x-block.elements-item-column :block="$block"
-                                              :subdued="$subdued"/>
             </div>
             @break
 
@@ -116,10 +99,6 @@
             <x-block.full-price-list :block="$block"/>
             @break
 
-        @case(\App\Enums\BlockType::CALL_TO_ACTION)
-            <x-block.call-to-action :block="$block"/>
-            @break
-
         @case(\App\Enums\BlockType::LICENSES)
             <x-block.licenses :block="$block"/>
             @break
@@ -144,26 +123,12 @@
             <x-block.html-code :block="$block"/>
             @break
 
-        @case(\App\Enums\BlockType::UTP)
-            <div class="container">
-                <x-block.utp :block="$block"/>
-            </div>
-            @break
-
         @case(\App\Enums\BlockType::WELCOME)
             <x-block.welcome :block="$block"/>
             @break
 
-        @case(\App\Enums\BlockType::GRID_CAROUSEL)
-            <x-block.grid-carousel :block="$block"/>
-            @break
-
         @case(\App\Enums\BlockType::VIDEO_CAROUSEL)
             <x-block.video-carousel :block="$block"/>
-            @break
-
-        @case(\App\Enums\BlockType::POINTS)
-            <x-block.points :block="$block"/>
             @break
 
         @case(\App\Enums\BlockType::ADVANTAGES)
@@ -218,10 +183,6 @@
             <x-night-lenses.selection :block="$block"/>
             @break
 
-        @case(\App\Enums\BlockType::SEVERAL_COLS)
-            <x-block.several-cols :block="$block"/>
-            @break
-
         @case(\App\Enums\BlockType::BANNER_APPOINTMENT)
             <x-banner.appointment :block="$block"/>
             @break
@@ -240,14 +201,6 @@
 
         @case(\App\Enums\BlockType::CARDS_FEATURE)
             <x-block.cards-feature :block="$block"/>
-            @break
-
-        @case(\App\Enums\BlockType::SELECT_LENSES_SELECTION)
-            <x-block.select-lenses :block="$block"/>
-            @break
-
-        @case(\App\Enums\BlockType::PICTURE)
-            <x-block.picture :block="$block"/>
             @break
 
         @case(\App\Enums\BlockType::POST_TEXT)
@@ -312,10 +265,6 @@
 
         @case(\App\Enums\BlockType::APPARATUS_METHODS)
             <x-block.apparatus-methods :block="$block"/>
-            @break
-
-        @case(\App\Enums\BlockType::APPARATUS_CONTRAINDICATIONS)
-            <x-block.apparatus-contraindications :block="$block"/>
             @break
 
         @case(\App\Enums\BlockType::BANNER_SPECIALIST_CALLBACK)

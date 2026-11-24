@@ -13,7 +13,6 @@ export {default as VideoComponent} from "./Video";
 export {default as VideoNew} from "./VideoNew";
 export {default as ImageLazy} from "./ImageLazy";
 export {default as ReviewModal} from "./ReviewModal";
-export {default as CallToAction} from "./CallToAction";
 export {default as Faq} from "./Faq";
 export {default as AppFilter} from "./AppFilter";
 export {default as ReadMore} from "./ReadMore";

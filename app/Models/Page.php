@@ -167,11 +167,6 @@ class Page extends Model implements HasMedia
         return $this->hasOne(Block::class)->where('type', BlockType::TAGS);
     }
 
-    public function pictureBlock(): HasOne
-    {
-        return $this->hasOne(Block::class)->where('type', BlockType::PICTURE);
-    }
-
     public function authorBlock(): HasOne
     {
         return $this->hasOne(Block::class)->where('type', BlockType::AUTHOR);

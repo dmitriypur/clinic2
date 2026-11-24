@@ -175,7 +175,7 @@ class BlockResource extends Resource
                         ->hidden(
                             fn (Forms\Get $get) => ! in_array(
                                 BlockType::from($get('type')),
-                                [BlockType::WELCOME, BlockType::PICTURE, BlockType::ADVANTAGES]
+                                [BlockType::WELCOME, BlockType::ADVANTAGES]
                             )
                         ),
                     Forms\Components\TextInput::make('payload.image_subtitle')
@@ -271,7 +271,7 @@ class BlockResource extends Resource
                             fn (Forms\Get $get) => ! in_array(
                                 BlockType::from($get('type')),
                                 [BlockType::HTML, BlockType::TEXT_WITH_IMAGE,
-                                    BlockType::TEXT_SUBDUED, BlockType::WELCOME, BlockType::POST_TEXT, BlockType::APPARATUS_DISEASES, BlockType::APPARATUS_METHODS, BlockType::APPARATUS_CONTRAINDICATIONS, BlockType::EXPERT_OPINION, ]
+                                    BlockType::TEXT_SUBDUED, BlockType::WELCOME, BlockType::POST_TEXT, BlockType::APPARATUS_DISEASES, BlockType::APPARATUS_METHODS, BlockType::EXPERT_OPINION, ]
                             )
                         )
                         ->columnSpan('full'),
@@ -314,10 +314,8 @@ class BlockResource extends Resource
                     Forms\Components\Textarea::make('body_html')
                         ->label(fn (Forms\Get $get) => $get('type') === BlockType::HTML_CODE ? 'HTML-код' : 'Текст')
                         ->hidden(
-                            fn (Forms\Get $get) => ! in_array(BlockType::tryFrom((string) $get('type')), [
-                                BlockType::HTML_CODE,
-                                BlockType::TEXT_WITH_IMAGE_ALT,
-                            ], true))
+                            fn (Forms\Get $get) => BlockType::tryFrom((string) $get('type')) !== BlockType::HTML_CODE
+                        )
                         ->columnSpan('full'),
 
                     Forms\Components\Repeater::make('payload.tags')
@@ -472,42 +470,10 @@ class BlockResource extends Resource
                                 [
                                     BlockType::TEXT_WITH_IMAGE,
                                     BlockType::WELCOME,
-                                    BlockType::TEXT_WITH_IMAGE_ALT,
-                                    BlockType::PICTURE,
                                     BlockType::POST_TEXT,
                                     BlockType::LIST_WITH_IMAGE,
                                     BlockType::APPARATUS_DISEASES,
                                 ])
-                        ),
-
-                    Forms\Components\Select::make('payload.classes')
-                        ->label('Классы')
-                        ->multiple()
-                        ->options([
-                            'text-center mx-auto' => 'По центру',
-                            'rounded-xl md:rounded-20' => 'Скругление',
-                        ])
-                        ->hidden(
-                            fn (Forms\Get $get) => ! in_array(BlockType::from($get('type')),
-                                [
-                                    BlockType::PICTURE,
-                                ])
-                        ),
-
-                    Forms\Components\TextInput::make('payload.width')
-                        ->label('Ширина')
-                        ->hidden(
-                            fn (Forms\Get $get) => ! in_array(BlockType::from($get('type')), [
-                                BlockType::PICTURE,
-                            ])
-                        ),
-
-                    Forms\Components\TextInput::make('payload.subtitle')
-                        ->label('Подзаголовок')
-                        ->hidden(
-                            fn (Forms\Get $get) => ! in_array(BlockType::from($get('type')), [
-                                BlockType::CALL_TO_ACTION,
-                            ])
                         ),
 
                     Forms\Components\TextInput::make('payload.link')
@@ -536,17 +502,6 @@ class BlockResource extends Resource
                             fn (Forms\Get $get) => ! in_array(BlockType::from($get('type')), [
                                 BlockType::TEXT_WITH_IMAGE,
                                 BlockType::NIGHT_LENSES_SELECTION,
-                                BlockType::SELECT_LENSES_SELECTION,
-                                BlockType::CALL_TO_ACTION,
-                            ])
-                        ),
-
-                    Forms\Components\Toggle::make('payload.add_fox2')
-                        ->label('Добавить 2го лисенка')
-                        ->default(true)
-                        ->hidden(
-                            fn (Forms\Get $get) => ! in_array(BlockType::from($get('type')), [
-                                BlockType::CALL_TO_ACTION,
                             ])
                         ),
 
@@ -684,7 +639,6 @@ class BlockResource extends Resource
                         fn (Forms\Get $get) => ! in_array(BlockType::from($get('type')), [
                             BlockType::HOW_TO_ORDER,
                             BlockType::NIGHT_LENSES_SELECTION,
-                            BlockType::SELECT_LENSES_SELECTION,
                         ])
                     ),
 
@@ -937,41 +891,6 @@ class BlockResource extends Resource
                 ),
 
                 Forms\Components\Section::make([
-                    Forms\Components\Repeater::make('payload.utp')
-                        ->label('УТП')
-                        ->schema([
-                            Forms\Components\TextInput::make('uuid')
-                                ->label('UUID')
-                                ->hiddenLabel()
-                                ->columnSpan('full')
-                                ->default(
-                                    fn (Forms\Get $get) => $get('uuid') ??
-                                        Str::uuid()->toString()
-                                )
-                                ->required()
-                                ->reactive()
-                                ->extraAttributes(['class' => 'hidden']),
-
-                            Forms\Components\TextInput::make('title')
-                                ->label('Заголовок')
-                                ->columnSpan('full')
-                                ->required(),
-
-                            Forms\Components\Textarea::make('body_html')
-                                ->label('Текст')
-                                ->columnSpan('full')
-                                ->required(),
-
-                            SafeMediaLibraryFileUpload::make('image')
-                                ->safeImages()
-                                ->collection(fn (Forms\Get $get) => $get('uuid'))
-                                ->label('Изображение')
-                                ->responsiveImages()
-                                ->required(),
-                        ]),
-                ])->hidden(fn (Forms\Get $get) => BlockType::from($get('type')) != BlockType::UTP),
-
-                Forms\Components\Section::make([
                     Forms\Components\Repeater::make('payload.coating')
                         ->label('Покрытие')
                         ->schema([
@@ -1068,9 +987,7 @@ class BlockResource extends Resource
                 Forms\Components\TextInput::make('payload.count_column')
                     ->label('Кол-во колонок')
                     ->hidden(
-                        fn (Forms\Get $get) => ! in_array(BlockType::from($get('type')), [
-                            BlockType::SEVERAL_COLS, BlockType::NIGHT_LENSES_SELECTION,
-                        ])
+                        fn (Forms\Get $get) => BlockType::from($get('type')) !== BlockType::NIGHT_LENSES_SELECTION
                     ),
                 Forms\Components\Toggle::make('payload.is_slider')
                     ->label('Слайдер')
@@ -1111,7 +1028,6 @@ class BlockResource extends Resource
                                     fn (Forms\Get $get) => in_array(BlockType::from($get('../../../type')), [
                                         BlockType::CARDS_BORDER,
                                         BlockType::NIGHT_LENSES_PICTURES,
-                                        BlockType::SEVERAL_COLS,
                                         BlockType::LIST_WITH_IMAGE,
                                     ])
                                 )
@@ -1124,7 +1040,6 @@ class BlockResource extends Resource
                                     fn (Forms\Get $get) => in_array(BlockType::from($get('../../../type')), [
                                         BlockType::CARDS_BORDER,
                                         BlockType::NIGHT_LENSES_PICTURES,
-                                        BlockType::SEVERAL_COLS,
                                         BlockType::LIST_WITH_IMAGE,
                                     ])
                                 )
@@ -1155,7 +1070,6 @@ class BlockResource extends Resource
                                     fn (Forms\Get $get) => in_array(BlockType::from($get('../../../type')), [
                                         BlockType::CARDS_BORDER,
                                         BlockType::NIGHT_LENSES_PICTURES,
-                                        BlockType::SEVERAL_COLS,
                                         BlockType::LIST_WITH_IMAGE,
                                     ])
                                 )
@@ -1190,11 +1104,9 @@ class BlockResource extends Resource
                         ]),
                 ])->hidden(
                     fn (Forms\Get $get) => ! in_array(BlockType::from($get('type')), [
-                        BlockType::ELEMENTS_ITEM_COLUMN,
                         BlockType::ELEMENTS_ITEM_ROW,
                         BlockType::CARDS_BORDER,
                         BlockType::NIGHT_LENSES_PICTURES,
-                        BlockType::SEVERAL_COLS,
                         BlockType::LIST_WITH_IMAGE,
                     ])
                 ),
@@ -1231,10 +1143,7 @@ class BlockResource extends Resource
                         ->minItems(1)
                         ->required(),
                 ])->hidden(
-                    fn (Forms\Get $get) => ! in_array(BlockType::from($get('type')), [
-                        BlockType::APPARATUS_DISEASES,
-                        BlockType::APPARATUS_CONTRAINDICATIONS,
-                    ])
+                    fn (Forms\Get $get) => BlockType::from($get('type')) !== BlockType::APPARATUS_DISEASES
                 ),
 
                 Forms\Components\Section::make([
@@ -1273,56 +1182,6 @@ class BlockResource extends Resource
                         ->required(),
                 ])->hidden(
                     fn (Forms\Get $get) => BlockType::from($get('type')) !== BlockType::APPARATUS_METHODS
-                ),
-
-                Forms\Components\Section::make([
-                    Forms\Components\Repeater::make('payload.elements')->schema([
-                        Forms\Components\TextInput::make('title')
-                            ->label('Заголовок')
-                            ->columnSpan('full')
-                            ->required(),
-
-                        Forms\Components\Textarea::make('body_html')
-                            ->label('Текст')
-                            ->columnSpan('full')
-                            ->required(),
-                    ]),
-                ])->visible(fn (Forms\Get $get) => BlockType::from($get('type')) === BlockType::POINTS),
-
-                Forms\Components\Section::make([
-                    Forms\Components\Repeater::make('payload.elements')
-                        ->label('Элементы')
-                        ->schema([
-                            Forms\Components\TextInput::make('title')
-                                ->label('Заголовок')
-                                ->columnSpan('full')
-                                ->required(),
-
-                            Forms\Components\TextInput::make('media_collection')
-                                ->columnSpan('full')
-                                ->hiddenLabel()
-                                ->default(
-                                    fn (Forms\Get $get) => $get(
-                                        'media_collection'
-                                    ) ?? Str::uuid()->toString()
-                                )
-                                ->reactive()
-                                ->required()
-                                ->extraAttributes(['class' => 'hidden']),
-
-                            SafeMediaLibraryFileUpload::make('image')
-                                ->safeImages()
-                                ->collection(
-                                    fn (Forms\Get $get) => $get('media_collection')
-                                )
-                                ->label('Изображение')
-                                ->responsiveImages()
-                                ->required(),
-                        ]),
-                ])->hidden(
-                    fn (Forms\Get $get) => ! in_array(BlockType::from($get('type')), [
-                        BlockType::GRID_CAROUSEL,
-                    ])
                 ),
 
                 Forms\Components\Group::make()
@@ -1456,25 +1315,6 @@ class BlockResource extends Resource
                     }),
             ])
             ->bulkActions([
-                Tables\Actions\BulkAction::make('replaceCallToActionWithSpecialistBanner')
-                    ->label('Заменить CTA на новый баннер')
-                    ->icon('heroicon-o-arrows-right-left')
-                    ->color('primary')
-                    ->visible(fn (): bool => auth()->user()->hasRole('super_admin'))
-                    ->authorize(fn (): bool => static::canEdit(new Block))
-                    ->requiresConfirmation()
-                    ->modalHeading('Заменить старые формы на новый баннер')
-                    ->modalDescription('У выбранных блоков типа "Форма заявки" будет изменён тип на "Запись или обратный звонок". Payload старой формы будет очищен, чтобы не тащить неиспользуемые данные в новый статичный баннер.')
-                    ->action(function (Collection $records): void {
-                        $records
-                            ->where('type', BlockType::CALL_TO_ACTION)
-                            ->each(function (Block $block): void {
-                                $block->forceFill([
-                                    'type' => BlockType::BANNER_SPECIALIST_CALLBACK,
-                                    'payload' => [],
-                                ])->save();
-                            });
-                    }),
                 Tables\Actions\BulkAction::make('excludeDoctorsAltDoctors')
                     ->label('Исключить врачей')
                     ->icon('heroicon-o-user-minus')
