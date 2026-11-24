@@ -243,10 +243,6 @@
             <x-banner.selection-glasses :block="$block"/>
             @break
 
-        @case(\App\Enums\BlockType::TAGS_NEW)
-            <x-new-block.tags-new :block="$block"/>
-            @break
-
         @case(\App\Enums\BlockType::APPARATUS_DISEASES)
             <x-block.apparatus-diseases :block="$block"/>
             @break

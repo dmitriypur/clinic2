@@ -103,7 +103,7 @@ class BlockRegistryTest extends TestCase
     {
         $options = app(BlockRegistry::class)->options();
 
-        foreach ([5, 14, 19, 23, 25, 26, 28, 44, 48, 49, 71, 79] as $removedType) {
+        foreach ([5, 14, 19, 23, 25, 26, 28, 44, 48, 49, 62, 71, 79] as $removedType) {
             $this->assertArrayNotHasKey($removedType, $options);
         }
     }

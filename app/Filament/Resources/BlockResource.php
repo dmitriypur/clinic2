@@ -323,13 +323,11 @@ class BlockResource extends Resource
                         ->required(
                             fn (Forms\Get $get) => ! in_array(BlockType::from($get('type')), [
                                 BlockType::TAGS,
-                                BlockType::TAGS_NEW,
                             ])
                         )
                         ->hidden(
                             fn (Forms\Get $get) => ! in_array(BlockType::from($get('type')), [
                                 BlockType::TAGS,
-                                BlockType::TAGS_NEW,
                             ])),
 
                     Forms\Components\RichEditor::make('payload.enter_text')

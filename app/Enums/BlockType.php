@@ -97,8 +97,6 @@ enum BlockType: int
     case GRID_CONTACTS = 59;
     case LIST_TEXT_WITH_LINK = 60;
     case BANNER_SELECTION_GLASSES = 61;
-    case TAGS_NEW = 62;
-
     case TEXT_WITH_IMAGE_NEW = 63;
 
     case BRANCH = 64;
@@ -145,7 +143,6 @@ enum BlockType: int
             self::CONTACTS => 'Контакты',
             self::PROMOTIONS => 'Акции',
             self::TAGS => 'Тэги',
-            self::TAGS_NEW => 'Тэги (новый дизайн)',
             self::CAROUSEL => 'Карусель изображений',
             self::HTML => 'Текст',
             self::VIDEO => 'Видео',
