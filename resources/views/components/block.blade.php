@@ -75,14 +75,6 @@
             <x-block.carousel :block="$block"/>
             @break
 
-        @case(\App\Enums\BlockType::TAGS)
-            <x-block.tags :block="$block"/>
-            @break
-
-        @case(\App\Enums\BlockType::HTML)
-            <x-block.html :block="$block"/>
-            @break
-
         @case(\App\Enums\BlockType::VIDEO)
             <x-block.video :block="$block"/>
             @break
@@ -101,10 +93,6 @@
 
         @case(\App\Enums\BlockType::LICENSES)
             <x-block.licenses :block="$block"/>
-            @break
-
-        @case(\App\Enums\BlockType::FAQ)
-            <x-block.faq :block="$block"/>
             @break
 
         @case(\App\Enums\BlockType::AUTHOR)

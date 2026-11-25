@@ -150,8 +150,9 @@ class BlockRegistryTest extends TestCase
             $this->assertTrue(View::exists($view));
         }
 
-        $this->assertFalse($registry->has(BlockType::HTML));
-        $this->assertSame('Текст', BlockType::HTML->getLabel());
+        $this->assertSame('Текст', $registry->label(BlockType::HTML));
+        $this->assertSame('Тэги', $registry->label(BlockType::TAGS));
+        $this->assertSame('FAQ', $registry->label(BlockType::FAQ));
     }
 
     public function test_block_type_label_prefers_a_registered_definition(): void

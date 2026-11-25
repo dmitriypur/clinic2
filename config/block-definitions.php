@@ -22,6 +22,9 @@ return [
         App\Blocks\Definitions\ApparatusTasksDefinition::class,
         App\Blocks\Definitions\TextSubduedDefinition::class,
         App\Blocks\Definitions\HtmlCodeDefinition::class,
+        App\Blocks\Definitions\HtmlDefinition::class,
+        App\Blocks\Definitions\TagsDefinition::class,
+        App\Blocks\Definitions\FaqDefinition::class,
         // <block-generator-definitions>
     ],
 ];

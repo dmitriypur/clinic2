@@ -270,7 +270,7 @@ class BlockResource extends Resource
                         ->hidden(
                             fn (Forms\Get $get) => ! in_array(
                                 BlockType::from($get('type')),
-                                [BlockType::HTML, BlockType::TEXT_WITH_IMAGE,
+                                [BlockType::TEXT_WITH_IMAGE,
                                     BlockType::WELCOME, BlockType::POST_TEXT, BlockType::APPARATUS_DISEASES, BlockType::APPARATUS_METHODS, BlockType::EXPERT_OPINION, ]
                             )
                         )
@@ -310,25 +310,6 @@ class BlockResource extends Resource
                         ->hidden(
                             fn (Forms\Get $get) => BlockType::tryFrom((string) $get('type')) !== BlockType::POST_TEXT
                         ),
-
-                    Forms\Components\Repeater::make('payload.tags')
-                        ->schema([
-                            Forms\Components\TextInput::make('title')
-                                ->label('Название')
-                                ->required(),
-                            Forms\Components\TextInput::make('link')
-                                ->label('Ссылка')
-                                ->required(),
-                        ])
-                        ->required(
-                            fn (Forms\Get $get) => ! in_array(BlockType::from($get('type')), [
-                                BlockType::TAGS,
-                            ])
-                        )
-                        ->hidden(
-                            fn (Forms\Get $get) => ! in_array(BlockType::from($get('type')), [
-                                BlockType::TAGS,
-                            ])),
 
                     Forms\Components\RichEditor::make('payload.enter_text')
                         ->columnSpanFull()
@@ -567,30 +548,6 @@ class BlockResource extends Resource
 
                         ),
                 ]),
-
-                Forms\Components\Repeater::make('payload.faq')
-                    ->schema([
-                        Forms\Components\TextInput::make('question')
-                            ->label('Вопрос')
-                            ->required(),
-
-                        Forms\Components\RichEditor::make('answer_html')
-                            ->label('Ответ')
-                            ->required(),
-
-                        SafeFileUpload::make('icon')
-                            ->safeImages()
-                            ->label('Иконка'),
-                    ])
-                    ->required(
-                        fn (Forms\Get $get) => BlockType::from($get('type')) ==
-                            BlockType::FAQ
-                    )
-                    ->columnSpanFull()
-                    ->hidden(
-                        fn (Forms\Get $get) => BlockType::from($get('type')) !=
-                            BlockType::FAQ
-                    ),
 
                 Forms\Components\Repeater::make('payload.advantages')
                     ->schema([

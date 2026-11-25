@@ -97,6 +97,8 @@ class BlockResourceRegistryIntegrationTest extends TestCase
             [BlockType::APPARATUS_TASKS, null, ['tasks' => [['text' => 'Задача терапии']], 'note_text' => 'Примечание'], 'Задача терапии'],
             [BlockType::TEXT_SUBDUED, '<p>Второстепенный контент</p>', [], 'Второстепенный контент'],
             [BlockType::HTML_CODE, '<div>HTML контент</div>', [], 'HTML контент'],
+            [BlockType::TAGS, null, ['tags' => [['title' => 'Раздел статьи', 'link' => '#section']]], '#section"'],
+            [BlockType::FAQ, null, ['faq' => [['question' => 'Вопрос статьи', 'answer_html' => '<p>Ответ статьи</p>', 'icon' => null]]], '<p>Ответ статьи</p>'],
         ];
 
         foreach ($cases as [$type, $body, $payload, $expected]) {
@@ -142,8 +144,10 @@ class BlockResourceRegistryIntegrationTest extends TestCase
         $this->assertTrue($block->settings['show_on_mobile']);
     }
 
-    public function test_legacy_html_schema_still_saves_through_block_resource(): void
+    public function test_html_remains_the_default_and_saves_through_block_resource(): void
     {
+        Livewire::test(CreateBlock::class)->assertFormSet(['type' => BlockType::HTML->value]);
+
         $this->createBlock([
             'title' => 'Текстовый блок',
             'type' => BlockType::HTML->value,
