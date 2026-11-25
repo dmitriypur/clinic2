@@ -14,10 +14,9 @@
         <video-new inline-template>
             <div class="aspect-video relative overflow-hidden md:rounded-[25px] md:border-[3px] md:border-[#F5841F]"
                  ref="container">
-                <div :class="backdropClassName">
+                <div v-if="!hideBackdrop" :class="backdropClassName">
                     <button
                         type="button"
-                        v-show="!hideBackdrop"
                         class="absolute z-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
                         @click="togglePlay"
                     >
