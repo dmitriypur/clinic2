@@ -75,10 +75,6 @@
             <x-block.carousel :block="$block"/>
             @break
 
-        @case(\App\Enums\BlockType::VIDEO)
-            <x-block.video :block="$block"/>
-            @break
-
         @case(\App\Enums\BlockType::PRICE_LIST)
             <x-block.price-list
                 :block="$block"
@@ -115,20 +111,12 @@
             <x-block.advantages :block="$block"/>
             @break
 
-        @case(\App\Enums\BlockType::VIDEO_NEW)
-            <x-block.video-new :block="$block"/>
-            @break
-
         @case(\App\Enums\BlockType::TEXT_WITH_CHART)
             <x-block.text-with-chart :block="$block"/>
             @break
 
         @case(\App\Enums\BlockType::CARD_COATING)
             <x-block.card-coating :block="$block"/>
-            @break
-
-        @case(\App\Enums\BlockType::HOW_TO_ORDER)
-            <x-block.how-to-order :block="$block"/>
             @break
 
         @case(\App\Enums\BlockType::TEXT_BLOCKS)

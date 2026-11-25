@@ -25,6 +25,9 @@ return [
         App\Blocks\Definitions\HtmlDefinition::class,
         App\Blocks\Definitions\TagsDefinition::class,
         App\Blocks\Definitions\FaqDefinition::class,
+        App\Blocks\Definitions\VideoDefinition::class,
+        App\Blocks\Definitions\VideoNewDefinition::class,
+        App\Blocks\Definitions\HowToOrderDefinition::class,
         // <block-generator-definitions>
     ],
 ];

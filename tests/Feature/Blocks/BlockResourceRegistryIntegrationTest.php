@@ -97,6 +97,7 @@ class BlockResourceRegistryIntegrationTest extends TestCase
             [BlockType::APPARATUS_TASKS, null, ['tasks' => [['text' => 'Задача терапии']], 'note_text' => 'Примечание'], 'Задача терапии'],
             [BlockType::TEXT_SUBDUED, '<p>Второстепенный контент</p>', [], 'Второстепенный контент'],
             [BlockType::HTML_CODE, '<div>HTML контент</div>', [], 'HTML контент'],
+            [BlockType::HOW_TO_ORDER, null, ['order' => [['title' => 'Первый шаг', 'text' => '<p>Описание шага</p>']]], 'Описание шага'],
             [BlockType::TAGS, null, ['tags' => [['title' => 'Раздел статьи', 'link' => '#section']]], '#section"'],
             [BlockType::FAQ, null, ['faq' => [['question' => 'Вопрос статьи', 'answer_html' => '<p>Ответ статьи</p>', 'icon' => null]]], '<p>Ответ статьи</p>'],
         ];
@@ -439,6 +440,33 @@ class BlockResourceRegistryIntegrationTest extends TestCase
             $this->assertStringNotContainsString('data:image/', $html);
             $this->assertStringNotContainsString('onload=', $html);
             $this->assertStringNotContainsString($media->getUrl().'"', $html);
+        }
+    }
+
+    public function test_video_blocks_preserve_existing_files_and_render_their_urls(): void
+    {
+        foreach ([BlockType::VIDEO, BlockType::VIDEO_NEW] as $type) {
+            $this->assertTrue(app(BlockRegistry::class)->has($type));
+            $block = Block::query()->create([
+                'page_id' => $this->page->id,
+                'title' => 'Видео',
+                'type' => $type,
+            ]);
+            $video = $block->addMedia(UploadedFile::fake()->create('clip.mp4', 10, 'video/mp4'))->toMediaCollection('video');
+            $cover = $block->addMedia(UploadedFile::fake()->image('cover.jpg'))->toMediaCollection('cover');
+
+            Livewire::test(EditBlock::class, ['record' => $block->getRouteKey()])
+                ->assertFormFieldIsVisible('video')
+                ->assertFormFieldIsVisible('cover')
+                ->call('save')
+                ->assertHasNoFormErrors();
+            $block->refresh();
+
+            $this->assertSame($video->id, $block->getFirstMedia('video')?->id);
+            $this->assertSame($cover->id, $block->getFirstMedia('cover')?->id);
+            $html = Blade::render('<x-block :block="$block" breadcrumbs-title="" page-title="" page-description="" />', ['block' => $block]);
+            $this->assertStringContainsString($video->getUrl(), $html);
+            $this->assertStringContainsString($cover->getUrl(), $html);
         }
     }
 

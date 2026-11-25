@@ -488,26 +488,6 @@ class BlockResource extends Resource
                             ])
                         ),
 
-                    SafeMediaLibraryFileUpload::make('video')
-                        ->safeVideos()
-                        ->collection('video')
-                        ->label('Видео')
-                        ->openable()
-                        ->hidden(
-                            fn (Forms\Get $get) => ! in_array(BlockType::from($get('type')), [BlockType::VIDEO, BlockType::VIDEO_NEW])
-                        ),
-
-                    SafeMediaLibraryFileUpload::make('cover')
-                        ->safeImages()
-                        ->collection('cover')
-                        ->label('Обложка видео')
-                        ->imageEditor()
-                        ->openable()
-                        ->hidden(
-                            fn (Forms\Get $get) => ! in_array(BlockType::from($get('type')), [BlockType::VIDEO, BlockType::VIDEO_NEW])
-
-                        ),
-
                     Forms\Components\TextInput::make('payload.var_1_title')
                         ->label('Вариант 1 заголовок')
                         ->required()
@@ -584,10 +564,7 @@ class BlockResource extends Resource
                     ->label('Карточка')
                     ->columnSpanFull()
                     ->hidden(
-                        fn (Forms\Get $get) => ! in_array(BlockType::from($get('type')), [
-                            BlockType::HOW_TO_ORDER,
-                            BlockType::NIGHT_LENSES_SELECTION,
-                        ])
+                        fn (Forms\Get $get) => BlockType::from($get('type')) !== BlockType::NIGHT_LENSES_SELECTION
                     ),
 
                 Forms\Components\Section::make([
