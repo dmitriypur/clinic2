@@ -28,6 +28,9 @@ return [
         App\Blocks\Definitions\VideoDefinition::class,
         App\Blocks\Definitions\VideoNewDefinition::class,
         App\Blocks\Definitions\HowToOrderDefinition::class,
+        App\Blocks\Definitions\ApparatusDiseasesDefinition::class,
+        App\Blocks\Definitions\TextWithChartDefinition::class,
+        App\Blocks\Definitions\GuaranteeDefinition::class,
         // <block-generator-definitions>
     ],
 ];

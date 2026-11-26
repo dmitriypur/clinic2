@@ -271,7 +271,7 @@ class BlockResource extends Resource
                             fn (Forms\Get $get) => ! in_array(
                                 BlockType::from($get('type')),
                                 [BlockType::TEXT_WITH_IMAGE,
-                                    BlockType::WELCOME, BlockType::POST_TEXT, BlockType::APPARATUS_DISEASES, BlockType::APPARATUS_METHODS, BlockType::EXPERT_OPINION, ]
+                                    BlockType::WELCOME, BlockType::POST_TEXT, BlockType::APPARATUS_METHODS, BlockType::EXPERT_OPINION, ]
                             )
                         )
                         ->columnSpan('full'),
@@ -309,32 +309,6 @@ class BlockResource extends Resource
                         ->default('right')
                         ->hidden(
                             fn (Forms\Get $get) => BlockType::tryFrom((string) $get('type')) !== BlockType::POST_TEXT
-                        ),
-
-                    Forms\Components\RichEditor::make('payload.enter_text')
-                        ->columnSpanFull()
-                        ->label('Начальный текст')
-                        ->hidden(
-                            fn (Forms\Get $get) => BlockType::from($get('type')) !==
-                                BlockType::GUARANTEE
-                        ),
-                    Forms\Components\Repeater::make('payload.guarantee')
-                        ->schema([
-                            Forms\Components\TextInput::make('title')
-                                ->label('Заголовок')
-                                ->required(),
-                            Forms\Components\Textarea::make('text')
-                                ->label('Текст')
-                                ->required(),
-                        ])
-                        ->label('Гарантии')
-                        ->required(
-                            fn (Forms\Get $get) => BlockType::from($get('type')) ==
-                                BlockType::GUARANTEE
-                        )
-                        ->hidden(
-                            fn (Forms\Get $get) => BlockType::from($get('type')) !=
-                                BlockType::GUARANTEE
                         ),
 
                     Forms\Components\Section::make([
@@ -444,7 +418,6 @@ class BlockResource extends Resource
                                     BlockType::WELCOME,
                                     BlockType::POST_TEXT,
                                     BlockType::LIST_WITH_IMAGE,
-                                    BlockType::APPARATUS_DISEASES,
                                 ])
                         ),
 
@@ -488,34 +461,6 @@ class BlockResource extends Resource
                             ])
                         ),
 
-                    Forms\Components\TextInput::make('payload.var_1_title')
-                        ->label('Вариант 1 заголовок')
-                        ->required()
-                        ->hidden(
-                            fn (Forms\Get $get) => BlockType::from($get('type')) !=
-                                BlockType::TEXT_WITH_CHART
-                        ),
-                    Forms\Components\Textarea::make('payload.var_1_text')
-                        ->label('Вариант 1 текст')
-                        ->required()
-                        ->hidden(
-                            fn (Forms\Get $get) => BlockType::from($get('type')) !=
-                                BlockType::TEXT_WITH_CHART
-                        ),
-                    Forms\Components\TextInput::make('payload.var_2_title')
-                        ->label('Вариант 2 заголовок')
-                        ->required()
-                        ->hidden(
-                            fn (Forms\Get $get) => BlockType::from($get('type')) !=
-                                BlockType::TEXT_WITH_CHART
-                        ),
-                    Forms\Components\Textarea::make('payload.var_2_text')
-                        ->label('Вариант 2 текст')
-                        ->required()
-                        ->hidden(
-                            fn (Forms\Get $get) => BlockType::from($get('type')) !=
-                                BlockType::TEXT_WITH_CHART
-                        ),
                     SafeMediaLibraryFileUpload::make('payload.bg_chart')
                         ->safeImages()
                         ->label('Изображение графика')
@@ -524,8 +469,7 @@ class BlockResource extends Resource
                         ->responsiveImages()
                         ->openable()
                         ->hidden(
-                            fn (Forms\Get $get) => ! in_array(BlockType::from($get('type')), [BlockType::TEXT_WITH_CHART, BlockType::ADVANTAGES]),
-
+                            fn (Forms\Get $get) => BlockType::from($get('type')) !== BlockType::ADVANTAGES,
                         ),
                 ]),
 
@@ -1038,23 +982,8 @@ class BlockResource extends Resource
 
                 Forms\Components\Section::make([
                     Forms\Components\Repeater::make('payload.items')
-                        ->label('Карточки')
-                        ->schema([
-                            Forms\Components\Textarea::make('text')
-                                ->label('Текст')
-                                ->columnSpanFull()
-                                ->required(),
-                        ])
-                        ->minItems(1)
-                        ->required(),
-                ])->hidden(
-                    fn (Forms\Get $get) => BlockType::from($get('type')) !== BlockType::APPARATUS_DISEASES
-                ),
-
-                Forms\Components\Section::make([
-                    Forms\Components\Repeater::make('payload.items')
                         ->label('Методики')
-                        ->schema([
+                        ->schema(fn (Forms\Get $get): array => BlockType::from($get('type')) === BlockType::APPARATUS_METHODS ? [
                             Forms\Components\TextInput::make('title')
                                 ->label('Заголовок')
                                 ->columnSpanFull()
@@ -1082,7 +1011,7 @@ class BlockResource extends Resource
                                 ->imageEditor()
                                 ->responsiveImages()
                                 ->required(),
-                        ])
+                        ] : [])
                         ->minItems(1)
                         ->required(),
                 ])->hidden(

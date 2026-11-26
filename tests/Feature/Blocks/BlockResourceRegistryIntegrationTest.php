@@ -125,6 +125,101 @@ class BlockResourceRegistryIntegrationTest extends TestCase
         }
     }
 
+    public function test_apparatus_chart_and_guarantee_blocks_preserve_existing_content_and_media(): void
+    {
+        $cases = [
+            [
+                BlockType::APPARATUS_DISEASES,
+                '<p>Вводный текст о заболеваниях</p>',
+                ['items' => [['text' => 'Карточка заболевания']]],
+                ['Вводный текст о заболеваниях', 'Карточка заболевания'],
+                ['default', 'default'],
+            ],
+            [
+                BlockType::TEXT_WITH_CHART,
+                null,
+                [
+                    'var_1_title' => 'Первый вариант',
+                    'var_1_text' => 'Описание первого варианта',
+                    'var_2_title' => 'Второй вариант',
+                    'var_2_text' => 'Описание второго варианта',
+                ],
+                ['Первый вариант', 'Описание первого варианта', 'Второй вариант', 'Описание второго варианта'],
+                ['bg_chart', 'payload.bg_chart'],
+            ],
+            [
+                BlockType::GUARANTEE,
+                null,
+                [
+                    'enter_text' => '<p>Условия программы</p>',
+                    'guarantee' => [['title' => 'Название гарантии', 'text' => 'Описание гарантии']],
+                ],
+                ['Условия программы', 'Название гарантии', 'Описание гарантии', 'images/guarantee/boy.jpg'],
+                null,
+            ],
+        ];
+
+        foreach ($cases as [$type, $body, $payload, $expected, $upload]) {
+            $this->assertTrue(app(BlockRegistry::class)->has($type), $type->name);
+
+            $block = $this->page->blocks()->create([
+                'title' => 'Существующий блок',
+                'type' => $type,
+                'body_html' => $body,
+                'payload' => $payload,
+                'settings' => ['title_hidden' => true, 'show_on_mobile' => true],
+            ]);
+            $media = $upload
+                ? $block->addMedia(UploadedFile::fake()->image('existing.jpg'))->toMediaCollection($upload[0])
+                : null;
+            $this->saveExistingBlock($block);
+            $block->refresh();
+
+            $this->assertSame($body, $block->body_html);
+            $this->assertSame($payload, $block->payload);
+            $this->assertTrue($block->title_hidden);
+            $html = Blade::render('<x-block :block="$block" breadcrumbs-title="" page-title="" page-description="" />', ['block' => $block]);
+            foreach ($expected as $content) {
+                $this->assertStringContainsString($content, $html);
+            }
+            if ($media !== null) {
+                $this->assertSame($media->id, $block->getFirstMedia($upload[0])?->id);
+                $this->assertStringContainsString($media->getUrl(), $html);
+            }
+
+            $this->createBlock([
+                'title' => 'Новый блок',
+                'type' => $type->value,
+                'body_html' => $body,
+                'payload' => $payload,
+            ], $upload ? ['data.'.$upload[1] => [UploadedFile::fake()->image('new.jpg')]] : []);
+            $created = $this->page->blocks()->reorder('id', 'desc')->firstOrFail();
+            $this->assertSame($type, $created->type);
+            $this->assertSame($body, $created->body_html);
+            $this->assertEquals($payload, $created->payload);
+            if ($upload !== null) {
+                $this->assertNotNull($created->getFirstMedia($upload[0]));
+            }
+        }
+    }
+
+    public function test_legacy_advantages_block_keeps_its_chart_image_field(): void
+    {
+        $block = $this->page->blocks()->create([
+            'title' => 'Преимущества',
+            'type' => BlockType::ADVANTAGES,
+            'payload' => ['advantages' => [['alt_image' => 'Иконка', 'text' => 'Преимущество']]],
+        ]);
+        $media = $block->addMedia(UploadedFile::fake()->image('advantages.jpg'))->toMediaCollection('bg_chart');
+
+        Livewire::test(EditBlock::class, ['record' => $block->getRouteKey()])
+            ->assertFormFieldIsVisible('payload.bg_chart')
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $this->assertSame($media->id, $block->fresh()->getFirstMedia('bg_chart')?->id);
+    }
+
     public function test_registered_reception_steps_schema_is_hydrated_and_saved_by_block_resource(): void
     {
         $items = [

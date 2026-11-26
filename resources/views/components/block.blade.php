@@ -111,10 +111,6 @@
             <x-block.advantages :block="$block"/>
             @break
 
-        @case(\App\Enums\BlockType::TEXT_WITH_CHART)
-            <x-block.text-with-chart :block="$block"/>
-            @break
-
         @case(\App\Enums\BlockType::CARD_COATING)
             <x-block.card-coating :block="$block"/>
             @break
@@ -125,10 +121,6 @@
 
         @case(\App\Enums\BlockType::REVIEWS_ALT)
             <x-block.reviews-alt :block="$block"/>
-            @break
-
-        @case(\App\Enums\BlockType::GUARANTEE)
-            <x-block.guarantee :block="$block"/>
             @break
 
         @case(\App\Enums\BlockType::SERVICES_BLOCK)
@@ -217,10 +209,6 @@
 
         @case(\App\Enums\BlockType::BANNER_SELECTION_GLASSES)
             <x-banner.selection-glasses :block="$block"/>
-            @break
-
-        @case(\App\Enums\BlockType::APPARATUS_DISEASES)
-            <x-block.apparatus-diseases :block="$block"/>
             @break
 
         @case(\App\Enums\BlockType::APPARATUS_METHODS)
