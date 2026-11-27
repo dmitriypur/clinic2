@@ -760,44 +760,6 @@ class BlockResource extends Resource
                 ),
 
                 Forms\Components\Section::make([
-                    Forms\Components\Repeater::make('payload.coating')
-                        ->label('Покрытие')
-                        ->schema([
-
-                            Forms\Components\TextInput::make('title')
-                                ->label('Заголовок')
-                                ->columnSpan('full')
-                                ->required(),
-
-                            Forms\Components\RichEditor::make('list')
-                                ->label('Выгоды')
-                                ->columnSpan('full')
-                                ->required(),
-
-                            Forms\Components\Toggle::make('colors')
-                                ->label('Показать цвета')
-                                ->default(false)
-                                ->reactive()
-                                ->columnSpan('full'),
-
-                            Forms\Components\TextInput::make('btn_text')
-                                ->label('Текст кнопки')
-                                ->columnSpan('full')
-                                ->required(),
-                        ]),
-                ])->hidden(fn (Forms\Get $get) => BlockType::from($get('type')) != BlockType::CARD_COATING),
-
-                Forms\Components\Section::make([
-                    SafeMediaLibraryFileUpload::make('videos')
-                        ->safeVideos()
-                        ->collection('videos')
-                        ->label('Вертикальные видео')
-                        ->multiple()
-                        ->required(),
-                ])
-                    ->hidden(fn (Forms\Get $get) => ! in_array(BlockType::from($get('type')), [BlockType::VIDEO_CAROUSEL])),
-
-                Forms\Components\Section::make([
                     Forms\Components\TextInput::make('payload.count_col')
                         ->label('Кол-во колонок')
                         ->default(1),

@@ -31,6 +31,9 @@ return [
         App\Blocks\Definitions\ApparatusDiseasesDefinition::class,
         App\Blocks\Definitions\TextWithChartDefinition::class,
         App\Blocks\Definitions\GuaranteeDefinition::class,
+        App\Blocks\Definitions\SpecialistCallbackDefinition::class,
+        App\Blocks\Definitions\CardCoatingDefinition::class,
+        App\Blocks\Definitions\VideoCarouselDefinition::class,
         // <block-generator-definitions>
     ],
 ];

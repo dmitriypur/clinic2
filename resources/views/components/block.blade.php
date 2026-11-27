@@ -103,16 +103,8 @@
             <x-block.welcome :block="$block"/>
             @break
 
-        @case(\App\Enums\BlockType::VIDEO_CAROUSEL)
-            <x-block.video-carousel :block="$block"/>
-            @break
-
         @case(\App\Enums\BlockType::ADVANTAGES)
             <x-block.advantages :block="$block"/>
-            @break
-
-        @case(\App\Enums\BlockType::CARD_COATING)
-            <x-block.card-coating :block="$block"/>
             @break
 
         @case(\App\Enums\BlockType::TEXT_BLOCKS)
@@ -213,10 +205,6 @@
 
         @case(\App\Enums\BlockType::APPARATUS_METHODS)
             <x-block.apparatus-methods :block="$block"/>
-            @break
-
-        @case(\App\Enums\BlockType::BANNER_SPECIALIST_CALLBACK)
-            <x-banner.specialist-callback :block="$block"/>
             @break
 
         @case(\App\Enums\BlockType::EXPERT_OPINION)

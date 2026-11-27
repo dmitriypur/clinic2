@@ -565,6 +565,71 @@ class BlockResourceRegistryIntegrationTest extends TestCase
         }
     }
 
+    public function test_callback_and_lens_coating_render_through_the_registry(): void
+    {
+        $registry = app(BlockRegistry::class);
+        $this->assertTrue($registry->has(BlockType::BANNER_SPECIALIST_CALLBACK));
+        $this->assertTrue($registry->has(BlockType::CARD_COATING));
+
+        $callback = $this->page->blocks()->create([
+            'title' => 'Запись или обратный звонок',
+            'type' => BlockType::BANNER_SPECIALIST_CALLBACK,
+        ]);
+        $this->saveExistingBlock($callback);
+        $html = Blade::render('<x-block :block="$block" breadcrumbs-title="" page-title="" page-description="" />', ['block' => $callback->refresh()]);
+        $this->assertStringContainsString("openBookingWidgetV3('otpravka-formy')", $html);
+        $this->assertStringContainsString("showCallbackFormNew(null, 'otpravka-formy')", $html);
+
+        $payload = ['coating' => [[
+            'title' => 'Покрытие Stellest',
+            'list' => '<p>Описание покрытия</p>',
+            'colors' => true,
+            'btn_text' => 'Выбрать покрытие',
+        ]]];
+        $this->createBlock([
+            'title' => 'Покрытия линз',
+            'type' => BlockType::CARD_COATING->value,
+            'payload' => $payload,
+        ]);
+        $coating = $this->page->blocks()->where('type', BlockType::CARD_COATING->value)->sole();
+        $this->assertSame($payload, $coating->payload);
+        $this->saveExistingBlock($coating);
+        $this->assertSame($payload, $coating->refresh()->payload);
+        $html = Blade::render('<x-block :block="$block" breadcrumbs-title="" page-title="" page-description="" />', ['block' => $coating]);
+        $this->assertStringContainsString('Покрытие Stellest', $html);
+        $this->assertStringContainsString('Описание покрытия', $html);
+        $this->assertStringContainsString('Цвет линзы на выбор', $html);
+        $this->assertStringContainsString('Выбрать покрытие', $html);
+    }
+
+    public function test_video_carousel_preserves_saved_video_order_and_renders_sources(): void
+    {
+        $this->assertTrue(app(BlockRegistry::class)->has(BlockType::VIDEO_CAROUSEL));
+        $this->createBlock([
+            'title' => 'Видео карусель',
+            'type' => BlockType::VIDEO_CAROUSEL->value,
+        ], ['data.videos' => [
+            UploadedFile::fake()->create('one.mp4', 10, 'video/mp4'),
+            UploadedFile::fake()->create('two.mp4', 10, 'video/mp4'),
+        ]]);
+        $block = $this->page->blocks()->where('type', BlockType::VIDEO_CAROUSEL->value)->sole();
+        $videos = $block->getMedia('videos');
+        $this->assertCount(2, $videos);
+
+        [$first, $second] = $videos;
+        $first->update(['order_column' => 2]);
+        $second->update(['order_column' => 1]);
+        $block->refresh();
+        $this->saveExistingBlock($block);
+        $block->refresh();
+        $this->assertSame([$second->id, $first->id], $block->getMedia('videos')->pluck('id')->all());
+
+        $html = Blade::render('<x-block :block="$block" breadcrumbs-title="" page-title="" page-description="" />', ['block' => $block]);
+        $this->assertStringContainsString($first->getUrl(), $html);
+        $this->assertStringContainsString($second->getUrl(), $html);
+        $this->assertLessThan(strpos($html, $first->getUrl()), strpos($html, $second->getUrl()));
+    }
+
     public function test_horizontal_cards_registry_preserves_existing_payload_media_and_markup(): void
     {
         $definition = app(BlockRegistry::class)->find(BlockType::CARDS_ITEM_ROW);
