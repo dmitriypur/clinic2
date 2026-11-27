@@ -40,6 +40,9 @@ return [
         App\Blocks\Definitions\StellestBannerDefinition::class,
         App\Blocks\Definitions\NightLensesBannerDefinition::class,
         App\Blocks\Definitions\AppointmentBannerDefinition::class,
+        App\Blocks\Definitions\CorrectionBannerDefinition::class,
+        App\Blocks\Definitions\MyopiaBannerDefinition::class,
+        App\Blocks\Definitions\SelectionGlassesBannerDefinition::class,
         // <block-generator-definitions>
     ],
 ];

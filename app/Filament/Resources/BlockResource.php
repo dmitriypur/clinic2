@@ -358,7 +358,6 @@ class BlockResource extends Resource
                         ->label('Текст кнопки')
                         ->hidden(
                             fn (Forms\Get $get) => ! in_array(BlockType::from($get('type')), [
-                                BlockType::BANNER_SELECTION_GLASSES,
                                 BlockType::BANNER_APPARATUS_HERO,
                                 BlockType::APPARATUS_METHODS,
                             ])
@@ -484,12 +483,7 @@ class BlockResource extends Resource
                         ->imageEditor()
                         ->openable(),
                 ])->hidden(
-                    fn (Forms\Get $get) => ! in_array(BlockType::from($get('type')), [
-                        BlockType::BANNER_CORRECTION,
-                        BlockType::BANNER_MYOPIA,
-                        BlockType::BANNER_SELECTION_GLASSES,
-                        BlockType::BANNER_APPARATUS_HERO,
-                    ])
+                    fn (Forms\Get $get) => BlockType::from($get('type')) !== BlockType::BANNER_APPARATUS_HERO
                 ),
 
                 Forms\Components\Section::make([

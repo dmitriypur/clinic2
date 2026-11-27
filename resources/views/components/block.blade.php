@@ -137,14 +137,6 @@
             <x-block.post-text :block="$block"/>
             @break
 
-        @case(\App\Enums\BlockType::BANNER_CORRECTION)
-            <x-banner.correction :block="$block"/>
-            @break
-
-        @case(\App\Enums\BlockType::BANNER_MYOPIA)
-            <x-banner.myopia :block="$block"/>
-            @break
-
         @case(\App\Enums\BlockType::CARDS_BORDER)
             <x-block.cards-border :block="$block"/>
             @break
@@ -171,10 +163,6 @@
 
         @case(\App\Enums\BlockType::UNIVERSAL_TEXT_BLOCK)
             <x-block.universal-block :block="$block"/>
-            @break
-
-        @case(\App\Enums\BlockType::BANNER_SELECTION_GLASSES)
-            <x-banner.selection-glasses :block="$block"/>
             @break
 
         @case(\App\Enums\BlockType::APPARATUS_METHODS)

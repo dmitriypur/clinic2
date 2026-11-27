@@ -700,14 +700,22 @@ class BlockResourceRegistryIntegrationTest extends TestCase
 
     public function test_service_banners_preserve_their_form_payload_images_and_callback(): void
     {
-        foreach ([BlockType::BANNER_WITH_BUTTON, BlockType::BANNER_NIGHT_LENSES, BlockType::BANNER_APPOINTMENT] as $type) {
+        $pricing = ['service_hero_subtitle' => 'Подзаголовок баннера', 'old_price' => '5000', 'price' => '3000'];
+        $cases = [
+            [BlockType::BANNER_WITH_BUTTON, $pricing],
+            [BlockType::BANNER_NIGHT_LENSES, $pricing],
+            [BlockType::BANNER_APPOINTMENT, $pricing],
+            [BlockType::BANNER_CORRECTION, []],
+            [BlockType::BANNER_MYOPIA, []],
+            [BlockType::BANNER_SELECTION_GLASSES, ['btn_text' => 'Подобрать очки']],
+        ];
+
+        foreach ($cases as [$type, $extraPayload]) {
             $this->assertTrue(app(BlockRegistry::class)->has($type), $type->name);
             $payload = [
                 'service_hero_title' => 'Заголовок баннера',
-                'service_hero_subtitle' => 'Подзаголовок баннера',
-                'old_price' => '5000',
-                'price' => '3000',
                 'service_hero_text' => 'Текст баннера',
+                ...$extraPayload,
             ];
             $this->createBlock([
                 'title' => 'Баннер услуги',
@@ -737,6 +745,9 @@ class BlockResourceRegistryIntegrationTest extends TestCase
             $this->assertStringContainsString($desktop->getUrl(), $html);
             $this->assertStringContainsString($mobile->getUrl(), $html);
             $this->assertStringContainsString("showCallbackModal(null, 'otpravka-formy')", $html);
+            if (isset($payload['btn_text'])) {
+                $this->assertStringContainsString($payload['btn_text'], $html);
+            }
         }
     }
 
