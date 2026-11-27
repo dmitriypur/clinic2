@@ -41,12 +41,6 @@
         @include($blockDefinition->view(), $blockDefinition->viewData($block))
     @else
         @switch($block->type)
-        @case(\App\Enums\BlockType::TEXT_WITH_IMAGE)
-            <div class="container">
-                <x-block.text-with-image :block="$block"/>
-            </div>
-            @break
-
         @case(\App\Enums\BlockType::ELEMENTS_ITEM_ROW)
             <div class="container">
                 <x-block.elements-item-row :block="$block" :subdued="$subdued"/>
@@ -105,10 +99,6 @@
 
         @case(\App\Enums\BlockType::ADVANTAGES)
             <x-block.advantages :block="$block"/>
-            @break
-
-        @case(\App\Enums\BlockType::TEXT_BLOCKS)
-            <x-block.text-blocks :block="$block"/>
             @break
 
         @case(\App\Enums\BlockType::REVIEWS_ALT)
@@ -189,10 +179,6 @@
 
         @case(\App\Enums\BlockType::DETAILS)
             <x-block.details :block="$block"/>
-            @break
-
-        @case(\App\Enums\BlockType::DETAILS_ALT)
-            <x-block.details-alt :block="$block"/>
             @break
 
         @case(\App\Enums\BlockType::UNIVERSAL_TEXT_BLOCK)

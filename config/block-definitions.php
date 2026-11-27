@@ -34,6 +34,9 @@ return [
         App\Blocks\Definitions\SpecialistCallbackDefinition::class,
         App\Blocks\Definitions\CardCoatingDefinition::class,
         App\Blocks\Definitions\VideoCarouselDefinition::class,
+        App\Blocks\Definitions\DetailsAltDefinition::class,
+        App\Blocks\Definitions\TextWithImageDefinition::class,
+        App\Blocks\Definitions\TextBlocksDefinition::class,
         // <block-generator-definitions>
     ],
 ];

@@ -9,8 +9,10 @@ use App\Filament\Resources\BlockResource\Pages\CreateBlock;
 use App\Filament\Resources\BlockResource\Pages\EditBlock;
 use App\Filament\Resources\BlockResource\Pages\ListBlocks;
 use App\Models\Block;
+use App\Models\City;
 use App\Models\Page;
 use App\Models\Staff;
+use App\Services\CityService;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\Component;
 use Filament\Forms\Components\Select;
@@ -22,6 +24,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\View;
 use Livewire\Livewire;
 use Spatie\MediaLibrary\Conversions\FileManipulator;
 use Spatie\MediaLibrary\Conversions\Jobs\PerformConversionsJob;
@@ -201,6 +204,99 @@ class BlockResourceRegistryIntegrationTest extends TestCase
                 $this->assertNotNull($created->getFirstMedia($upload[0]));
             }
         }
+    }
+
+    public function test_details_cards_render_the_current_city_details(): void
+    {
+        $this->assertTrue(app(BlockRegistry::class)->has(BlockType::DETAILS_ALT));
+        $block = $this->page->blocks()->create([
+            'type' => BlockType::DETAILS_ALT,
+            'title' => 'Наши реквизиты',
+        ]);
+        $this->saveExistingBlock($block);
+
+        $detailsByCity = [
+            'Киров' => [['name' => 'Клиника Кирова', 'legal_address' => 'Кировский адрес']],
+            'Москва' => [['name' => 'Клиника Москвы', 'legal_address' => 'Московский адрес']],
+        ];
+
+        foreach ($detailsByCity as $city => $details) {
+            View::share('currentCity', new City(['name' => $city, 'details' => $details]));
+            $html = Blade::render('<x-block :block="$block" breadcrumbs-title="" page-title="" page-description="" />', ['block' => $block->refresh()]);
+            $this->assertStringContainsString('Наши реквизиты', $html);
+            $this->assertStringContainsString($details[0]['name'], $html);
+            $this->assertStringContainsString($details[0]['legal_address'], $html);
+        }
+    }
+
+    public function test_original_text_with_image_saves_type_zero_and_preserves_layout_and_image(): void
+    {
+        $type = BlockType::TEXT_WITH_IMAGE;
+        $this->assertTrue(app(BlockRegistry::class)->has($type));
+
+        $payload = ['link' => $this->page->handle, 'reverse' => true, 'add_fox' => false];
+        $body = '<p>Сохранённый текст с изображением</p>';
+        $this->createBlock([
+            'title' => 'Текст с изображением',
+            'type' => $type->value,
+            'body_html' => $body,
+            'payload' => $payload,
+        ], ['data.default' => [UploadedFile::fake()->image('existing.jpg')]]);
+
+        $block = $this->page->blocks()->where('type', $type->value)->sole();
+        $media = $block->getFirstMedia('default');
+        $this->assertNotNull($media);
+        $this->saveExistingBlock($block);
+        $block->refresh();
+
+        $this->assertSame($body, $block->body_html);
+        $this->assertSame($payload, $block->payload);
+        $this->assertSame($media->id, $block->getFirstMedia('default')?->id);
+
+        app(CityService::class)->setCurrentCity(new City(['slug' => 'moskva']));
+        $html = Blade::render('<x-block :block="$block" breadcrumbs-title="" page-title="" page-description="" />', ['block' => $block]);
+        $this->assertMatchesRegularExpression('/<div class="container">\s*<div\s+class="flex flex-col-reverse lg:flex-row-reverse/', $html);
+        $this->assertStringContainsString('/moskva/'.$this->page->handle.'"', $html);
+        $this->assertStringContainsString($media->getUrl(), $html);
+        $this->assertStringContainsString($body, $html);
+        $this->assertStringNotContainsString('images/fireworks.webp', $html);
+    }
+
+    public function test_text_blocks_preserve_saved_grid_picture_and_opening_settings(): void
+    {
+        $type = BlockType::TEXT_BLOCKS;
+        $this->assertTrue(app(BlockRegistry::class)->has($type));
+        $picture = 'text-block-picture.jpg';
+        Storage::disk('public')->put($picture, UploadedFile::fake()->image($picture)->get());
+        $payload = [
+            'is_opening' => true,
+            'is_rounded' => false,
+            'text_content' => [[
+                'is_grid' => true,
+                'title' => 'Заголовок текста',
+                'subtitle' => 'Подзаголовок текста',
+                'body_html' => '<p>Основной текст</p>',
+                'picture' => $picture,
+                'grid_blocks' => [['body_html' => '<p>Ячейка сетки</p>', 'col_count' => '2']],
+                'cols_count' => '3',
+                'classes' => ['text-center'],
+            ]],
+        ];
+
+        $block = $this->page->blocks()->create(['type' => $type, 'title' => 'Текстовые блоки', 'payload' => $payload]);
+        $this->saveExistingBlock($block);
+        $block->refresh();
+
+        $this->assertSame($payload, $block->payload);
+        Storage::disk('public')->assertExists($picture);
+        $html = Blade::render('<x-block :block="$block" breadcrumbs-title="" page-title="" page-description="" />', ['block' => $block]);
+        $this->assertStringContainsString(':is-opening="1"', $html);
+        $this->assertStringContainsString('md:grid-cols-3', $html);
+        $this->assertStringContainsString('lg:col-span-2', $html);
+        $this->assertStringContainsString('<p>Ячейка сетки</p>', $html);
+        $this->assertStringContainsString('/storage/'.$picture, $html);
+        $this->assertStringContainsString('Смотреть статью полностью', $html);
+        $this->assertStringNotContainsString('rounded-20', $html);
     }
 
     public function test_legacy_advantages_block_keeps_its_chart_image_field(): void
