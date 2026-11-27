@@ -698,6 +698,48 @@ class BlockResourceRegistryIntegrationTest extends TestCase
         $this->assertStringContainsString('Выбрать покрытие', $html);
     }
 
+    public function test_service_banners_preserve_their_form_payload_images_and_callback(): void
+    {
+        foreach ([BlockType::BANNER_WITH_BUTTON, BlockType::BANNER_NIGHT_LENSES, BlockType::BANNER_APPOINTMENT] as $type) {
+            $this->assertTrue(app(BlockRegistry::class)->has($type), $type->name);
+            $payload = [
+                'service_hero_title' => 'Заголовок баннера',
+                'service_hero_subtitle' => 'Подзаголовок баннера',
+                'old_price' => '5000',
+                'price' => '3000',
+                'service_hero_text' => 'Текст баннера',
+            ];
+            $this->createBlock([
+                'title' => 'Баннер услуги',
+                'type' => $type->value,
+                'payload' => $payload,
+            ], [
+                'data.bg' => [UploadedFile::fake()->image('desktop.jpg')],
+                'data.pic' => [UploadedFile::fake()->image('mobile.jpg')],
+            ]);
+
+            $block = $this->page->blocks()->where('type', $type->value)->sole();
+            $this->assertEquals($payload, $block->payload);
+            $desktop = $block->getFirstMedia('bg');
+            $mobile = $block->getFirstMedia('pic');
+            $this->assertNotNull($desktop);
+            $this->assertNotNull($mobile);
+
+            $this->saveExistingBlock($block);
+            $block->refresh();
+            $this->assertEquals($payload, $block->payload);
+            $this->assertSame($desktop->id, $block->getFirstMedia('bg')?->id);
+            $this->assertSame($mobile->id, $block->getFirstMedia('pic')?->id);
+
+            $html = Blade::render('<x-block :block="$block" breadcrumbs-title="" page-title="" page-description="" />', ['block' => $block]);
+            $this->assertStringContainsString($payload['service_hero_title'], $html);
+            $this->assertStringContainsString($payload['service_hero_text'], $html);
+            $this->assertStringContainsString($desktop->getUrl(), $html);
+            $this->assertStringContainsString($mobile->getUrl(), $html);
+            $this->assertStringContainsString("showCallbackModal(null, 'otpravka-formy')", $html);
+        }
+    }
+
     public function test_video_carousel_preserves_saved_video_order_and_renders_sources(): void
     {
         $this->assertTrue(app(BlockRegistry::class)->has(BlockType::VIDEO_CAROUSEL));

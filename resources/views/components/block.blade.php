@@ -109,24 +109,12 @@
             <x-block.services-block :block="$block"/>
             @break
 
-        @case(\App\Enums\BlockType::BANNER_WITH_BUTTON)
-            <x-banner.with-btn :block="$block"/>
-            @break
-
-        @case(\App\Enums\BlockType::BANNER_NIGHT_LENSES)
-            <x-night-lenses.banner :block="$block"/>
-            @break
-
         @case(\App\Enums\BlockType::NIGHT_LENSES_PICTURES)
             <x-night-lenses.pictures :block="$block"/>
             @break
 
         @case(\App\Enums\BlockType::NIGHT_LENSES_SELECTION)
             <x-night-lenses.selection :block="$block"/>
-            @break
-
-        @case(\App\Enums\BlockType::BANNER_APPOINTMENT)
-            <x-banner.appointment :block="$block"/>
             @break
 
         @case(\App\Enums\BlockType::BANNER_APPARATUS_HERO)

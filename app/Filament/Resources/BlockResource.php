@@ -465,92 +465,32 @@ class BlockResource extends Resource
                 Forms\Components\Section::make([
                     Forms\Components\TextInput::make('payload.service_hero_title')
                         ->columnSpanFull()
-                        ->label('Заголовок')
-                        ->hidden(
-                            fn (Forms\Get $get) => ! in_array(BlockType::from($get('type')), [
-                                BlockType::BANNER_WITH_BUTTON,
-                                BlockType::BANNER_NIGHT_LENSES,
-                                BlockType::BANNER_APPOINTMENT,
-                                BlockType::BANNER_CORRECTION,
-                                BlockType::BANNER_MYOPIA,
-                                BlockType::BANNER_SELECTION_GLASSES,
-                                BlockType::BANNER_APPARATUS_HERO,
-                            ])),
-                    Forms\Components\TextInput::make('payload.service_hero_subtitle')
-                        ->columnSpanFull()
-                        ->label('Подзаголовок')
-                        ->hidden(
-                            fn (Forms\Get $get) => ! in_array(BlockType::from($get('type')), [
-                                BlockType::BANNER_WITH_BUTTON,
-                                BlockType::BANNER_NIGHT_LENSES,
-                                BlockType::BANNER_APPOINTMENT,
-                            ])),
-                    Forms\Components\TextInput::make('payload.old_price')
-                        ->columnSpanFull()
-                        ->label('Старая цена')
-                        ->hidden(
-                            fn (Forms\Get $get) => ! in_array(BlockType::from($get('type')), [
-                                BlockType::BANNER_WITH_BUTTON,
-                                BlockType::BANNER_NIGHT_LENSES,
-                                BlockType::BANNER_APPOINTMENT,
-                            ])),
-                    Forms\Components\TextInput::make('payload.price')
-                        ->columnSpanFull()
-                        ->label('Цена')
-                        ->hidden(
-                            fn (Forms\Get $get) => ! in_array(BlockType::from($get('type')), [
-                                BlockType::BANNER_WITH_BUTTON,
-                                BlockType::BANNER_NIGHT_LENSES,
-                                BlockType::BANNER_APPOINTMENT,
-                            ])),
+                        ->label('Заголовок'),
                     Forms\Components\Textarea::make('payload.service_hero_text')
                         ->columnSpanFull()
-                        ->label('Текст')
-                        ->hidden(
-                            fn (Forms\Get $get) => ! in_array(BlockType::from($get('type')), [
-                                BlockType::BANNER_WITH_BUTTON,
-                                BlockType::BANNER_NIGHT_LENSES,
-                                BlockType::BANNER_APPOINTMENT,
-                                BlockType::BANNER_CORRECTION,
-                                BlockType::BANNER_MYOPIA,
-                                BlockType::BANNER_SELECTION_GLASSES,
-                                BlockType::BANNER_APPARATUS_HERO,
-                            ])),
+                        ->label('Текст'),
                     SafeMediaLibraryFileUpload::make('bg')
                         ->safeImages()
                         ->label('Фон (desktop)')
                         ->collection('bg')
                         ->imageEditor()
                         ->responsiveImages()
-                        ->openable()
-                        ->hidden(
-                            fn (Forms\Get $get) => ! in_array(BlockType::from($get('type')), [
-                                BlockType::BANNER_WITH_BUTTON,
-                                BlockType::BANNER_NIGHT_LENSES,
-                                BlockType::BANNER_APPOINTMENT,
-                                BlockType::BANNER_CORRECTION,
-                                BlockType::BANNER_MYOPIA,
-                                BlockType::BANNER_SELECTION_GLASSES,
-                                BlockType::BANNER_APPARATUS_HERO,
-                            ])),
+                        ->openable(),
                     SafeMediaLibraryFileUpload::make('pic')
                         ->safeImages()
                         ->label('Изображение (mobile)')
                         ->collection('pic')
                         ->responsiveImages()
                         ->imageEditor()
-                        ->openable()
-                        ->hidden(
-                            fn (Forms\Get $get) => ! in_array(BlockType::from($get('type')), [
-                                BlockType::BANNER_WITH_BUTTON,
-                                BlockType::BANNER_NIGHT_LENSES,
-                                BlockType::BANNER_APPOINTMENT,
-                                BlockType::BANNER_CORRECTION,
-                                BlockType::BANNER_MYOPIA,
-                                BlockType::BANNER_SELECTION_GLASSES,
-                                BlockType::BANNER_APPARATUS_HERO,
-                            ])),
-                ]),
+                        ->openable(),
+                ])->hidden(
+                    fn (Forms\Get $get) => ! in_array(BlockType::from($get('type')), [
+                        BlockType::BANNER_CORRECTION,
+                        BlockType::BANNER_MYOPIA,
+                        BlockType::BANNER_SELECTION_GLASSES,
+                        BlockType::BANNER_APPARATUS_HERO,
+                    ])
+                ),
 
                 Forms\Components\Section::make([
                     Forms\Components\Section::make([

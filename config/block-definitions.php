@@ -37,6 +37,9 @@ return [
         App\Blocks\Definitions\DetailsAltDefinition::class,
         App\Blocks\Definitions\TextWithImageDefinition::class,
         App\Blocks\Definitions\TextBlocksDefinition::class,
+        App\Blocks\Definitions\StellestBannerDefinition::class,
+        App\Blocks\Definitions\NightLensesBannerDefinition::class,
+        App\Blocks\Definitions\AppointmentBannerDefinition::class,
         // <block-generator-definitions>
     ],
 ];
